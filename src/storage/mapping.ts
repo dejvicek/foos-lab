@@ -1,6 +1,6 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
-import type { MatchId, Mode, Player, PlayerId, Score, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TableCount, Training } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -17,6 +17,10 @@ export interface TrainingRow {
   start_time: string | null;
   sim_split: SimSplit | null;
   sim_teams: SimTeams | null;
+  format: TrainingFormat | null;
+  duration_min: number | null;
+  plan: Training['plan'] | null;
+  locked_rounds: LockedRound[] | null;
   mode: Mode;
   tables: number;
   attendees: string[];
@@ -61,6 +65,10 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   start_time: t.startTime,
   sim_split: t.simSplit,
   sim_teams: t.simTeams,
+  format: t.format,
+  duration_min: t.durationMin,
+  plan: t.plan,
+  locked_rounds: t.lockedRounds,
   mode: t.mode,
   tables: t.tables,
   attendees: t.attendees,
@@ -92,10 +100,10 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     soloResults,
     simSplit: r.sim_split === 'order' || r.sim_split === 'manual' ? r.sim_split : 'performance',
     simTeams: r.sim_teams ?? null,
-    format: 'classic',
-    durationMin: 180,
-    plan: {},
-    lockedRounds: [],
+    format: r.format === 'custom' ? 'custom' : 'classic',
+    durationMin: r.duration_min ?? 180,
+    plan: r.plan ?? {},
+    lockedRounds: r.locked_rounds ?? [],
   };
   if (r.notes !== null && r.notes !== undefined) t.notes = r.notes;
   return t;

@@ -44,6 +44,27 @@ describe('mapping', () => {
     expect(trainingFromRow(row, [], [])).toMatchObject({ startTime: '18:00', simSplit: 'performance', simTeams: null });
   });
 
+  it('konfigurovatelný trénink tam a zpět (formát, délka, plán, zamčená kola, výsledky po kolech)', () => {
+    const row = { time: 0, label: 'Kolo 1', kind: 'groups' as const, cells: [null], waiting: [] };
+    const t: Training = {
+      ...training,
+      scores: {},
+      format: 'custom',
+      durationMin: 150,
+      plan: { setShooting: 2, normal: 3 },
+      lockedRounds: [{ discipline: 'setShooting', rows: [row] }],
+      soloResults: { p1: { 'setShooting@1': 12, 'setShooting@2': 9 } },
+    };
+    const back = trainingFromRow(trainingToRow(t), [], soloToRows(t));
+    expect(back).toEqual(t);
+    expect(soloToRows(t).map((r) => [r.metric, r.round])).toEqual([['setShooting', 1], ['setShooting', 2]]);
+  });
+
+  it('starý řádek bez nových sloupců je klasický trénink', () => {
+    const row = { ...trainingToRow(training), format: null, duration_min: null, plan: null, locked_rounds: null };
+    expect(trainingFromRow(row, [], [])).toMatchObject({ format: 'classic', durationMin: 180, plan: {}, lockedRounds: [] });
+  });
+
   it('zamčené týmy tam a zpět', () => {
     const t: Training = { ...training, scores: {}, simSplit: 'performance', simTeams: { A: ['p1', 'p3'], B: ['p2', 'p4'] } };
     expect(trainingFromRow(trainingToRow(t), [], [])).toEqual(t);
