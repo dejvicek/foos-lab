@@ -1,6 +1,6 @@
-import { DEFAULT_START } from '../domain/solo';
+import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
-import type { MatchId, Mode, Player, PlayerId, Score, SimSplit, SimTeams, SoloMetric, SoloResults, TableCount, Training } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TableCount, Training } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -27,6 +27,8 @@ export interface SoloRow {
   training_id: string;
   player_id: string;
   metric: SoloMetric;
+  /** 0 = klasický trénink, jinak číslo kola (PRD 6, migrace 5). */
+  round: number;
   value: number;
 }
 
@@ -77,7 +79,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
   const soloResults: SoloResults = {};
   for (const x of solo) {
     if (x.training_id !== r.id) continue;
-    (soloResults[x.player_id] ??= {})[x.metric] = x.value;
+    (soloResults[x.player_id] ??= {})[soloKey(x.metric, x.round ?? 0)] = x.value;
   }
   const t: Training = {
     id: r.id,
@@ -108,13 +110,14 @@ export function soloToRows(t: Training): SoloRow[] {
   const out: SoloRow[] = [];
   for (const [player_id, metrics] of Object.entries(t.soloResults))
     for (const [metric, value] of Object.entries(metrics))
-      if (value !== undefined && value !== null) out.push({ training_id: t.id, player_id, metric: metric as SoloMetric, value });
+      if (value !== undefined && value !== null) {
+        const k = parseSoloKey(metric);
+        out.push({ training_id: t.id, player_id, metric: k.metric, round: k.round, value });
+      }
   return out;
 }
 
-export const soloRow = (trainingId: string, playerId: PlayerId, metric: SoloMetric, value: number): SoloRow => ({
-  training_id: trainingId,
-  player_id: playerId,
-  metric,
-  value,
-});
+export function soloRow(trainingId: string, playerId: PlayerId, key: SoloKey, value: number): SoloRow {
+  const k = parseSoloKey(key);
+  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value };
+}

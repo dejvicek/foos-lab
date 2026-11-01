@@ -12,6 +12,8 @@ import {
   type SoloRow,
   type TrainingRow,
 } from './mapping';
+import { parseSoloKey, soloKey } from '../domain/solo';
+import type { SoloMetric } from '../domain/types';
 import { fromPostgrest } from './errors';
 import type { Repository } from './repository';
 
@@ -69,7 +71,8 @@ export function supabaseRepository(url: string, anonKey: string): Repository {
         check(await client.from('scores').upsert(row, { onConflict: 'training_id,match_id' }));
       }
     },
-    async saveSolo(trainingId, playerId, metric, value) {
+    async saveSolo(trainingId, playerId, key, value) {
+      const { metric, round } = parseSoloKey(key);
       if (value === null) {
         check(
           await client
@@ -77,26 +80,28 @@ export function supabaseRepository(url: string, anonKey: string): Repository {
             .delete()
             .eq('training_id', trainingId)
             .eq('player_id', playerId)
-            .eq('metric', metric),
+            .eq('metric', metric)
+            .eq('round', round),
         );
       } else {
-        const row = { ...soloRow(trainingId, playerId, metric, value), updated_at: new Date().toISOString() };
-        check(await client.from('solo_results').upsert(row, { onConflict: 'training_id,player_id,metric' }));
+        const row = { ...soloRow(trainingId, playerId, key, value), updated_at: new Date().toISOString() };
+        check(await client.from('solo_results').upsert(row, { onConflict: 'training_id,player_id,metric,round' }));
       }
     },
     async replaceSolo(trainingId, keep) {
-      const rows = check<{ player_id: string; metric: string }[]>(
-        await client.from('solo_results').select('player_id,metric').eq('training_id', trainingId),
+      const rows = check<{ player_id: string; metric: SoloMetric; round: number }[]>(
+        await client.from('solo_results').select('player_id,metric,round').eq('training_id', trainingId),
       );
-      const k = new Set(keep.map((x) => `${x.playerId}::${x.metric}`));
-      for (const r of rows.filter((x) => !k.has(`${x.player_id}::${x.metric}`)))
+      const k = new Set(keep.map((x) => `${x.playerId}::${x.key}`));
+      for (const r of rows.filter((x) => !k.has(`${x.player_id}::${soloKey(x.metric, x.round)}`)))
         check(
           await client
             .from('solo_results')
             .delete()
             .eq('training_id', trainingId)
             .eq('player_id', r.player_id)
-            .eq('metric', r.metric),
+            .eq('metric', r.metric)
+            .eq('round', r.round),
         );
     },
     async replaceScores(trainingId, keep) {

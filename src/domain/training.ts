@@ -1,7 +1,7 @@
 import { sortedRoster } from './roster';
-import { DEFAULT_START, soloSlots, type SoloSlot } from './solo';
+import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
 import { buildSchedule, canBuildSchedule } from './schedule';
-import type { MatchId, Player, PlayerId, Score, SoloMetric, SoloResults, Training } from './types';
+import type { MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
 
 export function newTraining(id: string, today: string, last: Training | null): Training {
   return {
@@ -55,11 +55,11 @@ function built(t: Training) {
   return canBuildSchedule(t) ? buildSchedule(t) : null;
 }
 
-const slotKey = (playerId: PlayerId, metric: SoloMetric) => `${playerId}::${metric}`;
+const slotKey = (playerId: PlayerId, key: SoloKey) => `${playerId}::${key}`;
 
 function soloKeys(t: Training): Set<string> {
   const s = built(t);
-  return new Set(s ? soloSlots(s).map((x) => slotKey(x.playerId, x.metric)) : []);
+  return new Set(s ? soloSlots(s).map((x) => slotKey(x.playerId, x.key)) : []);
 }
 
 function matchIds(t: Training): Set<MatchId> {
@@ -71,7 +71,7 @@ function filledSolo(t: Training): SoloSlot[] {
   const out: SoloSlot[] = [];
   for (const [playerId, metrics] of Object.entries(t.soloResults))
     for (const [metric, v] of Object.entries(metrics))
-      if (v !== null && v !== undefined) out.push({ playerId, metric: metric as SoloMetric });
+      if (v !== null && v !== undefined) out.push({ playerId, key: metric, metric: parseSoloKey(metric).metric });
   return out;
 }
 
@@ -88,7 +88,7 @@ export function lostEntries(before: Training, after: Training): LostEntries {
     scores: Object.entries(before.scores)
       .filter(([id, s]) => !isEmptyScore(s) && !ids.has(id))
       .map(([id]) => id),
-    solo: filledSolo(before).filter((x) => !keys.has(slotKey(x.playerId, x.metric))),
+    solo: filledSolo(before).filter((x) => !keys.has(slotKey(x.playerId, x.key))),
   };
 }
 
@@ -99,16 +99,16 @@ export function pruneEntries(t: Training): Training {
   const scores = Object.fromEntries(Object.entries(t.scores).filter(([id]) => ids.has(id)));
   const soloResults: SoloResults = {};
   for (const [p, metrics] of Object.entries(t.soloResults)) {
-    const kept = Object.fromEntries(Object.entries(metrics).filter(([m]) => keys.has(slotKey(p, m as SoloMetric))));
+    const kept = Object.fromEntries(Object.entries(metrics).filter(([k]) => keys.has(slotKey(p, k))));
     if (Object.keys(kept).length) soloResults[p] = kept;
   }
   return { ...t, scores, soloResults };
 }
 
-export function setSolo(t: Training, playerId: PlayerId, metric: SoloMetric, value: number | null): Training {
+export function setSolo(t: Training, playerId: PlayerId, key: SoloKey, value: number | null): Training {
   const mine = { ...t.soloResults[playerId] };
-  if (value === null) delete mine[metric];
-  else mine[metric] = value;
+  if (value === null) delete mine[key];
+  else mine[key] = value;
   const soloResults = { ...t.soloResults };
   if (Object.keys(mine).length) soloResults[playerId] = mine;
   else delete soloResults[playerId];

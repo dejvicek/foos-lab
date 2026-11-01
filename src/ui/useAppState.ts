@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isEmptyScore, setSolo } from '../domain/training';
-import type { MatchId, Player, PlayerId, Score, SoloMetric, Training } from '../domain/types';
+import { parseSoloKey } from '../domain/solo';
+import type { MatchId, Player, PlayerId, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
@@ -26,7 +27,7 @@ export interface AppStore {
   /** Lokálně hned, do úložiště s odstupem SCORE_DEBOUNCE_MS za zápas. */
   saveScore(trainingId: string, matchId: MatchId, s: Score): void;
   /** Výsledek sólové části: lokálně hned, do úložiště s odstupem. null maže. */
-  saveSolo(trainingId: string, playerId: PlayerId, metric: SoloMetric, value: number | null): void;
+  saveSolo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): void;
   newId(): string;
 }
 
@@ -138,7 +139,7 @@ export function useAppState(repo: Repository): AppStore {
     if (!t) return false;
     if (rest.startsWith('solo::')) {
       const [, pid, metric] = rest.split('::');
-      return t.soloResults[pid]?.[metric as SoloMetric] !== undefined;
+      return t.soloResults[pid]?.[metric] !== undefined;
     }
     return rest in t.scores;
   };
@@ -186,7 +187,7 @@ export function useAppState(repo: Repository): AppStore {
           repo.replaceSolo(
             t.id,
             Object.entries(t.soloResults).flatMap(([playerId, ms]) =>
-              Object.keys(ms).map((metric) => ({ playerId, metric: metric as SoloMetric })),
+              Object.keys(ms).map((key) => ({ playerId, key, metric: parseSoloKey(key).metric })),
             ),
           ),
         );
@@ -209,12 +210,12 @@ export function useAppState(repo: Repository): AppStore {
         }));
         debounce(`${trainingId}::${matchId}`, () => repo.saveScore(trainingId, matchId, s));
       },
-      saveSolo: (trainingId: string, playerId: PlayerId, metric: SoloMetric, value: number | null) => {
+      saveSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null) => {
         setData((d) => ({
           ...d,
-          trainings: d.trainings.map((t) => (t.id === trainingId ? setSolo(t, playerId, metric, value) : t)),
+          trainings: d.trainings.map((t) => (t.id === trainingId ? setSolo(t, playerId, key, value) : t)),
         }));
-        debounce(`${trainingId}::solo::${playerId}::${metric}`, () => repo.saveSolo(trainingId, playerId, metric, value));
+        debounce(`${trainingId}::solo::${playerId}::${key}`, () => repo.saveSolo(trainingId, playerId, key, value));
       },
       newId: newUuid,
     }),

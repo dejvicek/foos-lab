@@ -19,8 +19,10 @@ export interface Score {
 }
 
 export type SoloMetric = 'warmupPasses' | 'fiveBarControl' | 'setShooting' | 'blockToControl' | 'backRodsBuildUp' | 'chain';
-/** Výsledky sólové části: hráč → metrika → hodnota (PRD 5.8). */
-export type SoloResults = Record<PlayerId, Partial<Record<SoloMetric, number>>>;
+/** Klíč výsledku: `metrika` (klasický trénink) nebo `metrika@kolo` (konfigurovatelný). */
+export type SoloKey = string;
+/** Výsledky sólové části: hráč → klíč → hodnota (PRD 5.8, 6). */
+export type SoloResults = Record<PlayerId, Record<SoloKey, number>>;
 
 /** Jak rozdělit přítomné na týmy simulace ligového kola. */
 export type SimSplit = 'performance' | 'order' | 'manual';
@@ -71,7 +73,7 @@ export interface Match {
 }
 
 export type Cell =
-  | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric }
+  | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric; soloRound?: number }
   | { type: 'match'; match: Match };
 
 export interface ScheduleRow {

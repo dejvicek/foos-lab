@@ -37,7 +37,7 @@ describe('memoryRepository', () => {
     await repo.saveSolo('t1', 'b', 'chain', 4);
     await repo.saveSolo('t1', 'a', 'setShooting', null);
     expect(repo.snapshot().trainings[0].soloResults).toEqual({ a: { fiveBarControl: 2 }, b: { chain: 4 } });
-    await repo.replaceSolo('t1', [{ playerId: 'a', metric: 'fiveBarControl' }]);
+    await repo.replaceSolo('t1', [{ playerId: 'a', metric: 'fiveBarControl', key: 'fiveBarControl' }]);
     expect(repo.snapshot().trainings[0].soloResults).toEqual({ a: { fiveBarControl: 2 } });
   });
 

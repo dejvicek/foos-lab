@@ -59,13 +59,13 @@ export function memoryRepository(
         if (isEmptyScore(s)) delete t.scores[matchId];
         else t.scores[matchId] = copy(s);
       }),
-    saveSolo: (trainingId, playerId, metric, value) =>
+    saveSolo: (trainingId, playerId, key, value) =>
       write(() => {
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
         const mine = { ...t.soloResults[playerId] };
-        if (value === null) delete mine[metric];
-        else mine[metric] = value;
+        if (value === null) delete mine[key];
+        else mine[key] = value;
         if (Object.keys(mine).length) t.soloResults[playerId] = mine;
         else delete t.soloResults[playerId];
       }),
@@ -73,7 +73,7 @@ export function memoryRepository(
       write(() => {
         const t = training(trainingId);
         if (!t) return;
-        const k = new Set(keep.map((x) => `${x.playerId}::${x.metric}`));
+        const k = new Set(keep.map((x) => `${x.playerId}::${x.key}`));
         const next: typeof t.soloResults = {};
         for (const [p, metrics] of Object.entries(t.soloResults)) {
           const kept = Object.fromEntries(Object.entries(metrics).filter(([m]) => k.has(`${p}::${m}`)));

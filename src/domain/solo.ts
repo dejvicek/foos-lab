@@ -1,4 +1,4 @@
-import type { PlayerId, Schedule, SoloMetric } from './types';
+import type { PlayerId, Schedule, SoloKey, SoloMetric } from './types';
 
 export interface SoloMetricDef {
   id: SoloMetric;
@@ -27,6 +27,14 @@ export const soloMetric = (id: SoloMetric): SoloMetricDef => SOLO_METRICS.find((
 export interface SoloSlot {
   metric: SoloMetric;
   playerId: PlayerId;
+  key: SoloKey;
+}
+
+export const soloKey = (metric: SoloMetric, round?: number): SoloKey => (round ? `${metric}@${round}` : metric);
+
+export function parseSoloKey(key: SoloKey): { metric: SoloMetric; round: number } {
+  const [m, r] = key.split('@');
+  return { metric: m as SoloMetric, round: r ? Number(r) : 0 };
 }
 
 /** Všechna místa, kde se v rozpisu zapisuje výsledek sólové části (hráč × metrika). */
@@ -35,7 +43,8 @@ export function soloSlots(s: Schedule): SoloSlot[] {
   for (const sec of s.sections)
     for (const row of sec.rows)
       for (const c of row.cells)
-        if (c?.type === 'group' && c.metric) for (const p of c.players) out.push({ metric: c.metric, playerId: p });
+        if (c?.type === 'group' && c.metric)
+          for (const p of c.players) out.push({ metric: c.metric, playerId: p, key: soloKey(c.metric, c.soloRound) });
   return out;
 }
 

@@ -93,8 +93,8 @@ describe('výsledky sólové části při změně konfigurace', () => {
     const before = base();
     const after = { ...before, attendees: H(7) };
     expect(lostEntries(before, after).solo).toEqual([
-      { playerId: 'H1', metric: 'backRodsBuildUp' },
-      { playerId: 'H8', metric: 'setShooting' },
+      { playerId: 'H1', metric: 'backRodsBuildUp', key: 'backRodsBuildUp' },
+      { playerId: 'H8', metric: 'setShooting', key: 'setShooting' },
     ]);
     expect(pruneEntries(after).soloResults.H8).toBeUndefined();
   });
@@ -102,7 +102,7 @@ describe('výsledky sólové části při změně konfigurace', () => {
   it('4 → 3 stoly: zmizí jen stanoviště 4', () => {
     const before = base();
     const after = { ...before, tables: 3 as const };
-    expect(lostEntries(before, after).solo).toEqual([{ playerId: 'H1', metric: 'backRodsBuildUp' }]);
+    expect(lostEntries(before, after).solo).toEqual([{ playerId: 'H1', metric: 'backRodsBuildUp', key: 'backRodsBuildUp' }]);
     expect(pruneEntries(after).soloResults.H1).toEqual({ fiveBarControl: 2 });
   });
 

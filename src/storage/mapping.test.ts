@@ -34,7 +34,7 @@ describe('mapping', () => {
 
   it('čas začátku a výsledky sólové části tam a zpět', () => {
     const t: Training = { ...training, startTime: '17:30', soloResults: { p1: { fiveBarControl: 2, setShooting: 0 }, p2: { warmupPasses: 18 } } };
-    const solo = [...soloToRows(t), { training_id: 'jiny', player_id: 'p1', metric: 'chain' as const, value: 3 }];
+    const solo = [...soloToRows(t), { training_id: 'jiny', player_id: 'p1', metric: 'chain' as const, round: 0, value: 3 }];
     expect(trainingToRow(t).start_time).toBe('17:30');
     expect(trainingFromRow(trainingToRow(t), [], solo)).toEqual({ ...t, scores: {} });
   });

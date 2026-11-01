@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
-import { clockAt } from '../../domain/solo';
-import type { Cell, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloMetric, Training } from '../../domain/types';
+import { clockAt, soloKey } from '../../domain/solo';
+import type { Cell, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey, type RowRef } from '../now';
 import { BlockEntry } from './BlockEntry';
 
@@ -12,7 +12,7 @@ interface Props {
   expanded: string | null;
   onToggle(key: string): void;
   onScore(id: MatchId, s: Score): void;
-  onSolo(playerId: PlayerId, metric: SoloMetric, value: number | null): void;
+  onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
 }
 
 function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names: Record<PlayerId, string> }) {
@@ -55,7 +55,7 @@ function soloProgress(row: ScheduleRow, t: Training): string | null {
     if (c?.type === 'group' && c.metric)
       for (const p of c.players) {
         total++;
-        if (t.soloResults[p]?.[c.metric] !== undefined) done++;
+        if (t.soloResults[p]?.[soloKey(c.metric, c.soloRound)] !== undefined) done++;
       }
   return total ? `zapsáno ${done} z ${total}` : null;
 }

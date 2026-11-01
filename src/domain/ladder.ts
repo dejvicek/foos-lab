@@ -1,6 +1,7 @@
 import { addDays } from './dates';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { compareStat, computeStandings, emptyStat, type StatLine } from './standings';
+import { parseSoloKey } from './solo';
 import { pruneEntries } from './training';
 import type { Mode, PlayerId, SoloMetric, Training } from './types';
 
@@ -134,8 +135,18 @@ export function playerHistory(
       lossPerLeg: r.lossLegs ? r.loss / r.lossLegs : null,
       simW: r.simW,
       simM: r.simM,
-      solo: pruneEntries(training).soloResults[playerId] ?? {},
+      solo: averageByMetric(pruneEntries(training).soloResults[playerId] ?? {}),
     });
   }
   return out.map((r, i) => ({ r, i })).sort((a, b) => (a.r.date < b.r.date ? 1 : a.r.date > b.r.date ? -1 : b.i - a.i)).map((x) => x.r);
+}
+
+/** Hodnoty hráče v tréninku podle metriky (víc kol téhož cvičení → průměr). */
+function averageByMetric(values: Record<string, number>): Partial<Record<SoloMetric, number>> {
+  const acc = new Map<SoloMetric, number[]>();
+  for (const [k, v] of Object.entries(values)) {
+    const m = parseSoloKey(k).metric;
+    acc.set(m, [...(acc.get(m) ?? []), v]);
+  }
+  return Object.fromEntries([...acc.entries()].map(([m, vs]) => [m, vs.reduce((a, b) => a + b, 0) / vs.length]));
 }

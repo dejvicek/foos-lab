@@ -1,8 +1,8 @@
 import type { ExplanationItem } from '../../domain/content';
 import { explanationsFor } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
-import { soloMetric } from '../../domain/solo';
-import type { MatchId, PlayerId, ScheduleRow, Score, SoloMetric, Training } from '../../domain/types';
+import { soloKey, soloMetric } from '../../domain/solo';
+import type { MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScoreInputs } from './ScoreInputs';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
   training: Training;
   names: Record<PlayerId, string>;
   onScore(id: MatchId, s: Score): void;
-  onSolo(playerId: PlayerId, metric: SoloMetric, value: number | null): void;
+  onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -88,7 +88,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <span>{def.what}</span>
               </div>
               {c.players.map((p) => {
-                const v = training.soloResults[p]?.[c.metric!];
+                const key = soloKey(c.metric!, c.soloRound);
+                const v = training.soloResults[p]?.[key];
                 return (
                   <label key={p} className="solo-line">
                     <span>{names[p] ?? '?'}</span>
@@ -103,7 +104,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                       onChange={(e) => {
                         const n = parseScoreValue(e.target.value);
                         if (n !== null && n > def.max) return;
-                        onSolo(p, c.metric!, n);
+                        onSolo(p, key, n);
                       }}
                     />
                   </label>

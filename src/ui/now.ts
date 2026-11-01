@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { todayIso } from './dates';
 import { TIMES } from '../domain/content';
+import { soloKey } from '../domain/solo';
 import type { Schedule, Training } from '../domain/types';
 
 /** Minuty od začátku tréninku, nebo null, když trénink není dnes. */
@@ -45,7 +46,7 @@ export function firstIncomplete(s: Schedule, t: Training): RowRef | null {
       if (c.type === 'match') {
         const sc = t.scores[c.match.id];
         if (sc?.ga === undefined || sc?.ga === null || sc?.gb === undefined || sc?.gb === null) return ref;
-      } else if (c.metric && c.players.some((p) => t.soloResults[p]?.[c.metric!] === undefined)) return ref;
+      } else if (c.metric && c.players.some((p) => t.soloResults[p]?.[soloKey(c.metric!, c.soloRound)] === undefined)) return ref;
     }
   }
   return null;

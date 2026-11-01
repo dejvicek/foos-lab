@@ -1,4 +1,4 @@
-import { computeSoloLadder } from './soloLadder';
+import { aggregateSolo, computeSoloLadder } from './soloLadder';
 import { playerHistory } from './ladder';
 import { setSolo } from './training';
 import { training } from '../test/fixtures';
@@ -51,5 +51,14 @@ describe('playerHistory – sólová část', () => {
   it('vrací i hodnoty ze sólové části', () => {
     const h = playerHistory([t1, t2], 'H1', { kind: 'all' }, TODAY);
     expect(h[0].solo).toEqual({ fiveBarControl: 4, setShooting: 12 });
+  });
+});
+
+describe('žebříček stanovišť – víc záznamů v jednom tréninku', () => {
+  it('průměr na záznam, tréninky = počet tréninků se záznamem', () => {
+    const t = training('c1', '2026-10-30', 'team', H(8), 4);
+    const raw = (x: typeof t) => x.soloResults;
+    const rows = aggregateSolo([{ ...t, soloResults: { H1: { 'setShooting@1': 10, 'setShooting@5': 14 } } }], 'setShooting', raw);
+    expect(rows.get('H1')).toEqual({ trainings: 1, records: 2, sum: 24 });
   });
 });

@@ -53,3 +53,13 @@ describe('metriky v rozpisu', () => {
     expect(count(slots, 'fiveBarControl')).toBe(0);
   });
 });
+
+describe('klíče výsledků sólové části', () => {
+  it('klasický = metrika, custom = metrika@kolo', async () => {
+    const { soloKey, parseSoloKey } = await import('./solo');
+    expect(soloKey('setShooting')).toBe('setShooting');
+    expect(soloKey('setShooting', 4)).toBe('setShooting@4');
+    expect(parseSoloKey('setShooting@4')).toEqual({ metric: 'setShooting', round: 4 });
+    expect(parseSoloKey('chain')).toEqual({ metric: 'chain', round: 0 });
+  });
+});
