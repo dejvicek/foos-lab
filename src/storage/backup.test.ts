@@ -5,7 +5,7 @@ describe('exportJson', () => {
     const { filename, json } = exportJson(
       {
         players: [{ id: 'a', name: 'A', archived: false, order: 0 }],
-        trainings: [{ id: 't', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, mode: 'team', tables: 4, attendees: ['a'], scores: { m: { ga: 1, gb: 0 } } }],
+        trainings: [{ id: 't', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [], mode: 'team', tables: 4, attendees: ['a'], scores: { m: { ga: 1, gb: 0 } } }],
       },
       '2026-10-31',
     );

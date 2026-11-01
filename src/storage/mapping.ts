@@ -92,6 +92,10 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     soloResults,
     simSplit: r.sim_split === 'order' || r.sim_split === 'manual' ? r.sim_split : 'performance',
     simTeams: r.sim_teams ?? null,
+    format: 'classic',
+    durationMin: 180,
+    plan: {},
+    lockedRounds: [],
   };
   if (r.notes !== null && r.notes !== undefined) t.notes = r.notes;
   return t;

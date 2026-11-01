@@ -1,7 +1,6 @@
-import type { SoloMetric } from './types';
+import type { DisciplineId, SoloMetric } from './types';
 
-export type MatchDisciplineId = 'normal' | 'lossTax' | 'wall' | 'start03' | 'start44' | 'start55' | 'singles';
-export type DisciplineId = SoloMetric | MatchDisciplineId | 'sim';
+export type { DisciplineId };
 
 export interface DisciplineDef {
   id: DisciplineId;

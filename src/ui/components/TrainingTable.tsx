@@ -79,7 +79,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
         </thead>
         <tbody>
           {s.sections.map((sec, si) => (
-            <Fragment key={sec.id}>
+            <Fragment key={`${sec.id}-${si}`}>
               <tr className="section-row">
                 <th colSpan={cols} scope="colgroup">
                   {sec.title}

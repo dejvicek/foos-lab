@@ -4,7 +4,7 @@ import type { Player, Training } from '../domain/types';
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
 const training: Training = {
   id: 't1',
-  date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null,
+  date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
   mode: 'team',
   tables: 4,
   attendees: ['p1', 'p2', 'p3', 'p4'],

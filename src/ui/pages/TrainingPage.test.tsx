@@ -49,7 +49,7 @@ describe('stránka Trénink', () => {
     const user = userEvent.setup();
     const t: Training = {
       id: 't1',
-      date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null,
+      date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
       mode: 'team',
       tables: 4,
       attendees: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'],
@@ -74,7 +74,7 @@ describe('stránka Trénink', () => {
   it('archivovaný hráč zůstane ve starém tréninku zaškrtnutý', async () => {
     const ps = players(4);
     ps[0].archived = true;
-    const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, mode: 'team', tables: 4, attendees: ['p1', 'p2', 'p3', 'p4'], scores: {} };
+    const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [], mode: 'team', tables: 4, attendees: ['p1', 'p2', 'p3', 'p4'], scores: {} };
     window.location.hash = '#/trenink/t1';
     render(<App repo={memoryRepository({ players: ps, trainings: [t] })} />);
     expect(await screen.findByRole('checkbox', { name: /Ada/ })).toBeChecked();

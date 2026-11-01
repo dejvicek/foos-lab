@@ -8,7 +8,7 @@ const players = (n: number): Player[] =>
   Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
 const training = (n: number, mode: Mode, tables: TableCount): Training => ({
   id: 't1', date: '2026-10-31', startTime: '18:00', mode, tables,
-  attendees: players(n).map((p) => p.id), scores: {}, soloResults: {}, simSplit: 'order', simTeams: null,
+  attendees: players(n).map((p) => p.id), scores: {}, soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
 });
 const rowOf = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) }).closest('tr')!;
 

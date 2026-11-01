@@ -1,7 +1,7 @@
 import { memoryRepository } from './memoryRepository';
 import type { Training } from '../domain/types';
 
-const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, mode: 'team', tables: 4, attendees: [], scores: {} };
+const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [], mode: 'team', tables: 4, attendees: [], scores: {} };
 
 describe('memoryRepository', () => {
   it('uloží a načte hráče', async () => {

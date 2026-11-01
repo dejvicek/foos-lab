@@ -31,6 +31,23 @@ export interface SimTeams {
   B: PlayerId[];
 }
 
+export type TrainingFormat = 'classic' | 'custom';
+export type DisciplineId =
+  | SoloMetric
+  | 'normal'
+  | 'lossTax'
+  | 'wall'
+  | 'start03'
+  | 'start44'
+  | 'start55'
+  | 'singles'
+  | 'sim';
+export interface LockedRound {
+  discipline: DisciplineId;
+  /** Řádky kola (simulace má 2 vlny). */
+  rows: ScheduleRow[];
+}
+
 export interface Training {
   id: string;
   date: string; // YYYY-MM-DD
@@ -46,6 +63,14 @@ export interface Training {
   simSplit: SimSplit;
   /** Ruční týmy, nebo zamčené týmy (od prvního zapsaného výsledku simulace); jinak null. */
   simTeams: SimTeams | null;
+  /** 'classic' = pevná struktura PRD 4.1–4.3, 'custom' = disciplíny PRD 4.6. */
+  format: TrainingFormat;
+  /** Délka tréninku v minutách (custom). */
+  durationMin: number;
+  /** Počet kol každé disciplíny (custom). */
+  plan: Partial<Record<DisciplineId, number>>;
+  /** Zamčená (odehraná) kola – jejich sestavy se už nemění (custom). */
+  lockedRounds: LockedRound[];
   notes?: string;
 }
 
@@ -70,10 +95,12 @@ export interface Match {
   wall?: 'A' | 'B';
   /** Scénářový start [levá, pravá]; zapisují se jen odehrané góly. */
   start?: [number, number];
+  /** Disciplína kola (konfigurovatelný trénink). */
+  discipline?: DisciplineId;
 }
 
 export type Cell =
-  | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric; soloRound?: number }
+  | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric; soloRound?: number; discipline?: DisciplineId }
   | { type: 'match'; match: Match };
 
 export interface ScheduleRow {
@@ -86,7 +113,7 @@ export interface ScheduleRow {
 }
 
 export interface ScheduleSection {
-  id: 'solo' | 'league' | 'sim' | 'singles';
+  id: 'solo' | 'league' | 'sim' | 'singles' | 'drills' | 'matches';
   title: string;
   subtitle?: string;
   waitingLabel: string;

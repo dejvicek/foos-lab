@@ -4,6 +4,7 @@ import { groups, rotate } from './rotation';
 import { balancedSplit, reconcileTeams, simulateTeams } from './simulation';
 import { computeStandings } from './standings';
 import { STATION_METRICS } from './solo';
+import { buildCustomSchedule } from './customSchedule';
 import type {
   Block,
   Cell,
@@ -23,7 +24,7 @@ export const MIN_PLAYERS = 4;
 export const MAX_PLAYERS = 13;
 
 export type ScheduleInput = Pick<Training, 'mode' | 'tables' | 'attendees'> &
-  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores'>>;
+  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds'>>;
 
 export function canBuildSchedule(t: ScheduleInput): boolean {
   return t.attendees.length >= MIN_PLAYERS && t.attendees.length <= MAX_PLAYERS;
@@ -37,7 +38,7 @@ function cellsOf(items: (Cell | null)[], tables: TableCount): (Cell | null)[] {
   return Array.from({ length: tables }, (_, j) => items[j] ?? null);
 }
 
-function breakRow(time: number, label: string, tables: TableCount, rule?: string): ScheduleRow {
+export function breakRow(time: number, label: string, tables: TableCount, rule?: string): ScheduleRow {
   return { time, label, rule, kind: 'break', cells: cellsOf([], tables), waiting: [] };
 }
 
@@ -109,7 +110,7 @@ function groupRows(
 }
 
 /** Týmy simulace: zamčené → podle nominačního pořadí → vyrovnaně podle výkonu ve scénářové lize. */
-function simTeamsFor(input: ScheduleInput, leagueMatches: Match[]): { A: PlayerId[]; B: PlayerId[] } {
+export function simTeamsFor(input: ScheduleInput, leagueMatches: Match[]): { A: PlayerId[]; B: PlayerId[] } {
   const players = input.attendees;
   const locked = input.simTeams;
   if (input.simSplit === 'manual' && locked) return reconcileTeams(locked, players);
@@ -232,5 +233,6 @@ export function buildSchedule(t: ScheduleInput): Schedule {
   if (!canBuildSchedule(t)) {
     throw new Error(`Rozpis umí ${MIN_PLAYERS}–${MAX_PLAYERS} hráčů, přítomno ${t.attendees.length}.`);
   }
+  if (t.format === 'custom') return buildCustomSchedule(t);
   return t.mode === 'team' ? buildTeam(t) : buildSingles(t.attendees, t.tables);
 }

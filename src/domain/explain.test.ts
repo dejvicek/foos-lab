@@ -4,6 +4,7 @@ import { buildSchedule } from './schedule';
 import { H } from '../test/fixtures';
 
 const team = buildSchedule({ mode: 'team', tables: 4, attendees: H(13) });
+const custom = buildSchedule({ mode: 'team', tables: 4, attendees: H(8), format: 'custom', plan: { warmupPasses: 1, chain: 1, start03: 1, singles: 1 }, lockedRounds: [] });
 const single = buildSchedule({ mode: 'single', tables: 2, attendees: H(5) });
 const rowByLabel = (s: typeof team, label: string) => s.sections.flatMap((x) => x.rows).find((r) => r.label === label)!;
 const names = (items: { name: string }[]) => items.map((i) => i.name);
@@ -25,9 +26,18 @@ describe('vysvětlivky u bloků', () => {
     expect(names(explanationsFor(rowByLabel(single, 'Rozehrání: rozehrávka ze zadku')).main)).toEqual(['Rozehrávka ze zadních tyčí']);
     expect(names(explanationsFor(rowByLabel(single, 'Řetězec (střídání po 10 pokusech)')).main)).toEqual(['Řetězec (trénink jedniček)']);
   });
+  it('konfigurovatelný trénink: nápověda podle disciplíny kola, cvičení jednou za kolo', () => {
+    const r = custom.sections.flatMap((x) => x.rows).filter((x) => x.kind !== 'break');
+    expect(names(explanationsFor(r[0]).main)).toEqual(['Přihrávky na pětce']);
+    expect(explanationsFor(r[0]).perTable.every((x) => x === null)).toBe(true);
+    expect(names(explanationsFor(r[1]).main)).toEqual(['Řetězec (trénink jedniček)']);
+    expect(names(explanationsFor(r[2]).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
+    expect(names(explanationsFor(r[3]).main)).toEqual(['Normální leg']);
+  });
+
   it('kritérium 8: každý text vysvětlivek je u nějakého bloku', () => {
     const shown = new Set<string>();
-    for (const s of [team, single])
+    for (const s of [team, single, custom])
       for (const row of s.sections.flatMap((x) => x.rows)) {
         const e = explanationsFor(row);
         [...e.main, ...e.general, ...e.perTable].forEach((i) => i && shown.add(i.name));

@@ -14,7 +14,7 @@ export function training(
   attendees: PlayerId[],
   tables: TableCount = 4,
 ): Training {
-  return { id, date, startTime: '18:00', mode, tables, attendees, scores: {}, soloResults: {}, simSplit: 'order', simTeams: null };
+  return { id, date, startTime: '18:00', mode, tables, attendees, scores: {}, soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [] };
 }
 
 /**

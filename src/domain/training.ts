@@ -15,6 +15,10 @@ export function newTraining(id: string, today: string, last: Training | null): T
     soloResults: {},
     simSplit: last?.simSplit ?? 'performance',
     simTeams: null,
+    format: 'classic',
+    durationMin: 180,
+    plan: {},
+    lockedRounds: [],
   };
 }
 

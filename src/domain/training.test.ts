@@ -8,7 +8,7 @@ describe('newTraining', () => {
   it('bez předchozího: týmový, 4 stoly, nikdo nepřítomen', () => {
     expect(newTraining('x', '2026-10-31', null)).toEqual({
       id: 'x', date: '2026-10-31', startTime: '18:00', mode: 'team', tables: 4, attendees: [], scores: {}, soloResults: {},
-      simSplit: 'performance', simTeams: null,
+      simSplit: 'performance', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
     });
   });
   it('typ a stoly převezme z posledního tréninku', () => {

@@ -3,7 +3,7 @@ import { useAppState } from './useAppState';
 import { memoryRepository } from '../storage/memoryRepository';
 import type { Training } from '../domain/types';
 
-const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, mode: 'team', tables: 4, attendees: [], scores: {} };
+const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [], mode: 'team', tables: 4, attendees: [], scores: {} };
 
 describe('useAppState', () => {
   it('smazání tréninku zruší čekající zápis skóre (žádné nekonečné opakování)', async () => {

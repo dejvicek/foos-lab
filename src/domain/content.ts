@@ -58,6 +58,23 @@ export const EXPLANATIONS: ExplanationGroup[] = [
     "title": "Stanoviště (sólový trénink, 8 minut na každém)",
     "items": [
       {
+        "name": "Přihrávky na pětce",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "dostat míč z pětky na vlastní trojku pod kontrolou přes aktivně bránícího soupeře."
+          },
+          {
+            "label": "Provedení:",
+            "text": "útočník má míč na pětce, soupeř brání pětkou. 20 pokusů o přihrávku na trojku, platí jen přihrávka, kterou trojka přijme pod kontrolou. V polovině kola výměna rolí."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "povedené přihrávky z 20."
+          }
+        ]
+      },
+      {
         "name": "Udržení míče na pětce",
         "parts": [
           {
@@ -171,7 +188,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Zeď",
         "parts": [
           {
-            "text": "Jeden tým má celý leg zakázáno riskovat: drží míč, nikam nespěchá, žádné riskantní přihrávky, střílí jen z jistoty. Druhý tým ho musí prolomit. V kole 3 hraje zeď levá strana, v kole 4 pravá. Simulace soupeře, který nás v lize trestá, když zrychlíme."
+            "text": "Jeden tým má celý leg zakázáno riskovat: drží míč, nikam nespěchá, žádné riskantní přihrávky, střílí jen z jistoty. Druhý tým ho musí prolomit. Kdo drží zeď, ukazuje rozpis štítkem Zeď; během tréninku se role střídají. Simulace soupeře, který nás v lize trestá, když zrychlíme."
           }
         ]
       },
@@ -214,7 +231,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
             "text": "Kdo zrovna nehraje, je rozhodčí: první čekající u stolu 1, druhý u stolu 2 a tak dál. Rozhodčí čárkuje ztráty (v kolech bez Daně), hlídá kolo Zeď a čas kola, rozhoduje sporné ztráty. Rozhodnutí platí, nediskutuje se. U stolu bez rozhodčího se ztráty nezapisují; v kolech s Daní jsou ztráty rovnou v gólech."
           },
           {
-            "text": "Kolo končí dohraným legem, čas je jen pojistka pro rotaci: když vyprší, zapíše se aktuální stav a jde se dál. Aby se nedalo hrát na čas, rozhodčí vymáhá limity držení míče (10 s na pětce, 15 s na trojce). Pomalá hra je záměr jen v kole Zeď."
+            "text": "Kolo končí dohraným legem, čas je jen pojistka, aby trénink držel čas: když vyprší, zapíše se aktuální stav a jde se dál. Aby se nedalo hrát na čas, rozhodčí vymáhá limity držení míče (10 s na pětce, 15 s na trojce). Pomalá hra je záměr jen v kole Zeď."
           }
         ]
       }

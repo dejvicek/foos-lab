@@ -1,4 +1,5 @@
 import { EXPLANATIONS, type ExplanationItem } from './content';
+import { discipline } from './disciplines';
 import type { ScheduleRow } from './types';
 
 const item = (name: string): ExplanationItem => {
@@ -25,6 +26,13 @@ export interface BlockExplanations {
 export function explanationsFor(row: ScheduleRow): BlockExplanations {
   const out: BlockExplanations = { main: [], general: [], perTable: row.cells.map(() => null) };
   const match = row.cells.find((c) => c?.type === 'match');
+  if (match?.type === 'match' && match.match.discipline && match.match.block !== 'sim') {
+    const def = discipline(match.match.discipline);
+    out.main.push(item(def.explain));
+    if (def.id === 'start03') out.main.push(item('Daň za ztrátu'));
+    out.general.push(item('Každý gól se počítá'), item('Role rozhodčího'));
+    return out;
+  }
   if (match?.type === 'match') {
     if (match.match.block === 'sim') {
       out.main.push(item('Simulace ligového kola'));
@@ -33,6 +41,12 @@ export function explanationsFor(row: ScheduleRow): BlockExplanations {
       if (match.match.round === 5) out.main.push(item('Daň za ztrátu'));
       out.general.push(item('Každý gól se počítá'), item('Role rozhodčího'));
     }
+    return out;
+  }
+  const group = row.cells.find((c) => c?.type === 'group');
+  if (group?.type === 'group' && group.discipline) {
+    // Konfigurovatelný trénink: všechny stoly dělají totéž cvičení → jedna nápověda.
+    out.main.push(item(discipline(group.discipline).explain));
     return out;
   }
   row.cells.forEach((c, j) => {
