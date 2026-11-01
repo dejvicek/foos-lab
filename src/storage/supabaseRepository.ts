@@ -44,7 +44,7 @@ export function supabaseRepository(url: string, anonKey: string): Repository {
         selectAll<PlayerRow>(client, 'players', ['id']),
         selectAll<TrainingRow>(client, 'trainings', ['id']),
         selectAll<ScoreRow>(client, 'scores', ['training_id', 'match_id']),
-        selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric']),
+        selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric', 'round']),
       ]);
       return {
         players: players.map(playerFromRow),

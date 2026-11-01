@@ -13,7 +13,7 @@ export function newTraining(id: string, today: string, last: Training | null): T
     id,
     date: today,
     startTime: last?.startTime ?? DEFAULT_START,
-    mode: last?.mode ?? 'team',
+    mode: 'team', // konfigurovatelný trénink: jedničky jsou disciplína, ne typ tréninku
     tables,
     attendees: [],
     scores: {},
@@ -156,6 +156,13 @@ export function replan(before: Training, after: Training): Training {
   if (!changed) return after;
   return {
     ...after,
-    plan: autoPlan(selectedDisciplines(after.plan), after.durationMin, after.attendees.length, after.tables, lockedCounts(after)),
+    plan: autoPlan(
+      selectedDisciplines(after.plan),
+      after.durationMin,
+      after.attendees.length,
+      after.tables,
+      lockedCounts(after),
+      new Set(after.lockedRounds.map((l) => l.discipline)),
+    ),
   };
 }

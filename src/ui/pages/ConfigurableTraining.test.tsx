@@ -63,4 +63,15 @@ describe('konfigurovatelný trénink v UI', () => {
     expect(again.textContent).toBe(before);
     expect(again.textContent).not.toContain('Pozdní');
   });
+
+  it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {
+    const { user, repo } = await newTraining(8);
+    await user.click(screen.getByRole('button', { name: '1. vlna' }));
+    fireEvent.change(screen.getByLabelText('1. vlna, stůl 1: góly vlevo'), { target: { value: '2' } });
+    await vi.waitFor(() => {
+      const t = repo.snapshot().trainings[0];
+      expect(t.simTeams).not.toBeNull();
+      expect(t.lockedRounds.at(-1)?.discipline).toBe('sim');
+    });
+  });
 });

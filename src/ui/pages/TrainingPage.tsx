@@ -82,9 +82,9 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
   };
 
   /** Konfigurovatelný trénink: zápis výsledku zamkne kola až po to, do kterého patří (PRD 4.6). */
-  const lockRound = (roundNo: number | null) => {
-    if (training.format !== 'custom' || !schedule || !roundNo || roundNo <= training.lockedRounds.length) return;
-    store.saveTraining({ ...training, lockedRounds: lockThrough(schedule, training.lockedRounds, roundNo) });
+  const withLocked = (t: Training, roundNo: number | null): Training => {
+    if (t.format !== 'custom' || !schedule || !roundNo || roundNo <= t.lockedRounds.length) return t;
+    return { ...t, lockedRounds: lockThrough(schedule, t.lockedRounds, roundNo) };
   };
 
   const onAddPlayer = (name: string) => {
@@ -124,15 +124,18 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
             expanded={openKey}
             onToggle={(key) => setExpanded(openKey === key ? '' : key)}
             onScore={(matchId, s) => {
-              lockRound(roundOfMatch(schedule, matchId));
+              // Jedno uložení: zamčení kol i týmů simulace (dvě by se navzájem přepsala).
+              let next = withLocked(training, roundOfMatch(schedule, matchId));
               const m = schedule.matches.find((x) => x.id === matchId);
               // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
               if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule.teams)
-                store.saveTraining({ ...training, simTeams: schedule.teams });
+                next = { ...next, simTeams: schedule.teams };
+              if (next !== training) store.saveTraining(next);
               store.saveScore(training.id, matchId, s);
             }}
             onSolo={(playerId, key, value) => {
-              lockRound(parseSoloKey(key).round || null);
+              const next = withLocked(training, parseSoloKey(key).round || null);
+              if (next !== training) store.saveTraining(next);
               store.saveSolo(training.id, playerId, key, value);
             }}
           />

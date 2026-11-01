@@ -59,8 +59,9 @@ export function computeSoloLadder(
 ): SoloLadderTable[] {
   const r = resolveRange(range, today);
   const inRange = trainings.filter((t) => !((r.from && t.date < r.from) || (r.to && t.date > r.to)));
+  const valid = new Map(inRange.map((t) => [t, validSolo(t)]));
   return SOLO_METRICS.flatMap((def) => {
-    const acc = aggregateSolo(inRange, def.id);
+    const acc = aggregateSolo(inRange, def.id, (t) => valid.get(t)!);
     if (!acc.size) return [];
     const rows: SoloLadderRow[] = [...acc.entries()].map(([playerId, x]) => ({
       playerId,

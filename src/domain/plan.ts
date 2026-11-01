@@ -55,11 +55,19 @@ export const plannedMinutes = (plan: Plan): number => planTimeline(planSequence(
  * Rozloží vybrané disciplíny do délky tréninku: cvičení tolik kol, aby se vystřídali všichni,
  * zápasy a simulace 1 kolo, pak dokola další kola zápasů, dokud se vejdou (PRD 4.6).
  */
-export function autoPlan(selected: DisciplineId[], durationMin: number, players: number, tables: number, minimum: Plan = {}): Plan {
+export function autoPlan(
+  selected: DisciplineId[],
+  durationMin: number,
+  players: number,
+  tables: number,
+  minimum: Plan = {},
+  /** Cvičení, která se už hrála: kola se nepřidávají (pozdní hráč je propásl). */
+  played: Set<DisciplineId> = new Set(),
+): Plan {
   const plan: Plan = {};
   for (const d of DISCIPLINES) {
     if (!selected.includes(d.id)) continue;
-    plan[d.id] = d.kind === 'drill' ? drillRoundsNeeded(players, tables) : 1;
+    plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables)) : 1;
   }
   for (const [id, n] of Object.entries(minimum) as [DisciplineId, number][]) plan[id] = Math.max(plan[id] ?? 0, n);
 

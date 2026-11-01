@@ -42,7 +42,10 @@ export function computeStandings(
   scores: Record<MatchId, Score>,
   attendees: PlayerId[],
 ): Standings {
-  const stats = new Map<PlayerId, StatLine>(attendees.map((p) => [p, emptyStat()]));
+  // Přítomní + kdokoli ze zápasů (hráč, který odešel, zůstává se svými zamčenými zápasy).
+  const everyone = [...attendees];
+  for (const m of schedule.matches) for (const p of [...m.sideA, ...m.sideB]) if (!everyone.includes(p)) everyone.push(p);
+  const stats = new Map<PlayerId, StatLine>(everyone.map((p) => [p, emptyStat()]));
   let legsDone = 0;
   const sim = { teamA: 0, teamB: 0, played: 0 };
 
@@ -86,7 +89,7 @@ export function computeStandings(
     }
   }
 
-  const rows: StandingRow[] = attendees.map((p) => {
+  const rows: StandingRow[] = everyone.map((p) => {
     const x = stats.get(p)!;
     return { playerId: p, ...x, diff: x.gf - x.gc };
   });

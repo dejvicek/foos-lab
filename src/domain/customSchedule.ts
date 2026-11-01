@@ -62,8 +62,10 @@ function replay(c: ReturnType<typeof newCounters>, locked: LockedRound, roundNo:
 /** PRD 4.6 + 5.10: rozpis konfigurovatelného tréninku. Zamčená kola jsou vstupem a nemění se. */
 export function buildCustomSchedule(t: ScheduleInput): Schedule {
   const players = t.attendees;
-  const tables = t.tables;
   const locked = t.lockedRounds ?? [];
+  // Zamčená kola mohla mít víc stolů – tabulka musí mít sloupce i pro ně.
+  const widest = Math.max(0, ...locked.flatMap((l) => l.rows.map((r) => r.cells.length)));
+  const tables = Math.max(t.tables, widest) as TableCount;
   const plan: Plan = t.plan ?? {};
   const c = newCounters();
   locked.forEach((l, i) => replay(c, l, i + 1));
@@ -120,10 +122,11 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
 
     if (def.kind === 'sim') {
       let simRows: ScheduleRow[];
-      if (lockedRound) simRows = lockedRound.rows.map((r, w) => ({ ...r, time: item.start + w * SIM_WAVE_MIN }));
+      if (lockedRound)
+        simRows = lockedRound.rows.map((r, w) => ({ ...r, cells: cellsOf(r.cells.filter(Boolean) as Cell[], tables), time: item.start + w * SIM_WAVE_MIN }));
       else {
         teams = simTeamsFor({ ...t, attendees: players }, matches.filter((m) => m.block === 'league'));
-        const sim = simulateTeams(teams.A, teams.B, tables);
+        const sim = simulateTeams(teams.A, teams.B, t.tables);
         simDoubles = sim.wave1.doubles + sim.wave2.doubles;
         simSingles = sim.wave1.singles + sim.wave2.singles;
         simRows = [sim.wave1, sim.wave2].map((w, wi) => ({
@@ -165,11 +168,12 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
 
     let row: ScheduleRow;
     if (lockedRound) {
-      row = { ...lockedRound.rows[0], roundNo, discipline: def.id, time: item.start, label, rule };
+      const lr = lockedRound.rows[0];
+      row = { ...lr, cells: cellsOf(lr.cells.filter(Boolean) as Cell[], tables), roundNo, discipline: def.id, time: item.start, label, rule };
     } else if (def.kind === 'drill') {
       const left = drillsLeft.get(def.id) ?? 1;
       drillsLeft.set(def.id, left - 1);
-      const r = drillRound(players, tables, def, c, roundNo, left);
+      const r = drillRound(players, t.tables, def, c, roundNo, left);
       row = {
         roundNo,
         discipline: def.id,
@@ -184,7 +188,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         waiting: r.waiting,
       };
     } else {
-      const r = matchRound(players, tables, def, c, roundNo);
+      const r = matchRound(players, t.tables, def, c, roundNo);
       row = {
         roundNo,
         discipline: def.id,

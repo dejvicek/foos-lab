@@ -228,8 +228,18 @@ function buildSingles(players: PlayerId[], tables: TableCount): Schedule {
   };
 }
 
-/** Čistá funkce: trénink → rozpis. Stejný vstup = stejný rozpis. */
+const cache = new WeakMap<ScheduleInput, Schedule>();
+
+/** Čistá funkce: trénink → rozpis. Stejný vstup = stejný rozpis (výsledek se pamatuje podle objektu). */
 export function buildSchedule(t: ScheduleInput): Schedule {
+  const hit = cache.get(t);
+  if (hit) return hit;
+  const s = buildScheduleUncached(t);
+  cache.set(t, s);
+  return s;
+}
+
+function buildScheduleUncached(t: ScheduleInput): Schedule {
   if (!canBuildSchedule(t)) {
     throw new Error(`Rozpis umí ${MIN_PLAYERS}–${MAX_PLAYERS} hráčů, přítomno ${t.attendees.length}.`);
   }

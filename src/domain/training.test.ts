@@ -21,9 +21,9 @@ describe('newTraining', () => {
     expect(t.durationMin).toBe(120);
     expect(Object.keys(t.plan).sort()).toEqual(['normal', 'setShooting']);
   });
-  it('typ a stoly převezme z posledního tréninku', () => {
+  it('stoly a začátek převezme z posledního tréninku, typ je vždy týmový', () => {
     const last = training('l', '2026-10-01', 'single', H(5), 2);
-    expect(newTraining('x', '2026-10-31', { ...last, startTime: '17:30' })).toMatchObject({ mode: 'single', tables: 2, attendees: [], startTime: '17:30' });
+    expect(newTraining('x', '2026-10-31', { ...last, startTime: '17:30' })).toMatchObject({ mode: 'team', tables: 2, attendees: [], startTime: '17:30' });
   });
 });
 
