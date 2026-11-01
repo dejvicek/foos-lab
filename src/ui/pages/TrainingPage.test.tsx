@@ -11,7 +11,7 @@ const checkbox = (name: string) => screen.getByRole('checkbox', { name });
 afterEach(() => vi.restoreAllMocks());
 
 describe('stránka Trénink', () => {
-  it('nový trénink: jen zaškrtnout přítomné, přidat hráče, převzít typ a stoly', async () => {
+  it('nový trénink: jen zaškrtnout přítomné, přidat hráče, převzít délku a stoly', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(6), trainings: [] });
     window.location.hash = '#/trenink';
@@ -33,7 +33,7 @@ describe('stránka Trénink', () => {
     expect(checkbox('Nový')).toBeChecked();
     expect(screen.getByText('Přítomno: 5')).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Typ tréninku'), 'single');
+    await user.selectOptions(screen.getByLabelText('Délka tréninku'), '120');
     await user.selectOptions(screen.getByLabelText('Počet stolů'), '2');
 
     await user.click(screen.getByRole('button', { name: 'Hráči' }));
@@ -41,7 +41,7 @@ describe('stránka Trénink', () => {
 
     await user.click(screen.getByRole('button', { name: 'Trénink' }));
     await user.click(screen.getByRole('button', { name: 'Nový trénink' }));
-    expect(screen.getByLabelText('Typ tréninku')).toHaveValue('single');
+    expect(screen.getByLabelText('Délka tréninku')).toHaveValue('120');
     expect(screen.getByLabelText('Počet stolů')).toHaveValue('2');
   });
 

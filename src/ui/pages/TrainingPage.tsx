@@ -2,7 +2,9 @@ import { addPlayer } from '../../domain/roster';
 import { useMemo, useState } from 'react';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { reconcileTeams } from '../../domain/simulation';
-import { lostEntries, pruneEntries, toggleAttendee, type LostEntries } from '../../domain/training';
+import { lostEntries, pruneEntries, replan, toggleAttendee, type LostEntries } from '../../domain/training';
+import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
+import { parseSoloKey } from '../../domain/solo';
 import type { Training } from '../../domain/types';
 import { TrainingTable } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -30,7 +32,10 @@ const configChanged = (a: Training, b: Training) =>
   a.tables !== b.tables ||
   a.attendees.join() !== b.attendees.join() ||
   a.simSplit !== b.simSplit ||
-  JSON.stringify(a.simTeams) !== JSON.stringify(b.simTeams);
+  JSON.stringify(a.simTeams) !== JSON.stringify(b.simTeams) ||
+  a.durationMin !== b.durationMin ||
+  JSON.stringify(a.plan) !== JSON.stringify(b.plan) ||
+  a.lockedRounds !== b.lockedRounds;
 // Pozn.: startTime ani datum rozpis nemění, ukládají se přes saveTraining.
 
 export function TrainingPage({ store, id, navigate }: { store: AppStore; id: string; navigate: (r: Route) => void }) {
@@ -57,7 +62,8 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
   const fallback = schedule ? defaultOpenRow(schedule, training, since) : null;
   const openKey = expanded ?? (fallback ? rowKey(fallback) : null);
 
-  const apply = (changed: Training) => {
+  const apply = (input: Training) => {
+    const changed = replan(training, input);
     let next = changed;
     if (changed.simSplit === 'manual') {
       // Ruční týmy se jen srovnají s přítomnými.
@@ -73,6 +79,12 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
       setExpanded(null); // klíč řádku je pozice – po změně rozpisu platí výchozí rozbalení
     }
     else store.saveTraining(next);
+  };
+
+  /** Konfigurovatelný trénink: zápis výsledku zamkne kola až po to, do kterého patří (PRD 4.6). */
+  const lockRound = (roundNo: number | null) => {
+    if (training.format !== 'custom' || !schedule || !roundNo || roundNo <= training.lockedRounds.length) return;
+    store.saveTraining({ ...training, lockedRounds: lockThrough(schedule, training.lockedRounds, roundNo) });
   };
 
   const onAddPlayer = (name: string) => {
@@ -112,13 +124,17 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
             expanded={openKey}
             onToggle={(key) => setExpanded(openKey === key ? '' : key)}
             onScore={(matchId, s) => {
+              lockRound(roundOfMatch(schedule, matchId));
               const m = schedule.matches.find((x) => x.id === matchId);
               // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
               if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule.teams)
                 store.saveTraining({ ...training, simTeams: schedule.teams });
               store.saveScore(training.id, matchId, s);
             }}
-            onSolo={(playerId, metric, value) => store.saveSolo(training.id, playerId, metric, value)}
+            onSolo={(playerId, key, value) => {
+              lockRound(parseSoloKey(key).round || null);
+              store.saveSolo(training.id, playerId, key, value);
+            }}
           />
           <div className="actions-row no-print">
             <button type="button" className="ghost" onClick={() => window.print()}>

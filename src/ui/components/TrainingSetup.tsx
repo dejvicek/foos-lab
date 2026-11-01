@@ -4,6 +4,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from '../../domain/schedule';
 import { moveAttendee, toggleAttendee } from '../../domain/training';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
+import { DisciplinePicker, DurationSelect } from './DisciplinePicker';
 import { ROSTER_ERRORS } from '../pages/PlayersPage';
 
 interface Props {
@@ -50,14 +51,18 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
             onChange={(e) => /^\d{2}:\d{2}$/.test(e.target.value) && onChange({ ...training, startTime: e.target.value })}
           />
         </div>
-        <div className="field">
-          <label htmlFor="t-mode">Typ tréninku</label>
-          <select id="t-mode" value={training.mode} onChange={(e) => onChange({ ...training, mode: e.target.value as Mode })}>
-            <option value="team">{MODE_OPTION.team}</option>
-            <option value="single">{MODE_OPTION.single}</option>
-          </select>
-        </div>
-        {training.mode === 'team' && (
+        {training.format === 'custom' ? (
+          <DurationSelect training={training} onChange={onChange} />
+        ) : (
+          <div className="field">
+            <label htmlFor="t-mode">Typ tréninku</label>
+            <select id="t-mode" value={training.mode} onChange={(e) => onChange({ ...training, mode: e.target.value as Mode })}>
+              <option value="team">{MODE_OPTION.team}</option>
+              <option value="single">{MODE_OPTION.single}</option>
+            </select>
+          </div>
+        )}
+        {(training.format === 'custom' ? (training.plan.sim ?? 0) > 0 : training.mode === 'team') && (
           <div className="field">
             <label htmlFor="t-split">Týmy pro simulaci</label>
             <select
@@ -85,7 +90,7 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
         </div>
       </div>
 
-      {training.mode === 'team' && training.simSplit === 'manual' && currentTeams && (
+      {training.simSplit === 'manual' && currentTeams && (
         <SimTeamsEditor teams={currentTeams} byId={byId} onChange={(t) => onChange({ ...training, simTeams: t })} />
       )}
 
@@ -133,6 +138,8 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
           {error && <p className="error">{error}</p>}
         </form>
       </details>
+
+      {training.format === 'custom' && <DisciplinePicker training={training} open={initiallyOpen} onChange={onChange} />}
 
       {n > 1 && (
         <details>

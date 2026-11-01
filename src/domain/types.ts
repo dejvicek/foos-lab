@@ -104,6 +104,10 @@ export type Cell =
   | { type: 'match'; match: Match };
 
 export interface ScheduleRow {
+  /** Pořadové číslo hracího kola (konfigurovatelný trénink). */
+  roundNo?: number;
+  /** Disciplína kola (konfigurovatelný trénink). */
+  discipline?: DisciplineId;
   time: number; // minuty od začátku tréninku
   label: string;
   rule?: string;

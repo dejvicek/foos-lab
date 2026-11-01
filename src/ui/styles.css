@@ -192,6 +192,23 @@ details.attendance .add-form { margin: 8px 0 0; }
 .teams-editor .note { grid-column: 1 / -1; margin: 0; }
 .teams-editor .order-list { max-width: none; }
 .teams-editor button.ghost { min-height: 30px; padding: 2px 8px; font-size: 13px; }
+details.disciplines {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0 14px; margin: 0 0 16px;
+}
+details.disciplines[open] { padding-bottom: 12px; }
+details.disciplines > summary::-webkit-details-marker { display: none; }
+details.disciplines > summary::before { content: '▸'; color: var(--muted); }
+details.disciplines[open] > summary::before { content: '▾'; }
+.count-badge.over { color: var(--warn); }
+.disc-group h3 { font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+.disc-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2px 20px; }
+.disc-list li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); min-height: 40px; }
+.disc-list label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.disc-list input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.disc-list .muted { font-size: 12px; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
+.stepper button.icon { min-width: 30px; min-height: 30px; }
 .order-list { list-style: none; padding: 0; margin: 6px 0; max-width: 420px; }
 .order-list li { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
 .order-list .pos { width: 2.5ch; color: var(--muted); text-align: right; }

@@ -5,11 +5,21 @@ import { H, training } from '../test/fixtures';
 const roster = (ids: string[]): Player[] => ids.map((id, order) => ({ id, name: id, order, archived: false }));
 
 describe('newTraining', () => {
-  it('bez předchozího: týmový, 4 stoly, nikdo nepřítomen', () => {
-    expect(newTraining('x', '2026-10-31', null)).toEqual({
-      id: 'x', date: '2026-10-31', startTime: '18:00', mode: 'team', tables: 4, attendees: [], scores: {}, soloResults: {},
-      simSplit: 'performance', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
+  it('bez předchozího: konfigurovatelný, 3:00, výchozí výběr, 4 stoly, nikdo nepřítomen', () => {
+    const t = newTraining('x', '2026-10-31', null);
+    expect(t).toMatchObject({
+      id: 'x', date: '2026-10-31', startTime: '18:00', tables: 4, attendees: [], scores: {}, soloResults: {},
+      simSplit: 'performance', simTeams: null, format: 'custom', durationMin: 180, lockedRounds: [],
     });
+    expect(t.plan.chain).toBeUndefined();
+    expect(t.plan.wall).toBeGreaterThanOrEqual(1);
+    expect(t.plan.sim).toBe(1);
+  });
+  it('z posledního konfigurovatelného převezme délku a výběr disciplín', () => {
+    const last = { ...newTraining('l', '2026-10-01', null), durationMin: 120, plan: { normal: 3, setShooting: 1 } };
+    const t = newTraining('x', '2026-10-31', last);
+    expect(t.durationMin).toBe(120);
+    expect(Object.keys(t.plan).sort()).toEqual(['normal', 'setShooting']);
   });
   it('typ a stoly převezme z posledního tréninku', () => {
     const last = training('l', '2026-10-01', 'single', H(5), 2);

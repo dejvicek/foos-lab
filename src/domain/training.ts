@@ -1,23 +1,28 @@
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
+import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
-import type { MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
+import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
 
 export function newTraining(id: string, today: string, last: Training | null): Training {
+  const prev = last?.format === 'custom' ? last : null;
+  const tables = last?.tables ?? 4;
+  const durationMin = prev?.durationMin ?? DEFAULT_DURATION;
+  const selection = prev ? selectedDisciplines(prev.plan) : DEFAULT_SELECTION;
   return {
     id,
     date: today,
     startTime: last?.startTime ?? DEFAULT_START,
     mode: last?.mode ?? 'team',
-    tables: last?.tables ?? 4,
+    tables,
     attendees: [],
     scores: {},
     soloResults: {},
     simSplit: last?.simSplit ?? 'performance',
     simTeams: null,
-    format: 'classic',
-    durationMin: 180,
-    plan: {},
+    format: 'custom',
+    durationMin,
+    plan: autoPlan(selection, durationMin, 0, tables),
     lockedRounds: [],
   };
 }
@@ -125,4 +130,32 @@ export function setScore(t: Training, id: MatchId, field: keyof Score, value: nu
 
 export function sortTrainings(ts: Training[]): Training[] {
   return [...ts].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+}
+
+export const selectedDisciplines = (plan: Partial<Record<DisciplineId, number>>): DisciplineId[] =>
+  (Object.entries(plan) as [DisciplineId, number][]).filter(([, n]) => n > 0).map(([id]) => id);
+
+export function lockedCounts(t: Training): Partial<Record<DisciplineId, number>> {
+  const out: Partial<Record<DisciplineId, number>> = {};
+  for (const l of t.lockedRounds) out[l.discipline] = (out[l.discipline] ?? 0) + 1;
+  return out;
+}
+
+/**
+ * Konfigurovatelný trénink: změna výběru disciplín, délky, přítomných nebo stolů rozloží kola znovu
+ * (PRD 4.6); pouhá změna počtu kol (+/−) zůstane, jak ji administrátor nastavil.
+ */
+export function replan(before: Training, after: Training): Training {
+  if (after.format !== 'custom') return after;
+  const sel = (t: Training) => selectedDisciplines(t.plan).sort().join();
+  const changed =
+    sel(before) !== sel(after) ||
+    before.durationMin !== after.durationMin ||
+    before.attendees.length !== after.attendees.length ||
+    before.tables !== after.tables;
+  if (!changed) return after;
+  return {
+    ...after,
+    plan: autoPlan(selectedDisciplines(after.plan), after.durationMin, after.attendees.length, after.tables, lockedCounts(after)),
+  };
 }

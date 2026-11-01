@@ -127,6 +127,8 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         simDoubles = sim.wave1.doubles + sim.wave2.doubles;
         simSingles = sim.wave1.singles + sim.wave2.singles;
         simRows = [sim.wave1, sim.wave2].map((w, wi) => ({
+          roundNo,
+          discipline: 'sim' as const,
           time: item.start + wi * SIM_WAVE_MIN,
           label: `${wi + 1}. vlna`,
           rule: `${SIM_WAVE_MIN} min, ligový formát`,
@@ -163,12 +165,14 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
 
     let row: ScheduleRow;
     if (lockedRound) {
-      row = { ...lockedRound.rows[0], time: item.start, label, rule };
+      row = { ...lockedRound.rows[0], roundNo, discipline: def.id, time: item.start, label, rule };
     } else if (def.kind === 'drill') {
       const left = drillsLeft.get(def.id) ?? 1;
       drillsLeft.set(def.id, left - 1);
       const r = drillRound(players, tables, def, c, roundNo, left);
       row = {
+        roundNo,
+        discipline: def.id,
         time: item.start,
         label,
         rule,
@@ -181,7 +185,16 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
       };
     } else {
       const r = matchRound(players, tables, def, c, roundNo);
-      row = { time: item.start, label, rule, kind: 'matches', cells: cellsOf(matchCells(def, roundNo, r.matches, r.waiting), tables), waiting: r.waiting };
+      row = {
+        roundNo,
+        discipline: def.id,
+        time: item.start,
+        label,
+        rule,
+        kind: 'matches',
+        cells: cellsOf(matchCells(def, roundNo, r.matches, r.waiting), tables),
+        waiting: r.waiting,
+      };
     }
     for (const x of row.cells) if (x?.type === 'match') matches.push(x.match);
     push(kind, row);
@@ -205,4 +218,28 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
       simSingles,
     },
   };
+}
+
+/** Zamkne kola 1…roundNo (PRD 4.6: odehraná kola se už nemění). Vrací nový seznam zamčených kol. */
+export function lockThrough(schedule: Schedule, locked: LockedRound[], roundNo: number): LockedRound[] {
+  if (roundNo <= locked.length) return locked;
+  const byRound = new Map<number, ScheduleRow[]>();
+  for (const sec of schedule.sections)
+    for (const row of sec.rows)
+      if (row.roundNo !== undefined && row.roundNo <= roundNo) byRound.set(row.roundNo, [...(byRound.get(row.roundNo) ?? []), row]);
+  const out: LockedRound[] = [];
+  for (let k = 1; k <= roundNo; k++) {
+    const rows = byRound.get(k);
+    if (!rows) break;
+    out.push({ discipline: rows[0].discipline!, rows });
+  }
+  return out;
+}
+
+/** Číslo kola, do kterého patří zápas nebo výsledek (pro zamykání). */
+export function roundOfMatch(schedule: Schedule, matchIdValue: string): number | null {
+  for (const sec of schedule.sections)
+    for (const row of sec.rows)
+      if (row.cells.some((c) => c?.type === 'match' && c.match.id === matchIdValue)) return row.roundNo ?? null;
+  return null;
 }
