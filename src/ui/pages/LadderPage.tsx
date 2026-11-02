@@ -9,6 +9,10 @@ import { todayIso } from '../dates';
 import { dec1, pct, plural, signed } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
+import { computeDelayLadder } from '../../domain/queue';
+import { canBuildSchedule } from '../../domain/schedule';
+import { DelayTable } from '../components/Timing';
+import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
 
 interface Props {
@@ -166,6 +170,25 @@ function SoloTable({
   );
 }
 
+/** Zdržovači napříč tréninky (PRD 4.8): čekání od aktivního utkání do zahájení. */
+function DelayLadder({ store, prefs, today, open }: { store: AppStore; prefs: UiPrefs; today: string; open(id: PlayerId): void }) {
+  const names = Object.fromEntries(store.data.players.map((p) => [p.id, p.name]));
+  const now = Date.now();
+  const rows = computeDelayLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today, (t) =>
+    t.playTimes && canBuildSchedule(t) ? trainingQueue(t, now) : null,
+  );
+  if (!rows.length) return <p className="note">V tomhle období zatím nejsou změřená žádná utkání.</p>;
+  return (
+    <>
+      <DelayTable rows={rows} names={names} showTrainings open={open} />
+      <p className="note">
+        Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání; připisuje se všem hráčům utkání.{' '}
+        {prefs.ladderView === 'avg' ? 'Řazeno podle průměrného čekání na utkání.' : 'Řazeno podle čekání celkem.'}
+      </p>
+    </>
+  );
+}
+
 function SoloLadder({ store, prefs, today, name, open }: { store: AppStore; prefs: UiPrefs; today: string; name(id: PlayerId): string; open(id: PlayerId): void }) {
   const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today);
   if (!tables.length) return <p className="note">V tomhle období zatím nejsou žádné výsledky ze sólové části.</p>;
@@ -219,6 +242,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         options={[
           ['matches', 'Zápasy'],
           ['solo', 'Stanoviště'],
+          ['delays', 'Zdržovači'],
         ]}
       />
       <div>
@@ -244,7 +268,9 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
       )}
       <p className="dateline">{rangeText(range, today)}</p>
 
-      {prefs.ladderPart === 'solo' ? (
+      {prefs.ladderPart === 'delays' ? (
+        <DelayLadder store={store} prefs={prefs} today={today} open={open} />
+      ) : prefs.ladderPart === 'solo' ? (
         <SoloLadder store={store} prefs={prefs} today={today} name={name} open={open} />
       ) : (
         <>

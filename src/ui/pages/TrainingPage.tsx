@@ -12,6 +12,12 @@ import { TrainingTable, type BreakControls } from '../components/TrainingTable';
 import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { RoundCards } from '../components/RoundCards';
 import { useMobile } from '../useMobile';
+import { ActiveMatches } from '../components/ActiveMatches';
+import { DelayTable } from '../components/Timing';
+import { delayStats, type QueueEntry } from '../../domain/queue';
+import { bump, legOver } from '../../domain/legState';
+import { trainingQueue, useTick } from '../queue';
+import { usedTables } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
 import { StandingsView } from '../components/StandingsView';
 import { TrainingSetup } from '../components/TrainingSetup';
@@ -63,9 +69,13 @@ export function TrainingPage({
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
-  const [tab, setTab] = useState<'mine' | 'all'>(() =>
+  const [tab, setTab] = useState<'mine' | 'active' | 'all'>(() =>
     attends && !viewer.isAdmin && training?.createdBy !== viewer.playerId ? 'mine' : 'all',
   );
+  // Stopky běží jen na obrazovkách, kde jsou vidět (Můj stůl, Aktivní utkání).
+  const tick = useTick(1000, !!training && tab !== 'all');
+  // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
+  const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {
     return (
       <section>
@@ -150,10 +160,23 @@ export function TrainingPage({
       : undefined;
   const canAddBreak = !!breakControls && freeSlots(training).length > 0;
 
+  /** Smí přihlášený zahájit / ukončit utkání? Zápas jako skóre, cvičení hráči skupiny a správce. */
+  const canItem = (e: Extract<QueueEntry, { kind: 'item' }>) =>
+    e.match ? canMatch(e.match) : manage || (!!viewer.playerId && e.players.includes(viewer.playerId));
+  const delays = queueInfo ? delayStats(queueInfo.queue, queueInfo.states) : [];
+
   const tap = {
     me: viewer.playerId,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
+      // Zdržovači: první ťuknutí utkání zahájí, dohraný leg ho ukončí, oprava pod konec ho znovu otevře.
+      const pt = training.playTimes?.[m.id] ?? {};
+      const now = Date.now();
+      const startedAt = pt.startedAt ?? (delta > 0 ? now : undefined);
+      const over = legOver(m, bump(m, training.scores[m.id] ?? {}, field, delta)).over;
+      const endedAt = over ? (pt.endedAt ?? now) : undefined;
+      if (startedAt !== undefined && (startedAt !== pt.startedAt || endedAt !== pt.endedAt))
+        store.setPlayTime(training.id, m.id, { startedAt, ...(endedAt !== undefined ? { endedAt } : {}) });
       store.bumpScore(training.id, m, field, delta);
     },
     onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
@@ -198,15 +221,37 @@ export function TrainingPage({
         />
       )}
 
-      {schedule && attends && (
+      {schedule && (
         <div className="tabs no-print" role="tablist" aria-label="Zobrazení">
-          <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>
-            Můj stůl
+          {attends && (
+            <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>
+              Můj stůl
+            </button>
+          )}
+          <button type="button" role="tab" aria-selected={tab === 'active'} onClick={() => setTab('active')}>
+            Aktivní utkání
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'all'} onClick={() => setTab('all')}>
+          <button type="button" role="tab" aria-selected={tab === 'all' || (tab === 'mine' && !attends)} onClick={() => setTab('all')}>
             Celý rozpis
           </button>
         </div>
+      )}
+
+      {schedule && queueInfo && tab === 'active' && (
+        <ActiveMatches
+          queue={queueInfo.queue}
+          states={queueInfo.states}
+          tables={usedTables(schedule).map((j) => j + 1)}
+          names={names}
+          me={viewer.playerId}
+          now={tick}
+          canWrite={canItem}
+          onStart={(e) => store.setPlayTime(training.id, e.id, { startedAt: Date.now() })}
+          onEnd={(e) => {
+            const pt = training.playTimes?.[e.id];
+            store.setPlayTime(training.id, e.id, { startedAt: pt?.startedAt ?? Date.now(), endedAt: Date.now() });
+          }}
+        />
       )}
 
       {schedule && attends && tab === 'mine' && (
@@ -221,10 +266,20 @@ export function TrainingPage({
           canMatch={canMatch}
           canSolo={canSolo}
           tap={mobile ? tap : undefined}
+          timing={
+            queueInfo
+              ? {
+                  states: queueInfo.states,
+                  now: tick,
+                  canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
+                  change: (id, p) => store.setPlayTime(training.id, id, p),
+                }
+              : undefined
+          }
         />
       )}
 
-      {schedule && (!attends || tab === 'all') && (
+      {schedule && (tab === 'all' || (tab === 'mine' && !attends)) && (
         <>
           {mobile ? (
             <RoundCards
@@ -271,6 +326,13 @@ export function TrainingPage({
             names={names}
             onClear={manage ? () => store.updateTrainingConfig({ ...training, scores: {} }) : undefined}
           />
+          {delays.length > 0 && (
+            <section className="delays">
+              <h2>Zdržovači</h2>
+              <p className="note">Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</p>
+              <DelayTable rows={delays} names={names} />
+            </section>
+          )}
         </>
       )}
 

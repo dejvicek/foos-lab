@@ -1,6 +1,6 @@
 import type { LadderRange, LadderView } from '../domain/ladder';
 
-export type LadderPart = 'matches' | 'solo';
+export type LadderPart = 'matches' | 'solo' | 'delays';
 
 export interface UiPrefs {
   ladderRange: LadderRange;
@@ -26,7 +26,7 @@ export function loadPrefs(): UiPrefs {
     const raw = localStorage.getItem(KEY);
     const p = raw ? JSON.parse(raw) : null;
     if (!valid(p)) return defaultPrefs();
-    return { ...p, ladderPart: p.ladderPart === 'solo' ? 'solo' : 'matches' };
+    return { ...p, ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'delays' ? p.ladderPart : 'matches' };
   } catch {
     return defaultPrefs();
   }
