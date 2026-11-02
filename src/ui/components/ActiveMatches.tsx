@@ -12,10 +12,10 @@ interface Props {
   me: PlayerId | null;
   now: number;
   canWrite(e: Item): boolean;
-  /** Organizátor: potvrzuje konec (i bez zahájení). Zahájit jde jen v Moje hra. */
+  /** Organizátor: potvrzuje konec (i bez zahájení). Zahájit jde jen v Moje hry. */
   manage: boolean;
   onEnd(e: Item): void;
-  /** Přechod do Moje hra (moje utkání čeká na zahájení). */
+  /** Přechod do Moje hry (moje utkání čeká na zahájení). */
   onMyGame?(): void;
 }
 
@@ -76,7 +76,7 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                     s?.state === 'ready' &&
                     onMyGame && (
                       <button type="button" onClick={onMyGame}>
-                        Zahájit v Moje hra
+                        Zahájit v Moje hry
                       </button>
                     )
                   )}

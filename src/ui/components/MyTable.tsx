@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
@@ -66,7 +66,21 @@ function summary(a: Assignment, names: Record<PlayerId, string>, me: PlayerId): 
 export function MyTable(props: Props) {
   const { schedule, training, names, playerId, since } = props;
   const list = myAssignments(schedule, playerId);
-  const [idx, setIdx] = useState(() => initialIndex(list, since, training));
+  // Rozehraná hra (na řadě / hraje se) má přednost – Moje hry ji otevřou vždy.
+  const itemOf = (x: Assignment) =>
+    x.role === 'wait' ? null : x.match ? x.match.id : x.group && x.table ? drillItemId(x.row, x.table, x.group.players) : null;
+  const activeIdx = list.findIndex((x) => {
+    const id = itemOf(x);
+    const st = id ? props.timing?.state(id)?.state : undefined;
+    return st === 'ready' || st === 'playing';
+  });
+  const [idx, setIdx] = useState(() => (activeIdx >= 0 ? activeIdx : initialIndex(list, since, training)));
+  const activeId = activeIdx >= 0 ? itemOf(list[activeIdx]) : null;
+  // Když se rozehraná hra změní (další kolo je na řadě), přepnout na ni.
+  useEffect(() => {
+    if (activeIdx >= 0) setIdx(activeIdx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
   if (!list.length) return <p className="note">V tomhle rozpisu nemáš žádné kolo.</p>;
   const i = Math.min(idx, list.length - 1);
   const a = list[i];

@@ -39,12 +39,12 @@ interface Item {
   label: string;
   route: Route;
   match: Route['page'][];
-  /** Červená tečka (Moje hra: jsi na řadě). */
+  /** Červená tečka (Moje hry: jsi na řadě). */
   dot?: boolean;
 }
 
 /**
- * Hlavní navigace: Živě (běžící trénink, na kterém hráč hraje nebo který organizuje) · Moje hra (jen když hraje) · Trénink · Žebříček
+ * Hlavní navigace: Živě (běžící trénink, na kterém hráč hraje nebo který organizuje) · Moje hry (jen když hraje) · Trénink · Žebříček
  * · Hráči (jen admin). Na telefonu dole s ikonami.
  */
 export function MainNav({
@@ -63,9 +63,9 @@ export function MainNav({
   myName?: string | null;
   onChangePassword?(): void;
   onSignOut?(): void;
-  /** Běží trénink, na kterém jsem → Živě a Moje hra. */
+  /** Běží trénink, na kterém jsem → Živě a Moje hry. */
   live?: boolean;
-  /** Hraju na běžícím tréninku → Moje hra (organizátor, který nehraje, ji nemá). */
+  /** Hraju na běžícím tréninku → Moje hry (organizátor, který nehraje, ji nemá). */
   mine?: boolean;
   myTurn?: boolean;
   admin?: boolean;
@@ -74,7 +74,7 @@ export function MainNav({
     ...(live
       ? [
           { key: 'live', label: 'Živě', route: { page: 'live' } as Route, match: ['live'] as Route['page'][] },
-          ...(mine ? [{ key: 'my', label: 'Moje hra', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
+          ...(mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
         ]
       : []),
     { key: 'trainings', label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit'] },

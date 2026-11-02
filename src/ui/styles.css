@@ -700,7 +700,7 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .plan tr.sim-setup-row .sim-setup { margin: 0; max-width: none; }
 .round-cards .sim-setup { margin: 4px 0; }
 
-/* ── Hlavní navigace: Živě · Moje hra · Trénink · Žebříček (· Hráči) ── */
+/* ── Hlavní navigace: Živě · Moje hry · Trénink · Žebříček (· Hráči) ── */
 .main-nav button { position: relative; }
 .nav-icon { display: none; }
 .nav-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; margin: 0 auto 2px; }
@@ -717,11 +717,11 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .timing.finished { border: 2px solid var(--felt); background: var(--felt-soft); }
 .timing-hint { margin: 0; color: var(--felt); font-weight: 700; font-size: 13px; }
 
-/* ── Notebook: Moje hra a Živě využijí šířku (kontrola 2. 11. 2026) ── */
-/* Moje hra: úzký sloupec na střed (jeden stůl, nemá smysl ho roztahovat). */
+/* ── Notebook: Moje hry a Živě využijí šířku (kontrola 2. 11. 2026) ── */
+/* Moje hry: úzký sloupec na střed (jeden stůl, nemá smysl ho roztahovat). */
 .view-my { max-width: 640px; margin: 0 auto; }
 .view-my .my-table { max-width: none; }
-/* V Moje hra je jen můj stůl → vždy jeden sloupec přes celou šířku karty. */
+/* V Moje hry je jen můj stůl → vždy jeden sloupec přes celou šířku karty. */
 .my-table .entry-cards:has(.picker),
 .my-table .entry-cards:has(.drill-line) { grid-template-columns: 1fr; }
 .active-tables { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }

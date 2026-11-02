@@ -17,7 +17,7 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'trenink' && parts[1] && parts[2] === 'nastaveni') return { page: 'training-edit', id: parts[1] };
   if (parts[0] === 'trenink' && parts[1]) return { page: 'training', id: parts[1] };
   if (parts[0] === 'zive') return { page: 'live' };
-  if (parts[0] === 'moje-hra') return { page: 'my' };
+  if (parts[0] === 'moje-hry' || parts[0] === 'moje-hra') return { page: 'my' };
   if (parts[0] === 'zebricek' && parts[1] === 'hrac' && parts[2]) return { page: 'player', id: parts[2] };
   if (parts[0] === 'zebricek') return { page: 'ladder' };
   if (parts[0] === 'hraci') return { page: 'players' };
@@ -37,7 +37,7 @@ export function toHash(r: Route): string {
     case 'live':
       return '#/zive';
     case 'my':
-      return '#/moje-hra';
+      return '#/moje-hry';
     case 'ladder':
       return '#/zebricek';
     case 'player':

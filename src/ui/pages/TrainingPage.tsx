@@ -38,7 +38,7 @@ export function TrainingPage({
   id: string;
   navigate: (r: Route) => void;
   viewer?: Viewer;
-  /** schedule = stránka tréninku (rozpis, souhrn), live = Živě, my = Moje hra (hlavní navigace). */
+  /** schedule = stránka tréninku (rozpis, souhrn), live = Živě, my = Moje hry (hlavní navigace). */
   view?: 'schedule' | 'live' | 'my';
 }) {
   const training = store.data.trainings.find((t) => t.id === id);
@@ -50,7 +50,7 @@ export function TrainingPage({
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
-  // Stopky běží jen na obrazovkách, kde jsou vidět (Moje hra, Živě).
+  // Stopky běží jen na obrazovkách, kde jsou vidět (Moje hry, Živě).
   const tick = useTick(1000, !!training && view !== 'schedule');
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
@@ -243,7 +243,7 @@ export function TrainingPage({
   if (view === 'my')
     return (
       <section className="view-my">
-        {viewHead('Moje hra')}
+        {viewHead('Moje hry')}
         {schedule && attends ? (
           <MyTable
             schedule={schedule}

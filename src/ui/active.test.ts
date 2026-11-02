@@ -10,7 +10,7 @@ const t = (over: Partial<Training> = {}): Training => ({
 const NOW = new Date(2026, 10, 2, 18, 30).getTime();
 const ids = queueOf(buildSchedule(t())).flatMap((e) => (e.kind === 'item' ? [e.id] : []));
 
-describe('běžící trénink pro hráče (Živě / Moje hra)', () => {
+describe('běžící trénink pro hráče (Živě / Moje hry)', () => {
   it('nezahájený trénink ani trénink, kde nejsem, není aktivní', () => {
     expect(activeFor([t()], 'a', NOW)).toBeNull();
     expect(activeFor([t({ playTimes: { training: { startedAt: NOW - 60_000 } } })], 'x', NOW)).toBeNull();
@@ -36,7 +36,7 @@ describe('běžící trénink pro hráče (Živě / Moje hra)', () => {
 });
 
 describe('organizátor, který nehraje', () => {
-  it('vidí běžící trénink (Živě), ale nemá Moje hra', () => {
+  it('vidí běžící trénink (Živě), ale nemá Moje hry', () => {
     const run = t({ createdBy: 'org', playTimes: { training: { startedAt: NOW - 60_000 } } });
     const a = activeFor([run], 'org', NOW)!;
     expect(a.training.id).toBe('t1');

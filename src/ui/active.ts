@@ -10,11 +10,11 @@ export interface Active {
   training: Training;
   queue: QueueEntry[];
   states: Map<string, ItemState>;
-  /** Hraju (jsem mezi přítomnými) – jinak jsem jen organizátor (Živě bez Moje hra). */
+  /** Hraju (jsem mezi přítomnými) – jinak jsem jen organizátor (Živě bez Moje hry). */
   plays: boolean;
-  /** Moje utkání je na řadě a čeká na zahájení (tečka u Moje hra). */
+  /** Moje utkání je na řadě a čeká na zahájení (tečka u Moje hry). */
   myTurn: boolean;
-  /** Mám utkání na řadě nebo ho hraju (appka se otevře na Moje hra). */
+  /** Mám utkání na řadě nebo ho hraju (appka se otevře na Moje hry). */
   myGame: boolean;
 }
 

@@ -56,7 +56,7 @@ describe('přihlášení', () => {
     expect(auth.passwords.get('id2')).toBe('tajne123');
   });
 
-  it('hráč v cizím tréninku: žádné nastavení; nezahájený trénink nemá Živě / Moje hra; nezapíše nic', async () => {
+  it('hráč v cizím tréninku: žádné nastavení; nezahájený trénink nemá Živě / Moje hry; nezapíše nic', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     window.location.hash = '#/trenink';
     render(<App repo={memoryRepository({ players: roster, trainings: [training] })} auth={auth} />);
@@ -66,7 +66,7 @@ describe('přihlášení', () => {
     expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull();
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
-    expect(within(nav).queryByRole('button', { name: /^(Živě|Moje hra)/ })).toBeNull();
+    expect(within(nav).queryByRole('button', { name: /^(Živě|Moje hry)/ })).toBeNull();
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
 
     const rowToggles = screen.getAllByRole('button').filter((b) => /^\d+\. kolo$/.test(b.textContent ?? ''));
@@ -82,12 +82,12 @@ describe('přihlášení', () => {
     }
   });
 
-  it('notebook: „Moje hra“ zapisuje kliknutím na čísla', async () => {
+  it('notebook: „Moje hry“ zapisuje kliknutím na čísla', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     const repo = memoryRepository({ players: roster, trainings: [started()] });
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: /^Moje hra/ }));
+    await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     while (!within(mine).queryAllByRole('button', { name: /góly vlevo 6$/ }).length)
       await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
@@ -109,7 +109,7 @@ describe('přihlášení', () => {
     const repo = memoryRepository({ players: roster, trainings: [started()] });
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: /^Moje hra/ }));
+    await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     expect(within(mine).queryByRole('spinbutton')).toBeNull(); // žádná klávesnice
     while (!within(mine).queryByRole('button', { name: /^Gól vlevo/ }))

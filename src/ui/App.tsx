@@ -86,10 +86,10 @@ function SignedIn({
     savePrefs(p);
   };
   const myName = store.data.players.find((p) => p.id === viewer.playerId)?.name ?? null;
-  // Běžící trénink, na kterém jsem → Živě a Moje hra v navigaci.
+  // Běžící trénink, na kterém jsem → Živě a Moje hry v navigaci.
   const now = useNow();
   const active = useMemo(() => activeFor(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now())), [store.data.trainings, viewer.playerId, now]);
-  // Otevření appky (bez adresy): rozehraná hra → Moje hra, běžící trénink → Živě, jinak Trénink.
+  // Otevření appky (bez adresy): rozehraná hra → Moje hry, běžící trénink → Živě, jinak Trénink.
   const [openedBare] = useState(() => /^#?\/?$/.test(window.location.hash));
   const redirected = useRef(false);
   useEffect(() => {

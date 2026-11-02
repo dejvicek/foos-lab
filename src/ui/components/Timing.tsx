@@ -4,7 +4,7 @@ import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
 
 /**
- * Zahájení / konec utkání pro zápis (PRD 4.8). Zahájit jde jen v Moje hra (hráč utkání);
+ * Zahájení / konec utkání pro zápis (PRD 4.8). Zahájit jde jen v Moje hry (hráč utkání);
  * konec vždy potvrzuje člověk („Potvrdit konec“). Organizátor nezahajuje: zapíše skóre a potvrdí
  * (čas od vypsání utkání do potvrzení).
  */
@@ -12,7 +12,7 @@ export interface ItemTiming {
   state(itemId: string): ItemState | undefined;
   now: number;
   canWrite(itemId: string, players: PlayerId[], m?: Match): boolean;
-  /** Zobrazení Moje hra – jen tady jde utkání zahájit. */
+  /** Zobrazení Moje hry – jen tady jde utkání zahájit. */
   allowStart: boolean;
   /** Organizátor (zakladatel / admin) – zapisuje bez zahájení a potvrzuje. */
   manage: boolean;
@@ -33,13 +33,13 @@ interface BarProps {
   onEnd(): void;
 }
 
-/** Stopky utkání: Zahájit (jen Moje hra) a Potvrdit konec; časy se ručně neupravují. */
+/** Stopky utkání: Zahájit (jen Moje hry) a Potvrdit konec; časy se ručně neupravují. */
 export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
   const playerStart = allowStart && canWrite && started === undefined && s.state === 'ready';
-  // Konec potvrzuje hráč utkání v Moje hra, nebo organizátor kdekoli (i bez zahájení).
+  // Konec potvrzuje hráč utkání v Moje hry, nebo organizátor kdekoli (i bez zahájení).
   const confirm = ended === undefined && ((manage && canWrite) || (allowStart && canWrite && started !== undefined));
   return (
     <div className={`timing ${s.state}${finished && ended === undefined ? ' finished' : ''}`}>

@@ -35,7 +35,7 @@ describe('tabulka tréninku', () => {
 
     await user.click(screen.getByRole('button', { name: /^1. kolo$/ }));
     const cell = screen.getByRole('group', { name: '1. kolo, stůl 1' });
-    // organizátor utkání nezahajuje (to jde jen v Moje hra), zapíše skóre rovnou a potvrdí
+    // organizátor utkání nezahajuje (to jde jen v Moje hry), zapíše skóre rovnou a potvrdí
     expect(within(cell).queryByRole('button', { name: 'Zahájit' })).toBeNull();
     expect(within(cell).getByRole('button', { name: 'Potvrdit' })).toBeInTheDocument();
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vlevo 6' }));
