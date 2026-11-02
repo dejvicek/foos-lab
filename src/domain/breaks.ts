@@ -1,11 +1,12 @@
 import { roundSequence } from './customSchedule';
 import { autoBreaks, normalizeBreaks } from './plan';
+import { pauseId } from './queue';
 import type { BreakDef, Training } from './types';
 
 /** Délky pauzy na výběr (min). */
 export const BREAK_OPTIONS = [5, 10, 15, 20, 25, 30];
 
-type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode'>;
+type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode' | 'playTimes'>;
 
 /** Pauzy tréninku srovnané podle pozice: vlastní, jinak automatické (10 min po každé hodině). */
 export function breaksOf(t: T): BreakDef[] {
@@ -16,8 +17,18 @@ export function breaksOf(t: T): BreakDef[] {
 /** Počet hracích kol (pauza může být po 1. až předposledním). */
 export const roundsOf = (t: T): number => roundSequence(t).length;
 
-/** Kola 1…n jsou odehraná (zamčená): pauza po kole < n je minulost, nehýbe se. */
-const playedUpTo = (t: T) => t.lockedRounds.length;
+/** Pauza k už začala (organizátor ji zahájil, nebo rovnou spustil další kolo). */
+const pauseBegun = (t: T, k: number) => {
+  const p = t.playTimes?.[pauseId(k)];
+  return p?.startedAt !== undefined || p?.endedAt !== undefined;
+};
+
+/**
+ * Kola 1…n jsou minulost: odehraná (zamčená) kola a vše do zahájené pauzy včetně. Pauza po kole < n
+ * se nehýbe; zahájená pauza se nehýbe a jiná pauza se před ni nedostane (pořadí pauz = jejich ID).
+ */
+const playedUpTo = (t: T) =>
+  Math.max(t.lockedRounds.length, ...breaksOf(t).flatMap((b, k) => (pauseBegun(t, k) ? [b.after + 1] : [])));
 
 /** Smí se pauza na pozici `after` přesouvat / odebrat? (ne mezi odehranými koly) */
 export const breakMovable = (t: T, i: number): boolean => (breaksOf(t)[i]?.after ?? 0) >= playedUpTo(t);

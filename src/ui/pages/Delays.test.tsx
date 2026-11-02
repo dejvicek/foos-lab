@@ -155,12 +155,22 @@ describe('pauza v Trénink tabu', () => {
     const row = start.closest('tr')!;
     expect(row).toHaveClass('break-row');
     expect(within(row).getByRole('button', { name: 'Spustit další kolo' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Odebrat pauzu' })).toBeInTheDocument();
     await user.click(start);
     const running = screen.getByRole('button', { name: 'Spustit další kolo hned' }).closest('tr')!;
     expect(running).toHaveTextContent('zbývá 10:00');
-    await user.click(within(running).getByRole('button', { name: 'Spustit další kolo hned' }));
-    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.['pause|0']).toEqual({ startedAt: at(18, 3), endedAt: at(18, 3) }));
+    // zahájená pauza: délka jde změnit, přesun ani odebrání ne
+    expect(within(running).queryByRole('button', { name: 'Odebrat pauzu' })).toBeNull();
+    expect(within(running).queryByRole('button', { name: 'Přesunout pauzu' })).toBeNull();
+    expect(running).not.toHaveAttribute('draggable', 'true');
+    await user.selectOptions(within(running).getByRole('combobox', { name: 'Délka pauzy' }), '15');
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].breaks).toEqual([{ after: 1, min: 15 }]));
+    expect(screen.getByRole('button', { name: 'Spustit další kolo hned' }).closest('tr')).toHaveTextContent('zbývá 15:00');
+    await user.click(screen.getByRole('button', { name: 'Spustit další kolo hned' }));
+    // (čekání na uložení délky výše posunulo falešné hodiny o pár ms)
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.['pause|0']).toEqual({ startedAt: at(18, 3), endedAt: expect.any(Number) }));
     expect(screen.queryByRole('button', { name: /Spustit další kolo/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Odebrat pauzu' })).toBeNull();
   });
 
   it('hráč (ne organizátor) vidí u pauzy, že další kolo spustí organizátor', async () => {

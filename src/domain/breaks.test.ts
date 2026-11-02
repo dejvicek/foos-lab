@@ -1,4 +1,4 @@
-import { addBreak, breaksOf, BREAK_OPTIONS, moveBreak, removeBreak, setBreakMin } from './breaks';
+import { addBreak, breakMovable, breaksOf, BREAK_OPTIONS, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from './breaks';
 import { buildSchedule } from './schedule';
 import { autoPlan, DEFAULT_SELECTION, planTimeline } from './plan';
 import { shuffleAttendees } from './training';
@@ -70,6 +70,25 @@ describe('pauzy (PRD 4.6)', () => {
     expect(removeBreak(t, 0)).toBe(t);
     expect(moveBreak(t, 1, 4).breaks).toEqual([{ after: 2, min: 10 }, { after: 4, min: 10 }]); // hned za odehranými ano
     expect(setBreakMin(t, 0, 15).breaks![0].min).toBe(15); // délku opravit jde
+  });
+
+  it('zahájená pauza se nepřesouvá ani neodebírá (ani jiná pauza před ni); délka jde změnit', () => {
+    const base = custom({ breaks: [{ after: 2, min: 10 }, { after: 6, min: 10 }] });
+    for (const pt of [{ startedAt: 1 }, { endedAt: 2 }]) {
+      const t = { ...base, playTimes: { 'pause|0': pt } };
+      expect(breakMovable(t, 0)).toBe(false);
+      expect(removeBreak(t, 0)).toBe(t);
+      expect(moveBreak(t, 0, 4)).toBe(t);
+      expect(stepTarget(t, 0, -1)).toBeNull();
+      expect(breaksOf(setBreakMin(t, 0, 15))[0]).toEqual({ after: 2, min: 15 });
+      // druhá (nezahájená) pauza se hýbe dál, ale ne před zahájenou
+      expect(breakMovable(t, 1)).toBe(true);
+      expect(moveBreak(t, 1, 1)).toBe(t);
+      expect(freeSlots(t).every((a) => a > 2)).toBe(true);
+      expect(breaksOf(moveBreak(t, 1, 4))[1].after).toBe(4);
+    }
+    // nezahájená pauza se hýbe jako dřív
+    expect(breakMovable(base, 0)).toBe(true);
   });
 
   it('pauzy se počítají do naplánovaného času', () => {
