@@ -40,6 +40,8 @@ async function selectAll<T>(client: SupabaseClient, table: string, orderBy: stri
 export const createSupabase = (url: string, anonKey: string): SupabaseClient =>
   createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
 
+let channelSeq = 0;
+
 export function supabaseRepository(client: SupabaseClient): Repository {
 
   return {
@@ -121,7 +123,8 @@ export function supabaseRepository(client: SupabaseClient): Repository {
     },
     subscribe(h) {
       const ch = client
-        .channel('training-live')
+        // Jedinečné jméno: StrictMode / rychlé znovupřihlášení jinak dostane odcházející kanál.
+        .channel(`training-live-${++channelSeq}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, (p) => {
           const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as ScoreRow;
           if (!row?.training_id) return;
@@ -138,7 +141,10 @@ export function supabaseRepository(client: SupabaseClient): Repository {
           const row = p.new as TrainingRow;
           h.training(trainingFromRow(row, [], []), row.id);
         })
-        .subscribe();
+        .subscribe((status) => {
+          // Při každém (znovu)připojení dočíst, co mezitím proběhlo (i mezera mezi načtením a odběrem).
+          if (status === 'SUBSCRIBED') h.resync();
+        });
       return () => {
         void client.removeChannel(ch);
       };

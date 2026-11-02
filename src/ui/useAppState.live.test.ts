@@ -28,7 +28,7 @@ describe('useAppState – ťukání', () => {
     act(() => result.current.bumpScore('t1', m, 'gb', -1));
     expect(result.current.data.trainings[0].scores[m.id]?.gb ?? 0).toBe(0);
     for (let i = 0; i < 15; i++) act(() => result.current.bumpScore('t1', m, 'ga', 1));
-    expect(result.current.data.trainings[0].scores[m.id]?.ga).toBe(10);
+    expect(result.current.data.trainings[0].scores[m.id]?.ga).toBe(6); // běžný leg končí 6
   });
 
   it('bumpSolo přičítá v mezích 0…max', async () => {
@@ -68,5 +68,36 @@ describe('useAppState – živé změny', () => {
     expect(repo.subscribers()).toBe(1);
     unmount();
     expect(repo.subscribers()).toBe(0);
+  });
+});
+
+describe('useAppState – ozvěny a dorovnání', () => {
+  it('ozvěna staršího stavu nepřepíše ťuknutí, které ještě čeká na uložení', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] }, { failSaves: 1 });
+    const { result } = renderHook(() => useAppState(repo));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => repo.emit().score('t1', m.id, { ga: 1, gb: 0 })); // ozvěna prvního ťuknutí
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0 });
+  });
+
+  it('ozvěna tréninku během čekajícího uložení nezahodí lokální změnu, převezme jen delší zamčení', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] }, { failSaves: 1 });
+    const { result } = renderHook(() => useAppState(repo));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    act(() => result.current.saveTraining({ ...t, tables: 3 }));
+    const locked = [{ discipline: 'normal', rows: [] }] as unknown as Training['lockedRounds'];
+    act(() => repo.emit().training({ ...t, tables: 2, lockedRounds: locked }, 't1'));
+    expect(result.current.data.trainings[0].tables).toBe(3);
+    expect(result.current.data.trainings[0].lockedRounds).toHaveLength(1);
+  });
+
+  it('po výpadku spojení (resync) se doplní, co mezitím zapsaly jiné telefony', async () => {
+    const { repo, result } = await setup();
+    await repo.saveScore('t1', m.id, { ga: 4, gb: 2 }); // jiný telefon, ozvěna se ztratila
+    expect(result.current.data.trainings[0].scores[m.id]).toBeUndefined();
+    await act(async () => repo.emit().resync());
+    await waitFor(() => expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 4, gb: 2 }));
   });
 });

@@ -93,6 +93,20 @@ describe('ScoreMirror', () => {
     expect(goal('vpravo')).not.toBeDisabled();
   });
 
+  it('ztráta na stropu 30 nejde ťuknout a nepřidá se do Zpět', () => {
+    render(<Harness match={{ ...base, trackLosses: true }} initial={{ la: 30 }} />);
+    expect(screen.getByRole('button', { name: /^Ztráta vlevo/ })).toBeDisabled();
+  });
+
+  it('po Opravit se Zpět vynuluje (nevrátí víc, než bylo ťuknuto)', async () => {
+    const user = userEvent.setup();
+    const log: [keyof Score, number][] = [];
+    render(<Harness initial={{ ga: 3, gb: 1 }} log={log} />);
+    await user.click(goal('vlevo'));
+    await user.click(screen.getByRole('button', { name: 'Opravit' }));
+    expect(screen.getByRole('button', { name: /Zpět/ })).toBeDisabled();
+  });
+
   it('5:5 končí až při rozdílu 2', async () => {
     const user = userEvent.setup();
     render(<Harness match={{ ...base, start: [5, 5] }} initial={{ ga: 1 }} />);

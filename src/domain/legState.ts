@@ -4,6 +4,8 @@ export const LEG_TO = 6;
 export const LEG_CAP = 10;
 export const MAX_LOSSES = 30;
 
+const isFiveFive = (m: Match) => !!m.start && m.start[0] === 5 && m.start[1] === 5;
+
 /** Stav na stole: odehrané góly + scénářový start. */
 export function tableScore(m: Match, s: Score | undefined): [number, number] {
   const [sa, sb] = m.start ?? [0, 0];
@@ -16,17 +18,20 @@ export function legOver(m: Match, s: Score | undefined): { over: boolean; winner
   const [a, b] = m.block === 'sim' ? [s?.ga ?? 0, s?.gb ?? 0] : tableScore(m, s);
   let over: boolean;
   if (m.block === 'sim') over = a >= 2 || b >= 2;
-  else if (m.start && m.start[0] === 5 && m.start[1] === 5) over = (Math.max(a, b) >= LEG_TO && Math.abs(a - b) >= 2) || Math.max(a, b) >= LEG_CAP;
+  else if (isFiveFive(m)) over = (Math.max(a, b) >= LEG_TO && Math.abs(a - b) >= 2) || Math.max(a, b) >= LEG_CAP;
   else over = Math.max(a, b) >= LEG_TO;
   return { over, winner: over ? (a > b ? 'A' : b > a ? 'B' : null) : null };
 }
 
-/** Nejvyšší ukládaná hodnota pole (odehrané góly do stropu 10 na stole, sety ≤ 2, ztráty ≤ 30). */
+/**
+ * Nejvyšší hodnota pole při ťukání: góly do 6 na stole (5:5 do stropu 10), sety ≤ 2, ztráty ≤ 30.
+ * Stejný strop dostane i databáze, takže dva telefony, které ťuknou poslední gól, neudělají 7:4.
+ */
 export function bumpLimit(m: Match, field: keyof Score): number {
   if (field === 'la' || field === 'lb') return MAX_LOSSES;
   if (m.block === 'sim') return 2;
   const offset = field === 'ga' ? (m.start?.[0] ?? 0) : (m.start?.[1] ?? 0);
-  return LEG_CAP - offset;
+  return (isFiveFive(m) ? LEG_CAP : LEG_TO) - offset;
 }
 
 /**

@@ -31,9 +31,10 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Pr
   const locked = disabled || (over && !editing);
   const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
 
-  const tap = (field: keyof Score, delta: number) => {
-    onBump(field, delta);
-    if (delta > 0) setUndo((u) => [...u, field]);
+  const tap = (field: keyof Score) => {
+    if ((s[field] ?? 0) >= bumpLimit(m, field)) return; // na stropu se nic nezmění – nic ani nevracet
+    onBump(field, 1);
+    setUndo((u) => [...u, field]);
   };
   const back = () => {
     const last = undo[undo.length - 1];
@@ -65,7 +66,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Pr
           className="mirror-goal"
           aria-label={`Gól ${word} (${nm(ids)}), stav ${value}`}
           disabled={locked || atCap}
-          onClick={() => tap(g, 1)}
+          onClick={() => tap(g)}
         >
           <span className="mirror-num">{value}</span>
           <span className="mirror-lbl">{sim ? 'ťukni = set' : 'ťukni = gól'}</span>
@@ -81,8 +82,8 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Pr
               type="button"
               className="mirror-loss"
               aria-label={`Ztráta ${word} (${nm(ids)}), ${s[l] ?? 0}`}
-              disabled={locked}
-              onClick={() => tap(l, 1)}
+              disabled={locked || (s[l] ?? 0) >= bumpLimit(m, l)}
+              onClick={() => tap(l)}
             >
               ztráta <b>{s[l] ?? 0}</b>
             </button>
@@ -115,7 +116,15 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Pr
           <button type="button" className="pill" disabled={!undo.length} onClick={back}>
             ↶ Zpět
           </button>
-          <button type="button" className="pill" aria-pressed={editing} onClick={() => setEditing(!editing)}>
+          <button
+            type="button"
+            className="pill"
+            aria-pressed={editing}
+            onClick={() => {
+              setEditing(!editing);
+              setUndo([]); // ruční opravy Zpět nesleduje – po nich by vracel víc, než bylo ťuknuto
+            }}
+          >
             {editing ? 'Hotovo' : 'Opravit'}
           </button>
         </div>
@@ -188,7 +197,15 @@ export function DrillMirror({ players, def, values, names, canSolo, onBump }: Dr
           >
             ↶ Zpět
           </button>
-          <button type="button" className="pill" aria-pressed={editing} onClick={() => setEditing(!editing)}>
+          <button
+            type="button"
+            className="pill"
+            aria-pressed={editing}
+            onClick={() => {
+              setEditing(!editing);
+              setUndo([]);
+            }}
+          >
             {editing ? 'Hotovo' : 'Opravit'}
           </button>
         </div>

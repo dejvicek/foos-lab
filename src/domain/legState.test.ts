@@ -1,4 +1,4 @@
-import { bump, legOver, tableScore } from './legState';
+import { bump, bumpLimit, legOver, tableScore } from './legState';
 import type { Match } from './types';
 
 const m = (over: Partial<Match> = {}): Match => ({
@@ -38,5 +38,15 @@ describe('stav legu', () => {
     expect(bump(m({ block: 'sim' }), { gb: 2 }, 'gb', 1)).toEqual({ ga: 0, gb: 2 });
     expect(bump(m(), { la: 30 }, 'la', 1)).toEqual({ la: 30, lb: 0 });
     expect(bump(m(), { ga: 2, gb: 1 }, 'lb', 1)).toEqual({ ga: 2, gb: 1, la: 0, lb: 1 });
+  });
+
+  it('strop ťukání: běžný leg do 6 na stole (dva telefony neudělají 7:4), 5:5 do 10, simulace 2 sety', () => {
+    expect(bumpLimit(m(), 'ga')).toBe(6);
+    expect(bumpLimit(m({ start: [0, 3] }), 'gb')).toBe(3);
+    expect(bumpLimit(m({ start: [4, 4] }), 'ga')).toBe(2);
+    expect(bumpLimit(m({ start: [5, 5] }), 'ga')).toBe(5);
+    expect(bumpLimit(m({ block: 'sim' }), 'gb')).toBe(2);
+    expect(bumpLimit(m(), 'la')).toBe(30);
+    expect(bump(m(), { ga: 6, gb: 4 }, 'ga', 1)).toEqual({ ga: 6, gb: 4 });
   });
 });

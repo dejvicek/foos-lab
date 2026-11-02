@@ -11,6 +11,8 @@ export interface RemoteHandlers {
   score(trainingId: string, matchId: MatchId, s: Score | null): void;
   solo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): void;
   training(t: Training | null, id: string): void;
+  /** Spojení se (znovu) navázalo – zmeškané změny se musí dočíst. */
+  resync(): void;
 }
 
 export interface Repository {

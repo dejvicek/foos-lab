@@ -6,6 +6,7 @@ import type { Match, MatchId, Player, PlayerId, Score, SoloKey, Training } from 
 import { isPermanent, userMessageOf } from '../storage/errors';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
+import { mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
 
 export type Status = 'loading' | 'error' | 'ready';
 export type SaveState = 'idle' | 'saving' | 'retrying';
@@ -53,7 +54,8 @@ export function useAppState(repo: Repository): AppStore {
   const [loadNonce, setLoadNonce] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const queue = useRef<(() => Promise<void>)[]>([]);
+  /** Fronta zápisů; `key` říká, čeho se zápis týká (ozvěny ze serveru ho do uložení nepřepíšou). */
+  const queue = useRef<{ run: () => Promise<void>; key?: string }[]>([]);
   const running = useRef(false);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -82,7 +84,7 @@ export function useAppState(repo: Repository): AppStore {
     let rejected = false;
     while (queue.current.length) {
       try {
-        await queue.current[0]();
+        await queue.current[0].run();
         queue.current.shift();
         attempt = 0;
         setSaveState('saving');
@@ -113,18 +115,32 @@ export function useAppState(repo: Repository): AppStore {
   }, [repo]);
 
   const enqueue = useCallback(
-    (op: () => Promise<void>) => {
-      queue.current.push(op);
+    (op: () => Promise<void>, key?: string) => {
+      queue.current.push({ run: op, key });
       void pump();
     },
     [pump],
   );
 
+  /** Čeká na uložení vlastní změna s tímto klíčem (ve frontě nebo odložená)? */
+  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((e) => e.key === key), []);
+
+  /** Po výpadku spojení / návratu do appky: dorovnat se serverem (Realtime zmeškané změny neposílá). */
+  const resync = useCallback(() => {
+    repo.loadAll().then(
+      (r) => setData((d) => mergeRemote(d, r, busy)),
+      () => {
+        /* další pokus při příštím připojení */
+      },
+    );
+  }, [repo, busy]);
+
   // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky).
   useEffect(() => {
     if (status !== 'ready') return;
     return repo.subscribe({
-      score: (tid, mid, s) =>
+      score: (tid, mid, s) => {
+        if (busy(pendingKey.score(tid, mid))) return; // ozvěna staršího stavu, vlastní ťuknutí ještě čekají
         setData((d) => ({
           ...d,
           trainings: d.trainings.map((t) => {
@@ -134,18 +150,31 @@ export function useAppState(repo: Repository): AppStore {
             else delete scores[mid];
             return { ...t, scores };
           }),
-        })),
-      solo: (tid, pid, key, value) =>
-        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? setSolo(t, pid, key, value) : t)) })),
+        }));
+      },
+      solo: (tid, pid, key, value) => {
+        if (busy(pendingKey.solo(tid, pid, key))) return;
+        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? setSolo(t, pid, key, value) : t)) }));
+      },
       training: (t, id) =>
         setData((d) => {
-          if (!t) return { ...d, trainings: d.trainings.filter((x) => x.id !== id) };
+          const pending = busy(pendingKey.training(id));
+          if (!t) return pending ? d : { ...d, trainings: d.trainings.filter((x) => x.id !== id) };
           const cur = d.trainings.find((x) => x.id === id);
-          const merged = cur ? { ...t, scores: cur.scores, soloResults: cur.soloResults } : t;
+          const merged = cur ? mergeTrainingEcho(cur, t, pending) : t;
           return { ...d, trainings: cur ? d.trainings.map((x) => (x.id === id ? merged : x)) : [...d.trainings, merged] };
         }),
+      resync,
     });
-  }, [repo, status]);
+  }, [repo, status, busy, resync]);
+
+  // Telefon se zamčenou obrazovkou / appka na pozadí: po návratu dorovnat.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const on = () => document.visibilityState === 'visible' && resync();
+    document.addEventListener('visibilitychange', on);
+    return () => document.removeEventListener('visibilitychange', on);
+  }, [status, resync]);
 
   // Varování při zavření stránky s neuloženými změnami.
   useEffect(() => {
@@ -186,7 +215,7 @@ export function useAppState(repo: Repository): AppStore {
         key,
         setTimeout(() => {
           timers.current.delete(key);
-          enqueue(op);
+          enqueue(op, key);
         }, SCORE_DEBOUNCE_MS),
       );
     },
@@ -199,24 +228,25 @@ export function useAppState(repo: Repository): AppStore {
       dismissSaveError: () => setSaveError(null),
       savePlayer: (p: Player) => {
         setData((d) => ({ ...d, players: upsert(d.players, p) }));
-        enqueue(() => repo.savePlayer(p));
+        enqueue(() => repo.savePlayer(p), pendingKey.players);
       },
       deletePlayer: (id: PlayerId) => {
         setData((d) => ({ ...d, players: d.players.filter((p) => p.id !== id) }));
-        enqueue(() => repo.deletePlayer(id));
+        enqueue(() => repo.deletePlayer(id), pendingKey.players);
       },
       saveTraining: (t: Training) => {
         setData((d) => ({
           ...d,
           trainings: upsert(d.trainings, { ...t, scores: d.trainings.find((x) => x.id === t.id)?.scores ?? {} }),
         }));
-        enqueue(() => repo.saveTraining(t));
+        enqueue(() => repo.saveTraining(t), pendingKey.training(t.id));
       },
       updateTrainingConfig: (t: Training) => {
         cancelPending(t.id, stillValid, t);
         setData((d) => ({ ...d, trainings: upsert(d.trainings, t) }));
-        enqueue(() => repo.saveTraining(t));
-        enqueue(() => repo.replaceScores(t.id, Object.keys(t.scores)));
+        const k = pendingKey.training(t.id);
+        enqueue(() => repo.saveTraining(t), k);
+        enqueue(() => repo.replaceScores(t.id, Object.keys(t.scores)), k);
         enqueue(() =>
           repo.replaceSolo(
             t.id,
@@ -224,6 +254,7 @@ export function useAppState(repo: Repository): AppStore {
               Object.keys(ms).map((key) => ({ playerId, key, metric: parseSoloKey(key).metric })),
             ),
           ),
+          k,
         );
       },
       bumpScore: (trainingId: string, match: Match, field: keyof Score, delta: number) => {
@@ -233,7 +264,7 @@ export function useAppState(repo: Repository): AppStore {
             t.id === trainingId ? { ...t, scores: { ...t.scores, [match.id]: bump(match, t.scores[match.id] ?? {}, field, delta) } } : t,
           ),
         }));
-        enqueue(() => repo.bumpScore(trainingId, match.id, field, delta, bumpLimit(match, field)));
+        enqueue(() => repo.bumpScore(trainingId, match.id, field, delta, bumpLimit(match, field)), pendingKey.score(trainingId, match.id));
       },
       bumpSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
         setData((d) => ({
@@ -244,16 +275,16 @@ export function useAppState(repo: Repository): AppStore {
             return setSolo(t, playerId, key, Math.min(max, Math.max(0, cur + delta)));
           }),
         }));
-        enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max));
+        enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max), pendingKey.solo(trainingId, playerId, key));
       },
       lockRounds: (t: Training) => {
         setData((d) => ({ ...d, trainings: d.trainings.map((x) => (x.id === t.id ? { ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams } : x)) }));
-        enqueue(() => repo.lockRounds(t.id, t.lockedRounds, t.simTeams));
+        enqueue(() => repo.lockRounds(t.id, t.lockedRounds, t.simTeams), pendingKey.training(t.id));
       },
       deleteTraining: (id: string) => {
         cancelPending(id, stillValid, null);
         setData((d) => ({ ...d, trainings: d.trainings.filter((t) => t.id !== id) }));
-        enqueue(() => repo.deleteTraining(id));
+        enqueue(() => repo.deleteTraining(id), pendingKey.training(id));
       },
       saveScore: (trainingId: string, matchId: MatchId, s: Score) => {
         setData((d) => ({
@@ -266,14 +297,14 @@ export function useAppState(repo: Repository): AppStore {
             return { ...t, scores };
           }),
         }));
-        debounce(`${trainingId}::${matchId}`, () => repo.saveScore(trainingId, matchId, s));
+        debounce(pendingKey.score(trainingId, matchId), () => repo.saveScore(trainingId, matchId, s));
       },
       saveSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null) => {
         setData((d) => ({
           ...d,
           trainings: d.trainings.map((t) => (t.id === trainingId ? setSolo(t, playerId, key, value) : t)),
         }));
-        debounce(`${trainingId}::solo::${playerId}::${key}`, () => repo.saveSolo(trainingId, playerId, key, value));
+        debounce(pendingKey.solo(trainingId, playerId, key), () => repo.saveSolo(trainingId, playerId, key, value));
       },
       newId: newUuid,
     }),

@@ -31,6 +31,7 @@ export function memoryRepository(
     score: (...a) => listeners.forEach((l) => l.score(...a)),
     solo: (...a) => listeners.forEach((l) => l.solo(...a)),
     training: (...a) => listeners.forEach((l) => l.training(...a)),
+    resync: () => listeners.forEach((l) => l.resync()),
   };
 
   return {
