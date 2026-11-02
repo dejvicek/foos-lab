@@ -155,27 +155,28 @@ drop policy if exists "anon all" on public.solo_results;
 
 drop policy if exists "read" on public.players;
 drop policy if exists "admin write" on public.players;
-create policy "read" on public.players for select to authenticated using (true);
+create policy "read" on public.players for select to authenticated using (public.current_player() is not null);
 create policy "admin write" on public.players for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "read" on public.trainings;
 drop policy if exists "admin write" on public.trainings;
-create policy "read" on public.trainings for select to authenticated using (true);
+create policy "read" on public.trainings for select to authenticated using (public.current_player() is not null);
 create policy "admin write" on public.trainings for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "read" on public.scores;
 drop policy if exists "write" on public.scores;
-create policy "read" on public.scores for select to authenticated using (true);
+create policy "read" on public.scores for select to authenticated using (public.current_player() is not null);
 create policy "write" on public.scores for all to authenticated
   using (public.can_write_score(training_id, match_id)) with check (public.can_write_score(training_id, match_id));
 
 drop policy if exists "read" on public.solo_results;
 drop policy if exists "write" on public.solo_results;
-create policy "read" on public.solo_results for select to authenticated using (true);
+create policy "read" on public.solo_results for select to authenticated using (public.current_player() is not null);
 create policy "write" on public.solo_results for all to authenticated
   using (public.can_write_solo(training_id, player_id, round)) with check (public.can_write_solo(training_id, player_id, round));
 
 drop policy if exists "own or admin" on public.accounts;
 create policy "own or admin" on public.accounts for select to authenticated using (user_id = auth.uid() or public.is_admin());
 
--- Veřejná registrace není potřeba (účty zakládá login_prepare).
+-- Veřejná registrace je vypnutá v nastavení Auth (disable_signup); účty zakládá jen login_prepare.
+-- Číst smí jen účet propojený s hráčem (ne libovolný uživatel Supabase Auth).
