@@ -12,10 +12,12 @@ interface Props {
   onStartTraining(): void;
   onStartPause(id: string): void;
   onNextRound(id: string): void;
+  /** false = pauzy se ovládají v řádku pauzy rozpisu (Trénink tab), lišta jen pro zahájení tréninku. */
+  showPause?: boolean;
 }
 
 /** Pauza, která je právě na řadě: všechna utkání před ní už jsou zahájená. */
-function currentPause(queue: QueueEntry[], states: Map<string, ItemState>, pauses: PauseState[]): PauseState | null {
+export function currentPause(queue: QueueEntry[], states: Map<string, ItemState>, pauses: PauseState[]): PauseState | null {
   let k = 0;
   for (let i = 0; i < queue.length; i++) {
     const e = queue[i];
@@ -29,7 +31,7 @@ function currentPause(queue: QueueEntry[], states: Map<string, ItemState>, pause
 }
 
 /** PRD 4.8: zahájení tréninku a pauzy řídí organizátor. */
-export function FlowBar({ queue, states, pauses, now, started, manage, onStartTraining, onStartPause, onNextRound }: Props) {
+export function FlowBar({ queue, states, pauses, now, started, manage, onStartTraining, onStartPause, onNextRound, showPause = true }: Props) {
   if (!started)
     return (
       <div className="flow-bar" role="status">
@@ -41,6 +43,7 @@ export function FlowBar({ queue, states, pauses, now, started, manage, onStartTr
         )}
       </div>
     );
+  if (!showPause) return null;
   const p = currentPause(queue, states, pauses);
   if (!p) return null;
   return (
@@ -65,5 +68,50 @@ export function FlowBar({ queue, states, pauses, now, started, manage, onStartTr
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Ovládání pauzy přímo v jejím řádku rozpisu: běžící pauza ukazuje odpočet, pauza na řadě
+ * (všechna utkání před ní zahájená) nabízí organizátorovi Zahájit pauzu / Spustit další kolo.
+ */
+export function PauseInline({ p, current, now, manage, onStartPause, onNextRound }: {
+  p: PauseState;
+  current: boolean;
+  now: number;
+  manage: boolean;
+  onStartPause(id: string): void;
+  onNextRound(id: string): void;
+}) {
+  if (p.state === 'over') return null;
+  if (p.state === 'running')
+    return (
+      <span className="pause-inline">
+        <span>
+          zbývá <strong>{fmtDur((p.endsAt ?? now) - now)}</strong>
+        </span>
+        {manage && (
+          <button type="button" className="ghost" onClick={() => onNextRound(p.id)}>
+            Spustit další kolo hned
+          </button>
+        )}
+      </span>
+    );
+  if (!current) return null;
+  return (
+    <span className="pause-inline">
+      {manage ? (
+        <>
+          <button type="button" onClick={() => onStartPause(p.id)}>
+            Zahájit pauzu
+          </button>
+          <button type="button" className="ghost" onClick={() => onNextRound(p.id)}>
+            Spustit další kolo
+          </button>
+        </>
+      ) : (
+        <span className="muted">další kolo spustí organizátor</span>
+      )}
+    </span>
   );
 }

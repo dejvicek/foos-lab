@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { OrderTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
@@ -15,13 +15,13 @@ import { RoundCards } from '../components/RoundCards';
 import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
-import { FlowBar } from '../components/FlowBar';
+import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
-import { playingRow, roundStates } from '../roundState';
+import { pauseRows, playingRow, roundStates } from '../roundState';
 import { StandingsView } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
@@ -54,8 +54,11 @@ export function TrainingPage({
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
   // Stopky běží jen na obrazovkách, kde jsou vidět (Moje hry, Živě).
-  // V rozpisu stačí obnova po 30 s (stav kol, „hraje se X min“).
-  const tick = useTick(view === 'schedule' ? 30_000 : 1000, !!training);
+  // V rozpisu stačí obnova po 30 s (stav kol, „hraje se X min“); během pauzy po sekundě (odpočet v řádku pauzy).
+  const pauseRunning = Object.entries(training?.playTimes ?? {}).some(
+    ([k, v]) => k.startsWith('pause|') && v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000,
+  );
+  const tick = useTick(view === 'schedule' && !pauseRunning ? 30_000 : 1000, !!training);
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {
@@ -223,8 +226,23 @@ export function TrainingPage({
   };
 
 
-  const flowBar = schedule && queueInfo && (
+  const pauseNow = Math.max(tick, Date.now());
+  const pauseList = queueInfo ? pauseStates(queueInfo.queue, training.playTimes ?? {}, pauseNow) : [];
+  const onStartPause = (id: string) => store.setPlayTime(training.id, id, { startedAt: Date.now() });
+  const onNextRound = (id: string) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() });
+  /** Trénink tab: ovládání pauzy v jejím řádku rozpisu (ne v liště nahoře). */
+  const pauseSlots = new Map<string, ReactNode>();
+  if (schedule && queueInfo && rounds) {
+    const cur = currentPause(queueInfo.queue, queueInfo.states, pauseList);
+    for (const [key, k] of pauseRows(schedule)) {
+      const p = pauseList[k];
+      if (p)
+        pauseSlots.set(key, <PauseInline p={p} current={cur?.id === p.id} now={pauseNow} manage={manage} onStartPause={onStartPause} onNextRound={onNextRound} />);
+    }
+  }
+  const flowBar = (showPause: boolean) => schedule && queueInfo && (
     <FlowBar
+      showPause={showPause}
       queue={queueInfo.queue}
       states={queueInfo.states}
       pauses={pauseStates(queueInfo.queue, training.playTimes ?? {}, tick)}
@@ -232,8 +250,8 @@ export function TrainingPage({
       started={[...queueInfo.states.values()].some((s) => s.startedAt !== undefined) || training.playTimes?.[TRAINING_ITEM] !== undefined}
       manage={manage}
       onStartTraining={() => store.setPlayTime(training.id, TRAINING_ITEM, { startedAt: Date.now() })}
-      onStartPause={(id) => store.setPlayTime(training.id, id, { startedAt: Date.now() })}
-      onNextRound={(id) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() })}
+      onStartPause={onStartPause}
+      onNextRound={onNextRound}
     />
   );
   const viewHead = (title: string) => (
@@ -250,7 +268,7 @@ export function TrainingPage({
     return (
       <section>
         {viewHead('Živě')}
-        {flowBar}
+        {flowBar(true)}
         {simNext && simSetup}
         {schedule && queueInfo && (
           <ActiveMatches
@@ -319,7 +337,7 @@ export function TrainingPage({
       )}
 
 
-      {flowBar}
+      {flowBar(false)}
 
       {schedule && (
         <>
@@ -329,6 +347,7 @@ export function TrainingPage({
               training={training}
               names={names}
               rounds={rounds}
+              pauseSlots={pauseSlots}
               now={tick}
               expanded={openKey}
               onToggle={(key) => setExpanded(openKey === key ? '' : key)}
@@ -345,6 +364,7 @@ export function TrainingPage({
             training={training}
             names={names}
             rounds={rounds}
+              pauseSlots={pauseSlots}
               now={tick}
             expanded={openKey}
             onToggle={(key) => setExpanded(openKey === key ? '' : key)}

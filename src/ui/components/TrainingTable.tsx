@@ -14,6 +14,8 @@ interface Props {
   /** Stav kol podle skutečnosti (null = trénink nezačal). */
   rounds?: Map<string, RoundStatus> | null;
   now?: number;
+  /** Ovládání pauzy v jejím řádku (Zahájit pauzu / Spustit další kolo / odpočet). */
+  pauseSlots?: Map<string, ReactNode>;
   expanded: string | null;
   onToggle(key: string): void;
   onScore(id: MatchId, s: Score): void;
@@ -131,7 +133,7 @@ export function soloProgress(row: ScheduleRow, t: Training): string | null {
   return total ? `zapsáno ${done} z ${total}` : null;
 }
 
-export function TrainingTable({ schedule: s, training, names, rounds = null, now = 0, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo, simSetup }: Props) {
+export function TrainingTable({ schedule: s, training, names, rounds = null, now = 0, pauseSlots, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
   const visible = usedTables(s);
   const cols = visible.length + 3;
@@ -220,7 +222,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, now
                       </td>
                       <td colSpan={visible.length + 2}>
                         <BreakEditor i={bi} c={breaks} />
-                        {live && <span className="cell-sub live">{live}</span>}
+                        {pauseSlots?.get(key)}
                       </td>
                     </tr>
                   );
@@ -277,7 +279,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, now
                         {live && <span className="cell-sub live">{live}</span>}
                       </td>
                       {row.kind === 'break' ? (
-                        <td colSpan={visible.length + 1} />
+                        <td colSpan={visible.length + 1}>{pauseSlots?.get(key)}</td>
                       ) : (
                         <>
                           {visible.map((j) => {

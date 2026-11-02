@@ -91,12 +91,23 @@ export function railLine(rounds: Map<string, RoundStatus> | null, keys: string[]
   return rounds.get(keys[above])?.state === 'done' ? 'rail-line on' : 'rail-line';
 }
 
-/** „hraje se 4 min · 1 z 2 stolů hotovo“ / „pauza běží“. */
+/** „hraje se 4 min · 1 z 2 stolů hotovo“ / „na řadě“. */
 export function liveText(st: RoundStatus | undefined, now: number, pause: boolean): string | null {
   if (!st || st.state !== 'playing') return null;
-  if (pause) return 'pauza běží';
+  if (pause) return null; // pauza má vlastní odpočet v řádku (PauseInline)
   const min = st.since !== undefined ? Math.max(0, Math.floor((now - st.since) / 60_000)) : null;
   const parts = [min === null ? 'na řadě' : `hraje se ${min} min`];
   if (st.total > 1 && st.done > 0) parts.push(`${st.done} z ${st.total} stolů hotovo`);
   return parts.join(' · ');
+}
+
+/** Řádky pauz (label „Pauza“) → pořadí pauzy ve frontě (pauseId(k)). */
+export function pauseRows(s: Schedule): Map<string, number> {
+  const out = new Map<string, number>();
+  let k = 0;
+  for (const ref of flatRows(s)) {
+    const row = s.sections[ref.section].rows[ref.row];
+    if (row.kind === 'break' && row.label === 'Pauza') out.set(rowKey(ref), k++);
+  }
+  return out;
 }

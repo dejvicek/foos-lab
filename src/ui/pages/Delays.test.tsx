@@ -137,6 +137,42 @@ describe('pauza řízená organizátorem', () => {
   });
 });
 
+describe('pauza v Trénink tabu', () => {
+  const paused: Training = {
+    ...t,
+    breaks: [{ after: 1, min: 10 }],
+    playTimes: { training: { startedAt: at(18, 0) }, [ids[0]]: { startedAt: at(18, 0), endedAt: at(18, 2) } },
+  };
+
+  it('Zahájit pauzu / Spustit další kolo jsou v řádku pauzy, ne v liště nahoře', async () => {
+    window.location.hash = '#/trenink/t1';
+    const repo = memoryRepository({ players, trainings: [{ ...paused, createdBy: 'id1' }] });
+    render(<App repo={repo} auth={organizer()} />);
+    const user = userEvent.setup();
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    expect(screen.queryByRole('status')).toBeNull();
+    const start = screen.getByRole('button', { name: 'Zahájit pauzu' });
+    const row = start.closest('tr')!;
+    expect(row).toHaveClass('break-row');
+    expect(within(row).getByRole('button', { name: 'Spustit další kolo' })).toBeInTheDocument();
+    await user.click(start);
+    const running = screen.getByRole('button', { name: 'Spustit další kolo hned' }).closest('tr')!;
+    expect(running).toHaveTextContent('zbývá 10:00');
+    await user.click(within(running).getByRole('button', { name: 'Spustit další kolo hned' }));
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.['pause|0']).toEqual({ startedAt: at(18, 3), endedAt: at(18, 3) }));
+    expect(screen.queryByRole('button', { name: /Spustit další kolo/ })).toBeNull();
+  });
+
+  it('hráč (ne organizátor) vidí u pauzy, že další kolo spustí organizátor', async () => {
+    window.location.hash = '#/trenink/t1';
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    render(<App repo={memoryRepository({ players, trainings: [{ ...paused, createdBy: 'id1' }] })} auth={auth} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    expect(screen.queryByRole('button', { name: 'Zahájit pauzu' })).toBeNull();
+    expect(screen.getByText(/další kolo spustí organizátor/).closest('tr')).toHaveClass('break');
+  });
+});
+
 describe('otevření appky', () => {
   it('běží trénink, ale nejsem na řadě (pauza) → Živě; nic neběží → Trénink bez Živě', async () => {
     const paused: Training = {

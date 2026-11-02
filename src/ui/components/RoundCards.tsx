@@ -16,6 +16,8 @@ interface Props {
   /** Stav kol podle skutečnosti (null = trénink nezačal). */
   rounds?: Map<string, RoundStatus> | null;
   now?: number;
+  /** Ovládání pauzy v jejím řádku (Zahájit pauzu / Spustit další kolo / odpočet). */
+  pauseSlots?: Map<string, ReactNode>;
   expanded: string | null;
   onToggle(key: string): void;
   canMatch(m: Match): boolean;
@@ -46,7 +48,7 @@ function status(row: ScheduleRow, t: Training): string | null {
 }
 
 /** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, rounds = null, now = 0, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
+export function RoundCards({ schedule: s, training, names, rounds = null, now = 0, pauseSlots, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
   const [picked, setPicked] = useState<Record<string, number | null>>({});
   return (
@@ -78,9 +80,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, now = 
               return (
                 <div key={key} className={['round-break', 'editable', state].filter(Boolean).join(' ')}>
                   {node}
-                  <span>
-                    {time} Pauza{live && ` – ${live}`}
-                  </span>
+                  <span>{time} Pauza</span>
                   <select aria-label="Délka pauzy" value={breaks.list[bi].min} onChange={(e) => breaks.setMin(bi, Number(e.target.value))}>
                     {BREAK_OPTIONS.map((m) => (
                       <option key={m} value={m}>
@@ -101,15 +101,18 @@ export function RoundCards({ schedule: s, training, names, rounds = null, now = 
                       </button>
                     </>
                   )}
+                  {pauseSlots?.get(key)}
                 </div>
               );
             if (row.kind === 'break')
               return (
-                <p key={key} className={['round-break', state].filter(Boolean).join(' ')}>
+                <div key={key} className={['round-break', state].filter(Boolean).join(' ')}>
                   {node}
-                  {time} {row.label}
-                  {live && ` – ${live}`}
-                </p>
+                  <span>
+                    {time} {row.label}
+                  </span>
+                  {pauseSlots?.get(key)}
+                </div>
               );
             const open = expanded === key;
             const mineIdx = row.cells.findIndex((c) => isMine(c, tap.me));
