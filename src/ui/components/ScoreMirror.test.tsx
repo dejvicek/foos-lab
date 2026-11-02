@@ -184,3 +184,40 @@ describe('DrillMirror – pokusy', () => {
     expect(within(screen.getByRole('group', { name: 'Luky' })).getByRole('button', { name: 'do držení: Luky' })).toBeDisabled();
   });
 });
+
+describe('ScoreMirror – Daň za ztrátu', () => {
+  const tax: Match = { ...base, lossTax: true, trackLosses: true };
+  const loss = (side: 'vlevo' | 'vpravo') => screen.getByRole('button', { name: new RegExp(`^Ztráta ${side}`) });
+
+  it('ťuknutá ztráta je hned gól soupeře; Zpět vrátí obojí', async () => {
+    const user = userEvent.setup();
+    const log: [keyof Score, number][] = [];
+    render(<Harness match={tax} log={log} />);
+    await user.click(loss('vlevo'));
+    expect(log).toEqual([['la', 1], ['gb', 1]]);
+    expect(goal('vpravo')).toHaveTextContent('1');
+    expect(loss('vlevo')).toHaveTextContent('1');
+    await user.click(screen.getByRole('button', { name: '↶ Zpět' }));
+    expect(log.slice(2)).toEqual([['gb', -1], ['la', -1]]);
+    expect(goal('vpravo')).toHaveTextContent('0');
+    expect(loss('vlevo')).toHaveTextContent('0');
+  });
+
+  it('ztráta za stavu 5 soupeře dohraje leg', async () => {
+    const user = userEvent.setup();
+    render(<Harness match={tax} initial={{ ga: 3, gb: 5, la: 1, lb: 0 }} />);
+    await user.click(loss('vlevo'));
+    expect(screen.getByRole('status')).toHaveTextContent('Leg dohrán 3 : 6');
+  });
+
+  it('Opravit: −1 ztráta ubere i gól soupeře; gól soupeře nejde pod počet ztrát', async () => {
+    const user = userEvent.setup();
+    const log: [keyof Score, number][] = [];
+    render(<Harness match={tax} initial={{ ga: 2, gb: 2, la: 2, lb: 0 }} log={log} />);
+    await user.click(screen.getByRole('button', { name: 'Opravit' }));
+    expect(screen.getByRole('button', { name: 'Ubrat gól vpravo' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Ubrat ztrátu vlevo' }));
+    expect(log).toEqual([['la', -1], ['gb', -1]]);
+    expect(goal('vpravo')).toHaveTextContent('1');
+  });
+});

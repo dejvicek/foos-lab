@@ -1,4 +1,4 @@
-import { bump, bumpLimit, legOver, tableScore, winnerFor } from './legState';
+import { bump, bumpLimit, legOver, MAX_LOSSES, maxLosses, tableScore, taxGoal, winnerFor } from './legState';
 import type { Match } from './types';
 
 const m = (over: Partial<Match> = {}): Match => ({
@@ -61,5 +61,26 @@ describe('stav legu', () => {
     // simulace: 2 sety
     expect(winnerFor(m({ block: 'sim' }), 1)).toBe(2);
     expect(winnerFor(m({ block: 'sim' }), 2)).toBeNull();
+  });
+});
+
+describe('Daň za ztrátu: ztráta je hned gól soupeře', () => {
+  const tax = { id: 'x', block: 'league', sideA: ['a'], sideB: ['b'], lossTax: true, trackLosses: true } as unknown as Match;
+  const plain = { ...tax, lossTax: false } as Match;
+  const start03 = { ...tax, start: [0, 3] } as Match;
+
+  it('ztráta strany zvedne góly soupeře; gól ani běžná disciplína nic dalšího', () => {
+    expect(taxGoal(tax, 'la')).toBe('gb');
+    expect(taxGoal(tax, 'lb')).toBe('ga');
+    expect(taxGoal(tax, 'ga')).toBeNull();
+    expect(taxGoal(plain, 'la')).toBeNull();
+  });
+
+  it('ztrát může být nejvýš tolik, kolik má soupeř odehraných gólů (bez zapsaných gólů jeho strop)', () => {
+    expect(maxLosses(tax, { ga: 6, gb: 2 }, 'la')).toBe(2);
+    expect(maxLosses(tax, { ga: 6, gb: 2 }, 'lb')).toBe(6);
+    expect(maxLosses(tax, {}, 'la')).toBe(6);
+    expect(maxLosses(start03, {}, 'la')).toBe(3); // pravá začíná na 3, do 6 jí chybí 3 góly
+    expect(maxLosses(plain, { ga: 6, gb: 2 }, 'la')).toBe(MAX_LOSSES);
   });
 });

@@ -1,4 +1,4 @@
-import { LEG_CAP, LEG_TO, MAX_LOSSES, winnerFor } from '../../domain/legState';
+import { LEG_CAP, LEG_TO, MAX_LOSSES, maxLosses, winnerFor } from '../../domain/legState';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 interface Props {
@@ -42,6 +42,8 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
     const next: Score = { ...s, [goalKey(side)]: v - start(side) };
     const win = winnerFor(m, v);
     if (table(other) === null && win !== null) next[goalKey(other)] = win - start(other);
+    // Daň: ztráty nemohou převýšit góly soupeře – po snížení gólů se srovnají.
+    for (const l of ['la', 'lb'] as const) if (next[l] != null) next[l] = Math.min(next[l]!, maxLosses(m, next, l));
     onChange(next);
   };
 
@@ -69,12 +71,14 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
   };
 
   const losses = (side: Side) => {
-    const k = lossKey(side);
+    const k = lossKey(side) as 'la' | 'lb';
     const other = lossKey(side === 'A' ? 'B' : 'A');
     const cur = s[k] ?? null;
+    // Daň: každá ztráta je gól soupeře → nejvýš tolik, kolik má soupeř gólů.
+    const cap = maxLosses(m, s, k);
     // Druhá strana dostane 0: zapsané ztráty se počítají jen z legů, kde jsou u obou stran.
     const set = (v: number) => onChange({ ...s, [other]: s[other] ?? 0, [k]: Math.min(MAX_LOSSES, v) });
-    const chips = range(0, LOSS_ROW).map((v) => (
+    const chips = range(0, Math.min(LOSS_ROW, cap)).map((v) => (
       <button
         key={v}
         type="button"
@@ -87,13 +91,14 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
         {v}
       </button>
     ));
-    if (cur !== null && cur > LOSS_ROW)
+    if (cur !== null && cur > LOSS_ROW && cap > LOSS_ROW)
       chips.push(
         <button key="cur" type="button" className="pick-chip loss" aria-label={`${label}: ztráty ${WORD[side]} ${cur}`} aria-pressed disabled={disabled}>
           {cur}
         </button>,
       );
-    chips.push(
+    if (cap > LOSS_ROW)
+      chips.push(
       <button
         key="more"
         type="button"

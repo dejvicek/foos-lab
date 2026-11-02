@@ -148,7 +148,7 @@ describe('tabulka tréninku', () => {
     await user.click(screen.getByRole('button', { name: /^2. kolo$/ }));
     const d = screen.getByRole('group', { name: '2. kolo, stůl 1' });
     expect(within(d).getByLabelText('2. kolo, stůl 1: ztráty vlevo')).toBeInTheDocument();
-    expect(d).toHaveTextContent('Ztráty jsou i v gólech (Daň za ztrátu)');
+    expect(d).toHaveTextContent('Daň za ztrátu: ztráta se hned počítá jako gól soupeře.');
   });
 
   it('týmy simulace: výchozí podle výkonu, zamknou se prvním výsledkem simulace', async () => {

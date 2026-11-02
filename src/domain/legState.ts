@@ -57,3 +57,19 @@ export function winnerFor(m: Match, v: number): number | null {
   if (isFiveFive(m)) return v >= LEG_CAP ? null : Math.min(LEG_CAP, Math.max(LEG_TO, v + 2));
   return v < LEG_TO ? LEG_TO : null;
 }
+
+/** Daň za ztrátu: ztráta strany je hned gól soupeře – které gólové pole ztráta zvedne (jinak null). */
+export function taxGoal(m: Match, field: keyof Score): 'ga' | 'gb' | null {
+  if (!m.lossTax) return null;
+  return field === 'la' ? 'gb' : field === 'lb' ? 'ga' : null;
+}
+
+/**
+ * Kolik ztrát může strana reálně mít: u Daně nejvýš góly soupeře (každá ztráta je jeho gól;
+ * bez zapsaných gólů jeho strop), jinak MAX_LOSSES.
+ */
+export function maxLosses(m: Match, s: Score, field: 'la' | 'lb'): number {
+  const g = taxGoal(m, field);
+  if (!g) return MAX_LOSSES;
+  return s[g] ?? bumpLimit(m, g);
+}

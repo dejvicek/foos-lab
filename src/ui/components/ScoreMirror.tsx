@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { bumpLimit, legOver, tableScore } from '../../domain/legState';
+import { bumpLimit, legOver, tableScore, taxGoal } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
 import { drillCount, type DrillValue } from '../../domain/drillTap';
 import type { Match, PlayerId, Score } from '../../domain/types';
@@ -25,7 +25,8 @@ interface Props {
  * Ťuknutí do velkého pole = +1 gól (v simulaci set), červené pole = +1 ztráta.
  */
 export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note }: Props) {
-  const [undo, setUndo] = useState<(keyof Score)[]>([]);
+  // Jedno ťuknutí může změnit víc polí (Daň: ztráta + gól soupeře); Zpět vrací celé ťuknutí.
+  const [undo, setUndo] = useState<(keyof Score)[][]>([]);
   const [editing, setEditing] = useState(false);
   const s = score ?? {};
   const sim = m.block === 'sim';
@@ -34,16 +35,26 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
   const locked = disabled || (over && !editing);
   const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
 
+  /** Pole, která ťuknutí změní: Daň za ztrátu připíše ke ztrátě hned gól soupeře. */
+  const fieldsOf = (field: keyof Score): (keyof Score)[] => [field, ...(taxGoal(m, field) ? [taxGoal(m, field)!] : [])];
+  const atLimit = (field: keyof Score) => fieldsOf(field).some((f) => (s[f] ?? 0) >= bumpLimit(m, f));
   const tap = (field: keyof Score) => {
-    if ((s[field] ?? 0) >= bumpLimit(m, field)) return; // na stropu se nic nezmění – nic ani nevracet
-    onBump(field, 1);
-    setUndo((u) => [...u, field]);
+    if (atLimit(field)) return; // na stropu se nic nezmění – nic ani nevracet
+    const fs = fieldsOf(field);
+    for (const f of fs) onBump(f, 1);
+    setUndo((u) => [...u, fs]);
   };
   const back = () => {
     const last = undo[undo.length - 1];
     if (!last) return;
-    onBump(last, -1);
+    for (const f of [...last].reverse()) onBump(f, -1);
     setUndo((u) => u.slice(0, -1));
+  };
+  /** Oprava −1 ztráta: u Daně zmizí i gól soupeře, který ztráta přinesla. */
+  const minusLoss = (l: keyof Score) => {
+    onBump(l, -1);
+    const g = taxGoal(m, l);
+    if (g && (s[g] ?? 0) > 0) onBump(g, -1);
   };
 
   const half = (side: Side) => {
@@ -52,6 +63,8 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
     const l: keyof Score = side === 'A' ? 'la' : 'lb';
     const value = shown[side === 'A' ? 0 : 1];
     const atCap = (s[g] ?? 0) >= bumpLimit(m, g);
+    // Daň: góly strany obsahují ztráty soupeře – níž je oprava nesmí stáhnout.
+    const taxed = m.lossTax ? (s[side === 'A' ? 'lb' : 'la'] ?? 0) : 0;
     const word = SIDE_WORD[side];
     return (
       <div className={`mirror-half side-${side.toLowerCase()}`}>
@@ -75,7 +88,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
           <span className="mirror-lbl">{sim ? 'ťukni = set' : 'ťukni = gól'}</span>
         </button>
         {editing && !disabled && (
-          <button type="button" className="mirror-minus" aria-label={`Ubrat ${sim ? 'set' : 'gól'} ${word}`} disabled={(s[g] ?? 0) <= 0} onClick={() => onBump(g, -1)}>
+          <button type="button" className="mirror-minus" aria-label={`Ubrat ${sim ? 'set' : 'gól'} ${word}`} disabled={(s[g] ?? 0) <= taxed} onClick={() => onBump(g, -1)}>
             −1 {sim ? 'set' : 'gól'}
           </button>
         )}
@@ -85,13 +98,14 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
               type="button"
               className="mirror-loss"
               aria-label={`Ztráta ${word} (${nm(ids)}), ${s[l] ?? 0}`}
-              disabled={locked || (s[l] ?? 0) >= bumpLimit(m, l)}
+              disabled={locked || atLimit(l)}
               onClick={() => tap(l)}
             >
               ztráta <b>{s[l] ?? 0}</b>
+              {m.lossTax && <small className="mirror-tax">= gól soupeře</small>}
             </button>
             {editing && !disabled && (
-              <button type="button" className="mirror-minus" aria-label={`Ubrat ztrátu ${word}`} disabled={(s[l] ?? 0) <= 0} onClick={() => onBump(l, -1)}>
+              <button type="button" className="mirror-minus" aria-label={`Ubrat ztrátu ${word}`} disabled={(s[l] ?? 0) <= 0} onClick={() => minusLoss(l)}>
                 −1 ztráta
               </button>
             )}
