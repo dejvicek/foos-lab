@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  // relativní cesty: funguje na GitHub Pages pod /foosball-practice/ i lokálně
+  // relativní cesty: funguje na GitHub Pages pod /foos-lab/ i lokálně
   base: './',
   plugins: [react()],
   test: {
