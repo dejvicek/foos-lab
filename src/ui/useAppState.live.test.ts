@@ -139,3 +139,16 @@ describe('useAppState – pokusy cvičení', () => {
     await waitFor(() => expect(repo.snapshot().trainings[0].soloAttempts ?? {}).toEqual({}));
   });
 });
+
+describe('useAppState – události her', () => {
+  it('addEvent se hned projeví a uloží; ozvěna stejné události se nezdvojí; cizí se doplní', async () => {
+    const { repo, result } = await setup();
+    const e = { id: 'e1', itemId: m.id, at: 1000, kind: 'goal' as const, side: 'A' as const, delta: 1 as const };
+    act(() => result.current.addEvent('t1', e));
+    expect(result.current.data.trainings[0].events).toEqual([e]);
+    await waitFor(() => expect(repo.snapshot().trainings[0].events).toEqual([e]));
+    act(() => repo.emit().event('t1', e));
+    act(() => repo.emit().event('t1', { ...e, id: 'e2', side: 'B' }));
+    expect(result.current.data.trainings[0].events?.map((x) => x.id)).toEqual(['e1', 'e2']);
+  });
+});

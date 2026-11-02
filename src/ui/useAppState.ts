@@ -4,7 +4,7 @@ import { tapDelta, tapDrill } from '../domain/drillTap';
 import type { SoloMetricDef } from '../domain/solo';
 import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
-import type { Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
+import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
@@ -34,6 +34,8 @@ export interface AppStore {
   tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1): void;
   /** Ťuknutí ve cvičení: přičtení k výsledku hráče. */
   bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
+  /** Průběh hry: přidá událost (ťuknutí s časem). */
+  addEvent(trainingId: string, e: GameEvent): void;
   /** Zdržovači: zahájení / konec utkání (null smaže). */
   setPlayTime(trainingId: string, itemId: string, p: PlayTime | null): void;
   /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
@@ -57,6 +59,12 @@ function withPlayTime(t: Training, itemId: string, p: PlayTime | null): Training
   else times[itemId] = p;
   const { playTimes: _, ...rest } = t;
   return Object.keys(times).length ? { ...rest, playTimes: times } : rest;
+}
+
+/** Přidá událost hry, pokud ji trénink ještě nemá (ozvěna vlastní události se nezdvojí). */
+function withEvent(t: Training, e: GameEvent): Training {
+  if (t.events?.some((x) => x.id === e.id)) return t;
+  return { ...t, events: [...(t.events ?? []), e] };
 }
 
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
@@ -186,6 +194,7 @@ export function useAppState(repo: Repository): AppStore {
         if (busy(pendingKey.time(tid, itemId))) return;
         setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? withPlayTime(t, itemId, p) : t)) }));
       },
+      event: (tid, e) => setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? withEvent(t, e) : t)) })),
       resync,
     });
   }, [repo, status, busy, resync]);
@@ -311,6 +320,10 @@ export function useAppState(repo: Repository): AppStore {
           }),
         }));
         enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max), pendingKey.solo(trainingId, playerId, key));
+      },
+      addEvent: (trainingId: string, e: GameEvent) => {
+        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === trainingId ? withEvent(t, e) : t)) }));
+        enqueue(() => repo.addEvent(trainingId, e));
       },
       setPlayTime: (trainingId: string, itemId: string, p: PlayTime | null) => {
         setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === trainingId ? withPlayTime(t, itemId, p) : t)) }));

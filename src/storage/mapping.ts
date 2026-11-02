@@ -1,6 +1,6 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
-import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef, PlayTime, PlayTimes } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef, PlayTime, PlayTimes, GameEvent } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -92,7 +92,7 @@ function scoreFromRow(r: ScoreRow): Score {
   return s;
 }
 
-export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[], times: PlayTimeRow[] = []): Training {
+export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[], times: PlayTimeRow[] = [], events: EventRow[] = []): Training {
   const soloResults: SoloResults = {};
   const soloAttempts: SoloResults = {};
   for (const x of solo) {
@@ -118,6 +118,10 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     ...(r.created_by ? { createdBy: r.created_by } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
     ...(Object.keys(soloAttempts).length ? { soloAttempts } : {}),
+    ...(() => {
+      const mine = events.filter((x) => x.training_id === r.id).map(eventFromRow);
+      return mine.length ? { events: mine } : {};
+    })(),
     ...(() => {
       const mine = times.filter((x) => x.training_id === r.id);
       if (!mine.length) return {};
@@ -151,6 +155,35 @@ export function playTimeFromRow(r: PlayTimeRow): PlayTime {
   if (r.started_at) p.startedAt = Date.parse(r.started_at);
   if (r.ended_at) p.endedAt = Date.parse(r.ended_at);
   return p;
+}
+
+export interface EventRow {
+  id: string;
+  training_id: string;
+  item_id: string;
+  at: string;
+  kind: GameEvent['kind'];
+  side: 'A' | 'B' | null;
+  player_id: string | null;
+  delta: number;
+}
+
+export const eventToRow = (trainingId: string, e: GameEvent): EventRow => ({
+  id: e.id,
+  training_id: trainingId,
+  item_id: e.itemId,
+  at: new Date(e.at).toISOString(),
+  kind: e.kind,
+  side: e.side ?? null,
+  player_id: e.playerId ?? null,
+  delta: e.delta,
+});
+
+export function eventFromRow(r: EventRow): GameEvent {
+  const e: GameEvent = { id: r.id, itemId: r.item_id, at: Date.parse(r.at), kind: r.kind, delta: r.delta < 0 ? -1 : 1 };
+  if (r.side) e.side = r.side;
+  if (r.player_id) e.playerId = r.player_id;
+  return e;
 }
 
 export const scoreToRow = (trainingId: string, matchId: MatchId, s: Score): ScoreRow => ({

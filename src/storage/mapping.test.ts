@@ -1,4 +1,4 @@
-import { isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
+import { eventFromRow, eventToRow, isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
 import type { Player, Training } from '../domain/types';
 
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
@@ -95,5 +95,16 @@ describe('pokusy cvičení', () => {
     expect(t.soloResults).toEqual({ p1: { warmupPasses: 9 }, p2: { warmupPasses: 12 } });
     expect(t.soloAttempts).toEqual({ p1: { warmupPasses: 14 } });
     expect(soloRow('t', 'p2', 'warmupPasses', 12)).toMatchObject({ value: 12, attempts: null });
+  });
+});
+
+describe('události her', () => {
+  it('řádek ↔ GameEvent; trénink dostane své události', () => {
+    const e = { id: 'e1', itemId: 'league|1|1|a+bvc+d', at: Date.parse('2026-11-02T18:01:00Z'), kind: 'goal' as const, side: 'A' as const, delta: 1 as const };
+    const row = eventToRow('t1', e);
+    expect(row).toEqual({ id: 'e1', training_id: 't1', item_id: e.itemId, at: '2026-11-02T18:01:00.000Z', kind: 'goal', side: 'A', player_id: null, delta: 1 });
+    expect(eventFromRow(row)).toEqual(e);
+    const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [], [row, { ...row, id: 'e2', training_id: 'jiny' }]);
+    expect(t.events).toEqual([e]);
   });
 });

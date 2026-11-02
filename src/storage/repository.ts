@@ -1,5 +1,5 @@
 import type { SoloSlot } from '../domain/solo';
-import type { LockedRound, MatchId, Player, PlayerId, Score, SimTeams, SoloKey, Training, PlayTime } from '../domain/types';
+import type { LockedRound, MatchId, Player, PlayerId, Score, SimTeams, SoloKey, Training, PlayTime, GameEvent } from '../domain/types';
 
 export interface AppData {
   players: Player[];
@@ -15,6 +15,8 @@ export interface RemoteHandlers {
   resync(): void;
   /** Zahájení / konec utkání (null = smazáno). */
   playTime(trainingId: string, itemId: string, p: PlayTime | null): void;
+  /** Nová událost hry (průběh). */
+  event(trainingId: string, e: GameEvent): void;
 }
 
 export interface Repository {
@@ -41,6 +43,8 @@ export interface Repository {
   subscribe(handlers: RemoteHandlers): () => void;
   /** Zdržovači: zahájení a konec utkání; null nebo prázdné smaže. */
   savePlayTime(trainingId: string, itemId: string, p: PlayTime | null): Promise<void>;
+  /** Průběh hry: událost se jen přidává (ID ze zařízení, opakovaný zápis je bez účinku). */
+  addEvent(trainingId: string, e: GameEvent): Promise<void>;
   /** Hráč zamkne odehraná kola (jen prodloužení) a případně týmy simulace – funkce na serveru. */
   lockRounds(trainingId: string, locked: LockedRound[], simTeams: SimTeams | null): Promise<void>;
   /** Smaže výsledky sólové části tréninku mimo `keep`. */

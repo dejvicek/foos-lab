@@ -10,6 +10,11 @@ export const pendingKey = {
   players: 'players',
 };
 
+function withEvents(t: Training, events: Training['events']): Training {
+  const { events: _, ...rest } = t;
+  return events && events.length ? { ...rest, events } : rest;
+}
+
 /** Časy utkání: prázdný seznam se neukládá (trénink bez měření nemá klíč). */
 function withTimes(t: Training, times: Training['playTimes']): Training {
   const { playTimes: _, ...rest } = t;
@@ -29,7 +34,7 @@ function keepLocks(local: Training, remote: Training): Pick<Training, 'lockedRou
  * vlastní změna konfigurace, ponechá se lokální a převezme se jen delší zamčení kol.
  */
 export function mergeTrainingEcho(local: Training, remote: Training, busy: boolean): Training {
-  if (!busy) return { ...withTimes(remote, local.playTimes), scores: local.scores, soloResults: local.soloResults };
+  if (!busy) return withEvents({ ...withTimes(remote, local.playTimes), scores: local.scores, soloResults: local.soloResults }, local.events);
   return { ...local, ...keepLocks(local, remote) };
 }
 
@@ -68,7 +73,9 @@ export function mergeRemote(local: AppData, remote: AppData, busy: (key: string)
         if (l.playTimes?.[id]) times[id] = l.playTimes[id];
         else delete times[id];
       }
-    return withTimes({ ...base, scores, soloResults }, times);
+    // Události se jen přidávají: sjednotit podle ID (server + ještě neodeslané lokální).
+    const events = [...(r.events ?? []), ...(l.events ?? []).filter((e) => !r.events?.some((x) => x.id === e.id))];
+    return withEvents(withTimes({ ...base, scores, soloResults }, times), events);
   });
   const remoteIds = new Set(remote.trainings.map((t) => t.id));
   const unsaved = local.trainings.filter((t) => !remoteIds.has(t.id) && busy(pendingKey.training(t.id)));

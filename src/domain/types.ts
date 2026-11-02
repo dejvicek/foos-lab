@@ -75,6 +75,8 @@ export interface Training {
   breaks?: BreakDef[] | null;
   /** Odehrané pokusy cvičení (stejné klíče jako soloResults); chybí = zapsáno číslem = plný počet. */
   soloAttempts?: SoloResults;
+  /** Události her (průběh, PRD 4.9); chybí = nic neťukáno. */
+  events?: GameEvent[];
   /** Zahájení a konce utkání (Zdržovači); chybí = nic neměřeno. */
   playTimes?: PlayTimes;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
@@ -118,6 +120,20 @@ export interface PlayTime {
 }
 /** Klíč: ID zápasu, u cvičení `drill|kolo|stůl|hráči`. */
 export type PlayTimes = Record<string, PlayTime>;
+
+/**
+ * Událost hry (PRD 4.9): jedno ťuknutí s časem. Seznam se jen doplňuje; „Zpět“ = stejná událost s delta −1,
+ * která zruší poslední odpovídající. Zápas: goal / loss se stranou A/B; cvičení: hit / miss s hráčem.
+ */
+export interface GameEvent {
+  id: string;
+  itemId: string;
+  at: number;
+  kind: 'goal' | 'loss' | 'hit' | 'miss';
+  side?: 'A' | 'B';
+  playerId?: PlayerId;
+  delta: 1 | -1;
+}
 
 /** Pauza: po kolika kolech (1 = po kole 1) a jak dlouhá v minutách. */
 export interface BreakDef {

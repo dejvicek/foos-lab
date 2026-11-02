@@ -33,6 +33,7 @@ export function memoryRepository(
     training: (...a) => listeners.forEach((l) => l.training(...a)),
     resync: () => listeners.forEach((l) => l.resync()),
     playTime: (...a) => listeners.forEach((l) => l.playTime(...a)),
+    event: (...a) => listeners.forEach((l) => l.event(...a)),
   };
 
   return {
@@ -59,6 +60,8 @@ export function memoryRepository(
         const next = { ...copy(t), scores: existing ? existing.scores : {}, soloResults: existing ? existing.soloResults : {} };
         if (existing?.playTimes) next.playTimes = existing.playTimes;
         else delete next.playTimes;
+        if (existing?.events) next.events = existing.events;
+        else delete next.events;
         data.trainings = existing ? data.trainings.map((x) => (x.id === t.id ? next : x)) : [...data.trainings, next];
       }),
     deleteTraining: (id) =>
@@ -130,6 +133,13 @@ export function memoryRepository(
         if (dAttempts < 0 && dValue === 0 && att - value <= 0) return;
         t.soloResults[playerId] = { ...t.soloResults[playerId], [key]: value + dValue };
         t.soloAttempts = { ...t.soloAttempts, [playerId]: { ...t.soloAttempts?.[playerId], [key]: att + dAttempts } };
+      }),
+    addEvent: (trainingId, e) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        if (t.events?.some((x) => x.id === e.id)) return;
+        t.events = [...(t.events ?? []), copy(e)];
       }),
     savePlayTime: (trainingId, itemId, p) =>
       write(() => {

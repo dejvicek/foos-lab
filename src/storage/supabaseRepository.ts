@@ -8,6 +8,9 @@ import {
   soloRow,
   trainingFromRow,
   playTimeFromRow,
+  eventFromRow,
+  eventToRow,
+  type EventRow,
   playTimeToRow,
   type PlayTimeRow,
   trainingToRow,
@@ -49,16 +52,17 @@ export function supabaseRepository(client: SupabaseClient): Repository {
 
   return {
     async loadAll() {
-      const [players, trainings, scores, solo, times] = await Promise.all([
+      const [players, trainings, scores, solo, times, events] = await Promise.all([
         selectAll<PlayerRow>(client, 'players', ['id']),
         selectAll<TrainingRow>(client, 'trainings', ['id']),
         selectAll<ScoreRow>(client, 'scores', ['training_id', 'match_id']),
         selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric', 'round']),
         selectAll<PlayTimeRow>(client, 'play_times', ['training_id', 'item_id']),
+        selectAll<EventRow>(client, 'game_events', ['training_id', 'at', 'id']),
       ]);
       return {
         players: players.map(playerFromRow),
-        trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times)),
+        trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times, events)),
       };
     },
     async savePlayer(p) {
@@ -132,6 +136,10 @@ export function supabaseRepository(client: SupabaseClient): Repository {
       });
       if (error) throw fromPostgrest(error, status);
     },
+    async addEvent(trainingId, e) {
+      // Opakovaný pokus po chybě sítě: stejné ID se podruhé nezapíše.
+      check(await client.from('game_events').upsert(eventToRow(trainingId, e), { onConflict: 'id', ignoreDuplicates: true }));
+    },
     async savePlayTime(trainingId, itemId, p) {
       if (!p || (p.startedAt === undefined && p.endedAt === undefined))
         check(await client.from('play_times').delete().eq('training_id', trainingId).eq('item_id', itemId));
@@ -152,6 +160,10 @@ export function supabaseRepository(client: SupabaseClient): Repository {
           if (!row?.training_id) return;
           const gone = p.eventType === 'DELETE';
           h.solo(row.training_id, row.player_id, soloKey(row.metric, row.round ?? 0), gone ? null : row.value, gone ? null : (row.attempts ?? null));
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => {
+          const row = p.new as EventRow;
+          if (row?.training_id) h.event(row.training_id, eventFromRow(row));
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'play_times' }, (p) => {
           const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as PlayTimeRow;
