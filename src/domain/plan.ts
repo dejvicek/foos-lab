@@ -1,4 +1,5 @@
 import { DISCIPLINES, discipline, type DisciplineId } from './disciplines';
+import type { BreakDef } from './types';
 
 export type Plan = Partial<Record<DisciplineId, number>>;
 
@@ -29,22 +30,51 @@ export interface TimelineItem {
   discipline?: DisciplineId;
   start: number;
   min: number;
+  /** Pauza: pořadí v seznamu pauz (normalizovaném). */
+  index?: number;
 }
 
-/** Časová osa: kolo + přechod, pauza po kole, které první přesáhne hodinu od poslední pauzy, závěrečný Zápis. */
-export function planTimeline(sequence: DisciplineId[]): { items: TimelineItem[]; total: number } {
+/** Automatické pauzy (výchozí): 10 min po kole, které první přesáhne hodinu od poslední pauzy. */
+export function autoBreaks(sequence: DisciplineId[]): BreakDef[] {
+  const out: BreakDef[] = [];
+  let sincePause = 0;
+  sequence.forEach((id, i) => {
+    sincePause += discipline(id).min + CHANGEOVER_MIN;
+    if (sincePause >= BREAK_AFTER_MIN && i < sequence.length - 1) {
+      out.push({ after: i + 1, min: BREAK_MIN });
+      sincePause = 0;
+    }
+  });
+  return out;
+}
+
+/** Pauzy srovnané podle pozice: jen mezi koly (po 1. až předposledním), na jednom místě nejvýš jedna. */
+export function normalizeBreaks(breaks: BreakDef[], rounds: number): BreakDef[] {
+  const seen = new Set<number>();
+  const out: BreakDef[] = [];
+  for (const b of [...breaks].sort((x, y) => x.after - y.after)) {
+    const after = Math.min(Math.max(1, b.after), rounds - 1);
+    if (after < 1 || seen.has(after)) continue;
+    seen.add(after);
+    out.push({ after, min: b.min });
+  }
+  return out;
+}
+
+/** Časová osa: kolo + přechod, pauzy (vlastní, jinak automatické), závěrečný Zápis. */
+export function planTimeline(sequence: DisciplineId[], breaks?: BreakDef[] | null): { items: TimelineItem[]; total: number } {
+  const list = normalizeBreaks(breaks ?? autoBreaks(sequence), sequence.length);
+  const byAfter = new Map(list.map((b, index) => [b.after, { ...b, index }]));
   const items: TimelineItem[] = [];
   let t = 0;
-  let sincePause = 0;
   sequence.forEach((id, i) => {
     const min = discipline(id).min;
     items.push({ kind: 'round', discipline: id, start: t, min });
     t += min + CHANGEOVER_MIN;
-    sincePause += min + CHANGEOVER_MIN;
-    if (sincePause >= BREAK_AFTER_MIN && i < sequence.length - 1) {
-      items.push({ kind: 'break', start: t, min: BREAK_MIN });
-      t += BREAK_MIN;
-      sincePause = 0;
+    const b = byAfter.get(i + 1);
+    if (b) {
+      items.push({ kind: 'break', start: t, min: b.min, index: b.index });
+      t += b.min;
     }
   });
   items.push({ kind: 'final', start: t, min: FINAL_MIN });
@@ -52,8 +82,8 @@ export function planTimeline(sequence: DisciplineId[]): { items: TimelineItem[];
 }
 
 /** Naplánovaný čas; simulace se při méně než 4 hráčích nehraje, takže se nepočítá (zůstává ale vybraná). */
-export const plannedMinutes = (plan: Plan, players?: number): number =>
-  planTimeline(planSequence(players !== undefined && players < SIM_MIN_PLAYERS ? { ...plan, sim: 0 } : plan)).total;
+export const plannedMinutes = (plan: Plan, players?: number, breaks?: BreakDef[] | null): number =>
+  planTimeline(planSequence(players !== undefined && players < SIM_MIN_PLAYERS ? { ...plan, sim: 0 } : plan), breaks).total;
 
 /**
  * Rozloží vybrané disciplíny do délky tréninku: cvičení tolik kol, aby se vystřídali všichni,
@@ -67,6 +97,8 @@ export function autoPlan(
   minimum: Plan = {},
   /** Cvičení, která se už hrála: kola se nepřidávají (pozdní hráč je propásl). */
   played: Set<DisciplineId> = new Set(),
+  /** Vlastní pauzy tréninku (počítají se do času); null = automatické. */
+  breaks: BreakDef[] | null = null,
 ): Plan {
   const plan: Plan = {};
   for (const d of DISCIPLINES) {
@@ -81,7 +113,7 @@ export function autoPlan(
   while (matches.length && misses < matches.length) {
     const id = matches[i % matches.length];
     const next = { ...plan, [id]: (plan[id] ?? 0) + 1 };
-    if (plannedMinutes(next, players || undefined) <= durationMin) {
+    if (plannedMinutes(next, players || undefined, breaks) <= durationMin) {
       Object.assign(plan, next);
       misses = 0;
     } else misses++;

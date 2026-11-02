@@ -59,6 +59,19 @@ function replay(c: ReturnType<typeof newCounters>, locked: LockedRound, roundNo:
   }
 }
 
+/** Pořadí kol tréninku: zamčená (odehraná) kola, pak zbývající podle plánu. */
+export function roundSequence(t: ScheduleInput): DisciplineId[] {
+  const locked = t.lockedRounds ?? [];
+  const plan: Plan = t.plan ?? {};
+  const lockedCount = new Map<DisciplineId, number>();
+  for (const l of locked) lockedCount.set(l.discipline, (lockedCount.get(l.discipline) ?? 0) + 1);
+  const remaining: Plan = {};
+  for (const [id, n] of Object.entries(plan) as [DisciplineId, number][])
+    remaining[id] = Math.max(0, n - (lockedCount.get(id) ?? 0));
+  if (locked.some((l) => l.discipline === 'sim') || t.attendees.length < SIM_MIN_PLAYERS) remaining.sim = 0;
+  return [...locked.map((l) => l.discipline), ...planSequence(remaining)];
+}
+
 /** PRD 4.6 + 5.10: rozpis konfigurovatelného tréninku. Zamčená kola jsou vstupem a nemění se. */
 export function buildCustomSchedule(t: ScheduleInput): Schedule {
   const players = t.attendees;
@@ -66,21 +79,13 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   // Zamčená kola mohla mít víc stolů – tabulka musí mít sloupce i pro ně.
   const widest = Math.max(0, ...locked.flatMap((l) => l.rows.map((r) => r.cells.length)));
   const tables = Math.max(t.tables, widest) as TableCount;
-  const plan: Plan = t.plan ?? {};
   const c = newCounters();
   locked.forEach((l, i) => replay(c, l, i + 1));
-
-  const lockedCount = new Map<DisciplineId, number>();
-  for (const l of locked) lockedCount.set(l.discipline, (lockedCount.get(l.discipline) ?? 0) + 1);
-  const remaining: Plan = {};
-  for (const [id, n] of Object.entries(plan) as [DisciplineId, number][])
-    remaining[id] = Math.max(0, n - (lockedCount.get(id) ?? 0));
-  if (locked.some((l) => l.discipline === 'sim') || players.length < SIM_MIN_PLAYERS) remaining.sim = 0;
-  const seq = [...locked.map((l) => l.discipline), ...planSequence(remaining)];
+  const seq = roundSequence(t);
   const drillsLeft = new Map<DisciplineId, number>();
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);
 
-  const timeline = planTimeline(seq);
+  const timeline = planTimeline(seq, t.breaks);
   // Sekce jdou chronologicky: při změně druhu kola začne nová (cvičení přidané později je za zápasy).
   const META = {
     drills: { title: 'Cvičení', waitingLabel: 'Počítá' },
@@ -106,7 +111,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
 
   for (const item of timeline.items) {
     if (item.kind === 'break') {
-      pushBreak(breakRow(item.start, 'Pauza', tables));
+      pushBreak({ ...breakRow(item.start, 'Pauza', tables, `${item.min} min`), breakIndex: item.index });
       continue;
     }
     if (item.kind === 'final') {

@@ -23,7 +23,7 @@ export function DurationSelect({ training, onChange }: { training: Training; onC
 }
 
 export function DisciplinePicker({ training, open, onChange }: { training: Training; open: boolean; onChange(next: Training): void }) {
-  const used = plannedMinutes(training.plan, training.attendees.length);
+  const used = plannedMinutes(training.plan, training.attendees.length, training.breaks);
   const over = used > training.durationMin;
   const locked = lockedCounts(training);
   const setCount = (id: DisciplineId, n: number) => onChange({ ...training, plan: { ...training.plan, [id]: Math.max(locked[id] ?? 0, n) } });

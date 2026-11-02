@@ -546,3 +546,19 @@ button.pick-chip.loss[aria-pressed='true'] { background: var(--warn) !important;
 .pick-score.empty { color: var(--line-strong); }
 .pick-score small { display: block; font-size: 11px; font-weight: 600; color: var(--felt); }
 button.pick-clear { align-self: center; font-size: 12px; }
+
+/* ── Pauzy: úprava a přetahování (PRD 4.6) ─────────────── */
+.break-edit { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.break-edit select { min-height: 30px; padding: 2px 6px; }
+.drag-handle { cursor: grab; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 4px; user-select: none; }
+.drag-handle:hover, .drag-handle:focus-visible { background: var(--felt-soft); color: var(--ink); }
+.plan tr.break-row[draggable='true'] { cursor: grab; }
+.plan tr.break-row.dragging td { opacity: 0.45; }
+.plan tr.drop-before td { box-shadow: inset 0 3px 0 var(--felt); }
+.plan tr.drop-after td { box-shadow: inset 0 -3px 0 var(--felt); }
+.round-break.editable {
+  display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+  color: var(--ink); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 6px 8px;
+}
+.round-break.editable button.icon { min-width: 40px; min-height: 40px; }
+@media print { .break-edit select, .drag-handle, .break-edit button { display: none; } }

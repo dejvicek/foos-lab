@@ -8,7 +8,8 @@ import { parseSoloKey } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
-import { TrainingTable } from '../components/TrainingTable';
+import { TrainingTable, type BreakControls } from '../components/TrainingTable';
+import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { RoundCards } from '../components/RoundCards';
 import { useMobile } from '../useMobile';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -123,6 +124,32 @@ export function TrainingPage({
     if (next !== training) persistLock(next);
     store.saveSolo(training.id, playerId, key, value);
   };
+  // PRD 4.6: pauzy (kolik, kde, jak dlouhé) upravuje správce konfigurovatelného tréninku.
+  const breakControls: BreakControls | undefined =
+    manage && training.format === 'custom' && schedule
+      ? (() => {
+          const nextSlot = (i: number, dir: -1 | 1) => {
+            const at = breaksOf(training)[i]?.after ?? 0;
+            const free = freeSlots(training, i).filter((a) => (dir < 0 ? a < at : a > at));
+            return free.length ? (dir < 0 ? free.at(-1)! : free[0]) : null;
+          };
+          return {
+            list: breaksOf(training),
+            movable: (i) => breakMovable(training, i),
+            canMoveTo: (i, after) => breakMovable(training, i) && freeSlots(training, i).includes(after),
+            move: (i, after) => apply(moveBreak(training, i, after)),
+            step: (i, dir) => {
+              const a = nextSlot(i, dir);
+              if (a !== null) apply(moveBreak(training, i, a));
+            },
+            canStep: (i, dir) => breakMovable(training, i) && nextSlot(i, dir) !== null,
+            setMin: (i, min) => apply(setBreakMin(training, i, min)),
+            remove: (i) => apply(removeBreak(training, i)),
+          };
+        })()
+      : undefined;
+  const canAddBreak = !!breakControls && freeSlots(training).length > 0;
+
   const tap = {
     me: viewer.playerId,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
@@ -210,6 +237,7 @@ export function TrainingPage({
               canMatch={canMatch}
               canSolo={canSolo}
               tap={tap}
+              breaks={breakControls}
             />
           ) : (
           <TrainingTable
@@ -223,9 +251,15 @@ export function TrainingPage({
             onSolo={onSolo}
             canMatch={canMatch}
             canSolo={canSolo}
+            breaks={breakControls}
           />
           )}
           <div className="actions-row no-print">
+            {breakControls && (
+              <button type="button" className="ghost" disabled={!canAddBreak} onClick={() => apply(addBreak(training))}>
+                + Přidat pauzu
+              </button>
+            )}
             <button type="button" className="ghost" onClick={() => window.print()}>
               Vytisknout rozpis
             </button>

@@ -4,7 +4,8 @@ import { clockAt } from '../../domain/solo';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
 import { flatRows, rowKey, type RowRef } from '../now';
 import { BlockEntry, type TapEntry } from './BlockEntry';
-import { CompactCell, soloProgress } from './TrainingTable';
+import { CompactCell, soloProgress, type BreakControls } from './TrainingTable';
+import { BREAK_OPTIONS } from '../../domain/breaks';
 
 interface Props {
   schedule: Schedule;
@@ -16,6 +17,7 @@ interface Props {
   canMatch(m: Match): boolean;
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
   tap: TapEntry;
+  breaks?: BreakControls;
 }
 
 /** Dohraný zápas: leg skončil (ťukání), nebo je zapsaný ručně z notebooku. */
@@ -37,7 +39,7 @@ function status(row: ScheduleRow, t: Training): string | null {
 }
 
 /** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap }: Props) {
+export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const [picked, setPicked] = useState<Record<string, number | null>>({});
@@ -57,6 +59,33 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
           {sec.rows.map((row, ri) => {
             const key = rowKey({ section: si, row: ri });
             const time = clockAt(training.startTime, row.time);
+            const bi = row.breakIndex;
+            if (breaks && bi !== undefined && breaks.list[bi])
+              return (
+                <div key={key} className="round-break editable">
+                  <span>{time} Pauza</span>
+                  <select aria-label="Délka pauzy" value={breaks.list[bi].min} onChange={(e) => breaks.setMin(bi, Number(e.target.value))}>
+                    {BREAK_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {m} min
+                      </option>
+                    ))}
+                  </select>
+                  {breaks.movable(bi) && (
+                    <>
+                      <button type="button" className="icon" aria-label="Pauzu o kolo dřív" disabled={!breaks.canStep(bi, -1)} onClick={() => breaks.step(bi, -1)}>
+                        ↑
+                      </button>
+                      <button type="button" className="icon" aria-label="Pauzu o kolo později" disabled={!breaks.canStep(bi, 1)} onClick={() => breaks.step(bi, 1)}>
+                        ↓
+                      </button>
+                      <button type="button" className="link" aria-label="Odebrat pauzu" onClick={() => breaks.remove(bi)}>
+                        odebrat
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
             if (row.kind === 'break')
               return (
                 <p key={key} className="round-break">

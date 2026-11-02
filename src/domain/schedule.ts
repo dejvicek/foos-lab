@@ -30,7 +30,7 @@ export const minPlayers = (t: Pick<ScheduleInput, 'format'>): number => (t.forma
 export const MAX_PLAYERS = 13;
 
 export type ScheduleInput = Pick<Training, 'mode' | 'tables' | 'attendees'> &
-  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds'>>;
+  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds' | 'breaks'>>;
 
 export function canBuildSchedule(t: ScheduleInput): boolean {
   return t.attendees.length >= minPlayers(t) && t.attendees.length <= MAX_PLAYERS;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { sortedRoster, type RosterError } from '../../domain/roster';
 import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
-import { moveAttendee, toggleAttendee } from '../../domain/training';
+import { moveAttendee, shuffleAttendees, toggleAttendee } from '../../domain/training';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
 import { DisciplinePicker, DurationSelect, hm } from './DisciplinePicker';
@@ -150,6 +150,9 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
       <p className="note">
         Pořadí je nominační pořadí pro simulaci kola: první polovina je tým A, druhá tým B, a kdo je v týmu výš, jde dřív do singlu.
       </p>
+      <button type="button" className="ghost" onClick={() => onChange(shuffleAttendees(training, Math.random))}>
+        Náhodné pořadí
+      </button>
       <ol className="order-list">
         {training.attendees.map((id, i) => {
           const nm = byId.get(id)?.name ?? '?';

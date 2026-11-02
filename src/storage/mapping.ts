@@ -1,6 +1,6 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
-import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -21,6 +21,8 @@ export interface TrainingRow {
   duration_min: number | null;
   plan: Training['plan'] | null;
   locked_rounds: LockedRound[] | null;
+  /** Vlastní pauzy (migrace 11); null = automatické. */
+  breaks: BreakDef[] | null;
   created_by: string | null;
   mode: Mode;
   tables: number;
@@ -70,6 +72,7 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   duration_min: t.durationMin,
   plan: t.plan,
   locked_rounds: t.lockedRounds,
+  breaks: t.breaks ?? null,
   created_by: t.createdBy ?? null,
   mode: t.mode,
   tables: t.tables,
@@ -109,6 +112,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     plan: r.plan ?? {},
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
+    ...(r.breaks ? { breaks: r.breaks } : {}),
   };
   if (r.notes !== null && r.notes !== undefined) t.notes = r.notes;
   return t;

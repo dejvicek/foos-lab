@@ -71,6 +71,8 @@ export interface Training {
   plan: Partial<Record<DisciplineId, number>>;
   /** Zamčená (odehraná) kola – jejich sestavy se už nemění (custom). */
   lockedRounds: LockedRound[];
+  /** Vlastní pauzy (konfigurovatelný trénink); chybí / null = automaticky 10 min po každé hodině. */
+  breaks?: BreakDef[] | null;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
   createdBy?: PlayerId | null;
   notes?: string;
@@ -105,7 +107,15 @@ export type Cell =
   | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric; soloRound?: number; discipline?: DisciplineId }
   | { type: 'match'; match: Match };
 
+/** Pauza: po kolika kolech (1 = po kole 1) a jak dlouhá v minutách. */
+export interface BreakDef {
+  after: number;
+  min: number;
+}
+
 export interface ScheduleRow {
+  /** Pauza: index v seznamu pauz tréninku (jen konfigurovatelný trénink). */
+  breakIndex?: number;
   /** Pořadové číslo hracího kola (konfigurovatelný trénink). */
   roundNo?: number;
   /** Disciplína kola (konfigurovatelný trénink). */

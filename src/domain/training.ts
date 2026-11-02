@@ -57,6 +57,19 @@ export function moveAttendee(t: Training, playerId: PlayerId, dir: -1 | 1): Trai
   return { ...t, attendees };
 }
 
+/**
+ * Náhodné pořadí přítomných (Fisher–Yates). Generátor dodává UI – doména zůstává deterministická
+ * a rozpis je dál čistá funkce uloženého pořadí.
+ */
+export function shuffleAttendees(t: Training, rand: () => number): Training {
+  const attendees = [...t.attendees];
+  for (let i = attendees.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [attendees[i], attendees[j]] = [attendees[j], attendees[i]];
+  }
+  return { ...t, attendees };
+}
+
 export function isEmptyScore(s: Score | undefined): boolean {
   return !s || [s.ga, s.gb, s.la, s.lb].every((v) => v === null || v === undefined);
 }
@@ -164,6 +177,7 @@ export function replan(before: Training, after: Training): Training {
       after.tables,
       lockedCounts(after),
       new Set(after.lockedRounds.map((l) => l.discipline)),
+      after.breaks ?? null,
     ),
   };
 }
