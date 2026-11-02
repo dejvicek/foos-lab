@@ -63,3 +63,9 @@ describe('časový plán', () => {
     expect(autoPlan(['setShooting', 'normal'], 120, 13, 4).setShooting).toBe(2);
   });
 });
+
+it('délky kol startů (2. 11. 2026): Start 4:4 5 min, Start 5:5 6 min', () => {
+  expect(discipline('start44').min).toBe(5);
+  expect(discipline('start55').min).toBe(6);
+  expect(discipline('start03').min).toBe(5);
+});

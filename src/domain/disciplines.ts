@@ -33,8 +33,8 @@ export const DISCIPLINES: DisciplineDef[] = [
   { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true },
   { id: 'start03', kind: 'match', name: 'Start 0:3 + daň', min: 5, explain: 'Start 0:3', lossTax: true, start: [0, 3], paired: true },
-  { id: 'start44', kind: 'match', name: 'Start 4:4', min: 3, explain: 'Start 4:4', start: [4, 4] },
-  { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 3, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5] },
+  { id: 'start44', kind: 'match', name: 'Start 4:4', min: 5, explain: 'Start 4:4', start: [4, 4] },
+  { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5] },
   { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true },
   { id: 'sim', kind: 'sim', name: 'Simulace ligového kola', min: 40, explain: 'Simulace ligového kola' },
 ];
