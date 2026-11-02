@@ -30,7 +30,9 @@ export function TimingBar({ state: s, now, canWrite, onStart, onEnd }: BarProps)
       <div className="timing-main">
         {started === undefined ? (
           <span className="timing-label">
-            {s.state === 'ready' && s.activeAt !== null ? `Čeká na zahájení ${fmtDur(now - s.activeAt)}` : 'Utkání ještě není na řadě'}
+            {s.state === 'ready' && s.activeAt !== null
+              ? `Čeká na zahájení${now - s.activeAt >= 1000 ? ` ${fmtDur(now - s.activeAt)}` : ''}`
+              : 'Utkání ještě není na řadě'}
           </span>
         ) : (
           <span className="timing-clock" aria-label="Doba hry">

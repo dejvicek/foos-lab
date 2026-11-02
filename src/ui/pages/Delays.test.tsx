@@ -32,7 +32,7 @@ describe('Aktivní utkání', () => {
     const board = screen.getByRole('region', { name: 'Aktivní utkání' });
     const t1 = within(board).getByRole('group', { name: 'Stůl 1' });
     expect(t1).toHaveTextContent('Kolo 1');
-    expect(t1).toHaveTextContent('čeká na zahájení 3:00');
+    expect(t1).toHaveTextContent('čeká na zahájení'); // plánovaný začátek 18:00 nehraje roli
     expect(within(board).getByRole('list', { name: 'Další v pořadí' })).toHaveTextContent('Kolo 2');
     await user.click(within(t1).getByRole('button', { name: 'Zahájit' }));
     expect(t1).toHaveTextContent('hraje');
@@ -47,8 +47,8 @@ describe('Zdržovači', () => {
   const timed: Training = {
     ...t,
     playTimes: {
-      [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, // čekání 2:00, hra 8:00
-      [ids[1]]: { startedAt: at(18, 11), endedAt: at(18, 18) }, // aktivní 18:10 → čekání 1:00
+      [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, // první zahájení = začátek tréninku → čekání 0, hra 8:00
+      [ids[1]]: { startedAt: at(18, 12), endedAt: at(18, 19) }, // aktivní 18:10 → čekání 2:00, hra 7:00
     },
   };
 
@@ -57,7 +57,7 @@ describe('Zdržovači', () => {
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const table = await screen.findByRole('table', { name: 'Zdržovači' });
     const row = within(table).getAllByRole('row')[1];
-    expect(row).toHaveTextContent('1:30'); // průměrné čekání (2:00 + 1:00) / 2
+    expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2
   });
 

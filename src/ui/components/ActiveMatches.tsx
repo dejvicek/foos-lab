@@ -44,7 +44,11 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                   Stůl {t}
                   {e && ` · ${e.label}`}
                 </span>
-                {s?.state === 'ready' && <span className="chip wait">čeká na zahájení {fmtDur(now - (s.activeAt ?? now))}</span>}
+                {s?.state === 'ready' && (
+                  <span className="chip wait">
+                    čeká na zahájení{now - (s.activeAt ?? now) >= 1000 ? ` ${fmtDur(now - (s.activeAt ?? now))}` : ''}
+                  </span>
+                )}
                 {s?.state === 'playing' && <span className="chip play">hraje {fmtDur(now - (s.startedAt ?? now))}</span>}
                 {!e && <span className="chip free">volný</span>}
               </div>

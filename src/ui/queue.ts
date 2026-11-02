@@ -4,13 +4,10 @@ import { buildSchedule } from '../domain/schedule';
 import type { Schedule, Training } from '../domain/types';
 import { usedTables } from './components/TrainingTable';
 
-/** Začátek tréninku v ms (místní čas zařízení). */
-export const trainingStartMs = (t: Pick<Training, 'date' | 'startTime'>): number => new Date(`${t.date}T${t.startTime}:00`).getTime();
-
 /** Fronta utkání tréninku a stav každého utkání k času `nowMs` (PRD 4.8). */
 export function trainingQueue(t: Training, nowMs: number, s: Schedule = buildSchedule(t)): { queue: QueueEntry[]; states: Map<string, ItemState> } {
   const queue = queueOf(s);
-  return { queue, states: runQueue(queue, t.playTimes ?? {}, trainingStartMs(t), usedTables(s).map((j) => j + 1), nowMs) };
+  return { queue, states: runQueue(queue, t.playTimes ?? {}, usedTables(s).map((j) => j + 1), nowMs) };
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

@@ -3,8 +3,8 @@ import type { Match, PlayerId, PlayTimes, Schedule, Training } from './types';
 
 /**
  * Aktivní utkání a Zdržovači (PRD 4.8). Fronta = pořadí z rozpisu; utkání je aktivní, když jsou
- * všichni jeho hráči volní a je volný stůl. Čas se počítá v ms (epoch); „teď“ i začátek tréninku
- * dodává volající, doména nečte hodiny.
+ * všichni jeho hráči volní a je volný stůl. Plánované časy rozpisu se nepoužívají; začátek tréninku
+ * je první zahájení. Čas v ms (epoch); „teď“ dodává volající, doména nečte hodiny.
  */
 export type QueueEntry =
   | { kind: 'item'; id: string; players: PlayerId[]; table: number; label: string; group: boolean; match?: Match }
@@ -52,11 +52,11 @@ export function queueOf(s: Schedule): QueueEntry[] {
  * Projde frontu v pořadí a určí, kdy se které utkání stalo aktivním a na kterém stole.
  * Stůl z rozpisu má přednost, jiný volný stůl jen když utkání pustí na hru dřív.
  */
-export function runQueue(queue: QueueEntry[], times: PlayTimes, plannedStartMs: number, tables: number[], nowMs: number): Map<string, ItemState> {
+export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[], nowMs: number): Map<string, ItemState> {
   const out = new Map<string, ItemState>();
-  // Trénink začal dřív než podle plánu (někdo už zahájil)? Pak platí skutečný začátek.
+  // Plánované časy jsou jen orientační: trénink začíná prvním zahájeným utkáním (do té doby „teď“).
   const firstStart = Math.min(...Object.values(times).flatMap((t) => (t.startedAt !== undefined ? [t.startedAt] : [])));
-  const startMs = Math.min(plannedStartMs, firstStart);
+  const startMs = Number.isFinite(firstStart) ? firstStart : nowMs;
   // null = obsazený / zaneprázdněný na neurčito
   const tableFree = new Map<number, number | null>(tables.map((t) => [t, startMs]));
   const playerFree = new Map<PlayerId, number | null>();
