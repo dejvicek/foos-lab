@@ -151,3 +151,17 @@ describe('otevření appky', () => {
     expect(screen.queryByRole('button', { name: 'Živě' })).toBeNull();
   });
 });
+
+describe('organizátor, který nehraje', () => {
+  it('po otevření appky vidí Živě a ovládá trénink; Moje hra v navigaci nemá', async () => {
+    const auth = memoryAuth({ players: [{ id: 'org', name: 'Org' }], signedIn: { playerId: 'org', isAdmin: false, mustChangePassword: false } });
+    const run: Training = { ...t, createdBy: 'org', playTimes: { training: { startedAt: at(18, 0) } } };
+    window.location.hash = '';
+    render(<App repo={memoryRepository({ players: [...players, { id: 'org', name: 'Org', order: 9, archived: false }], trainings: [run] })} auth={auth} />);
+    const board = await screen.findByRole('region', { name: 'Aktivní utkání' });
+    const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
+    expect(within(nav).getByRole('button', { name: 'Živě' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).queryByRole('button', { name: /^Moje hra/ })).toBeNull();
+    expect(within(within(board).getByRole('group', { name: 'Stůl 1' })).getByRole('button', { name: 'Zahájit' })).toBeInTheDocument();
+  });
+});

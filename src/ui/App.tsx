@@ -100,7 +100,7 @@ function SignedIn({
   const noLive = (
     <div className="empty-live">
       <p>
-        <strong>Teď neběží žádný trénink, na kterém hraješ.</strong>
+        <strong>Teď neběží žádný trénink, na kterém hraješ nebo který organizuješ.</strong>
       </p>
       <p className="note">Až organizátor trénink zahájí, uvidíš tu stoly a svou hru.</p>
       <button type="button" onClick={() => navigate({ page: 'trainings' })}>
@@ -145,6 +145,7 @@ function SignedIn({
         onChangePassword={onChangePassword}
         onSignOut={onSignOut}
         live={!!active}
+        mine={!!active?.plays}
         myTurn={!!active?.myTurn}
         admin={viewer.isAdmin}
       />

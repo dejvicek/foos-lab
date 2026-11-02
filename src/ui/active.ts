@@ -10,6 +10,8 @@ export interface Active {
   training: Training;
   queue: QueueEntry[];
   states: Map<string, ItemState>;
+  /** Hraju (jsem mezi přítomnými) – jinak jsem jen organizátor (Živě bez Moje hra). */
+  plays: boolean;
   /** Moje utkání je na řadě a čeká na zahájení (tečka u Moje hra). */
   myTurn: boolean;
   /** Mám utkání na řadě nebo ho hraju (appka se otevře na Moje hra). */
@@ -24,11 +26,11 @@ function startedAt(t: Training): number | null {
   return starts.length ? Math.min(...starts) : null;
 }
 
-/** Běžící trénink, na kterém hráč je (Živě / Moje hra); z více ten naposledy zahájený. */
+/** Běžící trénink, na kterém hráč hraje nebo který organizuje (založil); z více ten naposledy zahájený. */
 export function activeFor(trainings: Training[], playerId: PlayerId | null, now: number): Active | null {
   if (!playerId) return null;
   const candidates = trainings
-    .filter((t) => t.attendees.includes(playerId) && canBuildSchedule(t))
+    .filter((t) => (t.attendees.includes(playerId) || t.createdBy === playerId) && canBuildSchedule(t))
     .map((t) => ({ t, s: startedAt(t) }))
     .filter((x): x is { t: Training; s: number } => x.s !== null && now - x.s < MAX_AGE_MS)
     .sort((a, b) => b.s - a.s);
@@ -41,6 +43,7 @@ export function activeFor(trainings: Training[], playerId: PlayerId | null, now:
       training: t,
       queue,
       states,
+      plays: t.attendees.includes(playerId),
       myTurn: mine.some((s) => s.state === 'ready'),
       myGame: mine.some((s) => s.state === 'ready' || s.state === 'playing'),
     };

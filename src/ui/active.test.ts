@@ -34,3 +34,15 @@ describe('běžící trénink pro hráče (Živě / Moje hra)', () => {
     expect(activeFor([older, newer], 'a', NOW)!.training.id).toBe('new');
   });
 });
+
+describe('organizátor, který nehraje', () => {
+  it('vidí běžící trénink (Živě), ale nemá Moje hra', () => {
+    const run = t({ createdBy: 'org', playTimes: { training: { startedAt: NOW - 60_000 } } });
+    const a = activeFor([run], 'org', NOW)!;
+    expect(a.training.id).toBe('t1');
+    expect(a.plays).toBe(false);
+    expect(a.myGame).toBe(false);
+    expect(activeFor([run], 'a', NOW)!.plays).toBe(true);
+    expect(activeFor([run], 'cizi', NOW)).toBeNull();
+  });
+});
