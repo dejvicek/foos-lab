@@ -1,4 +1,4 @@
-import { currentRow, defaultOpenRow, firstIncomplete, minutesSinceStart } from './now';
+import { currentRow, defaultOpenRow, firstIncomplete, liveTag, minutesSinceStart } from './now';
 import { buildSchedule } from '../domain/schedule';
 import { training } from '../test/fixtures';
 import { H } from '../test/fixtures';
@@ -39,5 +39,17 @@ describe('výchozí rozbalený blok', () => {
   });
   it('během kola je rozbalené to kolo', () => {
     expect(label(defaultOpenRow(s, t, 81))).toBe('Kolo 3');
+  });
+});
+
+describe('štítek tréninku v seznamu', () => {
+  const t = training('t1', '2026-10-31', 'team', H(8));
+  it('jiný den nic; dnes před začátkem, během kola a po konci', () => {
+    expect(liveTag(t, 'H1', new Date(2026, 9, 30, 19, 21))).toBeNull();
+    expect(liveTag(t, 'H1', new Date(2026, 9, 31, 17, 30))).toBe('Hraješ, začátek v 18:00');
+    expect(liveTag(t, 'X', new Date(2026, 9, 31, 17, 30))).toBe('Dnes v 18:00');
+    expect(liveTag(t, 'H1', new Date(2026, 9, 31, 19, 21))).toBe('Hraješ – Kolo 3 právě běží');
+    expect(liveTag(t, null, new Date(2026, 9, 31, 19, 21))).toBe('Kolo 3 právě běží');
+    expect(liveTag(t, 'H1', new Date(2026, 9, 31, 23, 50))).toBe('Dnes, dohráno');
   });
 });

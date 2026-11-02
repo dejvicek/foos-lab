@@ -4,9 +4,11 @@ import { MODE_LABEL, plural } from '../format';
 import type { Viewer } from '../../domain/my';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
+import { liveTag, useNow } from '../now';
 
 export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; navigate: (r: Route) => void; viewer: Viewer }) {
   const trainings = sortTrainings(store.data.trainings);
+  const now = useNow();
   const names = new Map(store.data.players.map((p) => [p.id, p.name]));
 
   const create = () => {
@@ -19,8 +21,8 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
     <section>
       <h1>Trénink</h1>
       <div className="actions-row">
-        <button type="button" onClick={create}>
-          Nový trénink
+        <button type="button" className="fab" onClick={create}>
+          <span aria-hidden="true">+ </span>Nový trénink
         </button>
       </div>
       {trainings.length === 0 ? (
@@ -29,9 +31,11 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
         <ul className="training-list" aria-label="Uložené tréninky">
           {trainings.map((t) => {
             const n = t.attendees.length;
+            const tag = liveTag(t, viewer.playerId, now);
             return (
-              <li key={t.id}>
+              <li key={t.id} className={tag ? 'today' : undefined}>
                 <button type="button" onClick={() => navigate({ page: 'training', id: t.id })}>
+                  {tag && <span className="live-tag">{tag}</span>}
                   <span>{formatDateLong(t.date)}</span>
                   <span className="sub">
                     {MODE_LABEL[t.mode]}, {n} {plural(n, 'hráč', 'hráči', 'hráčů')}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
+import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, type TapEntry } from './BlockEntry';
 
@@ -78,9 +79,9 @@ export function MyTable(props: Props) {
           ‹
         </button>
         <div className="my-title">
-          <strong>
+          <h2>
             {a.row.label}, {clockAt(training.startTime, a.row.time)}
-          </strong>
+          </h2>
           <span>{a.row.rule}</span>
         </div>
         <button type="button" className="icon" aria-label="Další kolo" disabled={i === list.length - 1} onClick={() => setIdx(i + 1)}>
@@ -103,6 +104,11 @@ export function MyTable(props: Props) {
           canSolo={props.canSolo}
           tap={props.tap}
         />
+      )}
+      {next && a.match && a.role !== 'wait' && legOver(a.match, training.scores[a.match.id]).over && (
+        <button type="button" className="my-go-next" onClick={() => setIdx(i + 1)}>
+          Na další kolo ›
+        </button>
       )}
       {next && (
         <p className="my-next">

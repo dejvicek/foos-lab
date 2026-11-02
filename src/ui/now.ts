@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { todayIso } from './dates';
 import { TIMES } from '../domain/content';
 import { soloKey } from '../domain/solo';
-import type { Schedule, Training } from '../domain/types';
+import { buildSchedule, canBuildSchedule } from '../domain/schedule';
+import type { PlayerId, Schedule, Training } from '../domain/types';
 
 /** Minuty od začátku tréninku, nebo null, když trénink není dnes. */
 export function minutesSinceStart(date: string, startTime: string, now: Date): number | null {
@@ -67,6 +68,20 @@ export function defaultOpenRow(s: Schedule, t: Training, sinceStart: number | nu
     }
   }
   return firstIncomplete(s, t);
+}
+
+/** PRD 7.1: štítek dnešního tréninku v seznamu („Hraješ – Kolo 3 právě běží“). */
+export function liveTag(t: Training, playerId: PlayerId | null, now: Date): string | null {
+  const since = minutesSinceStart(t.date, t.startTime, now);
+  if (since === null) return null;
+  const plays = !!playerId && t.attendees.includes(playerId);
+  if (since < 0) return plays ? `Hraješ, začátek v ${t.startTime}` : `Dnes v ${t.startTime}`;
+  if (!canBuildSchedule(t)) return 'Dnes';
+  const s = buildSchedule(t);
+  const cur = currentRow(s, since);
+  if (!cur) return 'Dnes, dohráno';
+  const label = s.sections[cur.section].rows[cur.row].label;
+  return plays ? `Hraješ – ${label} právě běží` : `${label} právě běží`;
 }
 
 /** Aktuální čas, obnovovaný každou minutu. */

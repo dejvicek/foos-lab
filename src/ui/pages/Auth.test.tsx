@@ -94,6 +94,13 @@ describe('přihlášení', () => {
       expect(Object.values(t.scores)).toEqual([{ ga: 2, gb: 0 }]);
       expect(t.lockedRounds.length).toBeGreaterThan(0);
     });
+    // dohraný leg nabídne další kolo
+    expect(within(mine).queryByRole('button', { name: /Na další kolo/ })).toBeNull();
+    for (let i = 0; i < 4; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    expect(within(mine).getByText(/Leg dohrán 6 : 0/)).toBeInTheDocument();
+    const title = within(mine).getByRole('heading', { level: 2 }).textContent;
+    await user.click(within(mine).getByRole('button', { name: /Na další kolo/ }));
+    expect(within(mine).getByRole('heading', { level: 2 }).textContent).not.toBe(title);
   });
 
   it('admin: resetuje heslo hráče na přezdívku', async () => {
