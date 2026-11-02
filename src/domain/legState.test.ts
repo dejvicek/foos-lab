@@ -1,4 +1,4 @@
-import { bump, bumpLimit, legOver, MAX_LOSSES, maxLosses, tableScore, taxGoal, winnerFor } from './legState';
+import { bump, bumpLimit, legOver, MAX_LOSSES, maxLosses, setLosses, tableScore, taxGoal, winnerFor } from './legState';
 import type { Match } from './types';
 
 const m = (over: Partial<Match> = {}): Match => ({
@@ -76,11 +76,20 @@ describe('Daň za ztrátu: ztráta je hned gól soupeře', () => {
     expect(taxGoal(plain, 'la')).toBeNull();
   });
 
-  it('ztrát může být nejvýš tolik, kolik má soupeř odehraných gólů (bez zapsaných gólů jeho strop)', () => {
-    expect(maxLosses(tax, { ga: 6, gb: 2 }, 'la')).toBe(2);
-    expect(maxLosses(tax, { ga: 6, gb: 2 }, 'lb')).toBe(6);
+  it('ztrát může být nejvýš tolik, kolik soupeři zbývá gólů do konce legu (jeho góly ze ztrát se nepočítají)', () => {
+    expect(maxLosses(tax, { ga: 0, gb: 0 }, 'la')).toBe(6);
     expect(maxLosses(tax, {}, 'la')).toBe(6);
+    expect(maxLosses(tax, { ga: 0, gb: 2, la: 0 }, 'la')).toBe(4); // 2 góly soupeře „ze hry“
+    expect(maxLosses(tax, { ga: 0, gb: 2, la: 2 }, 'la')).toBe(6); // oba góly jsou z mých ztrát
+    expect(maxLosses(tax, { ga: 6, gb: 2 }, 'lb')).toBe(0);
     expect(maxLosses(start03, {}, 'la')).toBe(3); // pravá začíná na 3, do 6 jí chybí 3 góly
     expect(maxLosses(plain, { ga: 6, gb: 2 }, 'la')).toBe(MAX_LOSSES);
+  });
+
+  it('zápis počtu ztrát (notebook) mění i góly soupeře o stejný rozdíl', () => {
+    expect(setLosses(tax, { ga: 0, gb: 0 }, 'la', 2)).toEqual({ ga: 0, gb: 2, la: 2, lb: 0 });
+    expect(setLosses(tax, { ga: 1, gb: 3, la: 2, lb: 0 }, 'la', 1)).toEqual({ ga: 1, gb: 2, la: 1, lb: 0 });
+    expect(setLosses(tax, {}, 'lb', 9)).toEqual({ ga: 6, gb: 0, la: 0, lb: 6 }); // strop
+    expect(setLosses(plain, { ga: 0, gb: 0 }, 'la', 2)).toEqual({ ga: 0, gb: 0, la: 2, lb: 0 });
   });
 });

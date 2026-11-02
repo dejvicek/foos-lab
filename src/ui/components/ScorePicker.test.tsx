@@ -144,18 +144,28 @@ describe('ScorePicker – Daň za ztrátu', () => {
   const tax: Match = { ...base, lossTax: true, trackLosses: true };
   const chips = (side: string) => within(screen.getByRole('group', { name: `S: ztráty ${side}` })).getAllByRole('button').map((b) => b.textContent);
 
-  it('ztrát nejvýš tolik, kolik má soupeř gólů; bez „+“', async () => {
-    render(<Harness match={tax} initial={{ ga: 6, gb: 2 }} />);
-    expect(chips('vlevo')).toEqual(['0', '1', '2']);
-    expect(chips('vpravo')).toEqual(['6', '5', '4', '3', '2', '1', '0']);
-  });
-
-  it('bez gólů soupeře do jeho stropu; snížení gólů soupeře sníží i ztráty', async () => {
+  it('za stavu 0:0 jde zadat 6 ztrát; ztráta je hned gól soupeře', async () => {
     const user = userEvent.setup();
     const saved: Score[] = [];
-    render(<Harness match={tax} initial={{}} saved={saved} />);
+    render(<Harness match={tax} initial={{ ga: 0, gb: 0 }} saved={saved} />);
     expect(chips('vlevo')).toEqual(['0', '1', '2', '3', '4', '5', '6']);
-    await user.click(btn('S: ztráty vlevo 4'));
+    await user.click(btn('S: ztráty vlevo 2'));
+    expect(saved.at(-1)).toEqual({ ga: 0, gb: 2, la: 2, lb: 0 });
+    expect(screen.getByText('0 : 2')).toBeInTheDocument();
+    await user.click(btn('S: ztráty vlevo 1'));
+    expect(saved.at(-1)).toEqual({ ga: 0, gb: 1, la: 1, lb: 0 });
+  });
+
+  it('nabídne jen tolik ztrát, kolik soupeři zbývá gólů; bez „+“', () => {
+    render(<Harness match={tax} initial={{ ga: 6, gb: 2, la: 0, lb: 0 }} />);
+    expect(chips('vlevo')).toEqual(['0', '1', '2', '3', '4']);
+    expect(chips('vpravo')).toEqual(['0']);
+  });
+
+  it('snížení gólů soupeře pod ztráty srovná ztráty', async () => {
+    const user = userEvent.setup();
+    const saved: Score[] = [];
+    render(<Harness match={tax} initial={{ ga: 0, gb: 4, la: 4, lb: 0 }} saved={saved} />);
     await user.click(btn('S: góly vpravo 3'));
     expect(saved.at(-1)).toMatchObject({ gb: 3, la: 3 });
   });

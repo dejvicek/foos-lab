@@ -65,11 +65,29 @@ export function taxGoal(m: Match, field: keyof Score): 'ga' | 'gb' | null {
 }
 
 /**
- * Kolik ztrát může strana reálně mít: u Daně nejvýš góly soupeře (každá ztráta je jeho gól;
- * bez zapsaných gólů jeho strop), jinak MAX_LOSSES.
+ * Kolik ztrát může strana reálně mít. U Daně je každá ztráta hned gól soupeře, takže nejvýš tolik,
+ * kolik soupeři zbývá gólů do jeho stropu – jeho góly z mých ztrát se do toho nepočítají
+ * (za 0:0 tedy 6). Jinak MAX_LOSSES.
  */
 export function maxLosses(m: Match, s: Score, field: 'la' | 'lb'): number {
   const g = taxGoal(m, field);
   if (!g) return MAX_LOSSES;
-  return s[g] ?? bumpLimit(m, g);
+  const fromPlay = Math.max(0, (s[g] ?? 0) - (s[field] ?? 0));
+  return Math.max(0, bumpLimit(m, g) - fromPlay);
+}
+
+/**
+ * Zápis počtu ztrát (notebook): u Daně se góly soupeře změní o stejný rozdíl (ztráta = jeho gól).
+ * Druhé pole dvojice dostane 0 jako u ťukání; hodnota se drží v 0…maxLosses.
+ */
+export function setLosses(m: Match, s: Score, field: 'la' | 'lb', v: number): Score {
+  const other = field === 'la' ? 'lb' : 'la';
+  const next: Score = { ...s, [other]: s[other] ?? 0, [field]: Math.min(maxLosses(m, s, field), Math.max(0, v)) };
+  const g = taxGoal(m, field);
+  if (g) {
+    next[g] = Math.max(0, (s[g] ?? 0) - (s[field] ?? 0)) + next[field]!;
+    const og = g === 'ga' ? 'gb' : 'ga';
+    next[og] = s[og] ?? 0;
+  }
+  return next;
 }

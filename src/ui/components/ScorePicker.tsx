@@ -1,4 +1,4 @@
-import { LEG_CAP, LEG_TO, MAX_LOSSES, maxLosses, winnerFor } from '../../domain/legState';
+import { LEG_CAP, LEG_TO, MAX_LOSSES, maxLosses, setLosses, winnerFor } from '../../domain/legState';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 interface Props {
@@ -42,8 +42,11 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
     const next: Score = { ...s, [goalKey(side)]: v - start(side) };
     const win = winnerFor(m, v);
     if (table(other) === null && win !== null) next[goalKey(other)] = win - start(other);
-    // Daň: ztráty nemohou převýšit góly soupeře – po snížení gólů se srovnají.
-    for (const l of ['la', 'lb'] as const) if (next[l] != null) next[l] = Math.min(next[l]!, maxLosses(m, next, l));
+    // Daň: ztráty nemohou převýšit góly soupeře (každá je jeho gól) – po snížení gólů se srovnají.
+    if (m.lossTax) {
+      if (next.la != null && next.gb != null) next.la = Math.min(next.la, next.gb);
+      if (next.lb != null && next.ga != null) next.lb = Math.min(next.lb, next.ga);
+    }
     onChange(next);
   };
 
@@ -72,12 +75,11 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
 
   const losses = (side: Side) => {
     const k = lossKey(side) as 'la' | 'lb';
-    const other = lossKey(side === 'A' ? 'B' : 'A');
     const cur = s[k] ?? null;
     // Daň: každá ztráta je gól soupeře → nejvýš tolik, kolik má soupeř gólů.
     const cap = maxLosses(m, s, k);
-    // Druhá strana dostane 0: zapsané ztráty se počítají jen z legů, kde jsou u obou stran.
-    const set = (v: number) => onChange({ ...s, [other]: s[other] ?? 0, [k]: Math.min(MAX_LOSSES, v) });
+    // Druhá strana dostane 0 (ztráty se počítají jen z legů, kde jsou u obou stran); u Daně se mění i góly soupeře.
+    const set = (v: number) => onChange(setLosses(m, s, k, v));
     const chips = range(0, Math.min(LOSS_ROW, cap)).map((v) => (
       <button
         key={v}
