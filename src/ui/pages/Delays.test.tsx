@@ -201,3 +201,32 @@ describe('Moje hry otevře rozehranou hru', () => {
     expect(within(mine).getByRole('button', { name: 'Zahájit' })).toBeInTheDocument();
   });
 });
+
+describe('průběh hry', () => {
+  const original = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+
+  it('ťukání se ukládá jako události; Průběh ukáže dvě dráhy, Zpět událost zruší', async () => {
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+    const repo = memoryRepository({ players, trainings: [{ ...t, playTimes: { training: { startedAt: at(18, 0) } } }] });
+    window.location.hash = '#/moje-hry';
+    render(<App repo={repo} auth={auth} />);
+    const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    const user = userEvent.setup();
+    await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
+    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    await user.click(within(mine).getByRole('button', { name: /^Gól vpravo/ }));
+    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    await user.click(within(mine).getByRole('button', { name: /Zpět/ }));
+    const lanes = within(mine).getByRole('group', { name: 'Průběh' });
+    expect(within(lanes).getAllByRole('listitem', { name: /^Gól/ })).toHaveLength(2);
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].events?.map((e) => [e.kind, e.side, e.delta])).toEqual([
+      ['goal', 'A', 1], ['goal', 'B', 1], ['goal', 'A', 1], ['goal', 'A', -1],
+    ]));
+  });
+});

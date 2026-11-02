@@ -9,6 +9,7 @@ import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } 
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
 import { TimingBar, type ItemTiming } from './Timing';
+import { DrillMarks, MatchLanes, TimelineBox } from './GameTimeline';
 import { drillItemId } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
 
@@ -116,6 +117,8 @@ interface Props {
   canMatch?(m: Match): boolean;
   canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
   tap?: TapEntry;
+  /** Průběh rozbalený (Moje hry); v rozpisu sbalený. */
+  timelineOpen?: boolean;
   /** Pokusy cvičení ✓ / ✗ (notebook i telefon). */
   onTapSolo?: TapSolo;
   /** Zdržovači: Zahájit / Ukončit u každého stolu; skóre jde zadat až po zahájení. */
@@ -136,7 +139,17 @@ function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false }: Props) {
+  /** Průběh cvičení u stolu (řada pokusů ✓ / ✗). */
+  const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
+    const id = drillItemId(r, j + 1, players);
+    const evs = (training.events ?? []).filter((e) => e.itemId === id);
+    return (
+      <TimelineBox count={evs.length} open={timelineOpen}>
+        <DrillMarks players={players} events={evs} names={names} />
+      </TimelineBox>
+    );
+  };
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
   const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match) => {
     const st = timing?.state(id);
@@ -207,6 +220,19 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                     onChange={(s) => onScore(m.id, s)}
                   />
                 )}
+                {(() => {
+                  const evs = (training.events ?? []).filter((e) => e.itemId === m.id);
+                  const pt = training.playTimes?.[m.id];
+                  const first = evs.length ? Math.min(...evs.map((e) => e.at)) : 0;
+                  const last = evs.length ? Math.max(...evs.map((e) => e.at)) : 0;
+                  // Konec osy: potvrzený konec, u rozehrané hry „teď“, jinak poslední ťuknutí.
+                  const to = pt?.endedAt ?? (pt?.startedAt !== undefined ? Date.now() : last);
+                  return (
+                    <TimelineBox count={evs.length} open={timelineOpen}>
+                      <MatchLanes match={m} events={evs} from={pt?.startedAt ?? first} to={to} names={names} />
+                    </TimelineBox>
+                  );
+                })()}
                 {m.block === 'league' && (
                   <p className="entry-ref">
                     {m.lossTax ? 'Ztráty jsou i v gólech (Daň za ztrátu). ' : ''}
@@ -241,6 +267,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   canSolo={canP}
                   onTap={(p, ok, d) => (tap.onTapSolo ?? onTapSolo)?.(p, key, def, ok, d)}
                 />
+                {drillBox(c.players, row, j)}
               </div>
             );
           }
@@ -264,6 +291,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 onSolo={onSolo}
                 onTapSolo={onTapSolo}
               />
+              {drillBox(c.players, row, j)}
             </div>
           );
         })}

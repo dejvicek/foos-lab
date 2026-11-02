@@ -5,7 +5,8 @@ const same = (a: GameEvent, b: GameEvent) => a.kind === b.kind && a.side === b.s
 /** Platné události v časovém pořadí: každá −1 zruší poslední odpovídající +1. */
 export function effectiveEvents(events: GameEvent[]): GameEvent[] {
   const out: GameEvent[] = [];
-  for (const e of [...events].sort((x, y) => x.at - y.at || (x.id < y.id ? -1 : 1))) {
+  // Stabilní řazení podle času: při shodě zůstává pořadí, v jakém události vznikly (Zpět až po ťuknutí).
+  for (const e of [...events].sort((x, y) => x.at - y.at)) {
     if (e.delta > 0) out.push(e);
     else {
       for (let i = out.length - 1; i >= 0; i--)
@@ -27,6 +28,20 @@ export interface LaneMark {
   at: number;
 }
 
+/** Minimální rozestup značek na dráze (podíl šířky), aby se nepřekrývaly. */
+const MIN_GAP = 0.045;
+
+/** Rozestoupí značky těsně u sebe (dopředu), a když přetečou konec, posune je zpět; pořadí zůstává. */
+function spread(marks: LaneMark[]): LaneMark[] {
+  const out = marks.map((m) => ({ ...m }));
+  for (let i = 1; i < out.length; i++) out[i].pos = Math.max(out[i].pos, out[i - 1].pos + MIN_GAP);
+  if (out.length && out[out.length - 1].pos > 1) {
+    out[out.length - 1].pos = 1;
+    for (let i = out.length - 2; i >= 0; i--) out[i].pos = Math.min(out[i].pos, out[i + 1].pos - MIN_GAP);
+  }
+  return out;
+}
+
 /** Zápas – dvě dráhy (PRD 4.9, varianta B): góly a ztráty levé / pravé strany na společné časové ose. */
 export function matchTimeline(events: GameEvent[], from: number, to: number) {
   const list = effectiveEvents(events).filter((e) => e.kind === 'goal' || e.kind === 'loss');
@@ -38,8 +53,8 @@ export function matchTimeline(events: GameEvent[], from: number, to: number) {
       .filter((e) => e.side === side)
       .map((e) => ({ kind: e.kind as 'goal' | 'loss', n: e.kind === 'goal' ? ++n : null, pos: (e.at - start) / (end - start), at: e.at }));
   };
-  const A = lane('A');
-  const B = lane('B');
+  const A = spread(lane('A'));
+  const B = spread(lane('B'));
   return { A, B, start, end, score: [A.filter((x) => x.kind === 'goal').length, B.filter((x) => x.kind === 'goal').length] as [number, number] };
 }
 

@@ -28,4 +28,12 @@ describe('průběh hry z událostí', () => {
     expect(d.p1.halves).toEqual([3, 3]); // 1.–4.: 3, 5.–8.: 3
     expect(d.p2.marks).toEqual([]);
   });
+
+  it('značky těsně u sebe se rozestoupí (dají se přečíst), pořadí zůstane', () => {
+    const list = [ev(1, 'goal', { side: 'A' }), ev(1.01, 'goal', { side: 'A' }), ev(1.02, 'loss', { side: 'A' })];
+    const pos = matchTimeline(list, 0, 10 * M).A.map((x) => x.pos);
+    expect(pos[1] - pos[0]).toBeGreaterThanOrEqual(0.04);
+    expect(pos[2] - pos[1]).toBeGreaterThanOrEqual(0.04);
+    expect(Math.max(...pos)).toBeLessThanOrEqual(1);
+  });
 });

@@ -3,7 +3,9 @@ import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { OrderTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
-import { parseSoloKey } from '../../domain/solo';
+import { parseSoloKey, soloKey } from '../../domain/solo';
+import { tapDrill } from '../../domain/drillTap';
+import { bump } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
@@ -15,7 +17,7 @@ import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
 import { FlowBar } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
-import { delayStats, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
+import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -166,10 +168,23 @@ export function TrainingPage({
       }
     : undefined;
 
+  /** ID utkání cvičení (stůl, kde hráč s danou metrikou a kolem cvičí). */
+  const drillItemOf = (playerId: PlayerId, key: SoloKey): string | null => {
+    for (const sec of schedule?.sections ?? [])
+      for (const r of sec.rows)
+        for (const [j, c] of r.cells.entries())
+          if (c?.type === 'group' && c.metric && c.players.includes(playerId) && soloKey(c.metric, c.soloRound) === key) return drillItemId(r, j + 1, c.players);
+    return null;
+  };
   /** Pokus cvičení ✓ / ✗: zamkne kolo (jako zápis výsledku) a přičte. */
   const onTapSolo: TapSolo = (playerId, key, def, ok, delta) => {
     const next = withLocked(training, parseSoloKey(key).round || null);
     if (next !== training) persistLock(next);
+    // Průběh cvičení: pokus jako událost (u stolu, kde hráč se skupinou cvičí).
+    const valid = tapDrill({ value: training.soloResults[playerId]?.[key], attempts: training.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
+    const itemId = drillItemOf(playerId, key);
+    if (valid && itemId)
+      store.addEvent(training.id, { id: store.newId(), itemId, at: Date.now(), kind: ok ? 'hit' : 'miss', playerId, delta });
     store.tapSolo(training.id, playerId, key, def, ok, delta);
   };
 
@@ -178,6 +193,17 @@ export function TrainingPage({
     onTapSolo,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
+      // Průběh hry: ťuknutí jako událost (jen když se hodnota opravdu změní – strop / nula se nezapíše).
+      const cur = training.scores[m.id] ?? {};
+      if ((bump(m, cur, field, delta)[field] ?? 0) !== (cur[field] ?? 0))
+        store.addEvent(training.id, {
+          id: store.newId(),
+          itemId: m.id,
+          at: Date.now(),
+          kind: field === 'ga' || field === 'gb' ? 'goal' : 'loss',
+          side: field === 'ga' || field === 'la' ? 'A' : 'B',
+          delta: delta > 0 ? 1 : -1,
+        });
       store.bumpScore(training.id, m, field, delta);
     },
     onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {

@@ -126,6 +126,7 @@ export function MyTable(props: Props) {
           tap={props.tap}
           timing={props.timing}
           onTapSolo={props.onTapSolo}
+          timelineOpen
         />
       )}
       {next && a.role !== 'wait' && myItemId && props.timing?.state(myItemId)?.endedAt !== undefined && (
