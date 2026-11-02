@@ -34,7 +34,7 @@ function matchCells(def: DisciplineDef, roundNo: number, plans: MatchPlan[], wai
       sideB: p.b,
       discipline: def.id,
       lossTax: !!def.lossTax,
-      trackLosses: !def.lossTax && referee !== undefined,
+      trackLosses: true, // i v Dani a bez rozhodčího (rozhodnutí 2. 11. 2026)
     };
     if (referee) match.referee = referee;
     if (def.wall) match.wall = 'A';

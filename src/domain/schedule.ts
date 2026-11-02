@@ -74,7 +74,7 @@ function matchRow(
       const referee = waiting[j];
       if (referee) match.referee = referee;
       match.lossTax = rd.lossTax;
-      match.trackLosses = !rd.lossTax && referee !== undefined;
+      match.trackLosses = true; // ztráty u každého ligového zápasu, i v Dani a bez rozhodčího (rozhodnutí 2. 11. 2026)
       if (rd.wall) match.wall = rd.wall;
       if (rd.start) match.start = rd.start;
     }

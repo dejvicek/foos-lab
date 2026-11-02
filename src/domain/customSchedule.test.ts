@@ -78,3 +78,14 @@ function discipline(row: ScheduleRow) {
   const c = row.cells.find(Boolean)!;
   return (c.type === 'match' ? c.match.discipline : c.discipline)!;
 }
+
+describe('ztráty v konfigurovatelném tréninku', () => {
+  it('zapisují se u každého zápasu ligových disciplín (i Start 0:3 + daň), ne v simulaci', () => {
+    const s = buildSchedule(custom(8, 4, { plan: { start03: 1, lossTax: 1, normal: 1, singles: 1, sim: 1 } }));
+    const league = s.matches.filter((m) => m.block === 'league');
+    expect(league.length).toBeGreaterThan(0);
+    expect(league.every((m) => m.trackLosses)).toBe(true);
+    expect(league.some((m) => m.discipline === 'start03')).toBe(true);
+    expect(s.matches.filter((m) => m.block === 'sim').every((m) => !m.trackLosses)).toBe(true);
+  });
+});

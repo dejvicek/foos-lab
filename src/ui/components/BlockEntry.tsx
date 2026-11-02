@@ -90,11 +90,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 )}
                 {m.block === 'league' && (
                   <p className="entry-ref">
-                    {m.lossTax
-                      ? `Ztráty jsou v gólech (Daň za ztrátu).${m.referee ? ` Rozhodčí: ${names[m.referee] ?? '?'}` : ''}`
-                      : m.referee
-                        ? `Rozhodčí: ${names[m.referee] ?? '?'}, čárkuje ztráty`
-                        : 'Bez rozhodčího, ztráty se nezapisují'}
+                    {m.lossTax ? 'Ztráty jsou i v gólech (Daň za ztrátu). ' : ''}
+                    {m.referee ? `Rozhodčí: ${names[m.referee] ?? '?'}, čárkuje ztráty` : 'Bez rozhodčího, ztráty zapisují hráči'}
                   </p>
                 )}
               </div>
