@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import {
-  activePlayers,
-  addPlayer,
-  canDeletePlayer,
-  movePlayer,
-  renamePlayer,
-  setArchived,
-  sortedRoster,
-  type RosterError,
-} from '../../domain/roster';
+import { addPlayer, alphabetical, canDeletePlayer, renamePlayer, setArchived, type RosterError } from '../../domain/roster';
 import type { Player } from '../../domain/types';
 import { exportJson } from '../../storage/backup';
 import { todayIso } from '../dates';
@@ -42,14 +33,10 @@ function download(filename: string, text: string) {
 function PlayerRow({
   store,
   player,
-  first,
-  last,
   onReset,
 }: {
   store: AppStore;
   player: Player;
-  first: boolean;
-  last: boolean;
   onReset(p: Player): void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -86,12 +73,6 @@ function PlayerRow({
         <>
           <span className="player-name">{player.name}</span>
           <span className="row-actions">
-            <button type="button" className="icon" aria-label={`Posunout ${player.name} nahoru`} disabled={first} onClick={() => persistPlayers(store, movePlayer(players, player.id, -1))}>
-              ↑
-            </button>
-            <button type="button" className="icon" aria-label={`Posunout ${player.name} dolů`} disabled={last} onClick={() => persistPlayers(store, movePlayer(players, player.id, 1))}>
-              ↓
-            </button>
             <button type="button" className="ghost" aria-label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)}>
               Přejmenovat
             </button>
@@ -114,8 +95,10 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const players = store.data.players;
-  const active = activePlayers(players);
-  const archived = sortedRoster(players).filter((p) => p.archived);
+  // Podle abecedy; pořadí v soupisce (order) zůstává jen pro pořadí přítomných v rozpisu.
+  const sorted = alphabetical(players);
+  const active = sorted.filter((p) => !p.archived);
+  const archived = sorted.filter((p) => p.archived);
 
   const add = () => {
     const r = addPlayer(players, store.newId(), name);
@@ -179,8 +162,8 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
         <p className="note">Soupiska je prázdná. Přidej první hráče.</p>
       ) : (
         <ul className="player-list" aria-label="Aktivní hráči">
-          {active.map((p, i) => (
-            <PlayerRow key={p.id} store={store} player={p} first={i === 0} last={i === active.length - 1} onReset={reset} />
+          {active.map((p) => (
+            <PlayerRow key={p.id} store={store} player={p} onReset={reset} />
           ))}
         </ul>
       )}

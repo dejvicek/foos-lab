@@ -1,6 +1,7 @@
 import {
   activePlayers,
   addPlayer,
+  alphabetical,
   canDeletePlayer,
   deletePlayer,
   movePlayer,
@@ -60,5 +61,14 @@ describe('pořadí a archiv', () => {
     expect(canDeletePlayer(ts, 'a')).toBe(false);
     expect(canDeletePlayer(ts, 'b')).toBe(true);
     expect(deletePlayer(players, 'b').map((x) => x.id)).toEqual(['a', 'c', 'd']);
+  });
+});
+
+describe('abecední řazení (Hráči, Přítomní)', () => {
+  it('podle české abecedy, bez ohledu na velikost písmen; pořadí v soupisce se nemění', () => {
+    const names = ['Hugo', 'Čeněk', 'chrudoš', 'Cyril', 'Ada', 'Šimon', 'Zdeněk', 'Řehoř', 'Radek'];
+    const ps = names.map((name, i) => ({ id: `x${i}`, name, order: i, archived: false }));
+    expect(alphabetical(ps).map((x) => x.name)).toEqual(['Ada', 'Cyril', 'Čeněk', 'Hugo', 'chrudoš', 'Radek', 'Řehoř', 'Šimon', 'Zdeněk']);
+    expect(ps.map((x) => x.name)).toEqual(names);
   });
 });

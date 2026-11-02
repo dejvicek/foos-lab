@@ -10,6 +10,13 @@ export function sortedRoster(players: Player[]): Player[] {
   return [...players].sort((a, b) => a.order - b.order);
 }
 
+const czech = new Intl.Collator('cs', { sensitivity: 'base' });
+
+/** Pro zobrazení (Hráči, Přítomní): podle české abecedy. Pořadí v soupisce (order) se nemění. */
+export function alphabetical(players: Player[]): Player[] {
+  return [...players].sort((a, b) => czech.compare(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 export function activePlayers(players: Player[]): Player[] {
   return sortedRoster(players).filter((p) => !p.archived);
 }

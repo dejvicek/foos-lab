@@ -26,19 +26,20 @@ describe('stránka Hráči', () => {
     const { unmount } = render(<App repo={repo} />);
     await screen.findByLabelText('Jméno nového hráče');
 
-    await addPlayer('Honza');
     await addPlayer('Petr');
-    expect(activeNames()).toEqual(['Honza', 'Petr']);
+    await addPlayer('Honza');
+    await addPlayer('Čeněk');
+    // podle abecedy, ne podle pořadí přidání; ruční posouvání už není
+    expect(activeNames()).toEqual(['Čeněk', 'Honza', 'Petr']);
+    expect(screen.queryByRole('button', { name: /^Posunout/ })).toBeNull();
 
     await addPlayer('honza');
     expect(screen.getByText('Hráč s tímto jménem už je na soupisce')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Posunout Honza dolů' }));
-    expect(activeNames()).toEqual(['Petr', 'Honza']);
+    await userEvent.click(screen.getByRole('button', { name: 'Archivovat Čeněk' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Archivovat Petr' }));
     expect(activeNames()).toEqual(['Honza']);
-    expect(screen.getByText('Archivovaní (1)')).toBeInTheDocument();
+    expect(screen.getByText('Archivovaní (2)')).toBeInTheDocument();
 
     await act(async () => {}); // dokončit frontu zápisů
     unmount();

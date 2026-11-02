@@ -12,6 +12,16 @@ const checkbox = (name: string) => screen.getByRole('checkbox', { name });
 afterEach(() => vi.restoreAllMocks());
 
 describe('stránka Trénink', () => {
+  it('Přítomní při zakládání: hráči podle abecedy, ne podle pořadí v soupisce', async () => {
+    const roster: Player[] = ['Filip', 'Čeněk', 'Ada', 'Bára'].map((name, order) => ({ id: `q${order}`, name, order, archived: false }));
+    const user = userEvent.setup();
+    window.location.hash = '#/trenink/novy';
+    render(<App repo={memoryRepository({ players: roster, trainings: [] })} />);
+    await screen.findByRole('heading', { name: 'Kdy a kde' });
+    await next(user);
+    expect(screen.getAllByRole('checkbox').map((c) => c.closest('label')?.textContent?.trim())).toEqual(['Ada', 'Bára', 'Čeněk', 'Filip']);
+  });
+
   it('nový trénink: začátek předvyplněný podle aktuálního času zaokrouhleného na 30 min nahoru; jde i na 1 stůl', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 10, 2, 18, 7));

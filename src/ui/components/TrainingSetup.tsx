@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sortedRoster, type RosterError } from '../../domain/roster';
+import { alphabetical, type RosterError } from '../../domain/roster';
 import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
 import { toggleAttendee } from '../../domain/training';
 import { randomTeams } from '../../domain/simulation';
@@ -80,7 +80,8 @@ export function AttendanceFields({
   const n = training.attendees.length;
   const min = minPlayers(training);
   // Aktivní hráči + archivovaní, kteří už v tréninku jsou.
-  const shown = sortedRoster(players).filter((p) => !p.archived || training.attendees.includes(p.id));
+  // Podle abecedy (pořadí přítomných v rozpisu se řídí soupiskou, ne tímhle výpisem).
+  const shown = alphabetical(players).filter((p) => !p.archived || training.attendees.includes(p.id));
   const add = () => {
     const r = onAddPlayer(name);
     if ('error' in r) return setError(ROSTER_ERRORS[r.error]);
