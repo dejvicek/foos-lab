@@ -598,3 +598,10 @@ button.pick-clear { align-self: center; font-size: 12px; }
 .delay-table td.neg { color: var(--warn); font-weight: 800; }
 .delays .wrap, .delay-table { max-width: 760px; }
 button.pick-chip.loss:disabled:not([aria-pressed='true']) { color: var(--line-strong); }
+.flow-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; max-width: 980px;
+  background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 10px; padding: 8px 12px; font-weight: 600;
+}
+.flow-bar.pause { background: var(--felt-soft); border-color: var(--felt); }
+.flow-bar span { flex: 1 1 220px; }
+.flow-bar button { min-height: 40px; border-radius: 20px; padding: 0 16px; }

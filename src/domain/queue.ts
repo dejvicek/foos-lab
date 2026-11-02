@@ -23,6 +23,8 @@ export interface ItemState {
   state: ItemStateKind;
   /** U neaktivního utkání: hráči, kteří ještě hrají / čekají na dřívější utkání. */
   blockedBy?: PlayerId[];
+  /** Čeká na organizátora: zahájení tréninku, nebo pauzu / spuštění dalšího kola. */
+  waitingFor?: 'training' | 'pause';
 }
 
 /** ID utkání ve cvičení: kolo, stůl a hráči skupiny (hráči v ID kvůli právům zápisu jako u zápasů). */
@@ -54,19 +56,23 @@ export function queueOf(s: Schedule): QueueEntry[] {
  */
 export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[], nowMs: number): Map<string, ItemState> {
   const out = new Map<string, ItemState>();
-  // Plánované časy jsou jen orientační: trénink začíná prvním zahájeným utkáním (do té doby „teď“).
-  const firstStart = Math.min(...Object.values(times).flatMap((t) => (t.startedAt !== undefined ? [t.startedAt] : [])));
-  const startMs = Number.isFinite(firstStart) ? firstStart : nowMs;
+  const origin = trainingStart(queue, times);
+  const startMs = origin ?? nowMs;
   // null = obsazený / zaneprázdněný na neurčito
   const tableFree = new Map<number, number | null>(tables.map((t) => [t, startMs]));
   const playerFree = new Map<PlayerId, number | null>();
-  let barrier: number | null = startMs;
-  let maxEnd = startMs;
-  let unended = false;
+  // Odkdy smí utkání začít: zahájení tréninku, po pauze její konec / ruční spuštění kola.
+  let barrier: number | null = origin;
+  let waitingFor: 'training' | 'pause' | undefined = origin === null ? 'training' : undefined;
+  let k = 0;
 
   for (const e of queue) {
     if (e.kind === 'pause') {
-      barrier = unended || barrier === null ? null : Math.max(barrier, maxEnd) + e.min * 60_000;
+      const end = pauseEnd(times[pauseId(k++)], e.min);
+      if (barrier !== null) {
+        barrier = end;
+        waitingFor = end === null ? 'pause' : undefined;
+      }
       continue;
     }
     const tm = times[e.id] ?? {};
@@ -101,8 +107,6 @@ export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[]
     else state = 'queued';
 
     const end = tm.startedAt !== undefined && tm.endedAt !== undefined ? tm.endedAt : null;
-    if (end === null) unended = true;
-    else maxEnd = Math.max(maxEnd, end);
     // Vypsané / hrané utkání drží stůl i hráče do konce; neaktivní drží hráče (pořadí se nepřeskakuje).
     if (table !== null && (activeAt !== null || tm.startedAt !== undefined)) tableFree.set(table, end);
     for (const p of e.players) playerFree.set(p, end);
@@ -115,9 +119,50 @@ export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[]
       ...(tm.endedAt !== undefined ? { endedAt: tm.endedAt } : {}),
       state,
       ...(state === 'queued' && activeAt === null && busy.length ? { blockedBy: busy } : {}),
+      ...(state === 'queued' && activeAt === null && barrier === null && waitingFor ? { waitingFor } : {}),
     });
   }
   return out;
+}
+
+/** Zahájení tréninku (organizátor); klíč v časech utkání. */
+export const TRAINING_ITEM = 'training';
+/** Pauza k (0 = první pauza ve frontě): zahájení pauzy / ruční spuštění dalšího kola. */
+export const pauseId = (k: number) => `pause|${k}`;
+
+/** Kdy trénink začal: zahájení organizátorem, u staršího tréninku první zahájené utkání; jinak null. */
+function trainingStart(queue: QueueEntry[], times: PlayTimes): number | null {
+  const t = times[TRAINING_ITEM]?.startedAt;
+  if (t !== undefined) return t;
+  const first = Math.min(...queue.flatMap((e) => (e.kind === 'item' && times[e.id]?.startedAt !== undefined ? [times[e.id].startedAt!] : [])));
+  return Number.isFinite(first) ? first : null;
+}
+
+/** Konec pauzy: ruční spuštění kola, jinak zahájení pauzy + její délka; null = čeká na organizátora. */
+function pauseEnd(p: { startedAt?: number; endedAt?: number } | undefined, min: number): number | null {
+  if (p?.endedAt !== undefined) return p.endedAt;
+  if (p?.startedAt !== undefined) return p.startedAt + min * 60_000;
+  return null;
+}
+
+export interface PauseState {
+  id: string;
+  min: number;
+  /** waiting = čeká na organizátora, running = běží, over = skončila / další kolo spuštěno */
+  state: 'waiting' | 'running' | 'over';
+  endsAt?: number;
+}
+
+/** Stav pauz tréninku v pořadí fronty. */
+export function pauseStates(queue: QueueEntry[], times: PlayTimes, nowMs: number): PauseState[] {
+  let k = 0;
+  return queue.flatMap((e): PauseState[] => {
+    if (e.kind !== 'pause') return [];
+    const id = pauseId(k++);
+    const end = pauseEnd(times[id], e.min);
+    if (end === null) return [{ id, min: e.min, state: 'waiting' as const }];
+    return [{ id, min: e.min, state: end > nowMs ? ('running' as const) : ('over' as const), ...(end > nowMs ? { endsAt: end } : {}) }];
+  });
 }
 
 export interface DelayRow {

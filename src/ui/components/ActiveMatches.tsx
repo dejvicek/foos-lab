@@ -28,7 +28,16 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
   const done = items.length > 0 && items.every((e) => states.get(e.id)?.state === 'done');
   // Volný stůl: proč na něm nic není – další utkání má čas aktivace v budoucnu (začátek tréninku, pauza)?
   const nextTimed = items.map((e) => states.get(e.id)!).find((s) => s.state === 'queued' && s.activeAt !== null && s.activeAt > now);
-  const freeText = done ? 'vše dohráno' : nextTimed ? `další utkání od ${clockOf(nextTimed.activeAt!)}` : 'čeká se na hráče';
+  const firstWaiting = items.map((e) => states.get(e.id)!).find((s) => s.state === 'queued');
+  const freeText = done
+    ? 'vše dohráno'
+    : firstWaiting?.waitingFor === 'training'
+      ? 'trénink ještě nezačal'
+      : firstWaiting?.waitingFor === 'pause'
+        ? 'pauza'
+        : nextTimed
+          ? `další utkání od ${clockOf(nextTimed.activeAt!)}`
+          : 'čeká se na hráče';
 
   return (
     <section className="active-board" aria-label="Aktivní utkání">
@@ -88,7 +97,11 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
               const why =
                 s.activeAt !== null
                   ? `od ${clockOf(s.activeAt)} na stole ${s.table}`
-                  : s.blockedBy?.length
+                  : s.waitingFor === 'training'
+                    ? 'po zahájení tréninku'
+                    : s.waitingFor === 'pause'
+                      ? 'po pauze'
+                      : s.blockedBy?.length
                     ? `čeká na: ${s.blockedBy.map((p) => names[p] ?? '?').join(', ')}`
                     : 'čeká na volný stůl';
               return (

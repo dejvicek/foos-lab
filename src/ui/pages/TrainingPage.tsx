@@ -13,8 +13,9 @@ import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, se
 import { RoundCards } from '../components/RoundCards';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
+import { FlowBar } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
-import { delayStats, type QueueEntry } from '../../domain/queue';
+import { delayStats, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { bump, legOver } from '../../domain/legState';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
@@ -180,6 +181,7 @@ export function TrainingPage({
         state: (id) => queueInfo.states.get(id),
         now: tick,
         canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
+        startAny: manage,
         start: (id) => store.setPlayTime(training.id, id, { startedAt: Date.now() }),
         end: (id) => store.setPlayTime(training.id, id, { startedAt: training.playTimes?.[id]?.startedAt ?? Date.now(), endedAt: Date.now() }),
       }
@@ -248,6 +250,20 @@ export function TrainingPage({
             Celý rozpis
           </button>
         </div>
+      )}
+
+      {schedule && queueInfo && (
+        <FlowBar
+          queue={queueInfo.queue}
+          states={queueInfo.states}
+          pauses={pauseStates(queueInfo.queue, training.playTimes ?? {}, tick)}
+          now={tick}
+          started={[...queueInfo.states.values()].some((s) => s.startedAt !== undefined) || training.playTimes?.[TRAINING_ITEM] !== undefined}
+          manage={manage}
+          onStartTraining={() => store.setPlayTime(training.id, TRAINING_ITEM, { startedAt: Date.now() })}
+          onStartPause={(id) => store.setPlayTime(training.id, id, { startedAt: Date.now() })}
+          onNextRound={(id) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() })}
+        />
       )}
 
       {schedule && queueInfo && tab === 'active' && (

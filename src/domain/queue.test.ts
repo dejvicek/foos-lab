@@ -1,4 +1,4 @@
-import { computeDelayLadder, delayStats, queueOf, runQueue, type QueueEntry } from './queue';
+import { computeDelayLadder, delayStats, pauseId, pauseStates, queueOf, runQueue, TRAINING_ITEM, type QueueEntry } from './queue';
 import { buildSchedule } from './schedule';
 import type { PlayTimes, Training } from './types';
 import { H } from '../test/fixtures';
@@ -10,12 +10,18 @@ const item = (id: string, players: string[], table: number): QueueEntry => ({ ki
 const pause = (min: number): QueueEntry => ({ kind: 'pause', min, label: 'Pauza' });
 
 describe('fronta utkání (aktivní utkání)', () => {
-  it('plánované časy nehrají roli: první utkání jsou na řadě; čekání se měří od prvního zahájení v tréninku', () => {
+  it('trénink musí zahájit organizátor: do té doby nic není na řadě; plánované časy nehrají roli', () => {
     const q = [item('a', ['p1', 'p2'], 1), item('b', ['p3', 'p4'], 2)];
-    let s = runQueue(q, {}, [1, 2], at(1));
-    expect(s.get('a')).toMatchObject({ state: 'ready', table: 1 });
-    expect(s.get('b')).toMatchObject({ state: 'ready', table: 2 });
-    s = runQueue(q, { a: { startedAt: at(4) } }, [1, 2], at(6));
+    let s = runQueue(q, {}, [1, 2], at(100));
+    expect(s.get('a')).toMatchObject({ state: 'queued', activeAt: null, waitingFor: 'training' });
+    s = runQueue(q, { [TRAINING_ITEM]: { startedAt: at(2) } }, [1, 2], at(3));
+    expect(s.get('a')).toMatchObject({ state: 'ready', table: 1, activeAt: at(2) });
+    expect(s.get('b')).toMatchObject({ state: 'ready', table: 2, activeAt: at(2) });
+  });
+
+  it('starší trénink bez zahájení: začal prvním zahájeným utkáním', () => {
+    const q = [item('a', ['p1', 'p2'], 1), item('b', ['p3', 'p4'], 2)];
+    const s = runQueue(q, { a: { startedAt: at(4) } }, [1, 2], at(6));
     expect(s.get('a')).toMatchObject({ state: 'playing', activeAt: at(4) });
     expect(s.get('b')).toMatchObject({ state: 'ready', activeAt: at(4) });
   });
@@ -37,19 +43,30 @@ describe('fronta utkání (aktivní utkání)', () => {
 
   it('kdo má v pořadí dřívější neukončené utkání, nemůže hrát další', () => {
     const q = [item('a', ['p1', 'p2'], 1), item('b', ['p2', 'p3'], 2), item('c', ['p3', 'p4'], 2)];
-    const s = runQueue(q, {}, [1, 2], at(1));
+    const s = runQueue(q, { [TRAINING_ITEM]: { startedAt: at(0) } }, [1, 2], at(1));
+    expect(s.get('a')!.state).toBe('ready');
     expect(s.get('b')!.state).toBe('queued'); // p2 je ve vypsaném a
     expect(s.get('c')!.state).toBe('queued'); // p3 čeká na b
   });
 
-  it('pauza je přehrada: začne po posledním utkání před ní a trvá svou délku', () => {
+  it('pauza: další kolo čeká na organizátora – Zahájit pauzu (spustí se po její délce) nebo Spustit další kolo', () => {
     const q = [item('a', ['p1', 'p2'], 1), item('b', ['p3', 'p4'], 2), pause(10), item('c', ['p1', 'p3'], 1)];
-    let s = runQueue(q, { a: { startedAt: at(0), endedAt: at(8) } }, [1, 2], at(9));
-    expect(s.get('c')!.state).toBe('queued'); // b ještě nedohrálo
-    s = runQueue(q, { a: { startedAt: at(0), endedAt: at(8) }, b: { startedAt: at(0), endedAt: at(12) } }, [1, 2], at(15));
-    expect(s.get('c')).toMatchObject({ state: 'queued', activeAt: at(22) }); // pauza běží
-    s = runQueue(q, { a: { startedAt: at(0), endedAt: at(8) }, b: { startedAt: at(0), endedAt: at(12) } }, [1, 2], at(23));
-    expect(s.get('c')).toMatchObject({ state: 'ready', activeAt: at(22) });
+    const played: PlayTimes = { [TRAINING_ITEM]: { startedAt: at(0) }, a: { startedAt: at(0), endedAt: at(8) }, b: { startedAt: at(0), endedAt: at(12) } };
+    let s = runQueue(q, played, [1, 2], at(60));
+    expect(s.get('c')).toMatchObject({ state: 'queued', activeAt: null, waitingFor: 'pause' });
+    expect(pauseStates(q, played, at(60))).toEqual([{ id: pauseId(0), min: 10, state: 'waiting' }]);
+
+    const paused = { ...played, [pauseId(0)]: { startedAt: at(13) } };
+    s = runQueue(q, paused, [1, 2], at(15));
+    expect(s.get('c')).toMatchObject({ state: 'queued', activeAt: at(23) });
+    expect(pauseStates(q, paused, at(15))).toEqual([{ id: pauseId(0), min: 10, state: 'running', endsAt: at(23) }]);
+    expect(runQueue(q, paused, [1, 2], at(24)).get('c')).toMatchObject({ state: 'ready', activeAt: at(23) });
+    expect(pauseStates(q, paused, at(24))[0].state).toBe('over');
+
+    const resumed = { ...paused, [pauseId(0)]: { startedAt: at(13), endedAt: at(16) } }; // Spustit další kolo hned
+    expect(runQueue(q, resumed, [1, 2], at(17)).get('c')).toMatchObject({ state: 'ready', activeAt: at(16) });
+    const skipped = { ...played, [pauseId(0)]: { endedAt: at(14) } }; // bez pauzy
+    expect(runQueue(q, skipped, [1, 2], at(15)).get('c')).toMatchObject({ state: 'ready', activeAt: at(14) });
   });
 
   it('zahájené dřív, než by bylo aktivní: čekání 0', () => {

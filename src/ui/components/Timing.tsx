@@ -8,6 +8,8 @@ export interface ItemTiming {
   state(itemId: string): ItemState | undefined;
   now: number;
   canWrite(itemId: string, players: PlayerId[], m?: Match): boolean;
+  /** Organizátor smí zahájit i utkání, které není na řadě (oprava). */
+  startAny: boolean;
   start(itemId: string): void;
   end(itemId: string): void;
 }
@@ -16,12 +18,14 @@ interface BarProps {
   state: ItemState | undefined;
   now: number;
   canWrite: boolean;
+  /** Smí zahájit, i když utkání není na řadě (organizátor). */
+  startAny?: boolean;
   onStart(): void;
   onEnd(): void;
 }
 
 /** Stopky utkání se Zahájit / Ukončit (časy se ručně neupravují). */
-export function TimingBar({ state: s, now, canWrite, onStart, onEnd }: BarProps) {
+export function TimingBar({ state: s, now, canWrite, startAny, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
@@ -32,14 +36,18 @@ export function TimingBar({ state: s, now, canWrite, onStart, onEnd }: BarProps)
           <span className="timing-label">
             {s.state === 'ready' && s.activeAt !== null
               ? `Čeká na zahájení${now - s.activeAt >= 1000 ? ` ${fmtDur(now - s.activeAt)}` : ''}`
-              : 'Utkání ještě není na řadě'}
+              : s.waitingFor === 'training'
+                ? 'Trénink ještě nezačal'
+                : s.waitingFor === 'pause'
+                  ? 'Pauza – další kolo spustí organizátor'
+                  : 'Utkání ještě není na řadě'}
           </span>
         ) : (
           <span className="timing-clock" aria-label="Doba hry">
             {fmtDur((ended ?? now) - started)}
           </span>
         )}
-        {canWrite && started === undefined && (
+        {canWrite && started === undefined && (s.state === 'ready' || startAny) && (
           <button type="button" onClick={onStart}>
             Zahájit
           </button>

@@ -51,7 +51,14 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     const st = timing?.state(id);
     const open = !timing || !st || st.startedAt !== undefined || hasResult;
     const bar = timing && st && (
-      <TimingBar state={st} now={timing.now} canWrite={timing.canWrite(id, players, m)} onStart={() => timing.start(id)} onEnd={() => timing.end(id)} />
+      <TimingBar
+        state={st}
+        now={timing.now}
+        canWrite={timing.canWrite(id, players, m)}
+        startAny={timing.startAny}
+        onStart={() => timing.start(id)}
+        onEnd={() => timing.end(id)}
+      />
     );
     return { open, bar };
   };

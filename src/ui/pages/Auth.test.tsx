@@ -17,6 +17,9 @@ const training: Training = {
   format: 'custom', durationMin: 120, plan: autoPlan(['setShooting', 'normal', 'wall'], 120, 8, 4), lockedRounds: [],
 };
 
+/** Trénink, který organizátor zahájil a začíná zápasem (hráč je hned na řadě). */
+const started = (): Training => ({ ...training, plan: { normal: 2, wall: 1 }, playTimes: { training: { startedAt: Date.now() } } });
+
 async function login(nick: string, password: string) {
   const user = userEvent.setup();
   await user.type(await screen.findByLabelText('Přezdívka'), nick);
@@ -70,18 +73,16 @@ describe('přihlášení', () => {
     await userEvent.setup().click(matchRound);
     const groups = screen.getAllByRole('group').filter((g) => /^Kolo \d+, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
     for (const g of groups) {
-      const mineCard = !!g.textContent?.includes('Milan');
-      // Zahájit jen u vlastního stolu; skóre až po zahájení
-      expect(within(g).queryByRole('button', { name: 'Zahájit' }) !== null).toBe(mineCard);
-      if (mineCard) await userEvent.setup().click(within(g).getByRole('button', { name: 'Zahájit' }));
+      // trénink nezahájil organizátor: hráč nezahájí ani nezapíše nic, ani u svého stolu
+      expect(within(g).queryByRole('button', { name: 'Zahájit' })).toBeNull();
       const chips = within(g).getAllByRole('button', { name: /góly (vlevo|vpravo) \d+$/ });
-      for (const c of chips) expect((c as HTMLButtonElement).disabled).toBe(!mineCard);
+      for (const c of chips) expect((c as HTMLButtonElement).disabled).toBe(true);
     }
   });
 
   it('notebook: „Můj stůl“ zapisuje kliknutím na čísla', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
-    const repo = memoryRepository({ players: roster, trainings: [training] });
+    const repo = memoryRepository({ players: roster, trainings: [started()] });
     render(<App repo={repo} auth={auth} />);
     await screen.findByRole('list', { name: 'Uložené tréninky' });
     const user = userEvent.setup();
@@ -104,7 +105,7 @@ describe('přihlášení', () => {
       window.matchMedia = original;
     });
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
-    const repo = memoryRepository({ players: roster, trainings: [training] });
+    const repo = memoryRepository({ players: roster, trainings: [started()] });
     render(<App repo={repo} auth={auth} />);
     await screen.findByRole('list', { name: 'Uložené tréninky' });
     const user = userEvent.setup();
