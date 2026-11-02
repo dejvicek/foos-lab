@@ -10,7 +10,7 @@ const training = (n: number, mode: Mode, tables: TableCount): Training => ({
   id: 't1', date: '2026-10-31', startTime: '18:00', mode, tables,
   attendees: players(n).map((p) => p.id), scores: {}, soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [],
 });
-const rowOf = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) }).closest('tr')!;
+const rowOf = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}$`) }).closest('tr')!;
 
 afterEach(() => vi.useRealTimers());
 
@@ -32,10 +32,10 @@ describe('tabulka tréninku', () => {
     // jiný den → rozbalený je první blok s chybějícím zápisem (rozehrání)
     expect(screen.getByLabelText('Rozehrání s počítáním, stůl 1: H1')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /^Kolo 1/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
     const cell = screen.getByRole('group', { name: 'Kolo 1, stůl 1' });
-    await user.type(within(cell).getByLabelText('Kolo 1, stůl 1: góly vlevo'), '6');
-    await user.type(within(cell).getByLabelText('Kolo 1, stůl 1: góly vpravo'), '2');
+    await user.click(within(cell).getByRole('button', { name: 'Kolo 1, stůl 1: góly vlevo 6' }));
+    await user.click(within(cell).getByRole('button', { name: 'Kolo 1, stůl 1: góly vpravo 2' }));
     expect(rowOf('Kolo 1')).toHaveTextContent('6:2');
     const first = within(screen.getByRole('table', { name: 'Souhrn tréninku' })).getAllByRole('row')[1];
     expect(first).toHaveTextContent('H1');
@@ -81,7 +81,7 @@ describe('tabulka tréninku', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    await user.click(screen.getByRole('button', { name: /^Kolo 2/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 2$/ }));
     await user.selectOptions(screen.getByLabelText('Typ tréninku'), 'single');
     expect(screen.getByLabelText('Rozehrání: rozehrávka ze zadku, stůl 1: H1')).toBeInTheDocument();
   });
@@ -90,13 +90,13 @@ describe('tabulka tréninku', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    await user.click(screen.getByRole('button', { name: /^Kolo 3/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 3$/ }));
     const c3 = screen.getByRole('group', { name: 'Kolo 3, stůl 1' });
-    const sides3 = c3.querySelectorAll('.result-side');
+    const sides3 = c3.querySelectorAll('.pick-a, .pick-b');
     expect(sides3[0]).toHaveTextContent('Zeď');
     expect(sides3[1]).toHaveTextContent('Láme zeď');
-    await user.click(screen.getByRole('button', { name: /^Kolo 4/ }));
-    const sides4 = screen.getByRole('group', { name: 'Kolo 4, stůl 1' }).querySelectorAll('.result-side');
+    await user.click(screen.getByRole('button', { name: /^Kolo 4$/ }));
+    const sides4 = screen.getByRole('group', { name: 'Kolo 4, stůl 1' }).querySelectorAll('.pick-a, .pick-b');
     expect(sides4[0]).toHaveTextContent('Láme zeď');
     expect(sides4[1]).toHaveTextContent('Zeď');
   });
@@ -106,19 +106,15 @@ describe('tabulka tréninku', () => {
     const repo = memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] });
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    await user.click(screen.getByRole('button', { name: /^Kolo 5/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 5$/ }));
     const card = screen.getByRole('group', { name: 'Kolo 5, stůl 1' });
     expect(card).toHaveTextContent('začíná 0');
     expect(card).toHaveTextContent('začíná 3');
-    const right = within(card).getByLabelText('Kolo 5, stůl 1: góly vpravo');
-    await user.type(right, '2'); // méně než start 3 → neuloží se, po opuštění políčka zmizí
-    expect(right).toHaveAttribute('aria-invalid', 'true');
-    await user.tab();
-    expect(right).toHaveValue(null);
-    await user.type(within(card).getByLabelText('Kolo 5, stůl 1: góly vlevo'), '6');
-    await user.clear(right);
-    await user.type(right, '4');
-    expect(card).toHaveTextContent('Odehráno 6 : 1');
+    // méně než start 3 nejde kliknout
+    expect(within(card).getByRole('button', { name: 'Kolo 5, stůl 1: góly vpravo 2' })).toBeDisabled();
+    await user.click(within(card).getByRole('button', { name: 'Kolo 5, stůl 1: góly vlevo 6' }));
+    await user.click(within(card).getByRole('button', { name: 'Kolo 5, stůl 1: góly vpravo 4' }));
+    expect(card).toHaveTextContent('odehráno 6 : 1');
     const id = repo.snapshot().trainings[0].attendees;
     await vi.waitFor(() => {
       const sc = Object.entries(repo.snapshot().trainings[0].scores).find(([k]) => k.startsWith('league|5|1|'));
@@ -131,14 +127,14 @@ describe('tabulka tréninku', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(9), trainings: [training(9, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    await user.click(screen.getByRole('button', { name: /^Kolo 1/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
     const t1 = screen.getByRole('group', { name: 'Kolo 1, stůl 1' });
     const t2 = screen.getByRole('group', { name: 'Kolo 1, stůl 2' });
     expect(within(t1).getByLabelText('Kolo 1, stůl 1: ztráty vlevo')).toBeInTheDocument();
     expect(t1).toHaveTextContent('Rozhodčí: H9');
     expect(within(t2).queryByLabelText('Kolo 1, stůl 2: ztráty vlevo')).toBeNull();
     expect(t2).toHaveTextContent('Bez rozhodčího, ztráty se nezapisují');
-    await user.click(screen.getByRole('button', { name: /^Kolo 2/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 2$/ }));
     const d = screen.getByRole('group', { name: 'Kolo 2, stůl 1' });
     expect(within(d).queryByLabelText('Kolo 2, stůl 1: ztráty vlevo')).toBeNull();
     expect(d).toHaveTextContent('Ztráty jsou v gólech');
@@ -155,13 +151,13 @@ describe('tabulka tréninku', () => {
 
     await user.click(screen.getByRole('button', { name: /^1\. vlna/ }));
     const sim = screen.getByRole('group', { name: '1. vlna, stůl 1' });
-    await user.type(within(sim).getByLabelText('1. vlna, stůl 1: góly vlevo'), '2');
+    await user.click(within(sim).getByRole('button', { name: '1. vlna, stůl 1: góly vlevo 2' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].simTeams).toEqual({ A: ['id1', 'id4', 'id5', 'id8'], B: ['id2', 'id3', 'id6', 'id7'] }));
 
     // výsledek ve scénářové lize už týmy nepřehází
-    await user.click(screen.getByRole('button', { name: /^Kolo 1/ }));
-    await user.type(screen.getByLabelText('Kolo 1, stůl 2: góly vlevo'), '0');
-    await user.type(screen.getByLabelText('Kolo 1, stůl 2: góly vpravo'), '6');
+    await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
+    await user.click(screen.getByRole('button', { name: 'Kolo 1, stůl 2: góly vlevo 0' }));
+    await user.click(screen.getByRole('button', { name: 'Kolo 1, stůl 2: góly vpravo 6' }));
     expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();
   });
 
@@ -209,7 +205,7 @@ describe('tabulka tréninku', () => {
     ]);
     expect(help).toHaveTextContent('Teprve po třetím zastavení smí přihrát na trojku');
 
-    await user.click(screen.getByRole('button', { name: /^Kolo 1/ }));
+    await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
     entry = screen.getByRole('group', { name: 'Kolo 1, stůl 1' }).closest<HTMLElement>('.block-entry')!;
     help = entry.querySelector<HTMLDetailsElement>('details.help')!;
     expect(help.open).toBe(false);

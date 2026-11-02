@@ -193,7 +193,7 @@ export function TrainingPage({
           onSolo={onSolo}
           canMatch={canMatch}
           canSolo={canSolo}
-          tap={tap}
+          tap={mobile ? tap : undefined}
         />
       )}
 

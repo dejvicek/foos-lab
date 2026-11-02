@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import { onTestFinished } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -69,13 +70,34 @@ describe('přihlášení', () => {
     await userEvent.setup().click(matchRound);
     const groups = screen.getAllByRole('group').filter((g) => /^Kolo \d+, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
     for (const g of groups) {
-      const inputs = within(g).getAllByRole('spinbutton');
+      const chips = within(g).getAllByRole('button', { name: /góly (vlevo|vpravo) \d+$/ });
       const mineCard = g.textContent?.includes('Milan');
-      for (const i of inputs) expect((i as HTMLInputElement).disabled).toBe(!mineCard);
+      for (const c of chips) expect((c as HTMLButtonElement).disabled).toBe(!mineCard);
     }
   });
 
-  it('hráč ťuká v „Můj stůl“: gól se přičte, kolo se zamkne, výsledek se uloží', async () => {
+  it('notebook: „Můj stůl“ zapisuje kliknutím na čísla', async () => {
+    const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    const repo = memoryRepository({ players: roster, trainings: [training] });
+    render(<App repo={repo} auth={auth} />);
+    await screen.findByRole('list', { name: 'Uložené tréninky' });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('list', { name: 'Uložené tréninky' }).querySelector('button')!);
+    const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    while (!within(mine).queryAllByRole('button', { name: /góly vlevo 6$/ }).length)
+      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
+    await user.click(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]);
+    await user.click(within(mine).getAllByRole('button', { name: /góly vpravo 2$/ })[0]);
+    await vi.waitFor(() => expect(Object.values(repo.snapshot().trainings[0].scores)).toEqual([{ ga: 6, gb: 2 }]));
+  });
+
+  it('telefon: hráč ťuká v „Můj stůl“: gól se přičte, kolo se zamkne, výsledek se uloží', async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    onTestFinished(() => {
+      window.matchMedia = original;
+    });
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     const repo = memoryRepository({ players: roster, trainings: [training] });
     render(<App repo={repo} auth={auth} />);

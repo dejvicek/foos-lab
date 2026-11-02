@@ -16,7 +16,8 @@ interface Props {
   onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
   canMatch(m: Match): boolean;
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
-  tap: TapEntry;
+  /** Telefon: ťukací zrcadlo; notebook: čísla na kliknutí. */
+  tap?: TapEntry;
 }
 
 function missing(a: Assignment, t: Training): boolean {

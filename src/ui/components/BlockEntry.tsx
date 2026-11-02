@@ -3,7 +3,7 @@ import { explanationsFor } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
-import { ScoreInputs } from './ScoreInputs';
+import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
 
 /** Zápis ťukáním (telefon, Můj stůl) místo číselných políček. */
@@ -79,17 +79,14 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                     onBump={(f, d) => tap.onBumpScore(m, f, d)}
                   />
                 ) : (
-                <ScoreInputs
-                  label={label}
-                  score={training.scores[m.id]}
-                  maxGoals={m.block === 'sim' ? 2 : 10}
-                  withLosses={!!m.trackLosses}
-                  sides={[nm(m.sideA), nm(m.sideB)]}
-                  start={m.start}
-                  wall={m.wall}
-                  disabled={!canMatch(m)}
-                  onChange={(s) => onScore(m.id, s)}
-                />
+                  <ScorePicker
+                    label={label}
+                    match={m}
+                    score={training.scores[m.id]}
+                    names={names}
+                    disabled={!canMatch(m)}
+                    onChange={(s) => onScore(m.id, s)}
+                  />
                 )}
                 {m.block === 'league' && (
                   <p className="entry-ref">
@@ -158,7 +155,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         })}
       </div>
       <div className="entry-foot">
-        {scenario && <p className="entry-warn">Zapiš konečný stav na stole, startovní góly appka odečte sama.</p>}
+        {scenario && <p className="entry-warn">Zapisuje se stav na stole, startovní góly appka odečte sama.</p>}
         {unassigned.length > 0 && (
           <p className="muted">
             {refs.size ? 'Čeká' : waitingLabel}: {unassigned.map((p) => names[p] ?? '?').join(', ')}

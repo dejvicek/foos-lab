@@ -51,9 +51,9 @@ describe('konfigurovatelný trénink v UI', () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
     const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
-    const before = card.textContent;
-    fireEvent.change(within(card).getByLabelText('Kolo 6, stůl 1: góly vlevo'), { target: { value: '6' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Kolo 6, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
+    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!.textContent;
     // pozdní příchod: nový hráč
     await user.type(screen.getByLabelText('Jméno nového hráče'), 'Pozdní');
     await user.click(screen.getByRole('button', { name: 'Přidat a zaškrtnout' }));
@@ -67,7 +67,7 @@ describe('konfigurovatelný trénink v UI', () => {
   it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: '1. vlna' }));
-    fireEvent.change(screen.getByLabelText('1. vlna, stůl 1: góly vlevo'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: '1. vlna, stůl 1: góly vlevo 2' }));
     await vi.waitFor(() => {
       const t = repo.snapshot().trainings[0];
       expect(t.simTeams).not.toBeNull();
