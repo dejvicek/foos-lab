@@ -810,3 +810,13 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .pause-inline button { min-height: 36px; border-radius: 18px; padding: 0 14px; }
 .round-break .pause-inline { display: flex; flex-basis: 100%; justify-content: center; margin: 6px 0 0; }
 button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weight: 600; opacity: 0.85; }
+
+/* Týmy pro simulaci: dvě možnosti rozdělení */
+.split-options { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; }
+.split-option {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; min-height: 40px;
+  border: 1px solid var(--line-strong); border-radius: 20px; background: var(--surface); cursor: pointer; font-weight: 600;
+}
+.split-option:has(input:checked) { border-color: var(--felt); background: var(--felt-soft); }
+.split-option input { margin: 0; accent-color: var(--felt); }
+.order-fields > button.ghost { margin-bottom: 8px; }

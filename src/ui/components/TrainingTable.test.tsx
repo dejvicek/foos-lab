@@ -159,7 +159,7 @@ describe('tabulka tréninku', () => {
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();
     await openTeams(user);
-    expect(screen.getByLabelText('Týmy pro simulaci')).toHaveValue('performance');
+    expect(screen.getByRole('radio', { name: 'Vyrovnaně podle výkonu v tréninku' })).toBeChecked();
 
     await user.click(screen.getByRole('button', { name: /^1\. vlna/ }));
     const sim = screen.getByRole('group', { name: '1. vlna, stůl 1' });
@@ -174,7 +174,7 @@ describe('tabulka tréninku', () => {
     expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();
   });
 
-  it('přepnutí na nominační pořadí', async () => {
+  it('panel vždy ukáže oba týmy a dvě možnosti; vyrovnaně podle výkonu je pevné (bez úprav a bez Náhodně)', async () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [{ ...training(8, 'team', 4), simSplit: 'performance' as const }] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
@@ -182,8 +182,15 @@ describe('tabulka tréninku', () => {
     expect(screen.getByText('Týmy pro simulaci', { selector: 'strong' }).closest('tr')).toHaveClass('sim-setup-row');
     expect(screen.getByText('Týmy pro simulaci', { selector: 'strong' }).closest('tr')!.previousElementSibling).toHaveTextContent('Simulace ligového kola');
     await openTeams(user);
-    await user.selectOptions(screen.getByLabelText('Týmy pro simulaci'), 'order');
-    expect(screen.getByText('Tým A: H1, H2, H3, H4. Tým B: H5, H6, H7, H8.')).toBeInTheDocument();
+    const options = within(screen.getByRole('radiogroup', { name: 'Týmy pro simulaci' })).getAllByRole('radio');
+    expect(options.map((o) => o.getAttribute('aria-label') ?? o.closest('label')?.textContent)).toEqual(['Vyrovnaně podle výkonu v tréninku', 'Ručně']);
+    const a = screen.getByRole('list', { name: 'Tým A' });
+    const b = screen.getByRole('list', { name: 'Tým B' });
+    expect(within(a).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1.H1', '2.H4', '3.H5', '4.H8']);
+    expect(within(b).getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.queryByRole('button', { name: /Přesunout H1/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Náhodně' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Náhodné pořadí' })).toBeNull();
   });
 
   it('ruční týmy: převezmou se zobrazené a jde přesouvat hráče', async () => {
@@ -192,7 +199,7 @@ describe('tabulka tréninku', () => {
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await openTeams(user);
-    await user.selectOptions(screen.getByLabelText('Týmy pro simulaci'), 'manual');
+    await user.click(screen.getByRole('radio', { name: 'Ručně' }));
     // ruční sestavení začne od týmů, které byly v rozpisu
     expect(screen.getByRole('button', { name: 'Přesunout H1 do týmu B' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Přesunout H1 do týmu B' }));

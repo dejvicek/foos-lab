@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
-import { OrderTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
+import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey, soloKey } from '../../domain/solo';
 import { tapDrill } from '../../domain/drillTap';
@@ -148,7 +148,7 @@ export function TrainingPage({
           <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
           <span className="muted"> – nastav před zahájením simulace</span>
         </summary>
-        <OrderTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
+        <SimTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
       </details>
     ) : null;
   const simNext =

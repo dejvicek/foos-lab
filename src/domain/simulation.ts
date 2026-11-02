@@ -1,5 +1,5 @@
 import type { Pairing } from './assign';
-import type { PlayerId } from './types';
+import type { PlayerId, SimTeams } from './types';
 
 export interface Wave {
   matches: Pairing[];
@@ -73,4 +73,17 @@ export function reconcileTeams(teams: { A: PlayerId[]; B: PlayerId[] }, attendee
   const placed = new Set([...A, ...B]);
   for (const p of attendees) if (!placed.has(p)) (B.length < A.length ? B : A).push(p);
   return { A, B };
+}
+
+/**
+ * Ruční týmy „Náhodně“: zamíchá hráče obou týmů (Fisher–Yates) a rozdělí je ve stejných velikostech.
+ * Generátor dodává UI – doména zůstává deterministická.
+ */
+export function randomTeams(teams: SimTeams, rand: () => number): SimTeams {
+  const all = [...teams.A, ...teams.B];
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return { A: all.slice(0, teams.A.length), B: all.slice(teams.A.length) };
 }

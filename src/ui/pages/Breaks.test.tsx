@@ -92,14 +92,20 @@ describe('pauzy na telefonu', () => {
 });
 
 describe('náhodné pořadí', () => {
-  it('tlačítko v panelu Týmy pro simulaci zamíchá přítomné', async () => {
+  it('ručně: tlačítko Náhodně rozhází hráče do týmů (stejné velikosti, nikdo se neztratí)', async () => {
     const { repo, user } = await setup(custom(8, 4));
-    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
     await openTeams(user);
-    await user.click(screen.getByRole('button', { name: 'Náhodné pořadí' }));
+    await user.click(screen.getByRole('radio', { name: 'Ručně' }));
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].simSplit).toBe('manual'));
+    const before = repo.snapshot().trainings[0].simTeams!;
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    await user.click(screen.getByRole('button', { name: 'Náhodně' }));
     spy.mockRestore();
-    await vi.waitFor(() => expect(repo.snapshot().trainings[0].attendees).not.toEqual(players(8).map((p) => p.id)));
-    expect([...repo.snapshot().trainings[0].attendees].sort()).toEqual(players(8).map((p) => p.id).sort());
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].simTeams).not.toEqual(before));
+    const after = repo.snapshot().trainings[0].simTeams!;
+    expect(after.A).toHaveLength(before.A.length);
+    expect([...after.A, ...after.B].sort()).toEqual([...before.A, ...before.B].sort());
+    expect(repo.snapshot().trainings[0].attendees).toEqual(players(8).map((p) => p.id)); // pořadí přítomných se nemění
   });
 });
 

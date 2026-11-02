@@ -1,4 +1,4 @@
-import { balancedSplit, reconcileTeams } from './simulation';
+import { balancedSplit, randomTeams, reconcileTeams } from './simulation';
 import { buildSchedule } from './schedule';
 import type { Score } from './types';
 import { H } from '../test/fixtures';
@@ -65,5 +65,21 @@ describe('ruční týmy', () => {
   });
   it('ruční bez týmů → podle nominačního pořadí', () => {
     expect(buildSchedule({ ...base, simSplit: 'manual', simTeams: null }).teams).toEqual({ A: H(4), B: H(8).slice(4) });
+  });
+});
+
+describe('náhodné ruční týmy', () => {
+  it('zamíchá všechny hráče obou týmů a rozdělí je ve stejných velikostech; nikoho neztratí', () => {
+    const teams = { A: ['a', 'b', 'c'], B: ['d', 'e', 'f', 'g'] };
+    let i = 0;
+    const seq = [0.9, 0.1, 0.5, 0.3, 0.7, 0.2];
+    const r = randomTeams(teams, () => seq[i++ % seq.length]);
+    expect(r.A).toHaveLength(3);
+    expect(r.B).toHaveLength(4);
+    expect([...r.A, ...r.B].sort()).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g']);
+    expect(r).not.toEqual(teams);
+    // deterministické pro stejný generátor
+    i = 0;
+    expect(randomTeams(teams, () => seq[i++ % seq.length])).toEqual(r);
   });
 });

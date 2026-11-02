@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { sortedRoster, type RosterError } from '../../domain/roster';
 import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
-import { moveAttendee, shuffleAttendees, toggleAttendee } from '../../domain/training';
+import { toggleAttendee } from '../../domain/training';
+import { randomTeams } from '../../domain/simulation';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
 import { DurationSelect } from './DisciplinePicker';
@@ -119,65 +120,68 @@ export const simOn = (t: Training) => (t.format === 'custom' ? (t.plan.sim ?? 0)
 
 export const SPLIT_TEXT: Record<SimSplit, string> = { performance: 'vyrovnaně podle výkonu', order: 'podle nominačního pořadí', manual: 'ručně' };
 
-/** Krok „Pořadí a týmy“: týmy pro simulaci a nominační pořadí (↑ ↓, náhodně). */
-export function OrderTeamsFields({ training, currentTeams, players, onChange }: PartProps & { currentTeams: SimTeams | null; players: Player[] }) {
-  const n = training.attendees.length;
+/**
+ * Týmy pro simulaci (panel u sekce simulace): vždy oba týmy a dvě možnosti. Vyrovnaně podle výkonu
+ * je pevné (dopočítá se z výsledků scénářové ligy); ručně jde hráče přesouvat a rozházet Náhodně.
+ */
+export function SimTeamsFields({ training, currentTeams, players, onChange }: PartProps & { currentTeams: SimTeams | null; players: Player[] }) {
   const byId = new Map(players.map((p) => [p.id, p]));
+  if (!simOn(training)) return <p className="note">Simulace se v tomhle tréninku nehraje, týmy není potřeba dělit.</p>;
+  const pickSplit = (simSplit: SimSplit) =>
+    // Ručně: začni od týmů, které jsou právě vidět.
+    onChange({ ...training, simSplit, simTeams: simSplit === 'manual' ? currentTeams : null });
   return (
     <div className="order-fields">
-      {simOn(training) ? (
-        <div className="setup">
-          <div className="field">
-            <label htmlFor="t-split">Týmy pro simulaci</label>
-            <select
-              id="t-split"
-              value={training.simSplit}
-              onChange={(e) => {
-                const simSplit = e.target.value as SimSplit;
-                // Ručně: začni od týmů, které jsou právě vidět.
-                onChange({ ...training, simSplit, simTeams: simSplit === 'manual' ? currentTeams : null });
-              }}
-            >
-              <option value="performance">Vyrovnaně podle výkonu v tréninku</option>
-              <option value="order">Podle nominačního pořadí</option>
-              <option value="manual">Ručně</option>
-            </select>
-          </div>
-        </div>
-      ) : (
-        <p className="note">Simulace se v tomhle tréninku nehraje, týmy není potřeba dělit.</p>
-      )}
-      {training.simSplit === 'manual' && currentTeams && (
-        <SimTeamsEditor teams={currentTeams} byId={byId} onChange={(t) => onChange({ ...training, simTeams: t })} />
-      )}
-      {n > 1 && (
-        <>
-          <h3>Pořadí</h3>
-          <p className="note">
-            Pořadí je nominační pořadí pro simulaci kola: první polovina je tým A, druhá tým B, a kdo je v týmu výš, jde dřív do singlu.
-          </p>
-          <button type="button" className="ghost" onClick={() => onChange(shuffleAttendees(training, Math.random))}>
-            Náhodné pořadí
-          </button>
-          <ol className="order-list">
-            {training.attendees.map((id, i) => {
-              const nm = byId.get(id)?.name ?? '?';
-              return (
-                <li key={id}>
-                  <span className="pos">{i + 1}.</span>
-                  <span className="nm">{nm}</span>
-                  <button type="button" className="icon" aria-label={`Posunout ${nm} v pořadí nahoru`} disabled={i === 0} onClick={() => onChange(moveAttendee(training, id, -1))}>
-                    ↑
-                  </button>
-                  <button type="button" className="icon" aria-label={`Posunout ${nm} v pořadí dolů`} disabled={i === n - 1} onClick={() => onChange(moveAttendee(training, id, 1))}>
-                    ↓
-                  </button>
-                </li>
-              );
-            })}
+      <div className="split-options" role="radiogroup" aria-label="Týmy pro simulaci">
+        {(
+          [
+            ['performance', 'Vyrovnaně podle výkonu v tréninku'],
+            ['manual', 'Ručně'],
+          ] as const
+        ).map(([value, text]) => (
+          <label key={value} className="split-option">
+            <input type="radio" name={`split-${training.id}`} value={value} checked={training.simSplit === value} onChange={() => pickSplit(value)} />
+            {text}
+          </label>
+        ))}
+      </div>
+      {currentTeams &&
+        (training.simSplit === 'manual' ? (
+          <>
+            <button type="button" className="ghost" onClick={() => onChange({ ...training, simTeams: randomTeams(currentTeams, Math.random) })}>
+              Náhodně
+            </button>
+            <SimTeamsEditor teams={currentTeams} byId={byId} onChange={(t) => onChange({ ...training, simTeams: t })} />
+          </>
+        ) : (
+          <>
+            <TeamsView teams={currentTeams} byId={byId} />
+            <p className="note">Týmy se vyrovnají podle výsledků scénářové ligy v tomhle tréninku a zamknou se prvním výsledkem simulace.</p>
+          </>
+        ))}
+    </div>
+  );
+}
+
+/** Oba týmy jen ke čtení (vyrovnaně podle výkonu). */
+function TeamsView({ teams, byId }: { teams: SimTeams; byId: Map<string, Player> }) {
+  return (
+    <div className="teams-editor">
+      {(['A', 'B'] as const).map((side) => (
+        <div key={side} className="team-col">
+          <h3>
+            Tým {side} <span className="muted">({teams[side].length})</span>
+          </h3>
+          <ol className="order-list" aria-label={`Tým ${side}`}>
+            {teams[side].map((id, i) => (
+              <li key={id}>
+                <span className="pos">{i + 1}.</span>
+                <span className="nm">{byId.get(id)?.name ?? '?'}</span>
+              </li>
+            ))}
           </ol>
-        </>
-      )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -210,7 +214,7 @@ function SimTeamsEditor({
           <h3>
             Tým {side} <span className="muted">({teams[side].length})</span>
           </h3>
-          <ol className="order-list">
+          <ol className="order-list" aria-label={`Tým ${side}`}>
             {teams[side].map((id, i) => (
               <li key={id}>
                 <span className="pos">{i + 1}.</span>
