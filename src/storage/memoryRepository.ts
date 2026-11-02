@@ -80,7 +80,13 @@ export function memoryRepository(
         if (value === null) delete mine[key];
         else mine[key] = value;
         if (Object.keys(mine).length) t.soloResults[playerId] = mine;
-        else delete t.soloResults[playerId];
+        else delete t.soloResults[playerId];        if (t.soloAttempts?.[playerId]?.[key] !== undefined) {
+          const att = { ...t.soloAttempts[playerId] };
+          delete att[key];
+          t.soloAttempts = { ...t.soloAttempts, [playerId]: att };
+          if (!Object.keys(att).length) delete t.soloAttempts[playerId];
+          if (!Object.keys(t.soloAttempts).length) delete t.soloAttempts;
+        }
       }),
     replaceSolo: (trainingId, keep) =>
       write(() => {
@@ -110,6 +116,20 @@ export function memoryRepository(
         const mine = { ...t.soloResults[playerId] };
         mine[key] = Math.min(max, Math.max(0, (mine[key] ?? 0) + delta));
         t.soloResults[playerId] = mine;
+      }),
+    tapSolo: (trainingId, playerId, key, dValue, dAttempts, max) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const had = t.soloResults[playerId]?.[key];
+        const value = had ?? 0;
+        const att = t.soloAttempts?.[playerId]?.[key] ?? (had !== undefined ? max : 0);
+        // Stejné meze jako tap_solo v databázi: přes plný počet ne, vracet jen to, co je.
+        if (dAttempts > 0 && att >= max) return;
+        if (dValue < 0 && value <= 0) return;
+        if (dAttempts < 0 && dValue === 0 && att - value <= 0) return;
+        t.soloResults[playerId] = { ...t.soloResults[playerId], [key]: value + dValue };
+        t.soloAttempts = { ...t.soloAttempts, [playerId]: { ...t.soloAttempts?.[playerId], [key]: att + dAttempts } };
       }),
     savePlayTime: (trainingId, itemId, p) =>
       write(() => {

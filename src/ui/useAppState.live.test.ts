@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useAppState } from './useAppState';
 import { memoryRepository } from '../storage/memoryRepository';
 import type { Match, Training } from '../domain/types';
+import { soloMetric } from '../domain/solo';
 
 const t: Training = { id: 't1', date: '2026-11-02', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: {}, lockedRounds: [], mode: 'team', tables: 2, attendees: [], scores: {} };
 const m: Match = { id: 'league|1|1|a+bvc+d', block: 'league', round: 1, table: 1, kind: 'doubles', sideA: ['a', 'b'], sideB: ['c', 'd'] };
@@ -121,5 +122,20 @@ describe('useAppState – časy utkání', () => {
     act(() => result.current.setPlayTime('t1', 'x', { startedAt: 5, endedAt: 9 }));
     act(() => repo.emit().playTime('t1', 'x', { startedAt: 5 }));
     expect(result.current.data.trainings[0].playTimes).toEqual({ x: { startedAt: 5, endedAt: 9 } });
+  });
+});
+
+describe('useAppState – pokusy cvičení', () => {
+  it('tapSolo přičte pokus i výsledek; číslem zapsaný výsledek pokusy smaže', async () => {
+    const { repo, result } = await setup();
+    const passes = soloMetric('warmupPasses');
+    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, true, 1));
+    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, false, 1));
+    expect(result.current.data.trainings[0].soloResults).toEqual({ p1: { 'warmupPasses@1': 1 } });
+    expect(result.current.data.trainings[0].soloAttempts).toEqual({ p1: { 'warmupPasses@1': 2 } });
+    await waitFor(() => expect(repo.snapshot().trainings[0].soloAttempts).toEqual({ p1: { 'warmupPasses@1': 2 } }));
+    act(() => result.current.saveSolo('t1', 'p1', 'warmupPasses@1', 15));
+    expect(result.current.data.trainings[0].soloAttempts ?? {}).toEqual({});
+    await waitFor(() => expect(repo.snapshot().trainings[0].soloAttempts ?? {}).toEqual({}));
   });
 });

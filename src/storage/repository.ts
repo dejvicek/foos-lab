@@ -9,7 +9,7 @@ export interface AppData {
 
 export interface RemoteHandlers {
   score(trainingId: string, matchId: MatchId, s: Score | null): void;
-  solo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): void;
+  solo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null, attempts?: number | null): void;
   training(t: Training | null, id: string): void;
   /** Spojení se (znovu) navázalo – zmeškané změny se musí dočíst. */
   resync(): void;
@@ -35,6 +35,8 @@ export interface Repository {
   bumpScore(trainingId: string, matchId: MatchId, field: keyof Score, delta: number, max: number): Promise<void>;
   /** Ťuknutí ve cvičení: přičte delta k výsledku hráče, v mezích 0…max. */
   bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): Promise<void>;
+  /** Ťuknutí po pokusu cvičení: přičte k výsledku i k pokusům (v mezích 0…max). */
+  tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, dValue: number, dAttempts: number, max: number): Promise<void>;
   /** Živé změny od ostatních telefonů; vrací odhlášení. */
   subscribe(handlers: RemoteHandlers): () => void;
   /** Zdržovači: zahájení a konec utkání; null nebo prázdné smaže. */

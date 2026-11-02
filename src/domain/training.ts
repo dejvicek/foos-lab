@@ -138,6 +138,18 @@ export function setSolo(t: Training, playerId: PlayerId, key: SoloKey, value: nu
   return { ...t, soloResults };
 }
 
+/** Odehrané pokusy cvičení (null = smazat → výsledek zapsaný číslem = plný počet). */
+export function setAttempts(t: Training, playerId: PlayerId, key: SoloKey, attempts: number | null): Training {
+  const all = { ...t.soloAttempts };
+  const mine = { ...all[playerId] };
+  if (attempts === null) delete mine[key];
+  else mine[key] = attempts;
+  if (Object.keys(mine).length) all[playerId] = mine;
+  else delete all[playerId];
+  const { soloAttempts: _, ...rest } = t;
+  return Object.keys(all).length ? { ...rest, soloAttempts: all } : rest;
+}
+
 export function setScore(t: Training, id: MatchId, field: keyof Score, value: number | null): Training {
   return { ...t, scores: { ...t.scores, [id]: { ...t.scores[id], [field]: value } } };
 }

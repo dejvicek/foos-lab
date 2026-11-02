@@ -1,4 +1,4 @@
-import { isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
+import { isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
 import type { Player, Training } from '../domain/types';
 
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
@@ -83,5 +83,17 @@ describe('časy utkání (Zdržovači)', () => {
     expect(playTimeFromRow(row)).toEqual({ startedAt: Date.parse('2026-11-02T18:01:30Z') });
     const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [row, { ...row, training_id: 'jiny' }]);
     expect(t.playTimes).toEqual({ 'league|1|1|a+bvc+d': { startedAt: Date.parse('2026-11-02T18:01:30Z') } });
+  });
+});
+
+describe('pokusy cvičení', () => {
+  it('řádek s pokusy → soloAttempts; zapsáno číslem (attempts null) pokusy nemá', () => {
+    const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [
+      { training_id: training.id, player_id: 'p1', metric: 'warmupPasses', round: 0, value: 9, attempts: 14 },
+      { training_id: training.id, player_id: 'p2', metric: 'warmupPasses', round: 0, value: 12, attempts: null },
+    ]);
+    expect(t.soloResults).toEqual({ p1: { warmupPasses: 9 }, p2: { warmupPasses: 12 } });
+    expect(t.soloAttempts).toEqual({ p1: { warmupPasses: 14 } });
+    expect(soloRow('t', 'p2', 'warmupPasses', 12)).toMatchObject({ value: 12, attempts: null });
   });
 });

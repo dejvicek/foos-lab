@@ -125,6 +125,13 @@ export function supabaseRepository(client: SupabaseClient): Repository {
       });
       if (error) throw fromPostgrest(error, status);
     },
+    async tapSolo(trainingId, playerId, key, dValue, dAttempts, max) {
+      const { metric, round } = parseSoloKey(key);
+      const { error, status } = await client.rpc('tap_solo', {
+        p_training: trainingId, p_player: playerId, p_metric: metric, p_round: round, p_dvalue: dValue, p_dattempts: dAttempts, p_max: max,
+      });
+      if (error) throw fromPostgrest(error, status);
+    },
     async savePlayTime(trainingId, itemId, p) {
       if (!p || (p.startedAt === undefined && p.endedAt === undefined))
         check(await client.from('play_times').delete().eq('training_id', trainingId).eq('item_id', itemId));
@@ -143,7 +150,8 @@ export function supabaseRepository(client: SupabaseClient): Repository {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'solo_results' }, (p) => {
           const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as SoloRow;
           if (!row?.training_id) return;
-          h.solo(row.training_id, row.player_id, soloKey(row.metric, row.round ?? 0), p.eventType === 'DELETE' ? null : row.value);
+          const gone = p.eventType === 'DELETE';
+          h.solo(row.training_id, row.player_id, soloKey(row.metric, row.round ?? 0), gone ? null : row.value, gone ? null : (row.attempts ?? null));
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'play_times' }, (p) => {
           const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as PlayTimeRow;

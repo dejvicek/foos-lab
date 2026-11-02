@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { isEmptyScore, setSolo } from '../domain/training';
+import { isEmptyScore, setAttempts, setSolo } from '../domain/training';
+import { tapDelta, tapDrill } from '../domain/drillTap';
+import type { SoloMetricDef } from '../domain/solo';
 import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
 import type { Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
@@ -28,6 +30,8 @@ export interface AppStore {
   deleteTraining(id: string): void;
   /** Ťuknutí na zápas: lokálně hned, do databáze jako přičtení (souběžné telefony se nepřepíšou). */
   bumpScore(trainingId: string, match: Match, field: keyof Score, delta: number): void;
+  /** Pokus cvičení (✓ / ✗, delta −1 = zpět): výsledek i počet pokusů, do databáze jako přičtení. */
+  tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1): void;
   /** Ťuknutí ve cvičení: přičtení k výsledku hráče. */
   bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
   /** Zdržovači: zahájení / konec utkání (null smaže). */
@@ -163,9 +167,12 @@ export function useAppState(repo: Repository): AppStore {
           }),
         }));
       },
-      solo: (tid, pid, key, value) => {
+      solo: (tid, pid, key, value, attempts) => {
         if (busy(pendingKey.solo(tid, pid, key))) return;
-        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? setSolo(t, pid, key, value) : t)) }));
+        setData((d) => ({
+          ...d,
+          trainings: d.trainings.map((t) => (t.id === tid ? setAttempts(setSolo(t, pid, key, value), pid, key, value === null ? null : (attempts ?? null)) : t)),
+        }));
       },
       training: (t, id) =>
         setData((d) => {
@@ -281,6 +288,19 @@ export function useAppState(repo: Repository): AppStore {
         }));
         enqueue(() => repo.bumpScore(trainingId, match.id, field, delta, bumpLimit(match, field)), pendingKey.score(trainingId, match.id));
       },
+      tapSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1) => {
+        setData((d) => ({
+          ...d,
+          trainings: d.trainings.map((t) => {
+            if (t.id !== trainingId) return t;
+            const next = tapDrill({ value: t.soloResults[playerId]?.[key], attempts: t.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
+            return next ? setAttempts(setSolo(t, playerId, key, next.value), playerId, key, next.attempts) : t;
+          }),
+        }));
+        // Stejné meze hlídá i databáze (tap_solo), takže rychlé dvojité ťuknutí na hranici nic nepokazí.
+        const dlt = tapDelta(def, ok, delta);
+        enqueue(() => repo.tapSolo(trainingId, playerId, key, dlt.value, dlt.attempts, def.max), pendingKey.solo(trainingId, playerId, key));
+      },
       bumpSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
         setData((d) => ({
           ...d,
@@ -321,7 +341,8 @@ export function useAppState(repo: Repository): AppStore {
       saveSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null) => {
         setData((d) => ({
           ...d,
-          trainings: d.trainings.map((t) => (t.id === trainingId ? setSolo(t, playerId, key, value) : t)),
+          // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
+          trainings: d.trainings.map((t) => (t.id === trainingId ? setAttempts(setSolo(t, playerId, key, value), playerId, key, null) : t)),
         }));
         debounce(pendingKey.solo(trainingId, playerId, key), () => repo.saveSolo(trainingId, playerId, key, value));
       },

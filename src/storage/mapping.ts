@@ -37,6 +37,8 @@ export interface SoloRow {
   /** 0 = klasický trénink, jinak číslo kola (PRD 6, migrace 5). */
   round: number;
   value: number;
+  /** Odehrané pokusy (migrace 13); null = zapsáno číslem = plný počet. */
+  attempts?: number | null;
 }
 
 export interface ScoreRow {
@@ -92,9 +94,11 @@ function scoreFromRow(r: ScoreRow): Score {
 
 export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[], times: PlayTimeRow[] = []): Training {
   const soloResults: SoloResults = {};
+  const soloAttempts: SoloResults = {};
   for (const x of solo) {
     if (x.training_id !== r.id) continue;
     (soloResults[x.player_id] ??= {})[soloKey(x.metric, x.round ?? 0)] = x.value;
+    if (x.attempts !== null && x.attempts !== undefined) (soloAttempts[x.player_id] ??= {})[soloKey(x.metric, x.round ?? 0)] = x.attempts;
   }
   const t: Training = {
     id: r.id,
@@ -113,6 +117,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
+    ...(Object.keys(soloAttempts).length ? { soloAttempts } : {}),
     ...(() => {
       const mine = times.filter((x) => x.training_id === r.id);
       if (!mine.length) return {};
@@ -163,12 +168,13 @@ export function soloToRows(t: Training): SoloRow[] {
     for (const [metric, value] of Object.entries(metrics))
       if (value !== undefined && value !== null) {
         const k = parseSoloKey(metric);
-        out.push({ training_id: t.id, player_id, metric: k.metric, round: k.round, value });
+        out.push({ training_id: t.id, player_id, metric: k.metric, round: k.round, value, attempts: t.soloAttempts?.[player_id]?.[metric] ?? null });
       }
   return out;
 }
 
 export function soloRow(trainingId: string, playerId: PlayerId, key: SoloKey, value: number): SoloRow {
   const k = parseSoloKey(key);
-  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value };
+  // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
+  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: null };
 }
