@@ -3,12 +3,16 @@ import { useCallback, useEffect, useState } from 'react';
 export type Route =
   | { page: 'trainings' }
   | { page: 'training'; id: string }
+  | { page: 'training-new' }
+  | { page: 'training-edit'; id: string }
   | { page: 'ladder' }
   | { page: 'player'; id: string }
   | { page: 'players' };
 
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === 'trenink' && parts[1] === 'novy') return { page: 'training-new' };
+  if (parts[0] === 'trenink' && parts[1] && parts[2] === 'nastaveni') return { page: 'training-edit', id: parts[1] };
   if (parts[0] === 'trenink' && parts[1]) return { page: 'training', id: parts[1] };
   if (parts[0] === 'zebricek' && parts[1] === 'hrac' && parts[2]) return { page: 'player', id: parts[2] };
   if (parts[0] === 'zebricek') return { page: 'ladder' };
@@ -22,6 +26,10 @@ export function toHash(r: Route): string {
       return '#/trenink';
     case 'training':
       return `#/trenink/${encodeURIComponent(r.id)}`;
+    case 'training-new':
+      return '#/trenink/novy';
+    case 'training-edit':
+      return `#/trenink/${encodeURIComponent(r.id)}/nastaveni`;
     case 'ladder':
       return '#/zebricek';
     case 'player':

@@ -3,19 +3,28 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import type { Player } from '../../domain/types';
+import { next, openSettings, saveSettings, stepButton } from '../../test/wizard';
 
 const players = (n: number): Player[] =>
   Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
 
-async function newTraining(n = 8) {
+/** Nový trénink průvodcem: n přítomných; `stop` = zůstat na kroku Disciplíny, jinak zahájit. */
+async function newTraining(n = 8, stop?: 'disc') {
   const user = userEvent.setup();
   const repo = memoryRepository({ players: players(n), trainings: [] });
   window.location.hash = '#/trenink';
   render(<App repo={repo} />);
   await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+  await next(user);
   for (let i = 1; i <= n; i++) await user.click(screen.getByRole('checkbox', { name: `H${i}` }));
+  await next(user);
+  if (stop) return { user, repo };
+  while (screen.queryByRole('button', { name: /^Další:/ })) await next(user);
+  await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
+  await screen.findByRole('table', { name: 'Rozpis tréninku' });
   return { user, repo };
 }
+const preview = () => screen.getByRole('list', { name: 'Náhled plánu' });
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -25,26 +34,36 @@ afterEach(() => vi.useRealTimers());
 
 describe('konfigurovatelný trénink v UI', () => {
   it('nový trénink: délka, disciplíny, naplánovaný čas; kolo = jedna disciplína', async () => {
-    const { repo } = await newTraining(8);
-    expect(screen.getByLabelText('Délka tréninku')).toHaveValue('180');
-    expect(screen.queryByLabelText('Typ tréninku')).toBeNull();
+    const { user, repo } = await newTraining(8, 'disc');
+    expect(screen.getByRole('heading', { name: 'Disciplíny' })).toBeInTheDocument();
     expect(screen.getByText(/^Naplánováno \d:\d\d z 3:00$/)).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Řetězec' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Zeď' })).toBeChecked();
+    // náhled plánu vedle výběru: kolo = jedna disciplína
+    expect(within(preview()).getAllByRole('listitem')[0]).toHaveTextContent('Kolo 1Přihrávky na pětce');
+    await user.click(stepButton('Kdy a kde'));
+    expect(screen.getByLabelText('Délka tréninku')).toHaveValue('180');
+    expect(screen.queryByLabelText('Typ tréninku')).toBeNull();
+    while (screen.queryByRole('button', { name: /^Další:/ })) await next(user);
+    await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
+    expect(await screen.findByRole('button', { name: 'Kolo 1' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Kolo 1' }).closest('tr')).toHaveTextContent('Přihrávky na pětce');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0]).toMatchObject({ format: 'custom', durationMin: 180 }));
   });
 
   it('odškrtnutí disciplíny a +/− mění plán a čas', async () => {
-    const { user } = await newTraining(8);
+    const { user } = await newTraining(8, 'disc');
+    expect(preview()).toHaveTextContent('1. vlna');
     await user.click(screen.getByRole('checkbox', { name: 'Simulace ligového kola' }));
-    expect(screen.queryByRole('button', { name: /^1\. vlna/ })).toBeNull();
+    expect(preview()).not.toHaveTextContent('1. vlna');
+    const rows = within(preview()).getAllByRole('listitem').length;
     const before = screen.getByText(/^Naplánováno/).textContent;
     const count = () => Number(within(screen.getByRole('group', { name: 'Zeď' })).getByText(/×$/).textContent!.replace(' ×', ''));
     const n = count();
     await user.click(screen.getByRole('button', { name: 'Přidat kolo: Zeď' }));
     expect(screen.getByText(/^Naplánováno/).textContent).not.toBe(before);
     expect(count()).toBe(n + 1);
+    expect(within(preview()).getAllByRole('listitem').length).toBe(rows + 1); // náhled se přepočítá
   });
 
   it('zápis výsledku zamkne kola; pozdní hráč je nezmění', async () => {
@@ -56,9 +75,11 @@ describe('konfigurovatelný trénink v UI', () => {
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
     // jen jména stran (karta obsahuje i běžící stopky)
     const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!.querySelector('.pick-names')!.textContent;
-    // pozdní příchod: nový hráč
+    // pozdní příchod: nový hráč v nastavení
+    await openSettings(user, 'Přítomní');
     await user.type(screen.getByLabelText('Jméno nového hráče'), 'Pozdní');
     await user.click(screen.getByRole('button', { name: 'Přidat a zaškrtnout' }));
+    await saveSettings(user);
     if (screen.getByRole('button', { name: 'Kolo 6' }).getAttribute('aria-expanded') !== 'true')
       await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
     const again = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
@@ -84,18 +105,22 @@ describe('konfigurovatelný trénink v UI', () => {
     window.location.hash = '#/trenink';
     render(<App repo={repo} />);
     await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+    await next(user);
     await user.click(screen.getByRole('checkbox', { name: 'H1' }));
-    expect(screen.getByText('Ještě chybí 1 hráč do minima 2.')).toBeInTheDocument();
+    expect(screen.getByText(/Ještě chybí 1 hráč do minima 2./)).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'H2' }));
-    expect(screen.getByRole('table', { name: 'Rozpis tréninku' })).toBeInTheDocument();
+    await next(user);
+    expect(preview()).toBeInTheDocument();
     const sim = screen.getByRole('checkbox', { name: 'Simulace ligového kola' });
     expect(sim).toBeDisabled();
     expect(sim).not.toBeChecked();
     expect(screen.getByText('potřebuje aspoň 4 hráče')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '1. vlna' })).toBeNull();
+    expect(preview()).not.toHaveTextContent('1. vlna');
+    await user.click(stepButton('Přítomní'));
     await user.click(screen.getByRole('checkbox', { name: 'H3' }));
     await user.click(screen.getByRole('checkbox', { name: 'H4' }));
+    await next(user);
     expect(screen.getByRole('checkbox', { name: 'Simulace ligového kola' })).toBeChecked();
-    expect(screen.getByRole('button', { name: '1. vlna' })).toBeInTheDocument();
+    expect(preview()).toHaveTextContent('1. vlna');
   });
 });

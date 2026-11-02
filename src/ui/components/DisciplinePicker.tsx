@@ -22,20 +22,21 @@ export function DurationSelect({ training, onChange }: { training: Training; onC
   );
 }
 
-export function DisciplinePicker({ training, open, onChange }: { training: Training; open: boolean; onChange(next: Training): void }) {
+export function DisciplinePicker({ training, open, onChange, bare }: { training: Training; open: boolean; onChange(next: Training): void; bare?: boolean }) {
   const used = plannedMinutes(training.plan, training.attendees.length, training.breaks);
   const over = used > training.durationMin;
   const locked = lockedCounts(training);
   const setCount = (id: DisciplineId, n: number) => onChange({ ...training, plan: { ...training.plan, [id]: Math.max(locked[id] ?? 0, n) } });
-  return (
-    <details className="disciplines step" open={open}>
-      <summary className="attendance-head">
-        <span className="attendance-title">Disciplíny</span>
-        <span className={over ? 'count-badge over' : 'count-badge'}>
-          Naplánováno {hm(used)} z {hm(training.durationMin)}
-        </span>
-        {over && <span className="error">Nevejde se, uber kola.</span>}
-      </summary>
+  const badge = (
+    <>
+      <span className={over ? 'count-badge over' : 'count-badge'}>
+        Naplánováno {hm(used)} z {hm(training.durationMin)}
+      </span>
+      {over && <span className="error">Nevejde se, uber kola.</span>}
+    </>
+  );
+  const body = (
+    <>
       {(['drill', 'match', 'sim'] as const).map((kind) => (
         <div key={kind} className="disc-group">
           <h3>{KIND_TITLE[kind]}</h3>
@@ -74,6 +75,22 @@ export function DisciplinePicker({ training, open, onChange }: { training: Train
         </div>
       ))}
       <p className="note">Cvičení má tolik kol, aby se ve dvojicích vystřídali všichni. Zbylý čas appka doplní zápasy; počty jde upravit. Odehraná kola jsou zamčená.</p>
+    </>
+  );
+  if (bare)
+    return (
+      <div className="disciplines bare">
+        <p className="count-line">{badge}</p>
+        {body}
+      </div>
+    );
+  return (
+    <details className="disciplines step" open={open}>
+      <summary className="attendance-head">
+        <span className="attendance-title">Disciplíny</span>
+        {badge}
+      </summary>
+      {body}
     </details>
   );
 }

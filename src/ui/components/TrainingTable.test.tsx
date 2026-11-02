@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import type { Mode, Player, TableCount, Training } from '../../domain/types';
+import { openSettings, saveSettings } from '../../test/wizard';
 
 const players = (n: number): Player[] =>
   Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
@@ -62,9 +63,12 @@ describe('tabulka tréninku', () => {
   });
 
   it('změna začátku posune časy', async () => {
+    const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Kdy a kde');
     fireEvent.change(screen.getByLabelText('Začátek'), { target: { value: '17:30' } });
+    await saveSettings(user);
     expect(within(rowOf('Kolo 1')).getByText('18:30')).toBeInTheDocument();
   });
 
@@ -85,7 +89,9 @@ describe('tabulka tréninku', () => {
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await user.click(screen.getByRole('button', { name: /^Kolo 2$/ }));
+    await openSettings(user, 'Kdy a kde');
     await user.selectOptions(screen.getByLabelText('Typ tréninku'), 'single');
+    await saveSettings(user);
     expect(screen.getByLabelText('Rozehrání: rozehrávka ze zadku, stůl 1: H1')).toBeInTheDocument();
   });
 
@@ -150,8 +156,10 @@ describe('tabulka tréninku', () => {
     const repo = memoryRepository({ players: players(8), trainings: [t] });
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    expect(screen.getByLabelText('Týmy pro simulaci')).toHaveValue('performance');
     expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();
+    await openSettings(user, 'Pořadí a týmy');
+    expect(screen.getByLabelText('Týmy pro simulaci')).toHaveValue('performance');
+    await saveSettings(user);
 
     await user.click(screen.getByRole('button', { name: /^1\. vlna/ }));
     const sim = screen.getByRole('group', { name: '1. vlna, stůl 1' });
@@ -171,7 +179,9 @@ describe('tabulka tréninku', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [{ ...training(8, 'team', 4), simSplit: 'performance' as const }] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Pořadí a týmy');
     await user.selectOptions(screen.getByLabelText('Týmy pro simulaci'), 'order');
+    await saveSettings(user);
     expect(screen.getByText('Tým A: H1, H2, H3, H4. Tým B: H5, H6, H7, H8.')).toBeInTheDocument();
   });
 
@@ -180,11 +190,13 @@ describe('tabulka tréninku', () => {
     const repo = memoryRepository({ players: players(8), trainings: [{ ...training(8, 'team', 4), simSplit: 'performance' as const }] });
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Pořadí a týmy');
     await user.selectOptions(screen.getByLabelText('Týmy pro simulaci'), 'manual');
-    expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();
+    // ruční sestavení začne od týmů, které byly v rozpisu
+    expect(screen.getByRole('button', { name: 'Přesunout H1 do týmu B' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Přesunout H1 do týmu B' }));
-    expect(screen.getByText('Tým A: H4, H5, H8. Tým B: H2, H3, H6, H7, H1.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Posunout H1 v týmu nahoru' }));
+    await saveSettings(user);
     expect(screen.getByText('Tým A: H4, H5, H8. Tým B: H2, H3, H6, H1, H7.')).toBeInTheDocument();
     await vi.waitFor(() =>
       expect(repo.snapshot().trainings[0]).toMatchObject({ simSplit: 'manual', simTeams: { A: ['id4', 'id5', 'id8'] } }),

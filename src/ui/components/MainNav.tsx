@@ -1,7 +1,7 @@
 import type { Route } from '../useHashRoute';
 
 const ITEMS: { label: string; route: Route; match: Route['page'][] }[] = [
-  { label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training'] },
+  { label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit'] },
   { label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
   { label: 'Hráči', route: { page: 'players' }, match: ['players'] },
 ];

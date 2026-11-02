@@ -625,3 +625,57 @@ button.drill-fail:active:not(:disabled) { background: var(--warn-soft); }
 button.chip-btn { min-height: 32px; min-width: 34px; padding: 0 8px; border-radius: 16px; background: var(--surface); color: var(--muted); border: 1px solid var(--line-strong); font-weight: 800; }
 button.chip-btn.ok { color: var(--felt); border-color: var(--felt); }
 button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
+
+/* ── Průvodce nastavením tréninku ───────────────────────── */
+.training-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; max-width: 980px; }
+.training-head .dateline { margin-bottom: 12px; }
+.wizard { max-width: 1100px; }
+.wizard-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; }
+.wizard-steps li { flex: 1; border-bottom: 3px solid var(--line); }
+.wizard-steps li.done { border-color: var(--felt); }
+.wizard-steps li.on { border-color: var(--ink); }
+.wizard-steps button {
+  width: 100%; display: flex; align-items: center; gap: 8px; background: none; border: 0; border-radius: 0;
+  color: var(--muted); font-weight: 500; padding: 8px 6px; text-align: left; min-height: 44px;
+}
+.wizard-steps button:disabled { opacity: 1; cursor: default; }
+.wizard-steps li.done button { color: var(--felt); }
+.wizard-steps li.on button { color: var(--ink); font-weight: 700; }
+.wizard-steps b {
+  width: 24px; height: 24px; flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--line); color: var(--ink); font-size: 12px;
+}
+.wizard-steps li.done b { background: var(--felt); color: var(--felt-ink); }
+.wizard-steps li.on b { background: var(--ink); color: var(--surface); }
+.wizard-mobile-progress { display: none; color: var(--muted); font-weight: 600; margin: 0 0 8px; }
+.wizard-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.wizard-panel h2 { margin: 0 0 12px; }
+.wizard-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 14px 0; }
+.wizard-nav-right { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.wizard-nav button { min-height: 44px; padding: 0 18px; }
+.wizard-disc { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 18px; align-items: start; }
+.disciplines.bare { margin: 0; }
+.count-line { margin: 0 0 8px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.plan-preview { position: sticky; top: 64px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; max-height: 70vh; overflow: auto; }
+.plan-preview h3 { margin: 0 0 6px; }
+.plan-preview ol { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.plan-preview li { display: grid; grid-template-columns: 44px 62px 1fr; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.plan-preview li.brk { color: var(--muted); font-style: italic; }
+.pp-time { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pp-label { font-weight: 600; }
+.pp-rule { color: var(--muted); }
+.wizard-sum { display: flex; flex-direction: column; }
+.sum-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.sum-k { color: var(--muted); font-weight: 600; }
+.attendance-fields .check-list { margin: 8px 0 12px; }
+.order-fields h3 { margin: 16px 0 4px; }
+@media (max-width: 767px) {
+  .wizard-steps { display: none; }
+  .wizard-mobile-progress { display: block; }
+  .wizard-panel { padding: 12px; }
+  .wizard-disc { grid-template-columns: 1fr; }
+  .plan-preview { position: static; max-height: none; }
+  .sum-row { grid-template-columns: 1fr auto; }
+  .sum-row .sum-k { grid-column: 1 / -1; }
+  .wizard-nav { position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); background: var(--bg); padding: 8px 0; margin: 0; }
+}

@@ -1,3 +1,4 @@
+import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
 import { useEffect, useState } from 'react';
 import type { Viewer } from '../domain/my';
 import { memoryAuth, type AuthService, type Me } from '../storage/auth';
@@ -99,6 +100,9 @@ function SignedIn({
   else if (route.page === 'trainings') body = <TrainingsPage store={store} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'training')
     body = <TrainingPage key={route.id} store={store} id={route.id} navigate={navigate} viewer={viewer} />;
+  else if (route.page === 'training-new') body = <NewTrainingPage store={store} navigate={navigate} viewer={viewer} />;
+  else if (route.page === 'training-edit')
+    body = <EditTrainingPage key={route.id} store={store} id={route.id} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} />;
   else body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
 

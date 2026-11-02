@@ -4,6 +4,7 @@ import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import { autoPlan, DEFAULT_SELECTION } from '../../domain/plan';
 import type { Player, Training } from '../../domain/types';
+import { openSettings, saveSettings } from '../../test/wizard';
 
 const players = (n: number): Player[] => Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
 const custom = (n: number, tables: 2 | 3 | 4, over: Partial<Training> = {}): Training => ({
@@ -86,12 +87,13 @@ describe('pauzy na telefonu', () => {
 });
 
 describe('náhodné pořadí', () => {
-  it('tlačítko v Upravit pořadí zamíchá přítomné', async () => {
+  it('tlačítko v kroku Pořadí a týmy zamíchá přítomné', async () => {
     const { repo, user } = await setup(custom(8, 4));
     const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-    await user.click(screen.getByText('Upravit pořadí'));
+    await openSettings(user, 'Pořadí a týmy');
     await user.click(screen.getByRole('button', { name: 'Náhodné pořadí' }));
     spy.mockRestore();
+    await saveSettings(user);
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].attendees).not.toEqual(players(8).map((p) => p.id)));
     expect([...repo.snapshot().trainings[0].attendees].sort()).toEqual(players(8).map((p) => p.id).sort());
   });

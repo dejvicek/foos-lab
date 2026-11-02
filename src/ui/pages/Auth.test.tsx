@@ -20,6 +20,8 @@ const training: Training = {
 /** Trénink, který organizátor zahájil a začíná zápasem (hráč je hned na řadě). */
 const started = (): Training => ({ ...training, plan: { normal: 2, wall: 1 }, playTimes: { training: { startedAt: Date.now() } } });
 
+import { createTraining } from '../../test/wizard';
+
 async function login(nick: string, password: string) {
   const user = userEvent.setup();
   await user.type(await screen.findByLabelText('Přezdívka'), nick);
@@ -155,13 +157,15 @@ describe('přihlášení', () => {
     window.location.hash = '#/trenink';
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
-    expect(await screen.findByLabelText('Délka tréninku')).toBeInTheDocument();
+    await createTraining(user, ['Milan', 'Lavi']);
+    expect(await screen.findByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings.find((t) => t.id !== 't1')?.createdBy).toBe('id2'));
 
     window.location.hash = '#/trenink/t1';
-    await vi.waitFor(() => expect(screen.queryByLabelText('Délka tréninku')).toBeNull());
+    await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull());
     expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull();
+    window.location.hash = '#/trenink/t1/nastaveni'; // ani přímou adresou
+    expect(await screen.findByText(/Nastavení tréninku může měnit jen/)).toBeInTheDocument();
   });
 });

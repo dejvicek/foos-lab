@@ -43,16 +43,16 @@ describe('telefon – žebříček', () => {
 });
 
 describe('telefon – nastavení tréninku', () => {
-  it('kroky Kdy a kde → Přítomní → Disciplíny → Týmy pro simulaci, každý se shrnutím', async () => {
+  it('nastavení je průvodce v krocích „Krok N z 5“ se shrnutím na konci', async () => {
     const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };
     window.location.hash = '#/trenink/t1';
-    const { container } = render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
-    await screen.findByLabelText('Rozpis tréninku');
-    const steps = [...container.querySelectorAll('details.step > summary')].map((s) => s.textContent ?? '');
-    const titles = ['Kdy a kde', 'Přítomní', 'Disciplíny', 'Týmy pro simulaci'];
-    expect(steps).toHaveLength(4);
-    steps.forEach((s, i) => expect(s.startsWith(titles[i])).toBe(true));
-    expect(steps[0]).toMatch(/18:00, 3:00, 4 stoly/);
-    expect(steps[3]).toMatch(/podle nominačního pořadí/);
+    render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Upravit nastavení' }));
+    expect(screen.getByText('Krok 5 z 5 · Shrnutí')).toBeInTheDocument();
+    expect(screen.getByText(/18:00, 3:00, 4 stoly/)).toBeInTheDocument();
+    expect(screen.getByText('týmy podle nominačního pořadí')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Upravit: Přítomní' }));
+    expect(screen.getByText('Krok 2 z 5 · Přítomní')).toBeInTheDocument();
   });
 });

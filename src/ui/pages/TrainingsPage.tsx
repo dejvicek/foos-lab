@@ -1,5 +1,5 @@
-import { newTraining, sortTrainings } from '../../domain/training';
-import { formatDateLong, todayIso } from '../dates';
+import { sortTrainings } from '../../domain/training';
+import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import type { Viewer } from '../../domain/my';
 import type { AppStore } from '../useAppState';
@@ -11,11 +11,7 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
   const now = useNow();
   const names = new Map(store.data.players.map((p) => [p.id, p.name]));
 
-  const create = () => {
-    const t = newTraining(store.newId(), todayIso(), trainings[0] ?? null, viewer.playerId);
-    store.saveTraining(t);
-    navigate({ page: 'training', id: t.id });
-  };
+  const create = () => navigate({ page: 'training-new' });
 
   return (
     <section>
