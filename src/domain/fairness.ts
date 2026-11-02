@@ -1,5 +1,7 @@
+import { DISCIPLINES, discipline } from './disciplines';
 import { pairKey } from './pairing';
-import type { PlayerId, Schedule } from './types';
+import { buildSchedule, type ScheduleInput } from './schedule';
+import type { DisciplineId, PlayerId, Schedule } from './types';
 
 /** Kontrola spravedlnosti rozpisu (jen pro admina): kdo s kým kolikrát hrál ve dvojici a proti sobě. */
 export interface Fairness {
@@ -39,4 +41,58 @@ export function fairness(s: Schedule, players: PlayerId[]): Fairness {
     maxTogether: Math.max(0, ...together.values()),
     maxAgainst: Math.max(0, ...against.values()),
   };
+}
+
+export interface FairnessAdvice {
+  /** Hraje se ve dvojicích (aspoň 4 hráči)? Bez dvojic spolu hrát nejde. */
+  doubles: boolean;
+  /** Dvojice hráčů, které spolu nikdy nehrají / nikdy proti sobě. */
+  neverWith: number;
+  neverAgainst: number;
+  pairs: number;
+  /** Které kolo přidávat: vybraná nepárová disciplína dvojic, jinak Normální leg. */
+  discipline: DisciplineId;
+  /** Je ta disciplína už vybraná (jde rovnou přidat kola)? */
+  selected: boolean;
+  /** Kolik kol přidat, aby spolu / proti sobě hrál každý s každým; 0 = už je; null = ani s maxExtra koly. */
+  addForWith: number | null;
+  addForAgainst: number | null;
+}
+
+const neverCount = (f: Fairness, players: PlayerId[], kind: 'together' | 'against') => {
+  let n = 0;
+  for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) if (f[kind](players[i], players[j]) === 0) n++;
+  return n;
+};
+
+/**
+ * Nápověda k nastavení: kolik kol zápasu dvojic přidat, aby spolu i proti sobě hrál každý s každým.
+ * Počítá skutečným sestavením rozpisu s koly navíc (vyrovnávání je deterministické), nejvýš `maxExtra`.
+ */
+export function fairnessAdvice(t: ScheduleInput, maxExtra = 20): FairnessAdvice {
+  const players = t.attendees;
+  const plan = t.plan ?? {};
+  const candidates = DISCIPLINES.filter((d) => d.kind === 'match' && !d.paired && !d.singlesOnly && !d.retired);
+  const chosen = candidates.find((d) => (plan[d.id] ?? 0) > 0) ?? discipline('normal');
+  const doubles = players.length >= 4;
+  const at = (extra: number) => fairness(buildSchedule({ ...t, plan: { ...plan, [chosen.id]: (plan[chosen.id] ?? 0) + extra } }), players);
+  const now = at(0);
+  const out: FairnessAdvice = {
+    doubles,
+    neverWith: doubles ? neverCount(now, players, 'together') : 0,
+    neverAgainst: neverCount(now, players, 'against'),
+    pairs: (players.length * (players.length - 1)) / 2,
+    discipline: chosen.id,
+    selected: (plan[chosen.id] ?? 0) > 0,
+    addForWith: null,
+    addForAgainst: null,
+  };
+  if (!doubles || out.neverWith === 0) out.addForWith = doubles ? 0 : null;
+  if (out.neverAgainst === 0) out.addForAgainst = 0;
+  for (let k = 1; k <= maxExtra && ((doubles && out.addForWith === null) || out.addForAgainst === null); k++) {
+    const f = at(k);
+    if (doubles && out.addForWith === null && neverCount(f, players, 'together') === 0) out.addForWith = k;
+    if (out.addForAgainst === null && neverCount(f, players, 'against') === 0) out.addForAgainst = k;
+  }
+  return out;
 }

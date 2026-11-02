@@ -867,3 +867,6 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .fairness-table td.hot, .hot-key { background: var(--felt-soft); color: var(--felt); }
 .never-key, .hot-key { padding: 0 5px; border-radius: 4px; font-weight: 800; }
 .fairness-table tbody th, .fairness-table thead th:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.fairness-advice ul { margin: 6px 0 4px; padding-left: 18px; }
+.fairness-advice li { margin: 4px 0; }
+.fairness-advice li button { margin-left: 8px; min-height: 32px; padding: 2px 12px; }

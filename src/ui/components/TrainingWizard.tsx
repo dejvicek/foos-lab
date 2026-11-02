@@ -8,6 +8,7 @@ import { formatDate } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import { prepareEdit } from '../trainingEdit';
 import { DisciplinePicker, hm } from './DisciplinePicker';
+import { FairnessPanel } from './FairnessPanel';
 import { PlanPreview } from './PlanPreview';
 import { AttendanceFields, WhenFields } from './TrainingSetup';
 
@@ -23,10 +24,12 @@ interface Props {
   onAddPlayer(name: string): { id: PlayerId; players: Player[] } | { error: RosterError };
   onFinish(t: Training): void;
   onCancel(): void;
+  /** Admin: kontrola rozpisu (kdo s kým kolikrát) v kroku Disciplíny. */
+  admin?: boolean;
 }
 
 /** PRD 7: založení / úprava tréninku v krocích Kdy a kde → Přítomní → Disciplíny → Shrnutí. */
-export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel }: Props) {
+export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel, admin }: Props) {
   const [draft, setDraft] = useState(initial);
   // Týmy pro simulaci a pořadí se nastavují v tréninku před zahájením simulace.
   const steps: StepId[] = ['when', 'who', ...(draft.format === 'custom' ? (['disc'] as const) : []), 'sum'];
@@ -59,10 +62,19 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
         return <AttendanceFields training={draft} players={players} onChange={change} onAddPlayer={addPlayer} />;
       case 'disc':
         return (
-          <div className="wizard-disc">
-            <DisciplinePicker training={draft} open bare onChange={change} />
-            <PlanPreview training={draft} onChange={change} />
-          </div>
+          <>
+            <div className="wizard-disc">
+              <DisciplinePicker training={draft} open bare onChange={change} />
+              <PlanPreview training={draft} onChange={change} />
+            </div>
+            {admin && (
+              <FairnessPanel
+                training={draft}
+                names={Object.fromEntries(byId)}
+                onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
+              />
+            )}
+          </>
         );
       case 'sum': {
         const rounds = ready ? buildSchedule(draft).sections.flatMap((s) => s.rows).filter((r) => r.kind !== 'break').length : 0;
