@@ -47,7 +47,7 @@ export function WhenFields({ training, onChange }: PartProps) {
         </span>
         <div className="dot-line" role="radiogroup" aria-labelledby="t-tables" style={{ ["--fill" as string]: String((training.tables - 1) / 3) }}>
           {([1, 2, 3, 4] as TableCount[]).map((n) => (
-            <label key={n} className="dot-step">
+            <label key={n} className={n <= training.tables ? 'dot-step on' : 'dot-step'}>
               <input
                 type="radio"
                 name={`tables-${training.id}`}

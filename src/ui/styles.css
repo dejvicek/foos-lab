@@ -845,7 +845,8 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
 .dot-step:has(input:focus-visible) .dot { outline: 2px solid var(--felt); outline-offset: 3px; }
 .dot-num { font-size: 13px; color: var(--muted); }
 .dot-line::after { content: ''; position: absolute; left: 14px; top: 17px; height: 2px; width: calc((100% - 28px) * var(--fill, 0)); background: var(--felt); }
-.dot-step:has(input:checked) ~ .dot-step .dot { background: var(--surface); }
+.dot-step.on .dot { background: var(--felt); border-color: var(--felt); }
+.dot-step.on .dot-num { color: var(--ink); }
 /* Linka za tečkami, ne přes ně */
 .dot-line::before, .dot-line::after { z-index: 0; }
 .dot-step { z-index: 1; }
