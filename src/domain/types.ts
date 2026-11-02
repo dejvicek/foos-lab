@@ -73,6 +73,8 @@ export interface Training {
   lockedRounds: LockedRound[];
   /** Vlastní pauzy (konfigurovatelný trénink); chybí / null = automaticky 10 min po každé hodině. */
   breaks?: BreakDef[] | null;
+  /** Zahájení a konce utkání (Zdržovači); chybí = nic neměřeno. */
+  playTimes?: PlayTimes;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
   createdBy?: PlayerId | null;
   notes?: string;
@@ -106,6 +108,14 @@ export interface Match {
 export type Cell =
   | { type: 'group'; players: PlayerId[]; station?: string; metric?: SoloMetric; soloRound?: number; discipline?: DisciplineId }
   | { type: 'match'; match: Match };
+
+/** Zahájení a konec utkání (ms od epochy) – Zdržovači (PRD 4.8). */
+export interface PlayTime {
+  startedAt?: number;
+  endedAt?: number;
+}
+/** Klíč: ID zápasu, u cvičení `drill|kolo|stůl|hráči`. */
+export type PlayTimes = Record<string, PlayTime>;
 
 /** Pauza: po kolika kolech (1 = po kole 1) a jak dlouhá v minutách. */
 export interface BreakDef {
