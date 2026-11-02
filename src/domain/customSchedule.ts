@@ -1,6 +1,6 @@
 import { discipline, type DisciplineDef } from './disciplines';
 import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters, type MatchPlan } from './pairing';
-import { planSequence, planTimeline, FINAL_MIN, type Plan } from './plan';
+import { planSequence, planTimeline, FINAL_MIN, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
 import type {
@@ -75,7 +75,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   const remaining: Plan = {};
   for (const [id, n] of Object.entries(plan) as [DisciplineId, number][])
     remaining[id] = Math.max(0, n - (lockedCount.get(id) ?? 0));
-  if (locked.some((l) => l.discipline === 'sim')) remaining.sim = 0;
+  if (locked.some((l) => l.discipline === 'sim') || players.length < SIM_MIN_PLAYERS) remaining.sim = 0;
   const seq = [...locked.map((l) => l.discipline), ...planSequence(remaining)];
   const drillsLeft = new Map<DisciplineId, number>();
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);

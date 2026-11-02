@@ -22,7 +22,7 @@ describe('stránka Trénink', () => {
 
     expect(await screen.findByText('Přítomno: 0')).toBeInTheDocument();
     for (const n of NAMES.slice(0, 6)) expect(checkbox(n)).not.toBeChecked();
-    expect(screen.getByText('Ještě chybí 4 hráči do minima 4.')).toBeInTheDocument();
+    expect(screen.getByText('Ještě chybí 2 hráči do minima 2.')).toBeInTheDocument();
 
     for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(checkbox(n));
     expect(screen.getByText('Přítomno: 4')).toBeInTheDocument();

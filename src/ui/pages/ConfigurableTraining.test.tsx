@@ -74,4 +74,25 @@ describe('konfigurovatelný trénink v UI', () => {
       expect(t.lockedRounds.at(-1)?.discipline).toBe('sim');
     });
   });
+
+  it('trénink pro 2 hráče: rozpis bez simulace, simulace vypnutá; při 4 hráčích se vrátí', async () => {
+    const user = userEvent.setup();
+    const repo = memoryRepository({ players: players(4), trainings: [] });
+    window.location.hash = '#/trenink';
+    render(<App repo={repo} />);
+    await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+    await user.click(screen.getByRole('checkbox', { name: 'H1' }));
+    expect(screen.getByText('Ještě chybí 1 hráč do minima 2.')).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: 'H2' }));
+    expect(screen.getByRole('table', { name: 'Rozpis tréninku' })).toBeInTheDocument();
+    const sim = screen.getByRole('checkbox', { name: 'Simulace ligového kola' });
+    expect(sim).toBeDisabled();
+    expect(sim).not.toBeChecked();
+    expect(screen.getByText('potřebuje aspoň 4 hráče')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '1. vlna' })).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: 'H3' }));
+    await user.click(screen.getByRole('checkbox', { name: 'H4' }));
+    expect(screen.getByRole('checkbox', { name: 'Simulace ligového kola' })).toBeChecked();
+    expect(screen.getByRole('button', { name: '1. vlna' })).toBeInTheDocument();
+  });
 });

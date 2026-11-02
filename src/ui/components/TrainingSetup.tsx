@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { sortedRoster, type RosterError } from '../../domain/roster';
-import { MAX_PLAYERS, MIN_PLAYERS } from '../../domain/schedule';
+import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
 import { moveAttendee, toggleAttendee } from '../../domain/training';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
@@ -22,7 +22,8 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
   const [error, setError] = useState<string | null>(null);
   const n = training.attendees.length;
   // Přítomní jsou rozbalení, dokud jich při otevření stránky není dost na rozpis.
-  const [initiallyOpen] = useState(() => n < MIN_PLAYERS);
+  const min = minPlayers(training);
+  const [initiallyOpen] = useState(() => n < min);
   const byId = new Map(players.map((p) => [p.id, p]));
 
   // Aktivní hráči + archivovaní, kteří už v tréninku jsou.
@@ -62,7 +63,7 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
             </select>
           </div>
         )}
-        {(training.format === 'custom' ? (training.plan.sim ?? 0) > 0 : training.mode === 'team') && (
+        {(training.format === 'custom' ? (training.plan.sim ?? 0) > 0 && n >= 4 : training.mode === 'team') && (
           <div className="field">
             <label htmlFor="t-split">Týmy pro simulaci</label>
             <select
@@ -98,11 +99,11 @@ export function TrainingSetup({ training, currentTeams, players, onChange, onAdd
         <summary className="attendance-head">
           <span className="attendance-title">Přítomní</span>
           <span className="count-badge">Přítomno: {n}</span>
-          <span className="attendance-hint">{n >= MIN_PLAYERS ? 'upravit' : ''}</span>
+          <span className="attendance-hint">{n >= min ? 'upravit' : ''}</span>
         </summary>
-        {n < MIN_PLAYERS && (
+        {n < min && (
           <p className="note">
-            Ještě chybí {MIN_PLAYERS - n} {plural(MIN_PLAYERS - n, 'hráč', 'hráči', 'hráčů')} do minima {MIN_PLAYERS}.
+            Ještě chybí {min - n} {plural(min - n, 'hráč', 'hráči', 'hráčů')} do minima {min}.
           </p>
         )}
         {n > MAX_PLAYERS && <p className="error">Moc hráčů: rozpis umí nejvýš {MAX_PLAYERS}.</p>}

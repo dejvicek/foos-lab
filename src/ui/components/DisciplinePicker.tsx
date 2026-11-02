@@ -1,5 +1,5 @@
 import { DISCIPLINES } from '../../domain/disciplines';
-import { DURATION_OPTIONS, plannedMinutes } from '../../domain/plan';
+import { DURATION_OPTIONS, plannedMinutes, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
 
@@ -23,7 +23,7 @@ export function DurationSelect({ training, onChange }: { training: Training; onC
 }
 
 export function DisciplinePicker({ training, open, onChange }: { training: Training; open: boolean; onChange(next: Training): void }) {
-  const used = plannedMinutes(training.plan);
+  const used = plannedMinutes(training.plan, training.attendees.length);
   const over = used > training.durationMin;
   const locked = lockedCounts(training);
   const setCount = (id: DisciplineId, n: number) => onChange({ ...training, plan: { ...training.plan, [id]: Math.max(locked[id] ?? 0, n) } });
@@ -41,7 +41,8 @@ export function DisciplinePicker({ training, open, onChange }: { training: Train
           <h3>{KIND_TITLE[kind]}</h3>
           <ul className="disc-list">
             {DISCIPLINES.filter((d) => d.kind === kind).map((d) => {
-              const n = training.plan[d.id] ?? 0;
+              const simOff = d.kind === 'sim' && training.attendees.length < SIM_MIN_PLAYERS;
+              const n = simOff ? 0 : (training.plan[d.id] ?? 0);
               const min = locked[d.id] ?? 0;
               return (
                 <li key={d.id} role="group" aria-label={d.name}>
@@ -49,12 +50,12 @@ export function DisciplinePicker({ training, open, onChange }: { training: Train
                     <input
                       type="checkbox"
                       checked={n > 0}
-                      disabled={min > 0}
+                      disabled={min > 0 || simOff}
                       onChange={() => setCount(d.id, n > 0 ? 0 : 1)}
                     />
                     <span>{d.name}</span>
                   </label>
-                  <span className="muted">{d.min} min</span>
+                  <span className="muted">{simOff ? `potřebuje aspoň ${SIM_MIN_PLAYERS} hráče` : `${d.min} min`}</span>
                   {n > 0 && d.kind !== 'sim' && (
                     <span className="stepper">
                       <button type="button" className="icon" aria-label={`Ubrat kolo: ${d.name}`} disabled={n <= Math.max(1, min)} onClick={() => setCount(d.id, n - 1)}>

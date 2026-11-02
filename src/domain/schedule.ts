@@ -21,13 +21,19 @@ import type {
 } from './types';
 
 export const MIN_PLAYERS = 4;
+/** Konfigurovatelný trénink jde i pro 2–3 hráče (zápasy jen singly, bez simulace). */
+export const MIN_PLAYERS_CUSTOM = 2;
+/** Simulace ligového kola potřebuje dvojice. */
+export const MIN_PLAYERS_SIM = 4;
+
+export const minPlayers = (t: Pick<ScheduleInput, 'format'>): number => (t.format === 'custom' ? MIN_PLAYERS_CUSTOM : MIN_PLAYERS);
 export const MAX_PLAYERS = 13;
 
 export type ScheduleInput = Pick<Training, 'mode' | 'tables' | 'attendees'> &
   Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds'>>;
 
 export function canBuildSchedule(t: ScheduleInput): boolean {
-  return t.attendees.length >= MIN_PLAYERS && t.attendees.length <= MAX_PLAYERS;
+  return t.attendees.length >= minPlayers(t) && t.attendees.length <= MAX_PLAYERS;
 }
 
 export function matchId(block: Block, round: number, table: number, a: PlayerId[], b: PlayerId[]): MatchId {
@@ -241,7 +247,7 @@ export function buildSchedule(t: ScheduleInput): Schedule {
 
 function buildScheduleUncached(t: ScheduleInput): Schedule {
   if (!canBuildSchedule(t)) {
-    throw new Error(`Rozpis umí ${MIN_PLAYERS}–${MAX_PLAYERS} hráčů, přítomno ${t.attendees.length}.`);
+    throw new Error(`Rozpis umí ${minPlayers(t)}–${MAX_PLAYERS} hráčů, přítomno ${t.attendees.length}.`);
   }
   if (t.format === 'custom') return buildCustomSchedule(t);
   return t.mode === 'team' ? buildTeam(t) : buildSingles(t.attendees, t.tables);

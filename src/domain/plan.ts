@@ -8,6 +8,8 @@ export const BREAK_AFTER_MIN = 60;
 export const FINAL_MIN = 10;
 export const DURATION_OPTIONS = Array.from({ length: 13 }, (_, i) => 60 + i * 15); // 1:00–4:00
 export const DEFAULT_DURATION = 180;
+/** Simulace ligového kola potřebuje aspoň 4 hráče (dvojice). */
+export const SIM_MIN_PLAYERS = 4;
 
 /** Výchozí výběr úplně prvního konfigurovatelného tréninku (PRD 4.6). */
 export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => d.id !== 'chain').map((d) => d.id);
@@ -49,7 +51,9 @@ export function planTimeline(sequence: DisciplineId[]): { items: TimelineItem[];
   return { items, total: t + FINAL_MIN };
 }
 
-export const plannedMinutes = (plan: Plan): number => planTimeline(planSequence(plan)).total;
+/** Naplánovaný čas; simulace se při méně než 4 hráčích nehraje, takže se nepočítá (zůstává ale vybraná). */
+export const plannedMinutes = (plan: Plan, players?: number): number =>
+  planTimeline(planSequence(players !== undefined && players < SIM_MIN_PLAYERS ? { ...plan, sim: 0 } : plan)).total;
 
 /**
  * Rozloží vybrané disciplíny do délky tréninku: cvičení tolik kol, aby se vystřídali všichni,
@@ -77,7 +81,7 @@ export function autoPlan(
   while (matches.length && misses < matches.length) {
     const id = matches[i % matches.length];
     const next = { ...plan, [id]: (plan[id] ?? 0) + 1 };
-    if (plannedMinutes(next) <= durationMin) {
+    if (plannedMinutes(next, players || undefined) <= durationMin) {
       Object.assign(plan, next);
       misses = 0;
     } else misses++;
