@@ -83,7 +83,7 @@ export function MainNav({
   ];
   return (
     <nav className="main-nav" aria-label="Hlavní navigace" style={{ ['--nav-items' as string]: items.length }}>
-      <span className="brand">Rozpis stolů</span>
+      <span className="brand">Foos Lab</span>
       {items.map((it) => {
         const active = it.match.includes(route.page);
         return (
