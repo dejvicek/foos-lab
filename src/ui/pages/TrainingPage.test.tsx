@@ -42,7 +42,7 @@ describe('stránka Trénink', () => {
     expect(screen.getByRole('heading', { name: 'Shrnutí' })).toBeInTheDocument();
     expect(screen.getByText(/5 hráčů: Ada, Bára, Cyril, Dan, Nový/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
-    expect(await screen.findByRole('tab', { name: 'Celý rozpis' })).toBeInTheDocument();
+    expect(await screen.findByRole('table', { name: 'Rozpis tréninku' })).toBeInTheDocument();
     await vi.waitFor(() => {
       const [t] = repo.snapshot().trainings;
       expect(t).toMatchObject({ durationMin: 120, tables: 2 });

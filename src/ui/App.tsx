@@ -1,5 +1,7 @@
+import { activeFor } from './active';
+import { useNow } from './now';
 import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Viewer } from '../domain/my';
 import { memoryAuth, type AuthService, type Me } from '../storage/auth';
 import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
@@ -84,6 +86,28 @@ function SignedIn({
     savePrefs(p);
   };
   const myName = store.data.players.find((p) => p.id === viewer.playerId)?.name ?? null;
+  // Běžící trénink, na kterém jsem → Živě a Moje hra v navigaci.
+  const now = useNow();
+  const active = useMemo(() => activeFor(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now())), [store.data.trainings, viewer.playerId, now]);
+  // Otevření appky (bez adresy): rozehraná hra → Moje hra, běžící trénink → Živě, jinak Trénink.
+  const [openedBare] = useState(() => /^#?\/?$/.test(window.location.hash));
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (!openedBare || redirected.current || store.status !== 'ready') return;
+    redirected.current = true;
+    if (active) navigate({ page: active.myGame ? 'my' : 'live' });
+  }, [openedBare, store.status, active, navigate]);
+  const noLive = (
+    <div className="empty-live">
+      <p>
+        <strong>Teď neběží žádný trénink, na kterém hraješ.</strong>
+      </p>
+      <p className="note">Až organizátor trénink zahájí, uvidíš tu stoly a svou hru.</p>
+      <button type="button" onClick={() => navigate({ page: 'trainings' })}>
+        Tréninky
+      </button>
+    </div>
+  );
 
   let body: React.ReactNode;
   if (store.status === 'loading') body = <p className="note">Načítám…</p>;
@@ -103,12 +127,27 @@ function SignedIn({
   else if (route.page === 'training-new') body = <NewTrainingPage store={store} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'training-edit')
     body = <EditTrainingPage key={route.id} store={store} id={route.id} navigate={navigate} viewer={viewer} />;
+  else if (route.page === 'live' || route.page === 'my')
+    body = active ? (
+      <TrainingPage key={`${route.page}-${active.training.id}`} store={store} id={active.training.id} navigate={navigate} viewer={viewer} view={route.page} />
+    ) : (
+      noLive
+    );
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} />;
   else body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
 
   return (
     <>
-      <MainNav route={route} navigate={navigate} myName={myName} onChangePassword={onChangePassword} onSignOut={onSignOut} />
+      <MainNav
+        route={route}
+        navigate={navigate}
+        myName={myName}
+        onChangePassword={onChangePassword}
+        onSignOut={onSignOut}
+        live={!!active}
+        myTurn={!!active?.myTurn}
+        admin={viewer.isAdmin}
+      />
       {store.saveState === 'retrying' && (
         <div className="save-banner" role="status">
           Neuloženo – zkouším znovu

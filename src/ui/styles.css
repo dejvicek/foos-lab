@@ -339,7 +339,7 @@ tr.clickable:hover td { background: var(--felt-soft); }
   .main-nav {
     position: fixed; top: auto; bottom: 0; left: 0; right: 0; padding: 0 0 env(safe-area-inset-bottom);
     height: calc(var(--nav-h) + env(safe-area-inset-bottom));
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    display: grid; grid-template-columns: repeat(var(--nav-items, 3), 1fr); gap: 0;
     border-bottom: 0; border-top: 1px solid var(--line);
   }
   .main-nav .brand { display: none; }
@@ -697,3 +697,18 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .plan tr.sim-setup-row td { background: var(--bg); padding: 8px 10px; }
 .plan tr.sim-setup-row .sim-setup { margin: 0; max-width: none; }
 .round-cards .sim-setup { margin: 4px 0; }
+
+/* ── Hlavní navigace: Živě · Moje hra · Trénink · Žebříček (· Hráči) ── */
+.main-nav button { position: relative; }
+.nav-icon { display: none; }
+.nav-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; margin: 0 auto 2px; }
+.nav-dot { position: absolute; top: 6px; right: -6px; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); border: 2px solid var(--surface); }
+@media (max-width: 767px) {
+  .nav-icon { display: block; }
+  .main-nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 0 6px; font-size: 11px; gap: 0; }
+  .nav-dot { top: 4px; right: calc(50% - 18px); }
+}
+.view-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.view-head h1 { margin: 0; }
+.view-head .link { margin-left: auto; }
+.empty-live { max-width: 420px; margin: 40px auto; text-align: center; }

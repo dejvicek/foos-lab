@@ -33,11 +33,14 @@ export function TrainingPage({
   id,
   navigate,
   viewer = { playerId: null, isAdmin: true },
+  view = 'schedule',
 }: {
   store: AppStore;
   id: string;
   navigate: (r: Route) => void;
   viewer?: Viewer;
+  /** schedule = stránka tréninku (rozpis, souhrn), live = Živě, my = Moje hra (hlavní navigace). */
+  view?: 'schedule' | 'live' | 'my';
 }) {
   const training = store.data.trainings.find((t) => t.id === id);
   // Rozpis závisí i na skóre: týmy simulace se dělí podle výkonu ve scénářové lize.
@@ -48,11 +51,8 @@ export function TrainingPage({
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
-  const [tab, setTab] = useState<'mine' | 'active' | 'all'>(() =>
-    attends && !viewer.isAdmin && training?.createdBy !== viewer.playerId ? 'mine' : 'all',
-  );
-  // Stopky běží jen na obrazovkách, kde jsou vidět (Můj stůl, Aktivní utkání).
-  const tick = useTick(1000, !!training && tab !== 'all');
+  // Stopky běží jen na obrazovkách, kde jsou vidět (Moje hra, Živě).
+  const tick = useTick(1000, !!training && view !== 'schedule');
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {
@@ -199,6 +199,76 @@ export function TrainingPage({
   };
 
 
+  const flowBar = schedule && queueInfo && (
+    <FlowBar
+      queue={queueInfo.queue}
+      states={queueInfo.states}
+      pauses={pauseStates(queueInfo.queue, training.playTimes ?? {}, tick)}
+      now={tick}
+      started={[...queueInfo.states.values()].some((s) => s.startedAt !== undefined) || training.playTimes?.[TRAINING_ITEM] !== undefined}
+      manage={manage}
+      onStartTraining={() => store.setPlayTime(training.id, TRAINING_ITEM, { startedAt: Date.now() })}
+      onStartPause={(id) => store.setPlayTime(training.id, id, { startedAt: Date.now() })}
+      onNextRound={(id) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() })}
+    />
+  );
+  const viewHead = (title: string) => (
+    <div className="view-head">
+      <h1>{title}</h1>
+      <span className="muted">{formatDateLong(training.date)}</span>
+      <button type="button" className="link" onClick={() => navigate({ page: 'training', id: training.id })}>
+        celý rozpis ›
+      </button>
+    </div>
+  );
+
+  if (view === 'live')
+    return (
+      <section>
+        {viewHead('Živě')}
+        {flowBar}
+        {simNext && simSetup}
+        {schedule && queueInfo && (
+          <ActiveMatches
+            queue={queueInfo.queue}
+            states={queueInfo.states}
+            tables={usedTables(schedule).map((j) => j + 1)}
+            names={names}
+            me={viewer.playerId}
+            now={tick}
+            canWrite={canItem}
+            onStart={(e) => itemTiming?.start(e.id)}
+            onEnd={(e) => itemTiming?.end(e.id)}
+          />
+        )}
+      </section>
+    );
+
+  if (view === 'my')
+    return (
+      <section>
+        {viewHead('Moje hra')}
+        {schedule && attends ? (
+          <MyTable
+            schedule={schedule}
+            training={training}
+            names={names}
+            playerId={viewer.playerId!}
+            since={since}
+            onScore={onScore}
+            onSolo={onSolo}
+            canMatch={canMatch}
+            canSolo={canSolo}
+            tap={mobile ? tap : undefined}
+            timing={itemTiming}
+            onTapSolo={onTapSolo}
+          />
+        ) : (
+          <p className="note">V tomhle tréninku nehraješ.</p>
+        )}
+      </section>
+    );
+
   return (
     <section>
       <button type="button" className="back no-print" onClick={() => navigate({ page: 'trainings' })}>
@@ -224,70 +294,9 @@ export function TrainingPage({
       )}
 
 
+      {flowBar}
+
       {schedule && (
-        <div className="tabs no-print" role="tablist" aria-label="Zobrazení">
-          {attends && (
-            <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>
-              Můj stůl
-            </button>
-          )}
-          <button type="button" role="tab" aria-selected={tab === 'active'} onClick={() => setTab('active')}>
-            Aktivní utkání
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'all' || (tab === 'mine' && !attends)} onClick={() => setTab('all')}>
-            Celý rozpis
-          </button>
-        </div>
-      )}
-
-      {schedule && queueInfo && (
-        <FlowBar
-          queue={queueInfo.queue}
-          states={queueInfo.states}
-          pauses={pauseStates(queueInfo.queue, training.playTimes ?? {}, tick)}
-          now={tick}
-          started={[...queueInfo.states.values()].some((s) => s.startedAt !== undefined) || training.playTimes?.[TRAINING_ITEM] !== undefined}
-          manage={manage}
-          onStartTraining={() => store.setPlayTime(training.id, TRAINING_ITEM, { startedAt: Date.now() })}
-          onStartPause={(id) => store.setPlayTime(training.id, id, { startedAt: Date.now() })}
-          onNextRound={(id) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() })}
-        />
-      )}
-
-      {tab === 'active' && simNext && simSetup}
-
-      {schedule && queueInfo && tab === 'active' && (
-        <ActiveMatches
-          queue={queueInfo.queue}
-          states={queueInfo.states}
-          tables={usedTables(schedule).map((j) => j + 1)}
-          names={names}
-          me={viewer.playerId}
-          now={tick}
-          canWrite={canItem}
-          onStart={(e) => itemTiming?.start(e.id)}
-          onEnd={(e) => itemTiming?.end(e.id)}
-        />
-      )}
-
-      {schedule && attends && tab === 'mine' && (
-        <MyTable
-          schedule={schedule}
-          training={training}
-          names={names}
-          playerId={viewer.playerId!}
-          since={since}
-          onScore={onScore}
-          onSolo={onSolo}
-          canMatch={canMatch}
-          canSolo={canSolo}
-          tap={mobile ? tap : undefined}
-          timing={itemTiming}
-          onTapSolo={onTapSolo}
-        />
-      )}
-
-      {schedule && (tab === 'all' || (tab === 'mine' && !attends)) && (
         <>
           {mobile ? (
             <RoundCards
