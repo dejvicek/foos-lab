@@ -97,3 +97,45 @@ describe('ScorePicker – zápis kliknutím na notebooku', () => {
     expect(screen.queryByRole('button', { name: 'S: vymazat' })).toBeNull();
   });
 });
+
+describe('ScorePicker – předvyplnění vítěze', () => {
+  it('klik na číslo jedné strany doplní prázdné druhé straně 6; vyplněnou nepřepíše', async () => {
+    const user = userEvent.setup();
+    const saved: Score[] = [];
+    render(<Harness saved={saved} />);
+    await user.click(btn('S: góly vlevo 3'));
+    expect(saved.at(-1)).toEqual({ ga: 3, gb: 6 });
+    await user.click(btn('S: góly vpravo 4'));
+    await user.click(btn('S: góly vlevo 6'));
+    expect(saved.at(-1)).toEqual({ ga: 6, gb: 4 });
+  });
+
+  it('klik na 6 nic nedoplní (poraženého neznáme)', async () => {
+    const user = userEvent.setup();
+    const saved: Score[] = [];
+    render(<Harness saved={saved} />);
+    await user.click(btn('S: góly vpravo 6'));
+    expect(saved.at(-1)).toEqual({ gb: 6 });
+  });
+
+  it('start 5:5: 7 → soupeř 9, 9 → soupeř 10 (uloží se odehrané góly)', async () => {
+    const user = userEvent.setup();
+    const saved: Score[] = [];
+    const { unmount } = render(<Harness match={{ ...base, start: [5, 5] }} saved={saved} />);
+    await user.click(btn('S: góly vlevo 7'));
+    expect(saved.at(-1)).toEqual({ ga: 2, gb: 4 });
+    expect(screen.getByText('7 : 9')).toBeInTheDocument();
+    unmount();
+    render(<Harness match={{ ...base, start: [5, 5] }} saved={saved} />);
+    await user.click(btn('S: góly vpravo 9'));
+    expect(saved.at(-1)).toEqual({ ga: 5, gb: 4 });
+  });
+
+  it('start 0:3: soupeři se doplní 6 na stole', async () => {
+    const user = userEvent.setup();
+    const saved: Score[] = [];
+    render(<Harness match={{ ...base, start: [0, 3] }} saved={saved} />);
+    await user.click(btn('S: góly vpravo 4'));
+    expect(saved.at(-1)).toEqual({ ga: 6, gb: 1 });
+  });
+});

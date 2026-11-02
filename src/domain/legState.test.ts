@@ -1,4 +1,4 @@
-import { bump, bumpLimit, legOver, tableScore } from './legState';
+import { bump, bumpLimit, legOver, tableScore, winnerFor } from './legState';
 import type { Match } from './types';
 
 const m = (over: Partial<Match> = {}): Match => ({
@@ -48,5 +48,18 @@ describe('stav legu', () => {
     expect(bumpLimit(m({ block: 'sim' }), 'gb')).toBe(2);
     expect(bumpLimit(m(), 'la')).toBe(30);
     expect(bump(m(), { ga: 6, gb: 4 }, 'ga', 1)).toEqual({ ga: 6, gb: 4 });
+  });
+
+  it('předvyplnění vítěze: soupeři chybějícímu skóre doplní vítězný stav na stole', () => {
+    expect([0, 3, 5].map((v) => winnerFor(m(), v))).toEqual([6, 6, 6]);
+    expect(winnerFor(m(), 6)).toBeNull(); // 6 je vítěz – poraženého neznáme
+    expect(winnerFor(m({ start: [0, 3] }), 2)).toBe(6);
+    expect(winnerFor(m({ start: [4, 4] }), 5)).toBe(6);
+    // 5:5 o 2 góly, strop 10
+    expect([5, 6, 7, 8, 9].map((v) => winnerFor(m({ start: [5, 5] }), v))).toEqual([7, 8, 9, 10, 10]);
+    expect(winnerFor(m({ start: [5, 5] }), 10)).toBeNull();
+    // simulace: 2 sety
+    expect(winnerFor(m({ block: 'sim' }), 1)).toBe(2);
+    expect(winnerFor(m({ block: 'sim' }), 2)).toBeNull();
   });
 });

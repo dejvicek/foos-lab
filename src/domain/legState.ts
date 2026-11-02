@@ -46,3 +46,14 @@ export function bump(m: Match, s: Score, field: keyof Score, delta: number): Sco
   out[field] = next;
   return out;
 }
+
+/**
+ * Předvyplnění při zápisu kliknutím: když jedna strana skončila na `v` (stav na stole),
+ * jaký stav má vítěz? Do 6 → 6; 5:5 o 2 góly se stropem 10 → v + 2, nejvýš 10;
+ * simulace → 2 sety. Když `v` samo je vítězné, vrací null (poraženého neznáme).
+ */
+export function winnerFor(m: Match, v: number): number | null {
+  if (m.block === 'sim') return v < 2 ? 2 : null;
+  if (isFiveFive(m)) return v >= LEG_CAP ? null : Math.min(LEG_CAP, Math.max(LEG_TO, v + 2));
+  return v < LEG_TO ? LEG_TO : null;
+}

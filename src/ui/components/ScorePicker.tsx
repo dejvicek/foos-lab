@@ -1,4 +1,4 @@
-import { LEG_CAP, LEG_TO, MAX_LOSSES } from '../../domain/legState';
+import { LEG_CAP, LEG_TO, MAX_LOSSES, winnerFor } from '../../domain/legState';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 interface Props {
@@ -36,6 +36,15 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
   };
   const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
 
+  /** Klik na stav strany; prázdné druhé straně předvyplní vítězný stav (6, u 5:5 o 2 góly, strop 10). */
+  const pick = (side: Side, v: number) => {
+    const other: Side = side === 'A' ? 'B' : 'A';
+    const next: Score = { ...s, [goalKey(side)]: v - start(side) };
+    const win = winnerFor(m, v);
+    if (table(other) === null && win !== null) next[goalKey(other)] = win - start(other);
+    onChange(next);
+  };
+
   const goals = (side: Side) => {
     const values = sim ? range(0, 2) : fiveFive ? range(5, LEG_CAP) : range(0, LEG_TO);
     const shown = side === 'A' ? values : [...values].reverse();
@@ -50,7 +59,7 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
             aria-label={`${label}: góly ${WORD[side]} ${v}`}
             aria-pressed={cur === v}
             disabled={disabled || v < start(side)}
-            onClick={() => onChange({ ...s, [goalKey(side)]: v - start(side) })}
+            onClick={() => pick(side, v)}
           >
             {v}
           </button>
