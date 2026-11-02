@@ -29,9 +29,6 @@ export const clockOf = (ms: number): string => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-/** Čas HH:MM v den tréninku → ms. */
-export const msAt = (date: string, hhmm: string): number => new Date(`${date}T${hhmm}:00`).getTime();
-
 /** Aktuální čas obnovovaný každou sekundu (stopky). */
 export function useTick(ms = 1000, enabled = true): number {
   const [now, setNow] = useState(() => Date.now());

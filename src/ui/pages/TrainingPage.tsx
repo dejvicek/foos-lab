@@ -13,7 +13,7 @@ import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, se
 import { RoundCards } from '../components/RoundCards';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
-import { DelayTable } from '../components/Timing';
+import { DelayTable, type ItemTiming } from '../components/Timing';
 import { delayStats, type QueueEntry } from '../../domain/queue';
 import { bump, legOver } from '../../domain/legState';
 import { trainingQueue, useTick } from '../queue';
@@ -125,8 +125,18 @@ export function TrainingPage({
       next = { ...next, simTeams: schedule!.teams };
     if (next !== training) persistLock(next);
   };
+  /** Dohraný leg utkání ukončí, oprava pod konec ho znovu otevře (jen zahájené utkání). */
+  const syncEnd = (m: Match, sc: Score) => {
+    const pt = training.playTimes?.[m.id];
+    if (pt?.startedAt === undefined) return;
+    const over = legOver(m, sc).over;
+    if (over && pt.endedAt === undefined) store.setPlayTime(training.id, m.id, { startedAt: pt.startedAt, endedAt: Date.now() });
+    else if (!over && pt.endedAt !== undefined) store.setPlayTime(training.id, m.id, { startedAt: pt.startedAt });
+  };
   const onScore = (matchId: MatchId, sc: Score) => {
     lockForMatch(matchId);
+    const m = schedule?.matches.find((x) => x.id === matchId);
+    if (m) syncEnd(m, sc);
     store.saveScore(training.id, matchId, sc);
   };
   const onSolo = (playerId: PlayerId, key: SoloKey, value: number | null) => {
@@ -164,19 +174,22 @@ export function TrainingPage({
   const canItem = (e: Extract<QueueEntry, { kind: 'item' }>) =>
     e.match ? canMatch(e.match) : manage || (!!viewer.playerId && e.players.includes(viewer.playerId));
   const delays = queueInfo ? delayStats(queueInfo.queue, queueInfo.states) : [];
+  /** PRD 4.8: Zahájit / Ukončit u každého utkání; skóre jde zadat až po zahájení. */
+  const itemTiming: ItemTiming | undefined = queueInfo
+    ? {
+        state: (id) => queueInfo.states.get(id),
+        now: tick,
+        canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
+        start: (id) => store.setPlayTime(training.id, id, { startedAt: Date.now() }),
+        end: (id) => store.setPlayTime(training.id, id, { startedAt: training.playTimes?.[id]?.startedAt ?? Date.now(), endedAt: Date.now() }),
+      }
+    : undefined;
 
   const tap = {
     me: viewer.playerId,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
-      // Zdržovači: první ťuknutí utkání zahájí, dohraný leg ho ukončí, oprava pod konec ho znovu otevře.
-      const pt = training.playTimes?.[m.id] ?? {};
-      const now = Date.now();
-      const startedAt = pt.startedAt ?? (delta > 0 ? now : undefined);
-      const over = legOver(m, bump(m, training.scores[m.id] ?? {}, field, delta)).over;
-      const endedAt = over ? (pt.endedAt ?? now) : undefined;
-      if (startedAt !== undefined && (startedAt !== pt.startedAt || endedAt !== pt.endedAt))
-        store.setPlayTime(training.id, m.id, { startedAt, ...(endedAt !== undefined ? { endedAt } : {}) });
+      syncEnd(m, bump(m, training.scores[m.id] ?? {}, field, delta));
       store.bumpScore(training.id, m, field, delta);
     },
     onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
@@ -246,11 +259,8 @@ export function TrainingPage({
           me={viewer.playerId}
           now={tick}
           canWrite={canItem}
-          onStart={(e) => store.setPlayTime(training.id, e.id, { startedAt: Date.now() })}
-          onEnd={(e) => {
-            const pt = training.playTimes?.[e.id];
-            store.setPlayTime(training.id, e.id, { startedAt: pt?.startedAt ?? Date.now(), endedAt: Date.now() });
-          }}
+          onStart={(e) => itemTiming?.start(e.id)}
+          onEnd={(e) => itemTiming?.end(e.id)}
         />
       )}
 
@@ -266,16 +276,7 @@ export function TrainingPage({
           canMatch={canMatch}
           canSolo={canSolo}
           tap={mobile ? tap : undefined}
-          timing={
-            queueInfo
-              ? {
-                  states: queueInfo.states,
-                  now: tick,
-                  canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
-                  change: (id, p) => store.setPlayTime(training.id, id, p),
-                }
-              : undefined
-          }
+          timing={itemTiming}
         />
       )}
 
@@ -293,6 +294,7 @@ export function TrainingPage({
               canSolo={canSolo}
               tap={tap}
               breaks={breakControls}
+              timing={itemTiming}
             />
           ) : (
           <TrainingTable
@@ -307,6 +309,7 @@ export function TrainingPage({
             canMatch={canMatch}
             canSolo={canSolo}
             breaks={breakControls}
+            timing={itemTiming}
           />
           )}
           <div className="actions-row no-print">

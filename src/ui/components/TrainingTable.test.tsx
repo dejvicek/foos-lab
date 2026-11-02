@@ -34,6 +34,8 @@ describe('tabulka tréninku', () => {
 
     await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
     const cell = screen.getByRole('group', { name: 'Kolo 1, stůl 1' });
+    expect(within(cell).getByRole('button', { name: 'Kolo 1, stůl 1: góly vlevo 6' })).toBeDisabled(); // až po zahájení
+    await user.click(within(cell).getByRole('button', { name: 'Zahájit' }));
     await user.click(within(cell).getByRole('button', { name: 'Kolo 1, stůl 1: góly vlevo 6' }));
     await user.click(within(cell).getByRole('button', { name: 'Kolo 1, stůl 1: góly vpravo 2' }));
     expect(rowOf('Kolo 1')).toHaveTextContent('6:2');
@@ -49,6 +51,7 @@ describe('tabulka tréninku', () => {
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await user.click(screen.getByRole('button', { name: /^Stanoviště, rotace 2/ }));
+    await user.click(within(screen.getByRole('group', { name: 'Stanoviště, rotace 2, stůl 1' })).getByRole('button', { name: 'Zahájit' }));
     const input = screen.getByLabelText('Stanoviště, rotace 2, stůl 1: H4');
     await user.type(input, '3');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ id4: { fiveBarControl: 3 } }));
@@ -110,6 +113,7 @@ describe('tabulka tréninku', () => {
     const card = screen.getByRole('group', { name: 'Kolo 5, stůl 1' });
     expect(card).toHaveTextContent('začíná 0');
     expect(card).toHaveTextContent('začíná 3');
+    await user.click(within(card).getByRole('button', { name: 'Zahájit' }));
     // méně než start 3 nejde kliknout
     expect(within(card).getByRole('button', { name: 'Kolo 5, stůl 1: góly vpravo 2' })).toBeDisabled();
     await user.click(within(card).getByRole('button', { name: 'Kolo 5, stůl 1: góly vlevo 6' }));
@@ -151,11 +155,13 @@ describe('tabulka tréninku', () => {
 
     await user.click(screen.getByRole('button', { name: /^1\. vlna/ }));
     const sim = screen.getByRole('group', { name: '1. vlna, stůl 1' });
+    await user.click(within(sim).getByRole('button', { name: 'Zahájit' }));
     await user.click(within(sim).getByRole('button', { name: '1. vlna, stůl 1: góly vlevo 2' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].simTeams).toEqual({ A: ['id1', 'id4', 'id5', 'id8'], B: ['id2', 'id3', 'id6', 'id7'] }));
 
     // výsledek ve scénářové lize už týmy nepřehází
     await user.click(screen.getByRole('button', { name: /^Kolo 1$/ }));
+    await user.click(within(screen.getByRole('group', { name: 'Kolo 1, stůl 2' })).getByRole('button', { name: 'Zahájit' }));
     await user.click(screen.getByRole('button', { name: 'Kolo 1, stůl 2: góly vlevo 0' }));
     await user.click(screen.getByRole('button', { name: 'Kolo 1, stůl 2: góly vpravo 6' }));
     expect(screen.getByText('Tým A: H1, H4, H5, H8. Tým B: H2, H3, H6, H7.')).toBeInTheDocument();

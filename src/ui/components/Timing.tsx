@@ -1,28 +1,30 @@
 import type { DelayRow } from '../../domain/queue';
 import type { ItemState } from '../../domain/queue';
-import type { PlayerId, PlayTime } from '../../domain/types';
-import { clockOf, fmtDur, msAt } from '../queue';
+import type { Match, PlayerId } from '../../domain/types';
+import { clockOf, fmtDur } from '../queue';
+
+/** Zahájení / konec utkání pro zápis (PRD 4.8): skóre jde zadat až po zahájení. */
+export interface ItemTiming {
+  state(itemId: string): ItemState | undefined;
+  now: number;
+  canWrite(itemId: string, players: PlayerId[], m?: Match): boolean;
+  start(itemId: string): void;
+  end(itemId: string): void;
+}
 
 interface BarProps {
   state: ItemState | undefined;
   now: number;
-  date: string;
   canWrite: boolean;
-  onChange(p: PlayTime | null): void;
+  onStart(): void;
+  onEnd(): void;
 }
 
-/** Můj stůl: stopky utkání, Zahájit / Ukončit a oprava časů (PRD 4.8). */
-export function TimingBar({ state: s, now, date, canWrite, onChange }: BarProps) {
+/** Stopky utkání se Zahájit / Ukončit (časy se ručně neupravují). */
+export function TimingBar({ state: s, now, canWrite, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
-  const edit = (field: keyof PlayTime, v: string) => {
-    const next: PlayTime = { ...(started !== undefined ? { startedAt: started } : {}), ...(ended !== undefined ? { endedAt: ended } : {}) };
-    if (v) next[field] = msAt(date, v);
-    else delete next[field];
-    if (field === 'startedAt' && !v) delete next.endedAt; // bez zahájení není ani konec
-    onChange(Object.keys(next).length ? next : null);
-  };
   return (
     <div className={`timing ${s.state}`}>
       <div className="timing-main">
@@ -36,34 +38,24 @@ export function TimingBar({ state: s, now, date, canWrite, onChange }: BarProps)
           </span>
         )}
         {canWrite && started === undefined && (
-          <button type="button" onClick={() => onChange({ startedAt: now })}>
+          <button type="button" onClick={onStart}>
             Zahájit
           </button>
         )}
         {canWrite && started !== undefined && ended === undefined && (
-          <button type="button" className="danger" onClick={() => onChange({ startedAt: started, endedAt: now })}>
+          <button type="button" className="danger" onClick={onEnd}>
             Ukončit
           </button>
         )}
         {ended !== undefined && <span className="timing-label">dohráno</span>}
       </div>
-      <div className="timing-times">
-        {s.activeAt !== null && <span>Aktivní od {clockOf(s.activeAt)}</span>}
-        <label>
-          zahájeno{' '}
-          <input type="time" aria-label="Zahájeno" disabled={!canWrite} value={started !== undefined ? clockOf(started) : ''} onChange={(e) => edit('startedAt', e.target.value)} />
-        </label>
-        <label>
-          konec{' '}
-          <input
-            type="time"
-            aria-label="Konec"
-            disabled={!canWrite || started === undefined}
-            value={ended !== undefined ? clockOf(ended) : ''}
-            onChange={(e) => edit('endedAt', e.target.value)}
-          />
-        </label>
-      </div>
+      {(s.activeAt !== null || started !== undefined) && (
+        <div className="timing-times">
+          {s.activeAt !== null && <span>aktivní od {clockOf(s.activeAt)}</span>}
+          {started !== undefined && <span>zahájeno {clockOf(started)}</span>}
+          {ended !== undefined && <span>konec {clockOf(ended)}</span>}
+        </div>
+      )}
     </div>
   );
 }

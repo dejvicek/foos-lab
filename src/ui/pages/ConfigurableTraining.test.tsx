@@ -51,22 +51,25 @@ describe('konfigurovatelný trénink v UI', () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
     const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
+    fireEvent.click(within(card).getByRole('button', { name: 'Zahájit' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Kolo 6, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
-    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!.textContent;
+    // jen jména stran (karta obsahuje i běžící stopky)
+    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!.querySelector('.pick-names')!.textContent;
     // pozdní příchod: nový hráč
     await user.type(screen.getByLabelText('Jméno nového hráče'), 'Pozdní');
     await user.click(screen.getByRole('button', { name: 'Přidat a zaškrtnout' }));
     if (screen.getByRole('button', { name: 'Kolo 6' }).getAttribute('aria-expanded') !== 'true')
       await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
     const again = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
-    expect(again.textContent).toBe(before);
+    expect(again.querySelector('.pick-names')!.textContent).toBe(before);
     expect(again.textContent).not.toContain('Pozdní');
   });
 
   it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: '1. vlna' }));
+    fireEvent.click(within(screen.getByRole('group', { name: '1. vlna, stůl 1' })).getByRole('button', { name: 'Zahájit' }));
     fireEvent.click(screen.getByRole('button', { name: '1. vlna, stůl 1: góly vlevo 2' }));
     await vi.waitFor(() => {
       const t = repo.snapshot().trainings[0];

@@ -81,7 +81,7 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     window.matchMedia = original;
   });
 
-  it('první gól utkání zahájí, dohraný leg ho ukončí', async () => {
+  it('skóre jde ťukat až po Zahájit; dohraný leg utkání ukončí', async () => {
     const { memoryAuth } = await import('../../storage/auth');
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     window.location.hash = '#/trenink/t1';
@@ -89,10 +89,12 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
-    expect(within(mine).getByRole('button', { name: 'Zahájit' })).toBeInTheDocument();
-    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
+    expect(mine).toHaveTextContent('Skóre jde zapsat po zahájení utkání.');
+    await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
     expect(within(mine).getByRole('button', { name: 'Ukončit' })).toBeInTheDocument();
-    for (let i = 0; i < 5; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    expect(within(mine).queryByLabelText('Zahájeno')).toBeNull(); // časy se ručně neupravují
+    for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await vi.waitFor(() => {
       const pt = repo.snapshot().trainings[0].playTimes?.[ids[0]];
       expect(pt?.startedAt).toBe(at(18, 3));

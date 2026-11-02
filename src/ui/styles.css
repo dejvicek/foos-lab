@@ -597,3 +597,4 @@ button.pick-clear { align-self: center; font-size: 12px; }
 .delays { margin-top: 8px; }
 .delay-table td.neg { color: var(--warn); font-weight: 800; }
 .delays .wrap, .delay-table { max-width: 760px; }
+button.pick-chip.loss:disabled:not([aria-pressed='true']) { color: var(--line-strong); }

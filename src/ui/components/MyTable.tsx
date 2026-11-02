@@ -4,9 +4,7 @@ import { clockAt } from '../../domain/solo';
 import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, type TapEntry } from './BlockEntry';
-import { TimingBar } from './Timing';
-import { drillItemId, type ItemState } from '../../domain/queue';
-import type { PlayTime } from '../../domain/types';
+import type { ItemTiming } from './Timing';
 
 interface Props {
   schedule: Schedule;
@@ -21,13 +19,8 @@ interface Props {
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
   /** Telefon: ťukací zrcadlo; notebook: čísla na kliknutí. */
   tap?: TapEntry;
-  /** Zdržovači: stav utkání ve frontě, zahájení / konec. */
-  timing?: {
-    states: Map<string, ItemState>;
-    now: number;
-    canWrite(itemId: string, players: PlayerId[], m?: Match): boolean;
-    change(itemId: string, p: PlayTime | null): void;
-  };
+  /** Zdržovači: Zahájit / Ukončit; skóre až po zahájení. */
+  timing?: ItemTiming;
 }
 
 function missing(a: Assignment, t: Training): boolean {
@@ -103,21 +96,6 @@ export function MyTable(props: Props) {
         <strong>{names[playerId] ?? ''}</strong>: {summary(a, names, playerId)}
         {a.role === 'wait' && sec?.id === 'drills' && ', počítáš'}
       </p>
-      {a.role !== 'wait' && props.timing && (() => {
-        const players = a.match ? [...a.match.sideA, ...a.match.sideB] : (a.group?.players ?? []);
-        const id = a.match ? a.match.id : a.group && a.table ? drillItemId(a.row.label, a.table, a.group.players) : null;
-        if (!id) return null;
-        const tm = props.timing;
-        return (
-          <TimingBar
-            state={tm.states.get(id)}
-            now={tm.now}
-            date={training.date}
-            canWrite={tm.canWrite(id, players, a.match)}
-            onChange={(p) => tm.change(id, p)}
-          />
-        );
-      })()}
       {a.role !== 'wait' && (
         <BlockEntry
           row={myRow}
@@ -129,6 +107,7 @@ export function MyTable(props: Props) {
           canMatch={props.canMatch}
           canSolo={props.canSolo}
           tap={props.tap}
+          timing={props.timing}
         />
       )}
       {next && a.match && a.role !== 'wait' && legOver(a.match, training.scores[a.match.id]).over && (

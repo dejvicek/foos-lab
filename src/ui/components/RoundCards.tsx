@@ -4,6 +4,7 @@ import { clockAt } from '../../domain/solo';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
 import { flatRows, rowKey, type RowRef } from '../now';
 import { BlockEntry, type TapEntry } from './BlockEntry';
+import type { ItemTiming } from './Timing';
 import { CompactCell, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 
@@ -18,6 +19,7 @@ interface Props {
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
   tap: TapEntry;
   breaks?: BreakControls;
+  timing?: ItemTiming;
 }
 
 /** Dohraný zápas: leg skončil (ťukání), nebo je zapsaný ručně z notebooku. */
@@ -39,7 +41,7 @@ function status(row: ScheduleRow, t: Training): string | null {
 }
 
 /** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks }: Props) {
+export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks, timing }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const [picked, setPicked] = useState<Record<string, number | null>>({});
@@ -146,6 +148,7 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
                         canMatch={canMatch}
                         canSolo={canSolo}
                         tap={tap}
+                        timing={timing}
                       />
                     )}
                   </div>

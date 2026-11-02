@@ -15,13 +15,15 @@ interface Props {
   /** Jen ke čtení – přihlášený u stolu nehraje ani nerozhoduje. */
   disabled: boolean;
   onBump(field: keyof Score, delta: number): void;
+  /** Proč je zápis zamčený (jinak „Zapisují hráči a rozhodčí…“). */
+  note?: string;
 }
 
 /**
  * PRD 7.1 „Zrcadlo stolu“: levá a pravá polovina jako u stolu.
  * Ťuknutí do velkého pole = +1 gól (v simulaci set), červené pole = +1 ztráta.
  */
-export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Props) {
+export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note }: Props) {
   const [undo, setUndo] = useState<(keyof Score)[]>([]);
   const [editing, setEditing] = useState(false);
   const s = score ?? {};
@@ -110,7 +112,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump }: Pr
         {half('B')}
       </div>
       {disabled ? (
-        <p className="note">Zapisují hráči a rozhodčí tohoto stolu.</p>
+        <p className="note">{note ?? 'Zapisují hráči a rozhodčí tohoto stolu.'}</p>
       ) : (
         <div className="mirror-bar">
           <button type="button" className="pill" disabled={!undo.length} onClick={back}>
