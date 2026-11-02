@@ -2,7 +2,8 @@ import { Fragment, useState, type ReactNode } from 'react';
 import { legOver } from '../../domain/legState';
 import { clockAt } from '../../domain/solo';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
-import { flatRows, rowKey, type RowRef } from '../now';
+import { flatRows, rowKey } from '../now';
+import { liveText, railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
 import { BlockEntry, type TapEntry } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 import { CompactCell, soloProgress, type BreakControls } from './TrainingTable';
@@ -12,7 +13,9 @@ interface Props {
   schedule: Schedule;
   training: Training;
   names: Record<PlayerId, string>;
-  current: RowRef | null;
+  /** Stav kol podle skutečnosti (null = trénink nezačal). */
+  rounds?: Map<string, RoundStatus> | null;
+  now?: number;
   expanded: string | null;
   onToggle(key: string): void;
   canMatch(m: Match): boolean;
@@ -43,21 +46,22 @@ function status(row: ScheduleRow, t: Training): string | null {
 }
 
 /** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
+export function RoundCards({ schedule: s, training, names, rounds = null, now = 0, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
-  const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const [picked, setPicked] = useState<Record<string, number | null>>({});
   return (
-    <div className="round-cards" aria-label="Rozpis tréninku">
-      {s.sections.map((sec, si) => (
+    <div className={rounds ? 'round-cards has-rail' : 'round-cards'} aria-label="Rozpis tréninku">
+      {s.sections.map((sec, si) => {
+        const line = railLine(rounds, order, order.indexOf(rowKey({ section: si, row: 0 })) - 1);
+        return (
         <Fragment key={`${sec.id}-${si}`}>
-          <h3 className="round-sec">
+          <h3 className={['round-sec', line].filter(Boolean).join(' ')}>
             {sec.title}
             {sec.subtitle && <span> – {sec.subtitle}</span>}
           </h3>
-          {sec.id === 'sim' && simSetup}
+          {sec.id === 'sim' && simSetup && <div className={line || undefined}>{simSetup}</div>}
           {sec.id === 'sim' && s.teams && (
-            <p className="note">
+            <p className={['note', line].filter(Boolean).join(' ')}>
               Tým A: {s.teams.A.map((p) => names[p] ?? '?').join(', ')}. Tým B: {s.teams.B.map((p) => names[p] ?? '?').join(', ')}.
             </p>
           )}
@@ -65,10 +69,18 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
             const key = rowKey({ section: si, row: ri });
             const time = clockAt(training.startTime, row.time);
             const bi = row.breakIndex;
+            const idx = order.indexOf(key);
+            const state = railClass(rounds, order, idx);
+            const rs = rounds?.get(key);
+            const node = rs && <span className="rail-node" role="img" aria-label={STATE_LABEL[rs.state]} title={STATE_LABEL[rs.state]} />;
+            const live = liveText(rs, now, row.kind === 'break');
             if (breaks && bi !== undefined && breaks.list[bi])
               return (
-                <div key={key} className="round-break editable">
-                  <span>{time} Pauza</span>
+                <div key={key} className={['round-break', 'editable', state].filter(Boolean).join(' ')}>
+                  {node}
+                  <span>
+                    {time} Pauza{live && ` – ${live}`}
+                  </span>
                   <select aria-label="Délka pauzy" value={breaks.list[bi].min} onChange={(e) => breaks.setMin(bi, Number(e.target.value))}>
                     {BREAK_OPTIONS.map((m) => (
                       <option key={m} value={m}>
@@ -93,12 +105,12 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
               );
             if (row.kind === 'break')
               return (
-                <p key={key} className="round-break">
+                <p key={key} className={['round-break', state].filter(Boolean).join(' ')}>
+                  {node}
                   {time} {row.label}
+                  {live && ` – ${live}`}
                 </p>
               );
-            const idx = order.indexOf(key);
-            const state = curIdx < 0 ? '' : idx < curIdx ? 'past' : idx === curIdx ? 'current' : '';
             const open = expanded === key;
             const mineIdx = row.cells.findIndex((c) => isMine(c, tap.me));
             const sel = key in picked ? picked[key] : mineIdx >= 0 ? mineIdx : null;
@@ -106,12 +118,13 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
             const cell = sel === null ? null : row.cells[sel];
             return (
               <article key={key} className={['round-card', state, open ? 'open' : ''].filter(Boolean).join(' ')}>
+                {node}
                 <button type="button" className="round-head" aria-expanded={open} onClick={() => onToggle(key)}>
                   <span className="round-time">{time}</span>{' '}
                   <span className="round-name">
                     {row.label}
-                    {state === 'current' && ' – teď'}
                     {row.rule && <small> {row.rule}</small>}
+                    {live && <small className="live"> {live}</small>}
                   </span>{' '}
                   <span className="round-st">{st ?? (open ? '▾' : '▸')}</span>
                 </button>
@@ -123,7 +136,7 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
                           <button
                             key={j}
                             type="button"
-                            className={['round-table', isMine(c, tap.me) ? 'mine' : '', sel === j ? 'sel' : ''].filter(Boolean).join(' ')}
+                            className={['round-table', isMine(c, tap.me) ? 'mine' : '', sel === j ? 'sel' : '', rs?.state === 'playing' && rs.cells[j] === 'done' ? 'cell-done' : '', rs?.state === 'playing' && rs.cells[j] === 'playing' ? 'cell-live' : ''].filter(Boolean).join(' ')}
                             aria-pressed={sel === j}
                             onClick={() => setPicked({ ...picked, [key]: sel === j ? null : j })}
                           >
@@ -160,7 +173,8 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
             );
           })}
         </Fragment>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -30,15 +30,11 @@ describe('výchozí rozbalený blok', () => {
   const t = training('t', '2026-10-31', 'team', H(8));
   const label = (ref: ReturnType<typeof defaultOpenRow>) => (ref ? s.sections[ref.section].rows[ref.row].label : null);
 
-  it('o pauze je rozbalený blok, který právě skončil', () => {
-    expect(label(defaultOpenRow(s, t, 50))).toBe('Stanoviště, rotace 4');
+  it('když se nic nehraje (před zahájením, o pauze, po konci), rozbalí se první nevyplněný blok', () => {
+    expect(label(defaultOpenRow(s, t, null))).toBe('Rozehrání s počítáním');
   });
-  it('po konci tréninku nic neběží a rozbalí se první nevyplněný blok', () => {
-    expect(currentRow(s, 181)).toBeNull();
-    expect(label(defaultOpenRow(s, t, 181))).toBe('Rozehrání s počítáním');
-  });
-  it('během kola je rozbalené to kolo', () => {
-    expect(label(defaultOpenRow(s, t, 81))).toBe('3. kolo');
+  it('během hraní je rozbalené hrané kolo (podle skutečnosti, ne hodin)', () => {
+    expect(label(defaultOpenRow(s, t, currentRow(s, 81)))).toBe('3. kolo');
   });
 });
 

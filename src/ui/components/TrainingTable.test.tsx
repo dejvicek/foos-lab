@@ -4,6 +4,8 @@ import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import type { Mode, Player, TableCount, Training } from '../../domain/types';
 import { openSettings, openTeams, saveSettings } from '../../test/wizard';
+import { buildSchedule } from '../../domain/schedule';
+import { queueOf, TRAINING_ITEM } from '../../domain/queue';
 
 const players = (n: number): Player[] =>
   Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
@@ -247,16 +249,43 @@ describe('tabulka tréninku', () => {
   });
 });
 
-describe('tabulka tréninku – dnes', () => {
-  it('v 19:21 je zvýrazněné a rozbalené 3. kolo', async () => {
+describe('tabulka tréninku – stav kol podle skutečnosti', () => {
+  const T0 = new Date(2026, 9, 31, 18, 0).getTime();
+  const at = (min: number) => T0 + min * 60_000;
+  /** ID utkání kola (fronta z rozpisu). */
+  const idsOf = (t: Training, label: string) =>
+    queueOf(buildSchedule(t)).flatMap((e) => (e.kind === 'item' && e.label === label ? [e.id] : []));
+
+  it('podle hodin se nic nezvýrazňuje – trénink nezačal', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 31, 19, 21));
     window.location.hash = '#/trenink/t1';
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    expect(rowOf('3. kolo')).toHaveClass('current');
-    expect(rowOf('2. kolo')).toHaveClass('past');
-    const entry = screen.getByRole('group', { name: '3. kolo, stůl 1' }).closest<HTMLElement>('.block-entry')!;
-    expect(within(entry).getByText(/Jeden tým má celý leg zakázáno riskovat/)).toBeInTheDocument();
+    expect(rowOf('3. kolo')).not.toHaveClass('rail');
+    expect(screen.queryByRole('img', { name: 'Hraje se' })).toBeNull();
+  });
+
+  it('odehraná kola, hrané kolo (rozbalené, s dohranými stoly) a kola, která přijdou', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(at(30));
+    window.location.hash = '#/trenink/t1';
+    const base = training(8, 'team', 4);
+    const playTimes: Training['playTimes'] = { [TRAINING_ITEM]: { startedAt: at(0) } };
+    for (const label of ['Rozehrání s počítáním', 'Stanoviště, rotace 1', 'Stanoviště, rotace 2', 'Stanoviště, rotace 3', 'Stanoviště, rotace 4', '1. kolo'])
+      for (const id of idsOf(base, label)) playTimes[id] = { startedAt: at(1), endedAt: at(2) };
+    const [a, b] = idsOf(base, '2. kolo');
+    playTimes[a] = { startedAt: at(20), endedAt: at(26) };
+    playTimes[b] = { startedAt: at(21) };
+    render(<App repo={memoryRepository({ players: players(8), trainings: [{ ...base, playTimes }] })} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    expect(rowOf('1. kolo')).toHaveClass('st-done');
+    expect(within(rowOf('1. kolo')).getByRole('img', { name: 'Odehráno' })).toBeInTheDocument();
+    expect(rowOf('2. kolo')).toHaveClass('st-playing');
+    expect(rowOf('2. kolo')).toHaveTextContent('hraje se 10 min · 1 z 2 stolů hotovo');
+    expect(rowOf('2. kolo').querySelectorAll('td.cell-done')).toHaveLength(1);
+    expect(rowOf('2. kolo').querySelectorAll('td.cell-live')).toHaveLength(1);
+    expect(rowOf('3. kolo')).toHaveClass('st-upcoming');
+    expect(screen.getByRole('group', { name: '2. kolo, stůl 1' })).toBeInTheDocument();
   });
 });

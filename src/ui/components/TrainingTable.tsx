@@ -2,7 +2,8 @@ import { Fragment, useState, type DragEvent, type ReactNode } from 'react';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 import { clockAt, soloKey } from '../../domain/solo';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
-import { flatRows, rowKey, type RowRef } from '../now';
+import { flatRows, rowKey } from '../now';
+import { liveText, railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
 import { BlockEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 
@@ -10,7 +11,9 @@ interface Props {
   schedule: Schedule;
   training: Training;
   names: Record<PlayerId, string>;
-  current: RowRef | null;
+  /** Stav kol podle skutečnosti (null = trénink nezačal). */
+  rounds?: Map<string, RoundStatus> | null;
+  now?: number;
   expanded: string | null;
   onToggle(key: string): void;
   onScore(id: MatchId, s: Score): void;
@@ -128,9 +131,8 @@ export function soloProgress(row: ScheduleRow, t: Training): string | null {
   return total ? `zapsáno ${done} z ${total}` : null;
 }
 
-export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo, simSetup }: Props) {
+export function TrainingTable({ schedule: s, training, names, rounds = null, now = 0, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
-  const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const visible = usedTables(s);
   const cols = visible.length + 3;
   // Přetahování pauzy: která pauza se táhne a před / za které kolo by spadla.
@@ -143,7 +145,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
   };
   return (
     <div className="plan-wrap">
-      <table className="plan" aria-label="Rozpis tréninku">
+      <table className={rounds ? 'plan has-rail' : 'plan'} aria-label="Rozpis tréninku">
         <thead>
           <tr>
             <th className="c-time">Čas</th>
@@ -157,7 +159,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
         <tbody>
           {s.sections.map((sec, si) => (
             <Fragment key={`${sec.id}-${si}`}>
-              <tr className="section-row">
+              <tr className={['section-row', railLine(rounds, order, order.indexOf(rowKey({ section: si, row: 0 })) - 1)].filter(Boolean).join(' ')}>
                 <th colSpan={cols} scope="colgroup">
                   {sec.title}
                   {sec.subtitle && <span> – {sec.subtitle}</span>}
@@ -181,14 +183,17 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                 </th>
               </tr>
               {sec.id === 'sim' && simSetup && (
-                <tr className="sim-setup-row no-print">
+                <tr className={['sim-setup-row', 'no-print', railLine(rounds, order, order.indexOf(rowKey({ section: si, row: 0 })) - 1)].filter(Boolean).join(' ')}>
                   <td colSpan={cols}>{simSetup}</td>
                 </tr>
               )}
               {sec.rows.map((row, ri) => {
                 const key = rowKey({ section: si, row: ri });
                 const idx = order.indexOf(key);
-                const state = curIdx < 0 ? '' : idx < curIdx ? 'past' : idx === curIdx ? 'current' : '';
+                const state = railClass(rounds, order, idx);
+                const st = rounds?.get(key);
+                const node = st && <span className="rail-node" role="img" aria-label={STATE_LABEL[st.state]} title={STATE_LABEL[st.state]} />;
+                const live = liveText(st, now, row.kind === 'break');
                 const open = expanded === key;
                 const canOpen = row.kind !== 'break';
                 const progress = soloProgress(row, training);
@@ -209,9 +214,13 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                         setDrop(null);
                       }}
                     >
-                      <td className="c-time">{clockAt(training.startTime, row.time)}</td>
+                      <td className="c-time">
+                        {node}
+                        {clockAt(training.startTime, row.time)}
+                      </td>
                       <td colSpan={visible.length + 2}>
                         <BreakEditor i={bi} c={breaks} />
+                        {live && <span className="cell-sub live">{live}</span>}
                       </td>
                     </tr>
                   );
@@ -243,7 +252,10 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                           : undefined
                       }
                     >
-                      <td className="c-time">{clockAt(training.startTime, row.time)}</td>
+                      <td className="c-time">
+                        {node}
+                        {clockAt(training.startTime, row.time)}
+                      </td>
                       <td className="c-block">
                         {canOpen ? (
                           <button
@@ -262,6 +274,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                         )}
                         {row.rule && <span className="cell-sub">{row.rule}</span>}
                         {progress && <span className="cell-sub">{progress}</span>}
+                        {live && <span className="cell-sub live">{live}</span>}
                       </td>
                       {row.kind === 'break' ? (
                         <td colSpan={visible.length + 1} />
@@ -269,8 +282,10 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                         <>
                           {visible.map((j) => {
                             const c = row.cells[j];
+                            const cs = st?.state === 'playing' ? st.cells[j] : null;
+                            const mark = cs === 'done' ? 'cell-done' : cs === 'playing' ? 'cell-live' : undefined;
                             return (
-                              <td key={j} className={c ? undefined : 'free'}>
+                              <td key={j} className={c ? mark : 'free'} title={cs === 'done' ? 'Dohráno' : cs === 'playing' ? 'Hraje se' : undefined}>
                                 {c ? <CompactCell cell={c} t={training} names={names} /> : 'volný'}
                               </td>
                             );
@@ -280,7 +295,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                       )}
                     </tr>
                     {open && (
-                      <tr className="expand">
+                      <tr className={['expand', railLine(rounds, order, idx)].filter(Boolean).join(' ')}>
                         <td colSpan={cols}>
                           <BlockEntry
                             row={row}

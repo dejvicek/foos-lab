@@ -251,11 +251,44 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan .section-row .sec-teams { display: block; margin-top: 2px; color: var(--ink); font-weight: 600; }
 .plan .section-row .sec-teams .sec-lock { color: var(--muted); font-weight: 400; }
 .plan tbody tr:not(.section-row):not(.expand):not(.break) { cursor: pointer; }
-.plan tbody tr:not(.section-row):not(.expand):not(.break):not(.current):hover td { background: var(--bg); }
-.plan tr.past td { color: var(--muted); }
-.plan tr.past .cell-score { color: var(--muted); }
-.plan tr.current td { background: var(--felt-soft); }
-.plan tr.current td:first-child { box-shadow: inset 4px 0 0 var(--felt); }
+.plan tbody tr:not(.section-row):not(.expand):not(.break):not(.st-playing):hover td { background: var(--bg); }
+.plan tr.st-done td { color: var(--muted); }
+.plan tr.st-done .cell-score { color: var(--muted); }
+.plan tr.st-playing td { background: var(--felt-soft); }
+.plan td.cell-done .cell-names::before, button.round-table.cell-done .cell-names::before { content: '✓ '; color: var(--felt); font-weight: 800; }
+.plan td.cell-done { color: var(--muted); }
+.plan td.cell-live .cell-names::before, button.round-table.cell-live .cell-names::before {
+  content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%;
+  background: var(--felt); box-shadow: 0 0 0 3px var(--felt-soft); vertical-align: 1px;
+}
+.cell-sub.live, .round-name small.live { color: var(--felt); font-weight: 700; }
+
+/* Časová osa rozpisu: odehráno / hraje se / přijde (stav podle skutečnosti, ne hodin) */
+.has-rail { --rail-off: var(--line-strong); --rail-on: var(--felt); }
+.plan.has-rail .c-time, .plan.has-rail .section-row th, .plan.has-rail .expand > td, .plan.has-rail .sim-setup-row > td { position: relative; padding-left: 34px; }
+.plan.has-rail .c-time::before, .plan.has-rail .rail-line > *::before, .round-cards.has-rail > .rail::before, .round-cards.has-rail > .rail-line::before {
+  content: ''; position: absolute; left: 14px; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(var(--rt, var(--rail-off)) 0 var(--rail-mid, 21px), var(--rb, var(--rail-off)) var(--rail-mid, 21px));
+}
+.plan.has-rail thead .c-time::before { display: none; }
+.has-rail .rt { --rt: var(--rail-on); }
+.has-rail .rb { --rb: var(--rail-on); }
+.has-rail .rail-line.on { --rt: var(--rail-on); --rb: var(--rail-on); }
+.plan.has-rail .rail-first .c-time::before { top: 21px; }
+.plan.has-rail .rail-last .c-time::before { bottom: auto; height: 21px; }
+.rail-node {
+  position: absolute; left: 8px; top: 14px; width: 14px; height: 14px; box-sizing: border-box; z-index: 1;
+  border-radius: 50%; background: var(--surface); border: 2px solid var(--rail-off);
+  display: flex; align-items: center; justify-content: center; color: var(--felt-ink); font-size: 9px; font-weight: 900; line-height: 1;
+}
+.st-done > .rail-node, .st-done .rail-node { background: var(--rail-on); border-color: var(--rail-on); }
+.st-done .rail-node::after { content: '✓'; }
+.st-playing .rail-node { border-color: var(--rail-on); box-shadow: 0 0 0 4px var(--felt-soft); }
+.st-playing .rail-node::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--rail-on); }
+@media (prefers-reduced-motion: no-preference) {
+  .st-playing .rail-node { animation: rail-pulse 2s ease-in-out infinite; }
+}
+@keyframes rail-pulse { 50% { box-shadow: 0 0 0 7px var(--felt-soft); } }
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
 .plan tr.break .c-time { font-weight: 500; }
@@ -275,7 +308,6 @@ details.disciplines[open] > summary::before { content: '▾'; }
 
 /* Rozbalený blok */
 .plan tr.expand > td { background: var(--felt-soft); padding: 12px 14px 14px; border-bottom: 1px solid var(--line-strong); cursor: default; }
-.plan tr.current + tr.expand > td { box-shadow: inset 4px 0 0 var(--felt); }
 .entry-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
 .entry-card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
 .entry-head { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 6px; }
@@ -458,9 +490,19 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .round-sec span { color: var(--muted); font-weight: 500; }
 .round-break { margin: 2px 0; color: var(--muted); font-size: 13px; text-align: center; }
 .round-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.round-card.past { opacity: 0.6; }
-.round-card.past.open { opacity: 1; }
-.round-card.current { border: 2px solid var(--felt); }
+.round-card.st-done:not(.open) { background: var(--bg); }
+.round-card.st-done:not(.open) .round-name, .round-card.st-done:not(.open) .round-time { color: var(--muted); }
+.round-card.st-playing { border: 2px solid var(--felt); }
+/* Telefon: linka vlevo od karet; mezera mezi kartami (8px) je součástí linky nad uzlem */
+.round-cards.has-rail { padding-left: 28px; }
+.round-cards.has-rail > .rail, .round-cards.has-rail > .rail-line { position: relative; overflow: visible; --rail-mid: 26px; }
+.round-cards.has-rail > .rail::before, .round-cards.has-rail > .rail-line::before { left: -15px; top: -8px; bottom: 0; }
+.round-cards.has-rail > .round-sec.rail-line::before { top: -16px; bottom: -2px; }
+.round-cards.has-rail > .rail-first::before { top: 18px; }
+.round-cards.has-rail > .rail-last::before { bottom: auto; height: 26px; }
+.round-cards.has-rail > .rail > .rail-node { left: -21px; top: 18px; }
+.round-cards.has-rail > .round-break.rail > .rail-node { top: 1px; }
+.round-cards.has-rail > .round-break.rail { --rail-mid: 16px; }
 button.round-head {
   width: 100%; display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: center;
   padding: 10px 12px; min-height: 52px; background: none; color: var(--ink); border: 0; border-radius: 0; text-align: left; font-weight: 400;

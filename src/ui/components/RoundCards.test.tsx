@@ -22,7 +22,7 @@ function Harness({ me = 'id1', canMatch = () => true }: { me?: string; canMatch?
       schedule={s}
       training={t}
       names={names}
-      current={null}
+      rounds={null}
       expanded={open}
       onToggle={(k) => setOpen(open === k ? '' : k)}
       canMatch={canMatch}

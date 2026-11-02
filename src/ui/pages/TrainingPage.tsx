@@ -20,7 +20,8 @@ import { DelayTable, type ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
-import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
+import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
+import { playingRow, roundStates } from '../roundState';
 import { StandingsView } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
@@ -53,7 +54,8 @@ export function TrainingPage({
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
   // Stopky běží jen na obrazovkách, kde jsou vidět (Moje hry, Živě).
-  const tick = useTick(1000, !!training && view !== 'schedule');
+  // V rozpisu stačí obnova po 30 s (stav kol, „hraje se X min“).
+  const tick = useTick(view === 'schedule' ? 30_000 : 1000, !!training);
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {
@@ -67,9 +69,10 @@ export function TrainingPage({
     );
   }
 
+  // Moje hry: výchozí kolo pro hráče bez aktivní hry (podle hodin).
   const since = minutesSinceStart(training.date, training.startTime, now);
-  const current = schedule ? currentRow(schedule, since) : null;
-  const fallback = schedule ? defaultOpenRow(schedule, training, since) : null;
+  const rounds = schedule && queueInfo ? roundStates(schedule, queueInfo.states, pauseStates(queueInfo.queue, training.playTimes ?? {}, Math.max(tick, Date.now()))) : null;
+  const fallback = schedule ? defaultOpenRow(schedule, training, playingRow(schedule, rounds)) : null;
   const openKey = expanded ?? (fallback ? rowKey(fallback) : null);
 
   /** Úprava z rozpisu (pauzy): přeplánovat, při ztrátě výsledků se zeptat, uložit. */
@@ -325,7 +328,8 @@ export function TrainingPage({
               schedule={schedule}
               training={training}
               names={names}
-              current={current}
+              rounds={rounds}
+              now={tick}
               expanded={openKey}
               onToggle={(key) => setExpanded(openKey === key ? '' : key)}
               canMatch={canMatch}
@@ -340,7 +344,8 @@ export function TrainingPage({
             schedule={schedule}
             training={training}
             names={names}
-            current={current}
+            rounds={rounds}
+              now={tick}
             expanded={openKey}
             onToggle={(key) => setExpanded(openKey === key ? '' : key)}
             onScore={onScore}

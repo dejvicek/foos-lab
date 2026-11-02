@@ -54,20 +54,11 @@ export function firstIncomplete(s: Schedule, t: Training): RowRef | null {
 }
 
 /**
- * Který blok rozbalit, když uživatel nic nevybral: běžící blok; o pauze ten, který právě
- * skončil (dopsání výsledků); jinak první blok s chybějícím zápisem.
+ * Který blok rozbalit, když uživatel nic nevybral: hrané kolo (podle zahájených utkání,
+ * ne podle hodin), jinak první blok s chybějícím zápisem.
  */
-export function defaultOpenRow(s: Schedule, t: Training, sinceStart: number | null): RowRef | null {
-  const cur = currentRow(s, sinceStart);
-  if (cur) {
-    const rows = flatRows(s);
-    const idx = rows.findIndex((r) => r.section === cur.section && r.row === cur.row);
-    for (let i = idx; i >= 0; i--) {
-      const r = rows[i];
-      if (s.sections[r.section].rows[r.row].kind !== 'break') return r;
-    }
-  }
-  return firstIncomplete(s, t);
+export function defaultOpenRow(s: Schedule, t: Training, playing: RowRef | null): RowRef | null {
+  return playing ?? firstIncomplete(s, t);
 }
 
 /** PRD 7.1: štítek dnešního tréninku v seznamu („Hraješ – Kolo 3 právě běží“). */
