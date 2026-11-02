@@ -170,12 +170,12 @@ describe('DrillMirror – pokusy', () => {
     expect(log).toEqual([['c', true, 1], ['c', false, 1], ['c', false, -1]]);
   });
 
-  it('po posledním pokusu Hotovo a tlačítka zmizí', async () => {
+  it('po posledním pokusu „Všechny pokusy“ a ✓ / ✗ zmizí (Zpět zůstává)', async () => {
     const user = userEvent.setup();
     render(<DrillHarness />);
     const milan = screen.getByRole('group', { name: 'Milan' });
     await user.click(within(milan).getByRole('button', { name: 'do držení: Milan' }));
-    expect(milan).toHaveTextContent('Hotovo 8 z 10');
+    expect(milan).toHaveTextContent('Všechny pokusy: 8 z 10');
     expect(within(milan).queryByRole('button', { name: /: Milan$/ })).toBeNull();
   });
 

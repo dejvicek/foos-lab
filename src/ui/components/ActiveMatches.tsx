@@ -12,12 +12,15 @@ interface Props {
   me: PlayerId | null;
   now: number;
   canWrite(e: Item): boolean;
-  onStart(e: Item): void;
+  /** Organizátor: potvrzuje konec (i bez zahájení). Zahájit jde jen v Moje hra. */
+  manage: boolean;
   onEnd(e: Item): void;
+  /** Přechod do Moje hra (moje utkání čeká na zahájení). */
+  onMyGame?(): void;
 }
 
 /** PRD 4.8: stoly a co se na nich právě hraje / čeká na zahájení, pod tím fronta. */
-export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, onStart, onEnd }: Props) {
+export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame }: Props) {
   const items = queue.filter((e): e is Item => e.kind === 'item');
   const onTable = (t: number) => items.find((e) => {
     const s = states.get(e.id);
@@ -64,16 +67,19 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
               {e ? (
                 <>
                   <div className="active-names">{itemNames(e, names)}</div>
-                  {canWrite(e) &&
-                    (s?.state === 'ready' ? (
-                      <button type="button" onClick={() => onStart(e)}>
-                        Zahájit
+                  {manage && canWrite(e) ? (
+                    <button type="button" className="ghost" onClick={() => onEnd(e)}>
+                      {s?.state === 'ready' ? 'Potvrdit' : 'Potvrdit konec'}
+                    </button>
+                  ) : (
+                    mine &&
+                    s?.state === 'ready' &&
+                    onMyGame && (
+                      <button type="button" onClick={onMyGame}>
+                        Zahájit v Moje hra
                       </button>
-                    ) : (
-                      <button type="button" className="danger" onClick={() => onEnd(e)}>
-                        Ukončit
-                      </button>
-                    ))}
+                    )
+                  )}
                 </>
               ) : (
                 <div className="active-names muted">{freeText}</div>

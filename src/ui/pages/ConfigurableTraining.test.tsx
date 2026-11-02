@@ -72,7 +72,6 @@ describe('konfigurovatelný trénink v UI', () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: '6. kolo' }));
     const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
-    fireEvent.click(within(card).getByRole('button', { name: 'Zahájit' }));
     fireEvent.click(within(card).getByRole('button', { name: '6. kolo, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
     // jen jména stran (karta obsahuje i běžící stopky)
@@ -92,7 +91,6 @@ describe('konfigurovatelný trénink v UI', () => {
   it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: '1. vlna' }));
-    fireEvent.click(within(screen.getByRole('group', { name: '1. vlna, stůl 1' })).getByRole('button', { name: 'Zahájit' }));
     fireEvent.click(screen.getByRole('button', { name: '1. vlna, stůl 1: góly vlevo 2' }));
     await vi.waitFor(() => {
       const t = repo.snapshot().trainings[0];

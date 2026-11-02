@@ -127,6 +127,8 @@ describe('přihlášení', () => {
     expect(within(mine).queryByRole('button', { name: /Na další kolo/ })).toBeNull();
     for (let i = 0; i < 4; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     expect(within(mine).getByText(/Leg dohrán 6 : 0/)).toBeInTheDocument();
+    expect(within(mine).queryByRole('button', { name: /Na další kolo/ })).toBeNull(); // nejdřív potvrdit konec
+    await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     const title = within(mine).getByRole('heading', { level: 2 }).textContent;
     await user.click(within(mine).getByRole('button', { name: /Na další kolo/ }));
     expect(within(mine).getByRole('heading', { level: 2 }).textContent).not.toBe(title);

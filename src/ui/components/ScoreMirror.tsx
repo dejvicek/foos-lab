@@ -105,7 +105,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
     <div className="mirror">
       {over && (
         <p className="mirror-done" role="status">
-          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]}, uloženo
+          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]} – zkontroluj a potvrď konec
         </p>
       )}
       <div className="mirror-halves">
@@ -186,7 +186,7 @@ export function DrillMirror({ players, def, values, names, canSolo, onTap }: Dri
               </div>
               {c.done ? (
                 <div className="drill-done">
-                  Hotovo {c.value} z {def.max}
+                  Všechny pokusy: {c.value} z {def.max}
                 </div>
               ) : (
                 <>

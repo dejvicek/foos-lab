@@ -16,7 +16,6 @@ import { ActiveMatches } from '../components/ActiveMatches';
 import { FlowBar } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
 import { delayStats, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
-import { bump, legOver } from '../../domain/legState';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -91,17 +90,8 @@ export function TrainingPage({
     if (next !== training) persistLock(next);
   };
   /** Dohraný leg utkání ukončí, oprava pod konec ho znovu otevře (jen zahájené utkání). */
-  const syncEnd = (m: Match, sc: Score) => {
-    const pt = training.playTimes?.[m.id];
-    if (pt?.startedAt === undefined) return;
-    const over = legOver(m, sc).over;
-    if (over && pt.endedAt === undefined) store.setPlayTime(training.id, m.id, { startedAt: pt.startedAt, endedAt: Date.now() });
-    else if (!over && pt.endedAt !== undefined) store.setPlayTime(training.id, m.id, { startedAt: pt.startedAt });
-  };
   const onScore = (matchId: MatchId, sc: Score) => {
     lockForMatch(matchId);
-    const m = schedule?.matches.find((x) => x.id === matchId);
-    if (m) syncEnd(m, sc);
     store.saveScore(training.id, matchId, sc);
   };
   const onSolo = (playerId: PlayerId, key: SoloKey, value: number | null) => {
@@ -164,9 +154,15 @@ export function TrainingPage({
         state: (id) => queueInfo.states.get(id),
         now: tick,
         canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
-        startAny: manage,
+        allowStart: view === 'my',
+        manage,
         start: (id) => store.setPlayTime(training.id, id, { startedAt: Date.now() }),
-        end: (id) => store.setPlayTime(training.id, id, { startedAt: training.playTimes?.[id]?.startedAt ?? Date.now(), endedAt: Date.now() }),
+        // Konec vždy potvrzuje člověk. Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
+        end: (id) => {
+          const now = Date.now();
+          const startedAt = training.playTimes?.[id]?.startedAt ?? queueInfo.states.get(id)?.activeAt ?? now;
+          store.setPlayTime(training.id, id, { startedAt: Math.min(startedAt, now), endedAt: now });
+        },
       }
     : undefined;
 
@@ -182,7 +178,6 @@ export function TrainingPage({
     onTapSolo,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
-      syncEnd(m, bump(m, training.scores[m.id] ?? {}, field, delta));
       store.bumpScore(training.id, m, field, delta);
     },
     onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
@@ -237,8 +232,9 @@ export function TrainingPage({
             me={viewer.playerId}
             now={tick}
             canWrite={canItem}
-            onStart={(e) => itemTiming?.start(e.id)}
+            manage={manage}
             onEnd={(e) => itemTiming?.end(e.id)}
+            onMyGame={attends ? () => navigate({ page: 'my' }) : undefined}
           />
         )}
       </section>

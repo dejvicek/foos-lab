@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
-import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, type TapEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
+import { drillItemId } from '../../domain/queue';
 
 interface Props {
   schedule: Schedule;
@@ -72,6 +72,8 @@ export function MyTable(props: Props) {
   const a = list[i];
   const next = list[i + 1];
   const sec = schedule.sections.find((s) => s.rows.includes(a.row));
+  // Moje utkání v tomhle kole (zápas, nebo skupina ve cvičení) – „Na další kolo“ po potvrzeném konci.
+  const myItemId = a.match ? a.match.id : a.group && a.table ? drillItemId(a.row, a.table, a.group.players) : null;
   const myRow = {
     ...a.row,
     cells: a.row.cells.map((c, j) => (a.table !== undefined && j === a.table - 1 ? c : null)),
@@ -112,7 +114,7 @@ export function MyTable(props: Props) {
           onTapSolo={props.onTapSolo}
         />
       )}
-      {next && a.match && a.role !== 'wait' && legOver(a.match, training.scores[a.match.id]).over && (
+      {next && a.role !== 'wait' && myItemId && props.timing?.state(myItemId)?.endedAt !== undefined && (
         <button type="button" className="my-go-next" onClick={() => setIdx(i + 1)}>
           Na další kolo ›
         </button>

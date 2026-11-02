@@ -712,3 +712,5 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .view-head h1 { margin: 0; }
 .view-head .link { margin-left: auto; }
 .empty-live { max-width: 420px; margin: 40px auto; text-align: center; }
+.timing.finished { border: 2px solid var(--felt); background: var(--felt-soft); }
+.timing-hint { margin: 0; color: var(--felt); font-weight: 700; font-size: 13px; }

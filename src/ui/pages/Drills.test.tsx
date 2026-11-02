@@ -18,8 +18,7 @@ describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
     const user = userEvent.setup();
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
-    expect(within(card).getByRole('button', { name: 'povedená: H2' })).toBeDisabled(); // až po zahájení
-    await user.click(within(card).getByRole('button', { name: 'Zahájit' }));
+    expect(within(card).queryByRole('button', { name: 'Zahájit' })).toBeNull(); // organizátor nezahajuje, píše rovnou
     await user.click(within(card).getByRole('button', { name: 'povedená: H2' }));
     await user.click(within(card).getByRole('button', { name: 'povedená: H2' }));
     await user.click(within(card).getByRole('button', { name: 'nepovedená: H2' }));

@@ -4,6 +4,7 @@ import { explanationsFor } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric, type SoloMetricDef } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
+import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
@@ -67,7 +68,7 @@ function DrillRows({ label, players, def, skey, training, names, canP, onSolo, o
             {onTapSolo && (
               <>
                 <span className={c.done ? 'drill-progress done' : 'drill-progress'}>
-                  {c.done ? `Hotovo ${c.value} z ${def.max}` : v === undefined ? `pokus 0 / ${def.max}` : `${c.value} (pokus ${c.attempts} / ${def.max})`}
+                  {c.done ? `Všechny pokusy: ${c.value} z ${def.max}` : v === undefined ? `pokus 0 / ${def.max}` : `${c.value} (pokus ${c.attempts} / ${def.max})`}
                 </span>
                 {!c.done && (
                   <>
@@ -137,15 +138,18 @@ function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
 
 export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo }: Props) {
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
-  const timer = (id: string, players: PlayerId[], hasResult: boolean, m?: Match) => {
+  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match) => {
     const st = timing?.state(id);
-    const open = !timing || !st || st.startedAt !== undefined || hasResult;
+    // Zapisovat jde po zahájení; organizátor bez zahájení; hotový výsledek jde opravit vždy.
+    const open = !timing || !st || st.startedAt !== undefined || hasResult || timing.manage;
     const bar = timing && st && (
       <TimingBar
         state={st}
         now={timing.now}
         canWrite={timing.canWrite(id, players, m)}
-        startAny={timing.startAny}
+        allowStart={timing.allowStart}
+        manage={timing.manage}
+        finished={finished}
         onStart={() => timing.start(id)}
         onEnd={() => timing.end(id)}
       />
@@ -170,7 +174,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           const label = `${row.label}, stůl ${j + 1}`;
           if (c.type === 'match') {
             const m = c.match;
-            const tmr = timer(m.id, [...m.sideA, ...m.sideB], !isEmptyScore(training.scores[m.id]), m);
+            const tmr = timer(m.id, [...m.sideA, ...m.sideB], !isEmptyScore(training.scores[m.id]), legOver(m, training.scores[m.id]).over, m);
             const can = canMatch(m) && tmr.open;
             return (
               <div key={j} className="entry-card" role="group" aria-label={label}>
@@ -215,7 +219,12 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           if (!c.metric) return null;
           const def = soloMetric(c.metric);
           const gkey = soloKey(c.metric, c.soloRound);
-          const gtmr = timer(drillItemId(row, j + 1, c.players), c.players, c.players.some((p) => training.soloResults[p]?.[gkey] !== undefined));
+          const gtmr = timer(
+            drillItemId(row, j + 1, c.players),
+            c.players,
+            c.players.some((p) => training.soloResults[p]?.[gkey] !== undefined),
+            c.players.every((p) => drillCount({ value: training.soloResults[p]?.[gkey], attempts: training.soloAttempts?.[p]?.[gkey] }, def).done),
+          );
           const canP = (p: PlayerId) => canSolo(c.players, p) && gtmr.open;
           if (tap) {
             const key = gkey;
