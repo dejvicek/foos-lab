@@ -3,7 +3,7 @@ import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
 import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
-import { BlockEntry, type TapEntry } from './BlockEntry';
+import { BlockEntry, type TapEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 
 interface Props {
@@ -21,6 +21,7 @@ interface Props {
   tap?: TapEntry;
   /** Zdržovači: Zahájit / Ukončit; skóre až po zahájení. */
   timing?: ItemTiming;
+  onTapSolo?: TapSolo;
 }
 
 function missing(a: Assignment, t: Training): boolean {
@@ -108,6 +109,7 @@ export function MyTable(props: Props) {
           canSolo={props.canSolo}
           tap={props.tap}
           timing={props.timing}
+          onTapSolo={props.onTapSolo}
         />
       )}
       {next && a.match && a.role !== 'wait' && legOver(a.match, training.scores[a.match.id]).over && (

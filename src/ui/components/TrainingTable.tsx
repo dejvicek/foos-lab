@@ -3,7 +3,7 @@ import { BREAK_OPTIONS } from '../../domain/breaks';
 import { clockAt, soloKey } from '../../domain/solo';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey, type RowRef } from '../now';
-import { BlockEntry } from './BlockEntry';
+import { BlockEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 
 interface Props {
@@ -20,6 +20,7 @@ interface Props {
   /** Správce konfigurovatelného tréninku: úpravy pauz. */
   breaks?: BreakControls;
   timing?: ItemTiming;
+  onTapSolo?: TapSolo;
 }
 
 /** Úpravy pauz (počet, místo, délka) – jen správce konfigurovatelného tréninku. */
@@ -125,7 +126,7 @@ export function soloProgress(row: ScheduleRow, t: Training): string | null {
   return total ? `zapsáno ${done} z ${total}` : null;
 }
 
-export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing }: Props) {
+export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const visible = usedTables(s);
@@ -284,6 +285,7 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                             canMatch={canMatch}
                             canSolo={canSolo}
                             timing={timing}
+                            onTapSolo={onTapSolo}
                           />
                         </td>
                       </tr>

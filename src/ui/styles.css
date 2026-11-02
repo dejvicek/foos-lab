@@ -519,8 +519,8 @@ button.round-table.sel { border: 2px solid var(--felt); }
 .setup-steps .setup .field { flex: 1 1 140px; }
 
 /* ── Zápis na notebooku: čísla na kliknutí (stoly 2 × 2) ── */
-.entry-cards:has(.picker) { grid-template-columns: 1fr; }
-@media (min-width: 1100px) { .entry-cards:has(.picker) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.entry-cards:has(.picker), .entry-cards:has(.drill-line) { grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .entry-cards:has(.picker), .entry-cards:has(.drill-line) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .my-table .entry-cards:has(.picker) { grid-template-columns: 1fr; }
 .picker { display: flex; flex-direction: column; gap: 2px; }
 .pick-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); align-items: center; column-gap: 10px; }
@@ -605,3 +605,23 @@ button.pick-chip.loss:disabled:not([aria-pressed='true']) { color: var(--line-st
 .flow-bar.pause { background: var(--felt-soft); border-color: var(--felt); }
 .flow-bar span { flex: 1 1 220px; }
 .flow-bar button { min-height: 40px; border-radius: 20px; padding: 0 16px; }
+
+/* ── Cvičení: pokusy ✓ / ✗ (PRD 5.8) ─────────────────── */
+.drill-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.drill-bar i { display: block; height: 6px; background: var(--side); }
+.drill-value { text-align: center; line-height: 1; }
+.drill-value small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-top: 2px; }
+.mirror.drill .mirror-num { font-size: 48px; }
+button.drill-ok { min-height: 64px; border: 0; border-radius: 10px; background: var(--side-soft); color: var(--side); font-weight: 800; font-size: 15px; }
+button.drill-fail { min-height: 48px; border: 2px dashed var(--warn); border-radius: 10px; background: var(--surface); color: var(--warn); font-weight: 800; }
+button.drill-ok:active:not(:disabled) { background: var(--side); color: var(--felt-ink); }
+button.drill-fail:active:not(:disabled) { background: var(--warn-soft); }
+.drill-done { background: var(--side); color: var(--felt-ink); border-radius: 10px; text-align: center; padding: 14px 4px; font-weight: 800; }
+.drill-fix { display: flex; gap: 4px; }
+.drill-fix button { flex: 1; }
+.drill-line { display: grid; grid-template-columns: minmax(70px, 1fr) 64px auto auto auto auto; gap: 6px; align-items: center; }
+.drill-progress { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.drill-progress.done { color: var(--felt); font-weight: 700; }
+button.chip-btn { min-height: 32px; min-width: 34px; padding: 0 8px; border-radius: 16px; background: var(--surface); color: var(--muted); border: 1px solid var(--line-strong); font-weight: 800; }
+button.chip-btn.ok { color: var(--felt); border-color: var(--felt); }
+button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }

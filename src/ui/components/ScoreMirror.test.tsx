@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
 import { bump } from '../../domain/legState';
+import { tapDrill, type DrillValue } from '../../domain/drillTap';
 import { soloMetric } from '../../domain/solo';
 import type { Match, Score } from '../../domain/types';
 
@@ -132,10 +133,10 @@ describe('ScoreMirror', () => {
   });
 });
 
-describe('DrillMirror', () => {
-  const def = soloMetric('blockToControl');
-  function DrillHarness({ log = [] as [string, number][], disabledFor = [] as string[] }) {
-    const [v, setV] = useState<Record<string, number | undefined>>({ a: 9 });
+describe('DrillMirror – pokusy', () => {
+  const def = soloMetric('blockToControl'); // bloky do držení z 10
+  function DrillHarness({ log = [] as [string, boolean, number][], disabledFor = [] as string[], init = { a: { value: 7, attempts: 9 } } as Record<string, DrillValue> }) {
+    const [v, setV] = useState<Record<string, DrillValue>>(init);
     return (
       <DrillMirror
         players={['a', 'c', 'd']}
@@ -143,35 +144,43 @@ describe('DrillMirror', () => {
         values={v}
         names={names}
         canSolo={(p) => !disabledFor.includes(p)}
-        onBump={(p, d) => {
-          log.push([p, d]);
-          setV((cur) => ({ ...cur, [p]: Math.min(def.max, Math.max(0, (cur[p] ?? 0) + d)) }));
+        onTap={(p, ok, d) => {
+          log.push([p, ok, d]);
+          setV((cur) => {
+            const next = tapDrill(cur[p] ?? {}, def, ok, d);
+            return next ? { ...cur, [p]: next } : cur;
+          });
         }}
       />
     );
   }
 
-  it('pole pro každého hráče skupiny (i trojice), ťuknutí = +1 do jeho metriky', async () => {
+  it('každý hráč skupiny (i trojice) má ✓ a ✗; ťuknutí přičte pokus, Zpět ho vrátí', async () => {
     const user = userEvent.setup();
-    const log: [string, number][] = [];
+    const log: [string, boolean, number][] = [];
     render(<DrillHarness log={log} />);
-    expect(screen.getAllByRole('button', { name: /^Přičíst/ })).toHaveLength(3);
-    await user.click(screen.getByRole('button', { name: /^Přičíst Lavi/ }));
+    expect(screen.getAllByRole('button', { name: /^do držení:/ })).toHaveLength(3);
+    const lavi = screen.getByRole('group', { name: 'Lavi' });
+    expect(lavi).toHaveTextContent('pokus 0 / 10');
+    await user.click(within(lavi).getByRole('button', { name: 'do držení: Lavi' }));
+    await user.click(within(lavi).getByRole('button', { name: 'nechytil: Lavi' }));
+    expect(lavi).toHaveTextContent('pokus 2 / 10');
+    expect(lavi).toHaveTextContent('1');
     await user.click(screen.getByRole('button', { name: /Zpět/ }));
-    expect(log).toEqual([['c', 1], ['c', -1]]);
+    expect(log).toEqual([['c', true, 1], ['c', false, 1], ['c', false, -1]]);
   });
 
-  it('na maximu metriky další ťuknutí nejde', async () => {
+  it('po posledním pokusu Hotovo a tlačítka zmizí', async () => {
     const user = userEvent.setup();
     render(<DrillHarness />);
-    const milan = screen.getByRole('button', { name: /^Přičíst Milan/ });
-    await user.click(milan);
-    expect(milan).toHaveTextContent('10');
-    expect(milan).toBeDisabled();
+    const milan = screen.getByRole('group', { name: 'Milan' });
+    await user.click(within(milan).getByRole('button', { name: 'do držení: Milan' }));
+    expect(milan).toHaveTextContent('Hotovo 8 z 10');
+    expect(within(milan).queryByRole('button', { name: /: Milan$/ })).toBeNull();
   });
 
-  it('za hráče, za kterého nesmím, je pole jen ke čtení', () => {
+  it('za hráče, za kterého nesmím, jen ke čtení', () => {
     render(<DrillHarness disabledFor={['d']} />);
-    expect(screen.getByRole('button', { name: /^Přičíst Luky/ })).toBeDisabled();
+    expect(within(screen.getByRole('group', { name: 'Luky' })).getByRole('button', { name: 'do držení: Luky' })).toBeDisabled();
   });
 });

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import type { ExplanationItem } from '../../domain/content';
 import { explanationsFor } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
-import { soloKey, soloMetric } from '../../domain/solo';
+import { soloKey, soloMetric, type SoloMetricDef } from '../../domain/solo';
+import { drillCount } from '../../domain/drillTap';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
@@ -14,6 +16,92 @@ export interface TapEntry {
   me: PlayerId | null;
   onBumpScore(m: Match, field: keyof Score, delta: number): void;
   onBumpSolo(playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
+  onTapSolo?: TapSolo;
+}
+
+/** Pokus cvičení ✓ / ✗ (delta −1 = vrácení) – PRD 5.8. */
+export type TapSolo = (playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1) => void;
+
+/** Notebook: řádek hráče ve cvičení – číslo (zpětně z papíru) i ✓ / ✗ po pokusech. */
+function DrillRows({ label, players, def, skey, training, names, canP, onSolo, onTapSolo }: {
+  label: string;
+  players: PlayerId[];
+  def: SoloMetricDef;
+  skey: SoloKey;
+  training: Training;
+  names: Record<PlayerId, string>;
+  canP(p: PlayerId): boolean;
+  onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
+  onTapSolo?: TapSolo;
+}) {
+  const [undo, setUndo] = useState<{ p: PlayerId; ok: boolean }[]>([]);
+  return (
+    <>
+      {players.map((p) => {
+        const v = training.soloResults[p]?.[skey];
+        const c = drillCount({ value: v, attempts: training.soloAttempts?.[p]?.[skey] }, def);
+        const nm = names[p] ?? '?';
+        const tap = (ok: boolean) => {
+          onTapSolo?.(p, skey, def, ok, 1);
+          setUndo((u) => [...u, { p, ok }]);
+        };
+        const last = [...undo].reverse().find((x) => x.p === p);
+        return (
+          <div key={p} className="solo-line drill-line">
+            <span>{nm}</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={def.max}
+              placeholder="–"
+              aria-label={`${label}: ${nm}`}
+              disabled={!canP(p)}
+              value={v === undefined ? '' : String(v)}
+              onChange={(e) => {
+                const n = parseScoreValue(e.target.value);
+                if (n !== null && n > def.max) return;
+                onSolo(p, skey, n);
+              }}
+            />
+            {onTapSolo && (
+              <>
+                <span className={c.done ? 'drill-progress done' : 'drill-progress'}>
+                  {c.done ? `Hotovo ${c.value} z ${def.max}` : v === undefined ? `pokus 0 / ${def.max}` : `${c.value} (pokus ${c.attempts} / ${def.max})`}
+                </span>
+                {!c.done && (
+                  <>
+                    <button type="button" className="chip-btn ok" aria-label={`${def.ok}: ${nm}`} disabled={!canP(p)} onClick={() => tap(true)}>
+                      ✓
+                    </button>
+                    <button type="button" className="chip-btn fail" aria-label={`${def.fail}: ${nm}`} disabled={!canP(p)} onClick={() => tap(false)}>
+                      ✗
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="chip-btn"
+                  aria-label={`Zpět: ${nm}`}
+                  disabled={!last || !canP(p)}
+                  onClick={() => {
+                    if (!last) return;
+                    onTapSolo(p, skey, def, last.ok, -1);
+                    setUndo((u) => {
+                      const i = u.lastIndexOf(last);
+                      return u.filter((_, j) => j !== i);
+                    });
+                  }}
+                >
+                  ↶
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
 }
 
 interface Props {
@@ -27,6 +115,8 @@ interface Props {
   canMatch?(m: Match): boolean;
   canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
   tap?: TapEntry;
+  /** Pokusy cvičení ✓ / ✗ (notebook i telefon). */
+  onTapSolo?: TapSolo;
   /** Zdržovači: Zahájit / Ukončit u každého stolu; skóre jde zadat až po zahájení. */
   timing?: ItemTiming;
 }
@@ -45,7 +135,7 @@ function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo }: Props) {
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
   const timer = (id: string, players: PlayerId[], hasResult: boolean, m?: Match) => {
     const st = timing?.state(id);
@@ -137,10 +227,10 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   key={key}
                   players={c.players}
                   def={def}
-                  values={Object.fromEntries(c.players.map((p) => [p, training.soloResults[p]?.[key]]))}
+                  values={Object.fromEntries(c.players.map((p) => [p, { value: training.soloResults[p]?.[key], attempts: training.soloAttempts?.[p]?.[key] }]))}
                   names={names}
                   canSolo={canP}
-                  onBump={(p, d) => tap.onBumpSolo(p, key, d, def.max)}
+                  onTap={(p, ok, d) => (tap.onTapSolo ?? onTapSolo)?.(p, key, def, ok, d)}
                 />
               </div>
             );
@@ -153,30 +243,18 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <strong>{def.name}</strong>
                 <span>{def.what}</span>
               </div>
-              {c.players.map((p) => {
-                const key = soloKey(c.metric!, c.soloRound);
-                const v = training.soloResults[p]?.[key];
-                return (
-                  <label key={p} className="solo-line">
-                    <span>{names[p] ?? '?'}</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={def.max}
-                      placeholder="–"
-                      aria-label={`${label}: ${names[p] ?? '?'}`}
-                      disabled={!canP(p)}
-                      value={v === undefined ? '' : String(v)}
-                      onChange={(e) => {
-                        const n = parseScoreValue(e.target.value);
-                        if (n !== null && n > def.max) return;
-                        onSolo(p, key, n);
-                      }}
-                    />
-                  </label>
-                );
-              })}
+              <DrillRows
+                key={gkey}
+                label={label}
+                players={c.players}
+                def={def}
+                skey={gkey}
+                training={training}
+                names={names}
+                canP={canP}
+                onSolo={onSolo}
+                onTapSolo={onTapSolo}
+              />
             </div>
           );
         })}

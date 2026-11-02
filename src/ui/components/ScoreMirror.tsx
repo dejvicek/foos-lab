@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { bumpLimit, legOver, tableScore } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
+import { drillCount, type DrillValue } from '../../domain/drillTap';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 type Side = 'A' | 'B';
@@ -138,49 +139,74 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
 interface DrillProps {
   players: PlayerId[];
   def: SoloMetricDef;
-  values: Record<PlayerId, number | undefined>;
+  values: Record<PlayerId, DrillValue | undefined>;
   names: Record<PlayerId, string>;
   canSolo(playerId: PlayerId): boolean;
-  onBump(playerId: PlayerId, delta: number): void;
+  /** Pokus: ok = ✓, delta −1 = vrácení. */
+  onTap(playerId: PlayerId, ok: boolean, delta: 1 | -1): void;
 }
 
-/** PRD 7.1 Cvičení: stejné zrcadlo, pole pro každého hráče skupiny; ťuknutí = +1 do jeho metriky. */
-export function DrillMirror({ players, def, values, names, canSolo, onBump }: DrillProps) {
-  const [undo, setUndo] = useState<PlayerId[]>([]);
+/**
+ * PRD 5.8 Cvičení: po každém pokusu ✓ / ✗, appka počítá pokusy i výsledek;
+ * po posledním pokusu „Hotovo“. Pole pro každého hráče skupiny (i trojice).
+ */
+export function DrillMirror({ players, def, values, names, canSolo, onTap }: DrillProps) {
+  const [undo, setUndo] = useState<{ p: PlayerId; ok: boolean }[]>([]);
   const [editing, setEditing] = useState(false);
   const anyWritable = players.some(canSolo);
+  const unit = def.lowerIsBetter ? 'ztrát' : def.ok === 'gól' ? 'gólů' : 'povedených';
   return (
-    <div className="mirror">
+    <div className="mirror drill">
       <div className="mirror-metric">
         <strong>{def.name}</strong> <span>{def.what}</span>
       </div>
       <div className={`mirror-halves cols-${players.length}`}>
         {players.map((p, i) => {
-          const v = values[p] ?? 0;
+          const c = drillCount(values[p] ?? {}, def);
           const can = canSolo(p);
+          const nm = names[p] ?? '?';
+          const tap = (ok: boolean) => {
+            onTap(p, ok, 1);
+            setUndo((u) => [...u, { p, ok }]);
+          };
           return (
-            <div key={p} className={`mirror-half side-${i % 2 ? 'b' : 'a'}`}>
+            <div key={p} role="group" aria-label={nm} className={`mirror-half side-${i % 2 ? 'b' : 'a'}`}>
               <div className="mirror-who">
-                <strong>{names[p] ?? '?'}</strong>
-                <small>max {def.max}</small>
+                <strong>{nm}</strong>
+                <small>
+                  pokus {c.attempts} / {def.max}
+                </small>
               </div>
-              <button
-                type="button"
-                className="mirror-goal"
-                aria-label={`Přičíst ${names[p] ?? '?'}, ${values[p] ?? 0} z ${def.max}`}
-                disabled={!can || v >= def.max}
-                onClick={() => {
-                  onBump(p, 1);
-                  setUndo((u) => [...u, p]);
-                }}
-              >
-                <span className="mirror-num">{values[p] === undefined ? '–' : v}</span>
-                <span className="mirror-lbl">ťukni = +1</span>
-              </button>
+              <div className="drill-bar" aria-hidden="true">
+                <i style={{ width: `${(100 * c.attempts) / def.max}%` }} />
+              </div>
+              <div className="drill-value">
+                <span className="mirror-num">{values[p]?.value === undefined ? '–' : c.value}</span>
+                <small>{unit}</small>
+              </div>
+              {c.done ? (
+                <div className="drill-done">
+                  Hotovo {c.value} z {def.max}
+                </div>
+              ) : (
+                <>
+                  <button type="button" className="drill-ok" aria-label={`${def.ok}: ${nm}`} disabled={!can} onClick={() => tap(true)}>
+                    ✓ {def.ok}
+                  </button>
+                  <button type="button" className="drill-fail" aria-label={`${def.fail}: ${nm}`} disabled={!can} onClick={() => tap(false)}>
+                    ✗ {def.fail}
+                  </button>
+                </>
+              )}
               {editing && can && (
-                <button type="button" className="mirror-minus" aria-label={`Ubrat ${names[p] ?? '?'}`} disabled={v <= 0} onClick={() => onBump(p, -1)}>
-                  −1
-                </button>
+                <div className="drill-fix">
+                  <button type="button" className="mirror-minus" aria-label={`Ubrat ${def.ok}: ${nm}`} disabled={c.hits <= 0} onClick={() => onTap(p, true, -1)}>
+                    −✓
+                  </button>
+                  <button type="button" className="mirror-minus" aria-label={`Ubrat ${def.fail}: ${nm}`} disabled={c.misses <= 0} onClick={() => onTap(p, false, -1)}>
+                    −✗
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -193,7 +219,8 @@ export function DrillMirror({ players, def, values, names, canSolo, onBump }: Dr
             className="pill"
             disabled={!undo.length}
             onClick={() => {
-              onBump(undo[undo.length - 1], -1);
+              const last = undo[undo.length - 1];
+              onTap(last.p, last.ok, -1);
               setUndo((u) => u.slice(0, -1));
             }}
           >

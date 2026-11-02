@@ -11,6 +11,7 @@ import { MyTable } from '../components/MyTable';
 import { TrainingTable, type BreakControls } from '../components/TrainingTable';
 import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { RoundCards } from '../components/RoundCards';
+import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
 import { FlowBar } from '../components/FlowBar';
@@ -187,8 +188,16 @@ export function TrainingPage({
       }
     : undefined;
 
+  /** Pokus cvičení ✓ / ✗: zamkne kolo (jako zápis výsledku) a přičte. */
+  const onTapSolo: TapSolo = (playerId, key, def, ok, delta) => {
+    const next = withLocked(training, parseSoloKey(key).round || null);
+    if (next !== training) persistLock(next);
+    store.tapSolo(training.id, playerId, key, def, ok, delta);
+  };
+
   const tap = {
     me: viewer.playerId,
+    onTapSolo,
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
       syncEnd(m, bump(m, training.scores[m.id] ?? {}, field, delta));
@@ -293,6 +302,7 @@ export function TrainingPage({
           canSolo={canSolo}
           tap={mobile ? tap : undefined}
           timing={itemTiming}
+          onTapSolo={onTapSolo}
         />
       )}
 
@@ -326,6 +336,7 @@ export function TrainingPage({
             canSolo={canSolo}
             breaks={breakControls}
             timing={itemTiming}
+            onTapSolo={onTapSolo}
           />
           )}
           <div className="actions-row no-print">
