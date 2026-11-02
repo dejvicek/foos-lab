@@ -49,6 +49,13 @@ describe('fronta utkání (aktivní utkání)', () => {
     expect(s.get('c')).toMatchObject({ state: 'ready', activeAt: at(22) });
   });
 
+  it('trénink začal dřív než podle plánu: další utkání se řídí skutečným začátkem, ne plánem', () => {
+    const q = [item('a', ['p1', 'p2'], 1), item('b', ['p1', 'p2'], 1)];
+    const early = at(-300); // zahájeno 5 h před plánovaným začátkem
+    const s = runQueue(q, { a: { startedAt: early, endedAt: early + 5 * M } }, T0, [1], early + 6 * M);
+    expect(s.get('b')).toMatchObject({ state: 'ready', table: 1, activeAt: early + 5 * M });
+  });
+
   it('zahájené dřív, než by bylo aktivní: čekání 0', () => {
     const q = [item('a', ['p1', 'p2'], 1), item('c', ['p1', 'p3'], 1)];
     const s = runQueue(q, { c: { startedAt: at(3) } }, T0, [1], at(5));

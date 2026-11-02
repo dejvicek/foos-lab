@@ -26,6 +26,9 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
   const firstQueued = queue.findIndex((e) => e.kind === 'item' && states.get(e.id)?.state === 'queued');
   const upcoming = firstQueued < 0 ? [] : queue.slice(firstQueued).filter((e) => e.kind === 'pause' || states.get(e.id)?.state === 'queued').slice(0, 8);
   const done = items.length > 0 && items.every((e) => states.get(e.id)?.state === 'done');
+  // Volný stůl: proč na něm nic není – další utkání má čas aktivace v budoucnu (začátek tréninku, pauza)?
+  const nextTimed = items.map((e) => states.get(e.id)!).find((s) => s.state === 'queued' && s.activeAt !== null && s.activeAt > now);
+  const freeText = done ? 'vše dohráno' : nextTimed ? `další utkání od ${clockOf(nextTimed.activeAt!)}` : 'čeká se na hráče';
 
   return (
     <section className="active-board" aria-label="Aktivní utkání">
@@ -60,7 +63,7 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                     ))}
                 </>
               ) : (
-                <div className="active-names muted">{done ? 'vše dohráno' : 'čeká se na hráče'}</div>
+                <div className="active-names muted">{freeText}</div>
               )}
             </div>
           );

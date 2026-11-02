@@ -52,8 +52,11 @@ export function queueOf(s: Schedule): QueueEntry[] {
  * Projde frontu v pořadí a určí, kdy se které utkání stalo aktivním a na kterém stole.
  * Stůl z rozpisu má přednost, jiný volný stůl jen když utkání pustí na hru dřív.
  */
-export function runQueue(queue: QueueEntry[], times: PlayTimes, startMs: number, tables: number[], nowMs: number): Map<string, ItemState> {
+export function runQueue(queue: QueueEntry[], times: PlayTimes, plannedStartMs: number, tables: number[], nowMs: number): Map<string, ItemState> {
   const out = new Map<string, ItemState>();
+  // Trénink začal dřív než podle plánu (někdo už zahájil)? Pak platí skutečný začátek.
+  const firstStart = Math.min(...Object.values(times).flatMap((t) => (t.startedAt !== undefined ? [t.startedAt] : [])));
+  const startMs = Math.min(plannedStartMs, firstStart);
   // null = obsazený / zaneprázdněný na neurčito
   const tableFree = new Map<number, number | null>(tables.map((t) => [t, startMs]));
   const playerFree = new Map<PlayerId, number | null>();
