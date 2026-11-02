@@ -6,9 +6,10 @@ import { computeSoloLadder, type SoloLadderRow } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
-import { dec1, pct, signed } from '../format';
+import { dec1, pct, plural, signed } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
+import { useMobile } from '../useMobile';
 
 interface Props {
   store: AppStore;
@@ -47,6 +48,32 @@ function LadderTable({
   open(id: PlayerId): void;
 }) {
   const avg = view === 'avg';
+  const mobile = useMobile();
+  if (mobile)
+    return (
+      <ol aria-label={label} className={ranked ? 'ladder-list' : 'ladder-list low-data'}>
+        {rows.map((r, i) => {
+          const d = avg ? r.diffPerLeg : r.diff;
+          return (
+            <li key={r.playerId}>
+              <span className="ll-rank">{ranked ? `${i + 1}.` : '–'}</span>
+              <span className="ll-who">
+                <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                  {name(r.playerId)}
+                </button>
+                <small>
+                  {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
+                </small>
+              </span>
+              <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
+                {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
+                <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    );
   return (
     <div className="wrap">
       <table aria-label={label} className={ranked ? undefined : 'low-data'}>

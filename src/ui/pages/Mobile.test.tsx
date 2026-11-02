@@ -28,3 +28,16 @@ describe('telefon', () => {
     expect(within(cards).getAllByRole('button', { name: /^Stůl \d/ })).toHaveLength(2);
   });
 });
+
+describe('telefon – žebříček', () => {
+  it('žebříček je seznam: pořadí, jméno, legy a výhry, hlavní číslo vpravo', async () => {
+    const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
+    window.location.hash = '#/zebricek';
+    render(<App repo={memoryRepository({ players, trainings: [t] })} />);
+    const list = (await screen.findAllByRole('list', { name: /^(Žebříček|Málo dat)$/ }))[0];
+    expect(screen.queryByRole('table', { name: /^(Žebříček|Málo dat)$/ })).toBeNull();
+    const items = within(list).getAllByRole('listitem');
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0]).toHaveTextContent(/1 leg/);
+  });
+});
