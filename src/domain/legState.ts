@@ -29,8 +29,15 @@ export function bumpLimit(m: Match, field: keyof Score): number {
   return LEG_CAP - offset;
 }
 
-/** Přičte/odečte ťuknutím; nejde pod 0 ani přes strop. */
+/**
+ * Přičte/odečte ťuknutím; nejde pod 0 ani přes strop. Druhé pole dvojice (góly / ztráty)
+ * dostane 0, aby se leg 6:0 počítal jako zapsaný (souhrn bere jen legy s oběma góly).
+ */
 export function bump(m: Match, s: Score, field: keyof Score, delta: number): Score {
   const next = Math.min(bumpLimit(m, field), Math.max(0, (s[field] ?? 0) + delta));
-  return { ...s, [field]: next };
+  const pair: (keyof Score)[] = field === 'ga' || field === 'gb' ? ['ga', 'gb'] : ['la', 'lb'];
+  const out: Score = { ...s };
+  for (const f of pair) out[f] = s[f] ?? 0;
+  out[field] = next;
+  return out;
 }

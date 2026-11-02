@@ -17,7 +17,7 @@ interface Props {
   canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
 }
 
-function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names: Record<PlayerId, string> }) {
+export function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names: Record<PlayerId, string> }) {
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
   if (cell.type === 'group') {
     return (
@@ -50,7 +50,7 @@ function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names: Recor
   );
 }
 
-function soloProgress(row: ScheduleRow, t: Training): string | null {
+export function soloProgress(row: ScheduleRow, t: Training): string | null {
   let total = 0;
   let done = 0;
   for (const c of row.cells)

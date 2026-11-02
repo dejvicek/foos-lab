@@ -19,8 +19,8 @@ describe('useAppState – ťukání', () => {
     act(() => result.current.bumpScore('t1', m, 'ga', 1));
     act(() => result.current.bumpScore('t1', m, 'ga', 1));
     act(() => result.current.bumpScore('t1', m, 'lb', 1));
-    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 2, lb: 1 });
-    await waitFor(() => expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 2, lb: 1 }));
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0, la: 0, lb: 1 });
+    await waitFor(() => expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0, la: 0, lb: 1 }));
   });
 
   it('bumpScore nejde pod nulu ani přes strop legu', async () => {

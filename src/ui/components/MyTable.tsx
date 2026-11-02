@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
-import { BlockEntry } from './BlockEntry';
+import { BlockEntry, type TapEntry } from './BlockEntry';
 
 interface Props {
   schedule: Schedule;
@@ -15,6 +15,7 @@ interface Props {
   onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
   canMatch(m: Match): boolean;
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
+  tap: TapEntry;
 }
 
 function missing(a: Assignment, t: Training): boolean {
@@ -100,6 +101,7 @@ export function MyTable(props: Props) {
           onSolo={props.onSolo}
           canMatch={props.canMatch}
           canSolo={props.canSolo}
+          tap={props.tap}
         />
       )}
       {next && (

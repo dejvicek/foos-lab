@@ -95,7 +95,9 @@ export function memoryRepository(
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
         const cur = t.scores[matchId] ?? {};
-        t.scores[matchId] = { ...cur, [field]: Math.min(max, Math.max(0, (cur[field] ?? 0) + delta)) };
+        const pair = field === 'ga' || field === 'gb' ? (['ga', 'gb'] as const) : (['la', 'lb'] as const);
+        const next = { ...cur, [pair[0]]: cur[pair[0]] ?? 0, [pair[1]]: cur[pair[1]] ?? 0 };
+        t.scores[matchId] = { ...next, [field]: Math.min(max, Math.max(0, (cur[field] ?? 0) + delta)) };
       }),
     bumpSolo: (trainingId, playerId, key, delta, max) =>
       write(() => {

@@ -9,6 +9,8 @@ import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../d
 import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
 import { TrainingTable } from '../components/TrainingTable';
+import { RoundCards } from '../components/RoundCards';
+import { useMobile } from '../useMobile';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
 import { StandingsView } from '../components/StandingsView';
 import { TrainingSetup } from '../components/TrainingSetup';
@@ -56,6 +58,7 @@ export function TrainingPage({
   const schedule = useMemo(() => (training && canBuildSchedule(training) ? buildSchedule(training) : null), [training]);
   const names = useMemo(() => Object.fromEntries(store.data.players.map((p) => [p.id, p.name])), [store.data.players]);
   const now = useNow();
+  const mobile = useMobile();
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
@@ -102,20 +105,35 @@ export function TrainingPage({
   const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
   /** Uloží zamčení kol / týmů: admin přímo, hráč přes funkci na serveru. */
   const persistLock = (next: Training) => (manage ? store.saveTraining(next) : store.lockRounds(next));
-  const onScore = (matchId: MatchId, sc: Score) => {
-    // Jedno uložení: zamčení kol i týmů simulace (dvě by se navzájem přepsala).
+  /** Před zápisem výsledku zamkne kola (a týmy simulace) – jedno uložení, jinak by se přepsala. */
+  const lockForMatch = (matchId: MatchId) => {
     let next = withLocked(training, roundOfMatch(schedule!, matchId));
     const m = schedule!.matches.find((x) => x.id === matchId);
     // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
     if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule!.teams)
       next = { ...next, simTeams: schedule!.teams };
     if (next !== training) persistLock(next);
+  };
+  const onScore = (matchId: MatchId, sc: Score) => {
+    lockForMatch(matchId);
     store.saveScore(training.id, matchId, sc);
   };
   const onSolo = (playerId: PlayerId, key: SoloKey, value: number | null) => {
     const next = withLocked(training, parseSoloKey(key).round || null);
     if (next !== training) persistLock(next);
     store.saveSolo(training.id, playerId, key, value);
+  };
+  const tap = {
+    me: viewer.playerId,
+    onBumpScore: (m: Match, field: keyof Score, delta: number) => {
+      lockForMatch(m.id);
+      store.bumpScore(training.id, m, field, delta);
+    },
+    onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
+      const next = withLocked(training, parseSoloKey(key).round || null);
+      if (next !== training) persistLock(next);
+      store.bumpSolo(training.id, playerId, key, delta, max);
+    },
   };
 
   /** Konfigurovatelný trénink: zápis výsledku zamkne kola až po to, do kterého patří (PRD 4.6). */
@@ -175,11 +193,25 @@ export function TrainingPage({
           onSolo={onSolo}
           canMatch={canMatch}
           canSolo={canSolo}
+          tap={tap}
         />
       )}
 
       {schedule && (!attends || tab === 'all') && (
         <>
+          {mobile ? (
+            <RoundCards
+              schedule={schedule}
+              training={training}
+              names={names}
+              current={current}
+              expanded={openKey}
+              onToggle={(key) => setExpanded(openKey === key ? '' : key)}
+              canMatch={canMatch}
+              canSolo={canSolo}
+              tap={tap}
+            />
+          ) : (
           <TrainingTable
             schedule={schedule}
             training={training}
@@ -192,6 +224,7 @@ export function TrainingPage({
             canMatch={canMatch}
             canSolo={canSolo}
           />
+          )}
           <div className="actions-row no-print">
             <button type="button" className="ghost" onClick={() => window.print()}>
               Vytisknout rozpis

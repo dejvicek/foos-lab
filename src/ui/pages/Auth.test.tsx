@@ -75,6 +75,27 @@ describe('přihlášení', () => {
     }
   });
 
+  it('hráč ťuká v „Můj stůl“: gól se přičte, kolo se zamkne, výsledek se uloží', async () => {
+    const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    const repo = memoryRepository({ players: roster, trainings: [training] });
+    render(<App repo={repo} auth={auth} />);
+    await screen.findByRole('list', { name: 'Uložené tréninky' });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('list', { name: 'Uložené tréninky' }).querySelector('button')!);
+    const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    expect(within(mine).queryByRole('spinbutton')).toBeNull(); // žádná klávesnice
+    while (!within(mine).queryByRole('button', { name: /^Gól vlevo/ }))
+      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toHaveTextContent('2');
+    await vi.waitFor(() => {
+      const t = repo.snapshot().trainings[0];
+      expect(Object.values(t.scores)).toEqual([{ ga: 2, gb: 0 }]);
+      expect(t.lockedRounds.length).toBeGreaterThan(0);
+    });
+  });
+
   it('admin: resetuje heslo hráče na přezdívku', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: null });
     await auth.signIn('Milan', 'Milan');

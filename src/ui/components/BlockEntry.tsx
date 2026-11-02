@@ -4,6 +4,14 @@ import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScoreInputs } from './ScoreInputs';
+import { DrillMirror, ScoreMirror } from './ScoreMirror';
+
+/** Zápis ťukáním (telefon, Můj stůl) místo číselných políček. */
+export interface TapEntry {
+  me: PlayerId | null;
+  onBumpScore(m: Match, field: keyof Score, delta: number): void;
+  onBumpSolo(playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
+}
 
 interface Props {
   row: ScheduleRow;
@@ -15,6 +23,7 @@ interface Props {
   /** Smí přihlášený zapisovat do zápasu / za hráče ve skupině? (výchozí ano) */
   canMatch?(m: Match): boolean;
   canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
+  tap?: TapEntry;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -31,7 +40,7 @@ function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap }: Props) {
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
   const ex = explanationsFor(row);
   // Rozhodčí u stolu se ukazuje v kartě; pod kartami jen ti, kdo nejsou u žádného stolu.
@@ -59,6 +68,17 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <span className="visually-hidden">
                   {nm(m.sideA)} vs {nm(m.sideB)}
                 </span>
+                {tap ? (
+                  <ScoreMirror
+                    key={m.id}
+                    match={m}
+                    score={training.scores[m.id]}
+                    names={names}
+                    me={tap.me}
+                    disabled={!canMatch(m)}
+                    onBump={(f, d) => tap.onBumpScore(m, f, d)}
+                  />
+                ) : (
                 <ScoreInputs
                   label={label}
                   score={training.scores[m.id]}
@@ -70,6 +90,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   disabled={!canMatch(m)}
                   onChange={(s) => onScore(m.id, s)}
                 />
+                )}
                 {m.block === 'league' && (
                   <p className="entry-ref">
                     {m.lossTax
@@ -84,6 +105,23 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           }
           if (!c.metric) return null;
           const def = soloMetric(c.metric);
+          if (tap) {
+            const key = soloKey(c.metric, c.soloRound);
+            return (
+              <div key={j} className="entry-card" role="group" aria-label={label}>
+                <div className="entry-head">Stůl {j + 1}</div>
+                <DrillMirror
+                  key={key}
+                  players={c.players}
+                  def={def}
+                  values={Object.fromEntries(c.players.map((p) => [p, training.soloResults[p]?.[key]]))}
+                  names={names}
+                  canSolo={(p) => canSolo(c.players, p)}
+                  onBump={(p, d) => tap.onBumpSolo(p, key, d, def.max)}
+                />
+              </div>
+            );
+          }
           return (
             <div key={j} className="entry-card" role="group" aria-label={label}>
               <div className="entry-head">Stůl {j + 1}</div>

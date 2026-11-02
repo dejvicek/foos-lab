@@ -30,12 +30,13 @@ describe('stav legu', () => {
     expect(legOver(m({ block: 'sim' }), { ga: 1, gb: 2 })).toEqual({ over: true, winner: 'B' });
   });
 
-  it('bump: přičte, nejde pod 0 ani přes strop, nedotčená pole zůstanou', () => {
-    expect(bump(m(), {}, 'ga', 1)).toEqual({ ga: 1 });
-    expect(bump(m(), { ga: 1, la: 2 }, 'ga', -1)).toEqual({ ga: 0, la: 2 });
-    expect(bump(m(), { ga: 0 }, 'ga', -1)).toEqual({ ga: 0 });
-    expect(bump(m({ start: [5, 5] }), { ga: 5 }, 'ga', 1)).toEqual({ ga: 5 }); // 10 na stole je strop
-    expect(bump(m({ block: 'sim' }), { gb: 2 }, 'gb', 1)).toEqual({ gb: 2 });
-    expect(bump(m(), { la: 30 }, 'la', 1)).toEqual({ la: 30 });
+  it('bump: přičte, nejde pod 0 ani přes strop; druhá strana dostane 0, aby se leg započítal', () => {
+    expect(bump(m(), {}, 'ga', 1)).toEqual({ ga: 1, gb: 0 });
+    expect(bump(m(), { ga: 1, gb: 0, la: 2 }, 'ga', -1)).toEqual({ ga: 0, gb: 0, la: 2 });
+    expect(bump(m(), { ga: 0 }, 'ga', -1)).toEqual({ ga: 0, gb: 0 });
+    expect(bump(m({ start: [5, 5] }), { ga: 5, gb: 3 }, 'ga', 1)).toEqual({ ga: 5, gb: 3 }); // 10 na stole je strop
+    expect(bump(m({ block: 'sim' }), { gb: 2 }, 'gb', 1)).toEqual({ ga: 0, gb: 2 });
+    expect(bump(m(), { la: 30 }, 'la', 1)).toEqual({ la: 30, lb: 0 });
+    expect(bump(m(), { ga: 2, gb: 1 }, 'lb', 1)).toEqual({ ga: 2, gb: 1, la: 0, lb: 1 });
   });
 });
