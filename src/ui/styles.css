@@ -854,15 +854,16 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
 /* Kontrola rozpisu (admin): kdo s kým kolikrát */
 details.fairness { margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 8px 12px; }
 details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
-.fairness-wrap { overflow-x: auto; }
+.fairness-grid { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.fairness-wrap { overflow-x: auto; max-width: 100%; }
 .fairness-table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.fairness-table caption { text-align: left; font-weight: 700; padding: 4px 0 6px; white-space: nowrap; }
 .fairness-table th, .fairness-table td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
 .fairness-table thead th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .fairness-table tbody th { text-align: left; font-weight: 700; }
-.fairness-table td.self { color: var(--line-strong); }
-.fairness-table td.zero { color: var(--muted); }
-.fairness-table td .tg { font-weight: 800; }
-.fairness-table td .sep { color: var(--muted); margin: 0 3px; }
-.fairness-table td.hot { background: var(--warn-soft); }
-.fairness-table td.num { font-weight: 700; border-left: 1px solid var(--line); }
+.fairness-table td { font-weight: 700; }
+.fairness-table td.self { color: var(--line-strong); font-weight: 400; }
+.fairness-table td.never, .never-key { background: var(--warn-soft); color: var(--warn); }
+.fairness-table td.hot, .hot-key { background: var(--felt-soft); color: var(--felt); }
+.never-key, .hot-key { padding: 0 5px; border-radius: 4px; font-weight: 800; }
 .fairness-table tbody th, .fairness-table thead th:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
