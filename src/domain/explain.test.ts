@@ -6,6 +6,7 @@ import { H } from '../test/fixtures';
 const team = buildSchedule({ mode: 'team', tables: 4, attendees: H(13) });
 const custom = buildSchedule({ mode: 'team', tables: 4, attendees: H(8), format: 'custom', plan: { warmupPasses: 1, chain: 1, start03: 1, singles: 1 }, lockedRounds: [] });
 const single = buildSchedule({ mode: 'single', tables: 2, attendees: H(5) });
+const ending = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { start45: 2 }, lockedRounds: [] });
 const rowByLabel = (s: typeof team, label: string) => s.sections.flatMap((x) => x.rows).find((r) => r.label === label)!;
 const names = (items: { name: string }[]) => items.map((i) => i.name);
 
@@ -35,9 +36,14 @@ describe('vysvětlivky u bloků', () => {
     expect(names(explanationsFor(r[3]).main)).toEqual(['Normální leg']);
   });
 
+  it('Start 4:5: u kola jeho pravidlo', () => {
+    const r = ending.sections.flatMap((x) => x.rows).filter((x) => x.kind !== 'break');
+    expect(names(explanationsFor(r[0]).main)).toEqual(['Start 4:5']);
+  });
+
   it('kritérium 8: každý text vysvětlivek je u nějakého bloku', () => {
     const shown = new Set<string>();
-    for (const s of [team, single, custom])
+    for (const s of [team, single, custom, ending])
       for (const row of s.sections.flatMap((x) => x.rows)) {
         const e = explanationsFor(row);
         [...e.main, ...e.general, ...e.perTable].forEach((i) => i && shown.add(i.name));

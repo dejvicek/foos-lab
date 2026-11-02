@@ -12,7 +12,7 @@ export const DEFAULT_DURATION = 180;
 export const SIM_MIN_PLAYERS = 4;
 
 /** Výchozí výběr úplně prvního konfigurovatelného tréninku (PRD 4.6). */
-export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => !d.retired).map((d) => d.id);
+export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => !d.retired && !d.optional).map((d) => d.id);
 
 /** Kolik kol cvičení je potřeba, aby se ve dvojicích vystřídali všichni. */
 export function drillRoundsNeeded(players: number, tables: number): number {

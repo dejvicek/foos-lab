@@ -209,6 +209,14 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
+        "name": "Start 4:5",
+        "parts": [
+          {
+            "text": "Koncovka, kdy jeden gól rozhoduje: leg začíná za stavu 4:5, pozadu je strana uvedená v rozpisu vlevo. Vepředu stačí jeden gól, pozadu se musí ubránit a dvakrát skórovat. Hrají se 2 kola, ve druhém si strany role prohodí. Zapisuje se stav na stole (konec 6:5), appka započítá jen odehrané góly (2:0)."
+          }
+        ]
+      },
+      {
         "name": "Start 5:5, o 2 góly, strop 10",
         "parts": [
           {

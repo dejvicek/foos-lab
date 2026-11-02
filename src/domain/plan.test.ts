@@ -5,7 +5,7 @@ describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
       'warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl', 'backRodsBuildUp', 'chain',
-      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start55', 'singles', 'sim',
+      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
     ]);
     expect(discipline('start03')).toMatchObject({ kind: 'match', min: 5, lossTax: true, start: [0, 3] });
     expect(discipline('singles')).toMatchObject({ kind: 'match', min: 8, singlesOnly: true });
@@ -68,4 +68,12 @@ it('délky kol startů (2. 11. 2026): Start 4:4 5 min, Start 5:5 6 min', () => {
   expect(discipline('start44').min).toBe(5);
   expect(discipline('start55').min).toBe(6);
   expect(discipline('start03').min).toBe(5);
+});
+
+it('Start 4:5 (2. 11. 2026): koncovka pozadu o gól, 5 min, bez Daně, vždy 2 kola s prohozenými stranami', () => {
+  expect(discipline('start45')).toMatchObject({ kind: 'match', name: 'Start 4:5', min: 5, start: [4, 5], paired: true });
+  expect(discipline('start45').lossTax).toBeFalsy();
+  // nabízí se, ale ve výchozím výběru není – výchozí 3:00 by se nevešla (minima 189 min)
+  expect(DEFAULT_SELECTION).not.toContain('start45');
+  expect(discipline('start45').retired).toBeFalsy();
 });

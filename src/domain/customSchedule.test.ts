@@ -108,7 +108,7 @@ describe('úpravy plánu 2. 11. 2026', () => {
     expect(plan.wall! % 2).toBe(0);
     expect(plan.start03! % 2).toBe(0);
     expect(plan.wall).toBeGreaterThanOrEqual(2);
-    for (const id of ['wall', 'start03'] as const) {
+    for (const id of ['wall', 'start03', 'start45'] as const) {
       const r = playRows(custom(8, 4, { plan: { [id]: 2 } }));
       const [a, b] = r.map((x) => x.cells.flatMap((c) => (c?.type === 'match' ? [c.match] : [])));
       expect(b.map((m) => [m.sideA, m.sideB])).toEqual(a.map((m) => [m.sideB, m.sideA]));

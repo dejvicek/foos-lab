@@ -39,6 +39,7 @@ export type DisciplineId =
   | 'wall'
   | 'start03'
   | 'start44'
+  | 'start45'
   | 'start55'
   | 'singles'
   | 'sim';
