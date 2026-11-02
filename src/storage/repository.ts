@@ -7,6 +7,12 @@ export interface AppData {
   trainings: Training[];
 }
 
+export interface RemoteHandlers {
+  score(trainingId: string, matchId: MatchId, s: Score | null): void;
+  solo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): void;
+  training(t: Training | null, id: string): void;
+}
+
 export interface Repository {
   loadAll(): Promise<AppData>;
   savePlayer(p: Player): Promise<void>;
@@ -21,6 +27,12 @@ export interface Repository {
   replaceScores(trainingId: string, keep: MatchId[]): Promise<void>;
   /** Výsledek sólové části; null řádek smaže. */
   saveSolo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): Promise<void>;
+  /** Ťuknutí: přičte delta k poli skóre (atomicky v databázi), výsledek v mezích 0…max. */
+  bumpScore(trainingId: string, matchId: MatchId, field: keyof Score, delta: number, max: number): Promise<void>;
+  /** Ťuknutí ve cvičení: přičte delta k výsledku hráče, v mezích 0…max. */
+  bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): Promise<void>;
+  /** Živé změny od ostatních telefonů; vrací odhlášení. */
+  subscribe(handlers: RemoteHandlers): () => void;
   /** Hráč zamkne odehraná kola (jen prodloužení) a případně týmy simulace – funkce na serveru. */
   lockRounds(trainingId: string, locked: LockedRound[], simTeams: SimTeams | null): Promise<void>;
   /** Smaže výsledky sólové části tréninku mimo `keep`. */

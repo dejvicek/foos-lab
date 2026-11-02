@@ -79,6 +79,8 @@ export const trainingToRow = (t: Training): TrainingRow => ({
 
 const SCORE_FIELDS = ['ga', 'gb', 'la', 'lb'] as const;
 
+export const scoreFromRowPublic = (r: ScoreRow): Score => scoreFromRow(r);
+
 function scoreFromRow(r: ScoreRow): Score {
   const s: Score = {};
   for (const f of SCORE_FIELDS) if (r[f] !== null && r[f] !== undefined) s[f] = r[f];

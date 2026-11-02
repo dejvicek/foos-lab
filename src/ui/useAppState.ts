@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isEmptyScore, setSolo } from '../domain/training';
+import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
-import type { MatchId, Player, PlayerId, Score, SoloKey, Training } from '../domain/types';
+import type { Match, MatchId, Player, PlayerId, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
@@ -24,6 +25,10 @@ export interface AppStore {
   /** Konfigurace + smazání skóre zápasů, které v `t.scores` nejsou (po pruneEntries). */
   updateTrainingConfig(t: Training): void;
   deleteTraining(id: string): void;
+  /** Ťuknutí na zápas: lokálně hned, do databáze jako přičtení (souběžné telefony se nepřepíšou). */
+  bumpScore(trainingId: string, match: Match, field: keyof Score, delta: number): void;
+  /** Ťuknutí ve cvičení: přičtení k výsledku hráče. */
+  bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
   /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
   lockRounds(t: Training): void;
   /** Lokálně hned, do úložiště s odstupem SCORE_DEBOUNCE_MS za zápas. */
@@ -115,6 +120,33 @@ export function useAppState(repo: Repository): AppStore {
     [pump],
   );
 
+  // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky).
+  useEffect(() => {
+    if (status !== 'ready') return;
+    return repo.subscribe({
+      score: (tid, mid, s) =>
+        setData((d) => ({
+          ...d,
+          trainings: d.trainings.map((t) => {
+            if (t.id !== tid) return t;
+            const scores = { ...t.scores };
+            if (s) scores[mid] = s;
+            else delete scores[mid];
+            return { ...t, scores };
+          }),
+        })),
+      solo: (tid, pid, key, value) =>
+        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? setSolo(t, pid, key, value) : t)) })),
+      training: (t, id) =>
+        setData((d) => {
+          if (!t) return { ...d, trainings: d.trainings.filter((x) => x.id !== id) };
+          const cur = d.trainings.find((x) => x.id === id);
+          const merged = cur ? { ...t, scores: cur.scores, soloResults: cur.soloResults } : t;
+          return { ...d, trainings: cur ? d.trainings.map((x) => (x.id === id ? merged : x)) : [...d.trainings, merged] };
+        }),
+    });
+  }, [repo, status]);
+
   // Varování při zavření stránky s neuloženými změnami.
   useEffect(() => {
     const on = (e: BeforeUnloadEvent) => {
@@ -193,6 +225,26 @@ export function useAppState(repo: Repository): AppStore {
             ),
           ),
         );
+      },
+      bumpScore: (trainingId: string, match: Match, field: keyof Score, delta: number) => {
+        setData((d) => ({
+          ...d,
+          trainings: d.trainings.map((t) =>
+            t.id === trainingId ? { ...t, scores: { ...t.scores, [match.id]: bump(match, t.scores[match.id] ?? {}, field, delta) } } : t,
+          ),
+        }));
+        enqueue(() => repo.bumpScore(trainingId, match.id, field, delta, bumpLimit(match, field)));
+      },
+      bumpSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
+        setData((d) => ({
+          ...d,
+          trainings: d.trainings.map((t) => {
+            if (t.id !== trainingId) return t;
+            const cur = t.soloResults[playerId]?.[key] ?? 0;
+            return setSolo(t, playerId, key, Math.min(max, Math.max(0, cur + delta)));
+          }),
+        }));
+        enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max));
       },
       lockRounds: (t: Training) => {
         setData((d) => ({ ...d, trainings: d.trainings.map((x) => (x.id === t.id ? { ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams } : x)) }));

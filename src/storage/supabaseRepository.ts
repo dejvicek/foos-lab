@@ -4,6 +4,7 @@ import {
   playerFromRow,
   playerToRow,
   scoreToRow,
+  scoreFromRowPublic,
   soloRow,
   trainingFromRow,
   trainingToRow,
@@ -106,6 +107,41 @@ export function supabaseRepository(client: SupabaseClient): Repository {
             .eq('metric', r.metric)
             .eq('round', r.round),
         );
+    },
+    async bumpScore(trainingId, matchId, field, delta, max) {
+      const { error, status } = await client.rpc('bump_score', { p_training: trainingId, p_match: matchId, p_field: field, p_delta: delta, p_max: max });
+      if (error) throw fromPostgrest(error, status);
+    },
+    async bumpSolo(trainingId, playerId, key, delta, max) {
+      const { metric, round } = parseSoloKey(key);
+      const { error, status } = await client.rpc('bump_solo', {
+        p_training: trainingId, p_player: playerId, p_metric: metric, p_round: round, p_delta: delta, p_max: max,
+      });
+      if (error) throw fromPostgrest(error, status);
+    },
+    subscribe(h) {
+      const ch = client
+        .channel('training-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, (p) => {
+          const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as ScoreRow;
+          if (!row?.training_id) return;
+          const gone = p.eventType === 'DELETE';
+          h.score(row.training_id, row.match_id, gone ? null : scoreFromRowPublic(row));
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'solo_results' }, (p) => {
+          const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as SoloRow;
+          if (!row?.training_id) return;
+          h.solo(row.training_id, row.player_id, soloKey(row.metric, row.round ?? 0), p.eventType === 'DELETE' ? null : row.value);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trainings' }, (p) => {
+          if (p.eventType === 'DELETE') return h.training(null, (p.old as TrainingRow).id);
+          const row = p.new as TrainingRow;
+          h.training(trainingFromRow(row, [], []), row.id);
+        })
+        .subscribe();
+      return () => {
+        void client.removeChannel(ch);
+      };
     },
     async lockRounds(trainingId, locked, simTeams) {
       const { error, status } = await client.rpc('lock_rounds', { p_training: trainingId, p_locked: locked, p_sim_teams: simTeams });

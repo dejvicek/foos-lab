@@ -1,6 +1,6 @@
 import { isEmptyScore } from '../domain/training';
 import { StorageError } from './errors';
-import type { AppData, Repository } from './repository';
+import type { AppData, RemoteHandlers, Repository } from './repository';
 
 const copy = <T>(v: T): T => structuredClone(v);
 
@@ -8,7 +8,7 @@ const copy = <T>(v: T): T => structuredClone(v);
 export function memoryRepository(
   initial?: AppData,
   opts: { failLoad?: boolean; failSaves?: number; failPermanent?: number } = {},
-): Repository & { snapshot(): AppData } {
+): Repository & { snapshot(): AppData; emit(): RemoteHandlers; subscribers(): number } {
   let data: AppData = copy(initial ?? { players: [], trainings: [] });
   let failSaves = opts.failSaves ?? 0;
   let failPermanent = opts.failPermanent ?? 0;
@@ -26,9 +26,18 @@ export function memoryRepository(
   };
 
   const training = (id: string) => data.trainings.find((t) => t.id === id);
+  const listeners = new Set<RemoteHandlers>();
+  const fanOut: RemoteHandlers = {
+    score: (...a) => listeners.forEach((l) => l.score(...a)),
+    solo: (...a) => listeners.forEach((l) => l.solo(...a)),
+    training: (...a) => listeners.forEach((l) => l.training(...a)),
+  };
 
   return {
     snapshot: () => copy(data),
+    /** Testy: simulace změny z jiného telefonu (do úložiště nic nezapíše). */
+    emit: () => fanOut,
+    subscribers: () => listeners.size,
     async loadAll() {
       if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
       return copy(data);
@@ -81,6 +90,27 @@ export function memoryRepository(
         }
         t.soloResults = next;
       }),
+    bumpScore: (trainingId, matchId, field, delta, max) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const cur = t.scores[matchId] ?? {};
+        t.scores[matchId] = { ...cur, [field]: Math.min(max, Math.max(0, (cur[field] ?? 0) + delta)) };
+      }),
+    bumpSolo: (trainingId, playerId, key, delta, max) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const mine = { ...t.soloResults[playerId] };
+        mine[key] = Math.min(max, Math.max(0, (mine[key] ?? 0) + delta));
+        t.soloResults[playerId] = mine;
+      }),
+    subscribe: (h) => {
+      listeners.add(h);
+      return () => {
+        listeners.delete(h);
+      };
+    },
     lockRounds: (trainingId, locked, simTeams) =>
       write(() => {
         const t = training(trainingId);
