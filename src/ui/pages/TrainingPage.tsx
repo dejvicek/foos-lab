@@ -15,6 +15,7 @@ import { RoundCards } from '../components/RoundCards';
 import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
+import { FairnessPanel } from '../components/FairnessPanel';
 import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
@@ -388,6 +389,7 @@ export function TrainingPage({
               Vytisknout rozpis
             </button>
           </div>
+          {viewer.isAdmin && <FairnessPanel schedule={schedule} players={training.attendees} names={names} />}
           <StandingsView
             schedule={schedule}
             scores={training.scores}
