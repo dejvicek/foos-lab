@@ -41,3 +41,18 @@ describe('telefon – žebříček', () => {
     expect(items[0]).toHaveTextContent(/1 leg/);
   });
 });
+
+describe('telefon – nastavení tréninku', () => {
+  it('kroky Kdy a kde → Přítomní → Disciplíny → Týmy pro simulaci, každý se shrnutím', async () => {
+    const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };
+    window.location.hash = '#/trenink/t1';
+    const { container } = render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
+    await screen.findByLabelText('Rozpis tréninku');
+    const steps = [...container.querySelectorAll('details.step > summary')].map((s) => s.textContent ?? '');
+    const titles = ['Kdy a kde', 'Přítomní', 'Disciplíny', 'Týmy pro simulaci'];
+    expect(steps).toHaveLength(4);
+    steps.forEach((s, i) => expect(s.startsWith(titles[i])).toBe(true));
+    expect(steps[0]).toMatch(/18:00, 3:00, 4 stoly/);
+    expect(steps[3]).toMatch(/podle nominačního pořadí/);
+  });
+});

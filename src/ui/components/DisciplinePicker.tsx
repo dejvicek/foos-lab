@@ -3,7 +3,7 @@ import { DURATION_OPTIONS, plannedMinutes, SIM_MIN_PLAYERS } from '../../domain/
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
 
-const hm = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+export const hm = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy', sim: 'Tým' } as const;
 
 /** PRD 4.6 / 7: délka tréninku, výběr disciplín a počty kol. */
@@ -28,7 +28,7 @@ export function DisciplinePicker({ training, open, onChange }: { training: Train
   const locked = lockedCounts(training);
   const setCount = (id: DisciplineId, n: number) => onChange({ ...training, plan: { ...training.plan, [id]: Math.max(locked[id] ?? 0, n) } });
   return (
-    <details className="disciplines" open={open}>
+    <details className="disciplines step" open={open}>
       <summary className="attendance-head">
         <span className="attendance-title">Disciplíny</span>
         <span className={over ? 'count-badge over' : 'count-badge'}>
