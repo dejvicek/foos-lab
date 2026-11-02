@@ -6,7 +6,19 @@ const ITEMS: { label: string; route: Route; match: Route['page'][] }[] = [
   { label: 'Hráči', route: { page: 'players' }, match: ['players'] },
 ];
 
-export function MainNav({ route, navigate }: { route: Route; navigate: (r: Route) => void }) {
+export function MainNav({
+  route,
+  navigate,
+  myName,
+  onChangePassword,
+  onSignOut,
+}: {
+  route: Route;
+  navigate: (r: Route) => void;
+  myName?: string | null;
+  onChangePassword?(): void;
+  onSignOut?(): void;
+}) {
   return (
     <nav className="main-nav" aria-label="Hlavní navigace">
       <span className="brand">Rozpis stolů</span>
@@ -24,6 +36,17 @@ export function MainNav({ route, navigate }: { route: Route; navigate: (r: Route
           </button>
         );
       })}
+      {onSignOut && (
+        <span className="nav-user">
+          {myName && <span className="nav-name">{myName}</span>}
+          <button type="button" className="link" onClick={onChangePassword}>
+            Heslo
+          </button>
+          <button type="button" className="link" onClick={onSignOut}>
+            Odhlásit
+          </button>
+        </span>
+      )}
     </nav>
   );
 }

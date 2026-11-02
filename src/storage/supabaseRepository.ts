@@ -35,8 +35,11 @@ async function selectAll<T>(client: SupabaseClient, table: string, orderBy: stri
   }
 }
 
-export function supabaseRepository(url: string, anonKey: string): Repository {
-  const client = createClient(url, anonKey, { auth: { persistSession: false } });
+/** Jeden klient pro data i přihlášení; přihlášení se pamatuje v prohlížeči. */
+export const createSupabase = (url: string, anonKey: string): SupabaseClient =>
+  createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
+
+export function supabaseRepository(client: SupabaseClient): Repository {
 
   return {
     async loadAll() {
@@ -103,6 +106,10 @@ export function supabaseRepository(url: string, anonKey: string): Repository {
             .eq('metric', r.metric)
             .eq('round', r.round),
         );
+    },
+    async lockRounds(trainingId, locked, simTeams) {
+      const { error, status } = await client.rpc('lock_rounds', { p_training: trainingId, p_locked: locked, p_sim_teams: simTeams });
+      if (error) throw fromPostgrest(error, status);
     },
     async replaceScores(trainingId, keep) {
       const rows = check<{ match_id: string }[]>(

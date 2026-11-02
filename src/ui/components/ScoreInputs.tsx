@@ -13,12 +13,14 @@ interface Props {
   start?: [number, number];
   /** Která strana hraje Zeď. */
   wall?: 'A' | 'B';
+  /** Jen ke čtení (hráč nemá právo zapisovat). */
+  disabled?: boolean;
   onChange(next: Score): void;
 }
 
 const show = (v: number | null | undefined, offset = 0) => (v === null || v === undefined ? '' : String(v + offset));
 
-export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, wall, onChange }: Props) {
+export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, wall, disabled, onChange }: Props) {
   const s = score ?? {};
   const field = (key: keyof Score, max: number, title: string, className: string, offset = 0) => (
     <input
@@ -29,6 +31,7 @@ export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, 
       max={max}
       placeholder={offset ? String(offset) : '–'}
       aria-label={`${label}: ${title}`}
+      disabled={disabled}
       value={show(s[key], offset)}
       onChange={(e) => {
         const v = parseScoreValue(e.target.value);

@@ -24,6 +24,8 @@ export interface AppStore {
   /** Konfigurace + smazání skóre zápasů, které v `t.scores` nejsou (po pruneEntries). */
   updateTrainingConfig(t: Training): void;
   deleteTraining(id: string): void;
+  /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
+  lockRounds(t: Training): void;
   /** Lokálně hned, do úložiště s odstupem SCORE_DEBOUNCE_MS za zápas. */
   saveScore(trainingId: string, matchId: MatchId, s: Score): void;
   /** Výsledek sólové části: lokálně hned, do úložiště s odstupem. null maže. */
@@ -191,6 +193,10 @@ export function useAppState(repo: Repository): AppStore {
             ),
           ),
         );
+      },
+      lockRounds: (t: Training) => {
+        setData((d) => ({ ...d, trainings: d.trainings.map((x) => (x.id === t.id ? { ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams } : x)) }));
+        enqueue(() => repo.lockRounds(t.id, t.lockedRounds, t.simTeams));
       },
       deleteTraining: (id: string) => {
         cancelPending(id, stillValid, null);

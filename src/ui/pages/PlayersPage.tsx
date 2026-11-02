@@ -12,6 +12,8 @@ import {
 import type { Player } from '../../domain/types';
 import { exportJson } from '../../storage/backup';
 import { todayIso } from '../dates';
+import type { Viewer } from '../../domain/my';
+import type { AuthService } from '../../storage/auth';
 import type { AppStore } from '../useAppState';
 
 export const ROSTER_ERRORS: Record<RosterError, string> = {
@@ -37,7 +39,19 @@ function download(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-function PlayerRow({ store, player, first, last }: { store: AppStore; player: Player; first: boolean; last: boolean }) {
+function PlayerRow({
+  store,
+  player,
+  first,
+  last,
+  onReset,
+}: {
+  store: AppStore;
+  player: Player;
+  first: boolean;
+  last: boolean;
+  onReset(p: Player): void;
+}) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(player.name);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +95,9 @@ function PlayerRow({ store, player, first, last }: { store: AppStore; player: Pl
             <button type="button" className="ghost" aria-label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)}>
               Přejmenovat
             </button>
+            <button type="button" className="ghost" aria-label={`Resetovat heslo ${player.name}`} onClick={() => onReset(player)}>
+              Reset hesla
+            </button>
             <button type="button" className="ghost" aria-label={`Archivovat ${player.name}`} onClick={() => persistPlayers(store, setArchived(players, player.id, true))}>
               Archivovat
             </button>
@@ -91,7 +108,9 @@ function PlayerRow({ store, player, first, last }: { store: AppStore; player: Pl
   );
 }
 
-export function PlayersPage({ store }: { store: AppStore }) {
+export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?: Viewer; auth?: AuthService }) {
+  const isAdmin = viewer?.isAdmin ?? true;
+  const [notice, setNotice] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const players = store.data.players;
@@ -106,10 +125,40 @@ export function PlayersPage({ store }: { store: AppStore }) {
     setError(null);
   };
 
+  const reset = async (p: Player) => {
+    if (!auth || !confirm(`Vrátit heslo hráče ${p.name} na jeho přezdívku?`)) return;
+    try {
+      const ok = await auth.resetPassword(p.id);
+      setNotice(ok ? `Heslo hráče ${p.name} je zase jeho přezdívka.` : `${p.name} se ještě nepřihlásil, heslo je pořád jeho přezdívka.`);
+    } catch {
+      setNotice('Heslo se nepodařilo resetovat.');
+    }
+  };
+
+  if (!isAdmin)
+    return (
+      <section>
+        <h1>Hráči</h1>
+        <p className="lead">Soupiska klubu. Spravuje ji admin.</p>
+        <ul className="player-list" aria-label="Aktivní hráči">
+          {active.map((p) => (
+            <li key={p.id} data-name={p.name} className="player-row">
+              <span className="player-name">{p.name}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+
   return (
     <section>
       <h1>Hráči</h1>
       <p className="lead">Soupiska klubu. Pořadí na soupisce je výchozí nominační pořadí pro trénink.</p>
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
 
       <form
         className="add-form"
@@ -131,7 +180,7 @@ export function PlayersPage({ store }: { store: AppStore }) {
       ) : (
         <ul className="player-list" aria-label="Aktivní hráči">
           {active.map((p, i) => (
-            <PlayerRow key={p.id} store={store} player={p} first={i === 0} last={i === active.length - 1} />
+            <PlayerRow key={p.id} store={store} player={p} first={i === 0} last={i === active.length - 1} onReset={reset} />
           ))}
         </ul>
       )}

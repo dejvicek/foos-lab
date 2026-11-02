@@ -7,7 +7,7 @@ interface Props {
   scores: Record<MatchId, Score>;
   attendees: PlayerId[];
   names: Record<PlayerId, string>;
-  onClear(): void;
+  onClear?(): void;
 }
 
 export function StandingsView({ schedule, scores, attendees, names, onClear }: Props) {
@@ -68,11 +68,13 @@ export function StandingsView({ schedule, scores, attendees, names, onClear }: P
           </p>
         </>
       )}
-      <div className="actions-row no-print">
-        <button type="button" className="ghost danger" onClick={() => confirm('Opravdu smazat všechna skóre tohoto tréninku?') && onClear()}>
-          Vymazat všechna skóre tohoto tréninku
-        </button>
-      </div>
+      {onClear && (
+        <div className="actions-row no-print">
+          <button type="button" className="ghost danger" onClick={() => confirm('Opravdu smazat všechna skóre tohoto tréninku?') && onClear()}>
+            Vymazat všechna skóre tohoto tréninku
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,10 +1,11 @@
 import { newTraining, sortTrainings } from '../../domain/training';
 import { formatDateLong, todayIso } from '../dates';
 import { MODE_LABEL, plural } from '../format';
+import type { Viewer } from '../../domain/my';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 
-export function TrainingsPage({ store, navigate }: { store: AppStore; navigate: (r: Route) => void }) {
+export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; navigate: (r: Route) => void; viewer: Viewer }) {
   const trainings = sortTrainings(store.data.trainings);
 
   const create = () => {
@@ -16,13 +17,15 @@ export function TrainingsPage({ store, navigate }: { store: AppStore; navigate: 
   return (
     <section>
       <h1>Trénink</h1>
-      <div className="actions-row">
-        <button type="button" onClick={create}>
-          Nový trénink
-        </button>
-      </div>
+      {viewer.isAdmin && (
+        <div className="actions-row">
+          <button type="button" onClick={create}>
+            Nový trénink
+          </button>
+        </div>
+      )}
       {trainings.length === 0 ? (
-        <p className="note">Zatím žádný trénink. Začni tlačítkem Nový trénink.</p>
+        <p className="note">{viewer.isAdmin ? 'Zatím žádný trénink. Začni tlačítkem Nový trénink.' : 'Zatím žádný trénink.'}</p>
       ) : (
         <ul className="training-list" aria-label="Uložené tréninky">
           {trainings.map((t) => {

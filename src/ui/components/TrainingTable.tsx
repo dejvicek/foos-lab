@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { clockAt, soloKey } from '../../domain/solo';
-import type { Cell, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
+import type { Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey, type RowRef } from '../now';
 import { BlockEntry } from './BlockEntry';
 
@@ -13,6 +13,8 @@ interface Props {
   onToggle(key: string): void;
   onScore(id: MatchId, s: Score): void;
   onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
+  canMatch?(m: Match): boolean;
+  canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
 }
 
 function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names: Record<PlayerId, string> }) {
@@ -60,7 +62,7 @@ function soloProgress(row: ScheduleRow, t: Training): string | null {
   return total ? `zapsáno ${done} z ${total}` : null;
 }
 
-export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo }: Props) {
+export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const cols = s.tables + 3;
@@ -159,6 +161,8 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                             names={names}
                             onScore={onScore}
                             onSolo={onSolo}
+                            canMatch={canMatch}
+                            canSolo={canSolo}
                           />
                         </td>
                       </tr>

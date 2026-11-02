@@ -5,7 +5,9 @@ import { reconcileTeams } from '../../domain/simulation';
 import { lostEntries, pruneEntries, replan, toggleAttendee, type LostEntries } from '../../domain/training';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey } from '../../domain/solo';
-import type { Training } from '../../domain/types';
+import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
+import { canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
+import { MyTable } from '../components/MyTable';
 import { TrainingTable } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
 import { StandingsView } from '../components/StandingsView';
@@ -38,7 +40,17 @@ const configChanged = (a: Training, b: Training) =>
   a.lockedRounds !== b.lockedRounds;
 // Pozn.: startTime ani datum rozpis nemění, ukládají se přes saveTraining.
 
-export function TrainingPage({ store, id, navigate }: { store: AppStore; id: string; navigate: (r: Route) => void }) {
+export function TrainingPage({
+  store,
+  id,
+  navigate,
+  viewer = { playerId: null, isAdmin: true },
+}: {
+  store: AppStore;
+  id: string;
+  navigate: (r: Route) => void;
+  viewer?: Viewer;
+}) {
   const training = store.data.trainings.find((t) => t.id === id);
   // Rozpis závisí i na skóre: týmy simulace se dělí podle výkonu ve scénářové lize.
   const schedule = useMemo(() => (training && canBuildSchedule(training) ? buildSchedule(training) : null), [training]);
@@ -46,6 +58,8 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
   const now = useNow();
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
+  const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
+  const [tab, setTab] = useState<'mine' | 'all'>(() => (attends && !viewer.isAdmin ? 'mine' : 'all'));
   if (!training) {
     return (
       <section>
@@ -81,6 +95,26 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
     else store.saveTraining(next);
   };
 
+  const canMatch = (m: Match) => canWriteMatch(viewer, m, training);
+  const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
+  /** Uloží zamčení kol / týmů: admin přímo, hráč přes funkci na serveru. */
+  const persistLock = (next: Training) => (viewer.isAdmin ? store.saveTraining(next) : store.lockRounds(next));
+  const onScore = (matchId: MatchId, sc: Score) => {
+    // Jedno uložení: zamčení kol i týmů simulace (dvě by se navzájem přepsala).
+    let next = withLocked(training, roundOfMatch(schedule!, matchId));
+    const m = schedule!.matches.find((x) => x.id === matchId);
+    // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
+    if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule!.teams)
+      next = { ...next, simTeams: schedule!.teams };
+    if (next !== training) persistLock(next);
+    store.saveScore(training.id, matchId, sc);
+  };
+  const onSolo = (playerId: PlayerId, key: SoloKey, value: number | null) => {
+    const next = withLocked(training, parseSoloKey(key).round || null);
+    if (next !== training) persistLock(next);
+    store.saveSolo(training.id, playerId, key, value);
+  };
+
   /** Konfigurovatelný trénink: zápis výsledku zamkne kola až po to, do kterého patří (PRD 4.6). */
   const withLocked = (t: Training, roundNo: number | null): Training => {
     if (t.format !== 'custom' || !schedule || !roundNo || roundNo <= t.lockedRounds.length) return t;
@@ -106,15 +140,42 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
         {MODE_LABEL[training.mode]}, {training.attendees.length} {plural(training.attendees.length, 'hráč', 'hráči', 'hráčů')}, {training.tables} stoly
       </p>
 
-      <TrainingSetup
-        training={training}
-        currentTeams={schedule?.teams ?? null}
-        players={store.data.players}
-        onChange={apply}
-        onAddPlayer={onAddPlayer}
-      />
+      {viewer.isAdmin && (
+        <TrainingSetup
+          training={training}
+          currentTeams={schedule?.teams ?? null}
+          players={store.data.players}
+          onChange={apply}
+          onAddPlayer={onAddPlayer}
+        />
+      )}
 
-      {schedule && (
+      {schedule && attends && (
+        <div className="tabs no-print" role="tablist" aria-label="Zobrazení">
+          <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>
+            Můj stůl
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'all'} onClick={() => setTab('all')}>
+            Celý rozpis
+          </button>
+        </div>
+      )}
+
+      {schedule && attends && tab === 'mine' && (
+        <MyTable
+          schedule={schedule}
+          training={training}
+          names={names}
+          playerId={viewer.playerId!}
+          since={since}
+          onScore={onScore}
+          onSolo={onSolo}
+          canMatch={canMatch}
+          canSolo={canSolo}
+        />
+      )}
+
+      {schedule && (!attends || tab === 'all') && (
         <>
           <TrainingTable
             schedule={schedule}
@@ -123,21 +184,10 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
             current={current}
             expanded={openKey}
             onToggle={(key) => setExpanded(openKey === key ? '' : key)}
-            onScore={(matchId, s) => {
-              // Jedno uložení: zamčení kol i týmů simulace (dvě by se navzájem přepsala).
-              let next = withLocked(training, roundOfMatch(schedule, matchId));
-              const m = schedule.matches.find((x) => x.id === matchId);
-              // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
-              if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule.teams)
-                next = { ...next, simTeams: schedule.teams };
-              if (next !== training) store.saveTraining(next);
-              store.saveScore(training.id, matchId, s);
-            }}
-            onSolo={(playerId, key, value) => {
-              const next = withLocked(training, parseSoloKey(key).round || null);
-              if (next !== training) store.saveTraining(next);
-              store.saveSolo(training.id, playerId, key, value);
-            }}
+            onScore={onScore}
+            onSolo={onSolo}
+            canMatch={canMatch}
+            canSolo={canSolo}
           />
           <div className="actions-row no-print">
             <button type="button" className="ghost" onClick={() => window.print()}>
@@ -149,11 +199,12 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
             scores={training.scores}
             attendees={training.attendees}
             names={names}
-            onClear={() => store.updateTrainingConfig({ ...training, scores: {} })}
+            onClear={viewer.isAdmin ? () => store.updateTrainingConfig({ ...training, scores: {} }) : undefined}
           />
         </>
       )}
 
+      {viewer.isAdmin && (
       <div className="actions-row no-print">
         <button
           type="button"
@@ -168,6 +219,7 @@ export function TrainingPage({ store, id, navigate }: { store: AppStore; id: str
           Smazat trénink
         </button>
       </div>
+      )}
     </section>
   );
 }

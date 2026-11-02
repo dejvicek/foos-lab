@@ -1,5 +1,5 @@
 import type { SoloSlot } from '../domain/solo';
-import type { MatchId, Player, PlayerId, Score, SoloKey, Training } from '../domain/types';
+import type { LockedRound, MatchId, Player, PlayerId, Score, SimTeams, SoloKey, Training } from '../domain/types';
 
 export interface AppData {
   players: Player[];
@@ -21,6 +21,8 @@ export interface Repository {
   replaceScores(trainingId: string, keep: MatchId[]): Promise<void>;
   /** Výsledek sólové části; null řádek smaže. */
   saveSolo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): Promise<void>;
+  /** Hráč zamkne odehraná kola (jen prodloužení) a případně týmy simulace – funkce na serveru. */
+  lockRounds(trainingId: string, locked: LockedRound[], simTeams: SimTeams | null): Promise<void>;
   /** Smaže výsledky sólové části tréninku mimo `keep`. */
   replaceSolo(trainingId: string, keep: SoloSlot[]): Promise<void>;
 }

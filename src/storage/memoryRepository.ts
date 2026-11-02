@@ -81,6 +81,13 @@ export function memoryRepository(
         }
         t.soloResults = next;
       }),
+    lockRounds: (trainingId, locked, simTeams) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        t.lockedRounds = copy(locked);
+        t.simTeams = t.simTeams ?? copy(simTeams);
+      }),
     replaceScores: (trainingId, keep) =>
       write(() => {
         const t = training(trainingId);

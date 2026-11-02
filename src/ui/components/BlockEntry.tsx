@@ -2,7 +2,7 @@ import type { ExplanationItem } from '../../domain/content';
 import { explanationsFor } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric } from '../../domain/solo';
-import type { MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
+import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScoreInputs } from './ScoreInputs';
 
 interface Props {
@@ -12,6 +12,9 @@ interface Props {
   names: Record<PlayerId, string>;
   onScore(id: MatchId, s: Score): void;
   onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
+  /** Smí přihlášený zapisovat do zápasu / za hráče ve skupině? (výchozí ano) */
+  canMatch?(m: Match): boolean;
+  canSolo?(group: PlayerId[], playerId: PlayerId): boolean;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -28,7 +31,7 @@ function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true }: Props) {
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
   const ex = explanationsFor(row);
   // Rozhodčí u stolu se ukazuje v kartě; pod kartami jen ti, kdo nejsou u žádného stolu.
@@ -64,6 +67,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   sides={[nm(m.sideA), nm(m.sideB)]}
                   start={m.start}
                   wall={m.wall}
+                  disabled={!canMatch(m)}
                   onChange={(s) => onScore(m.id, s)}
                 />
                 {m.block === 'league' && (
@@ -100,6 +104,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                       max={def.max}
                       placeholder="–"
                       aria-label={`${label}: ${names[p] ?? '?'}`}
+                      disabled={!canSolo(c.players, p)}
                       value={v === undefined ? '' : String(v)}
                       onChange={(e) => {
                         const n = parseScoreValue(e.target.value);
