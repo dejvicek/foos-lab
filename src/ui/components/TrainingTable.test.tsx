@@ -111,7 +111,9 @@ describe('tabulka tréninku', () => {
     expect(card).toHaveTextContent('začíná 0');
     expect(card).toHaveTextContent('začíná 3');
     const right = within(card).getByLabelText('Kolo 5, stůl 1: góly vpravo');
-    await user.type(right, '2'); // méně než start 3 → nepřijme se
+    await user.type(right, '2'); // méně než start 3 → neuloží se, po opuštění políčka zmizí
+    expect(right).toHaveAttribute('aria-invalid', 'true');
+    await user.tab();
     expect(right).toHaveValue(null);
     await user.type(within(card).getByLabelText('Kolo 5, stůl 1: góly vlevo'), '6');
     await user.clear(right);

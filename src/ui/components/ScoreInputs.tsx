@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { parseScoreValue } from '../../domain/standings';
 import type { Score } from '../../domain/types';
 
@@ -20,9 +20,29 @@ interface Props {
 
 const show = (v: number | null | undefined, offset = 0) => (v === null || v === undefined ? '' : String(v + offset));
 
-export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, wall, disabled, onChange }: Props) {
-  const s = score ?? {};
-  const field = (key: keyof Score, max: number, title: string, className: string, offset = 0) => (
+/**
+ * Číselné políčko: hodnotu nad maximum nepřijme (překlep 66), hodnotu pod startem
+ * nechá dopsat (u startu 5:5 se „10“ píše přes „1“), ale uloží jen platnou.
+ */
+function Field({
+  value,
+  offset,
+  max,
+  label,
+  className,
+  disabled,
+  onCommit,
+}: {
+  value: number | null | undefined;
+  offset: number;
+  max: number;
+  label: string;
+  className: string;
+  disabled?: boolean;
+  onCommit(v: number | null): void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
     <input
       className={className}
       type="number"
@@ -30,14 +50,38 @@ export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, 
       min={offset}
       max={max}
       placeholder={offset ? String(offset) : '–'}
-      aria-label={`${label}: ${title}`}
+      aria-label={label}
+      aria-invalid={draft !== null ? true : undefined}
       disabled={disabled}
-      value={show(s[key], offset)}
+      value={draft ?? show(value, offset)}
       onChange={(e) => {
-        const v = parseScoreValue(e.target.value);
-        if (v !== null && (v > max || v < offset)) return; // překlep mimo rozsah se nepřijme
-        onChange({ ...s, [key]: v === null ? null : v - offset });
+        const raw = e.target.value;
+        if (raw === '') {
+          setDraft(null);
+          return onCommit(null);
+        }
+        const v = parseScoreValue(raw);
+        if (v !== null && v > max) return; // překlep nad maximum se nepřijme
+        if (v === null || v < offset) return setDraft(raw); // rozepsané / pod startem: neukládat
+        setDraft(null);
+        onCommit(v - offset);
       }}
+      onBlur={() => setDraft(null)}
+    />
+  );
+}
+
+export function ScoreInputs({ label, score, maxGoals, withLosses, sides, start, wall, disabled, onChange }: Props) {
+  const s = score ?? {};
+  const field = (key: keyof Score, max: number, title: string, className: string, offset = 0) => (
+    <Field
+      value={s[key]}
+      offset={offset}
+      max={max}
+      label={`${label}: ${title}`}
+      className={className}
+      disabled={disabled}
+      onCommit={(v) => onChange({ ...s, [key]: v })}
     />
   );
   const ga = s.ga ?? null;
