@@ -29,11 +29,16 @@ describe('pauzy v rozpisu (notebook, správce)', () => {
     const [p] = pauseRows();
     const sel = within(p).getByRole('combobox', { name: 'Délka pauzy' });
     expect(sel).toHaveValue('10');
-    const next = p.nextElementSibling as HTMLElement;
-    const before = within(next).getAllByRole('cell')[0].textContent;
+    // první kolo za pauzou (pauza je po cvičeních, mezi nimi nadpis sekce)
+    const roundAfter = (row: Element) => {
+      let x = row.nextElementSibling;
+      while (x && !x.querySelector('td.c-time')) x = x.nextElementSibling;
+      return x as HTMLElement;
+    };
+    const before = within(roundAfter(p)).getAllByRole('cell')[0].textContent;
     await user.selectOptions(sel, '20');
     await vi.waitFor(() => expect(saved(repo)?.[0].min).toBe(20));
-    expect(within(pauseRows()[0].nextElementSibling as HTMLElement).getAllByRole('cell')[0].textContent).not.toBe(before);
+    expect(within(roundAfter(pauseRows()[0])).getAllByRole('cell')[0].textContent).not.toBe(before);
   });
 
   it('přidat a odebrat pauzu', async () => {

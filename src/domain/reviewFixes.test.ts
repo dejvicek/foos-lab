@@ -47,7 +47,7 @@ describe('opravy z kontroly', () => {
     const drills = rows.filter((r) => r.kind === 'groups');
     const locked = lockThrough(buildSchedule(t), [], drills.at(-1)!.roundNo!);
     const plan = autoPlan(DEFAULT_SELECTION, 180, 9, 4, Object.fromEntries(locked.map((l) => [l.discipline, 1])), new Set(locked.map((l) => l.discipline)));
-    for (const d of ['warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl', 'backRodsBuildUp'] as const) expect(plan[d]).toBe(1);
+    for (const d of ['warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl'] as const) expect(plan[d]).toBe(1);
   });
 
   it('zamčené kolo s víc stoly se po snížení počtu stolů nerozjede', () => {

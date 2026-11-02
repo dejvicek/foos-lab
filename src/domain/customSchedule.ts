@@ -108,6 +108,9 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   let simDoubles = 0;
   let simSingles = 0;
   let roundNo = 0;
+  // Párová disciplína (Zeď, Start 0:3): druhé kolo dvojice = stejné zápasy s prohozenými stranami.
+  let lastMatchRound: { id: DisciplineId; roundNo: number; plans: MatchPlan[]; waiting: PlayerId[] } | null = null;
+  const seenOf = new Map<DisciplineId, number>();
 
   for (const item of timeline.items) {
     if (item.kind === 'break') {
@@ -193,7 +196,13 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         waiting: r.waiting,
       };
     } else {
-      const r = matchRound(players, t.tables, def, c, roundNo);
+      const k = seenOf.get(def.id) ?? 0;
+      const mirror = def.paired && k % 2 === 1 && lastMatchRound?.id === def.id && lastMatchRound.roundNo === roundNo - 1 ? lastMatchRound : null;
+      let r: { matches: MatchPlan[]; waiting: PlayerId[] };
+      if (mirror) {
+        r = { matches: mirror.plans.map((p) => ({ ...p, a: p.b, b: p.a })), waiting: mirror.waiting };
+        recordMatchRound(c, def, r.matches, r.waiting, roundNo);
+      } else r = matchRound(players, t.tables, def, c, roundNo);
       row = {
         roundNo,
         discipline: def.id,
@@ -206,6 +215,11 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
       };
     }
     for (const x of row.cells) if (x?.type === 'match') matches.push(x.match);
+    if (def.kind === 'match') {
+      seenOf.set(def.id, (seenOf.get(def.id) ?? 0) + 1);
+      const ms = row.cells.flatMap((x) => (x?.type === 'match' ? [x.match] : []));
+      lastMatchRound = { id: def.id, roundNo, plans: ms.map((m) => ({ kind: m.kind, a: m.sideA, b: m.sideB })), waiting: row.waiting };
+    }
     push(kind, row);
   }
 

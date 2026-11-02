@@ -2,7 +2,7 @@
 
 export const STATIONS: string[] = [
   'Udržení míče na pětce',
-  'Střelba jen z nastavení',
+  'Penalta z místa',
   'Obrana do držení',
   'Rozehrávka ze zadních tyčí',
 ];
@@ -92,7 +92,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
-        "name": "Střelba jen z nastavení",
+        "name": "Penalta z místa",
         "parts": [
           {
             "label": "Cíl:",

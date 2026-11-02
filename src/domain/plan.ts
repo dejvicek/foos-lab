@@ -5,7 +5,6 @@ export type Plan = Partial<Record<DisciplineId, number>>;
 
 export const CHANGEOVER_MIN = 1;
 export const BREAK_MIN = 10;
-export const BREAK_AFTER_MIN = 60;
 export const FINAL_MIN = 10;
 export const DURATION_OPTIONS = Array.from({ length: 13 }, (_, i) => 60 + i * 15); // 1:00–4:00
 export const DEFAULT_DURATION = 180;
@@ -13,7 +12,7 @@ export const DEFAULT_DURATION = 180;
 export const SIM_MIN_PLAYERS = 4;
 
 /** Výchozí výběr úplně prvního konfigurovatelného tréninku (PRD 4.6). */
-export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => d.id !== 'chain').map((d) => d.id);
+export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => !d.retired).map((d) => d.id);
 
 /** Kolik kol cvičení je potřeba, aby se ve dvojicích vystřídali všichni. */
 export function drillRoundsNeeded(players: number, tables: number): number {
@@ -34,20 +33,15 @@ export interface TimelineItem {
   index?: number;
 }
 
-/** Automatické pauzy (výchozí): 10 min po kole, které první přesáhne hodinu od poslední pauzy. */
+/** Automatické pauzy (výchozí): 10 min po každé sekci – po cvičeních a po zápasech (před simulací). */
 export function autoBreaks(sequence: DisciplineId[]): BreakDef[] {
   const out: BreakDef[] = [];
-  let sincePause = 0;
   sequence.forEach((id, i) => {
-    sincePause += discipline(id).min + CHANGEOVER_MIN;
-    if (sincePause >= BREAK_AFTER_MIN && i < sequence.length - 1) {
-      out.push({ after: i + 1, min: BREAK_MIN });
-      sincePause = 0;
-    }
+    const next = sequence[i + 1];
+    if (next && discipline(id).kind !== discipline(next).kind) out.push({ after: i + 1, min: BREAK_MIN });
   });
   return out;
 }
-
 /** Pauzy srovnané podle pozice: jen mezi koly (po 1. až předposledním), na jednom místě nejvýš jedna. */
 export function normalizeBreaks(breaks: BreakDef[], rounds: number): BreakDef[] {
   const seen = new Set<number>();
@@ -103,7 +97,8 @@ export function autoPlan(
   const plan: Plan = {};
   for (const d of DISCIPLINES) {
     if (!selected.includes(d.id)) continue;
-    plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables)) : 1;
+    // Asymetrická disciplína (Zeď, Start 0:3) vždy po dvou kolech, aby si každý vyzkoušel obě role.
+    plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables)) : d.paired ? 2 : 1;
   }
   for (const [id, n] of Object.entries(minimum) as [DisciplineId, number][]) plan[id] = Math.max(plan[id] ?? 0, n);
 
@@ -112,7 +107,7 @@ export function autoPlan(
   let misses = 0;
   while (matches.length && misses < matches.length) {
     const id = matches[i % matches.length];
-    const next = { ...plan, [id]: (plan[id] ?? 0) + 1 };
+    const next = { ...plan, [id]: (plan[id] ?? 0) + (discipline(id).paired ? 2 : 1) };
     if (plannedMinutes(next, players || undefined, breaks) <= durationMin) {
       Object.assign(plan, next);
       misses = 0;

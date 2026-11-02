@@ -37,7 +37,9 @@ describe('konfigurovatelný trénink v UI', () => {
     const { user, repo } = await newTraining(8, 'disc');
     expect(screen.getByRole('heading', { name: 'Disciplíny' })).toBeInTheDocument();
     expect(screen.getByText(/^Naplánováno \d:\d\d z 3:00$/)).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Řetězec' })).not.toBeChecked();
+    expect(screen.queryByRole('checkbox', { name: 'Řetězec' })).toBeNull(); // vyřazená disciplína
+    expect(screen.queryByRole('checkbox', { name: 'Rozehrávka ze zadních tyčí' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Penalta z místa' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Zeď' })).toBeChecked();
     // náhled plánu vedle výběru: kolo = jedna disciplína
     expect(within(preview()).getAllByRole('listitem')[0]).toHaveTextContent('1. koloPřihrávky na pětce');
@@ -62,8 +64,8 @@ describe('konfigurovatelný trénink v UI', () => {
     const n = count();
     await user.click(screen.getByRole('button', { name: 'Přidat kolo: Zeď' }));
     expect(screen.getByText(/^Naplánováno/).textContent).not.toBe(before);
-    expect(count()).toBe(n + 1);
-    expect(within(preview()).getAllByRole('listitem').length).toBe(rows + 1); // náhled se přepočítá
+    expect(count()).toBe(n + 2); // Zeď po dvou kolech (obě strany)
+    expect(within(preview()).getAllByRole('listitem').length).toBe(rows + 2); // náhled se přepočítá
   });
 
   it('zápis výsledku zamkne kola; pozdní hráč je nezmění', async () => {

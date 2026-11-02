@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import { legOver } from '../../domain/legState';
 import { clockAt } from '../../domain/solo';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
@@ -20,6 +20,8 @@ interface Props {
   tap: TapEntry;
   breaks?: BreakControls;
   timing?: ItemTiming;
+  /** Panel „Týmy pro simulaci“ – u sekce simulace. */
+  simSetup?: ReactNode;
 }
 
 /** Dohraný zápas: leg skončil (ťukání), nebo je zapsaný ručně z notebooku. */
@@ -41,7 +43,7 @@ function status(row: ScheduleRow, t: Training): string | null {
 }
 
 /** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks, timing }: Props) {
+export function RoundCards({ schedule: s, training, names, current, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const [picked, setPicked] = useState<Record<string, number | null>>({});
@@ -53,6 +55,7 @@ export function RoundCards({ schedule: s, training, names, current, expanded, on
             {sec.title}
             {sec.subtitle && <span> – {sec.subtitle}</span>}
           </h3>
+          {sec.id === 'sim' && simSetup}
           {sec.id === 'sim' && s.teams && (
             <p className="note">
               Tým A: {s.teams.A.map((p) => names[p] ?? '?').join(', ')}. Tým B: {s.teams.B.map((p) => names[p] ?? '?').join(', ')}.

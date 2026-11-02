@@ -41,10 +41,12 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
         <div key={kind} className="disc-group">
           <h3>{KIND_TITLE[kind]}</h3>
           <ul className="disc-list">
-            {DISCIPLINES.filter((d) => d.kind === kind).map((d) => {
+            {DISCIPLINES.filter((d) => d.kind === kind && (!d.retired || (training.plan[d.id] ?? 0) > 0)).map((d) => {
               const simOff = d.kind === 'sim' && training.attendees.length < SIM_MIN_PLAYERS;
               const n = simOff ? 0 : (training.plan[d.id] ?? 0);
               const min = locked[d.id] ?? 0;
+              // Zeď, Start 0:3: kola po dvou (každý si vyzkouší obě role).
+              const step = d.paired ? 2 : 1;
               return (
                 <li key={d.id} role="group" aria-label={d.name}>
                   <label>
@@ -52,18 +54,20 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
                       type="checkbox"
                       checked={n > 0}
                       disabled={min > 0 || simOff}
-                      onChange={() => setCount(d.id, n > 0 ? 0 : 1)}
+                      onChange={() => setCount(d.id, n > 0 ? 0 : step)}
                     />
                     <span>{d.name}</span>
                   </label>
-                  <span className="muted">{simOff ? `potřebuje aspoň ${SIM_MIN_PLAYERS} hráče` : `${d.min} min`}</span>
+                  <span className="muted">
+                    {simOff ? `potřebuje aspoň ${SIM_MIN_PLAYERS} hráče` : d.paired ? `${d.min} min, po 2 kolech (obě strany)` : `${d.min} min`}
+                  </span>
                   {n > 0 && d.kind !== 'sim' && (
                     <span className="stepper">
-                      <button type="button" className="icon" aria-label={`Ubrat kolo: ${d.name}`} disabled={n <= Math.max(1, min)} onClick={() => setCount(d.id, n - 1)}>
+                      <button type="button" className="icon" aria-label={`Ubrat kolo: ${d.name}`} disabled={n - step < Math.max(1, min)} onClick={() => setCount(d.id, n - step)}>
                         −
                       </button>
                       <span>{n} ×</span>
-                      <button type="button" className="icon" aria-label={`Přidat kolo: ${d.name}`} onClick={() => setCount(d.id, n + 1)}>
+                      <button type="button" className="icon" aria-label={`Přidat kolo: ${d.name}`} onClick={() => setCount(d.id, n + step)}>
                         +
                       </button>
                     </span>

@@ -24,14 +24,14 @@ describe('časový plán', () => {
     expect(planSequence({ wall: 2, warmupPasses: 1, sim: 1, normal: 1 })).toEqual(['warmupPasses', 'normal', 'wall', 'wall', 'sim']);
   });
 
-  it('časová osa: přechod 1 min, pauza 10 min po ~hodině, na konci Zápis 10 min', () => {
-    const tl = planTimeline(['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal']);
-    // 8 × (8 + 1) = 72: pauza po kole, které jako první přesáhne 60 min → po 7. kole (63)
-    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'round', 'round', 'round', 'round', 'round', 'round', 'break', 'round', 'final']);
-    expect(tl.items[7]).toMatchObject({ kind: 'break', start: 63, min: 10 });
-    expect(tl.items[8]).toMatchObject({ start: 73 });
-    expect(tl.items.at(-1)).toMatchObject({ kind: 'final', start: 82, min: 10 });
-    expect(tl.total).toBe(92);
+  it('časová osa: přechod 1 min, výchozí pauza 10 min po každé sekci, na konci Zápis 10 min', () => {
+    // jen zápasy = jedna sekce → žádná pauza
+    expect(planTimeline(['normal', 'normal', 'normal']).items.map((i) => i.kind)).toEqual(['round', 'round', 'round', 'final']);
+    const tl = planTimeline(['warmupPasses', 'normal', 'normal', 'sim']);
+    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'break', 'round', 'round', 'break', 'round', 'final']);
+    expect(tl.items[1]).toMatchObject({ kind: 'break', start: 9, min: 10 });
+    expect(tl.items[2]).toMatchObject({ start: 19 });
+    expect(tl.items.at(-1)).toMatchObject({ kind: 'final', start: 19 + 18 + 10 + 41, min: 10 });
   });
 
   it('kritérium 18: n=8, 4 stoly, 3:00, výchozí výběr se vejde a naplní čas', () => {
@@ -39,8 +39,11 @@ describe('časový plán', () => {
     const used = plannedMinutes(plan);
     expect(used).toBeLessThanOrEqual(180);
     expect(used).toBeGreaterThan(165);
-    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, setShooting: 1, blockToControl: 1, backRodsBuildUp: 1, sim: 1 });
+    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, setShooting: 1, blockToControl: 1, sim: 1 });
     expect(plan.chain).toBeUndefined();
+    expect(plan.backRodsBuildUp).toBeUndefined();
+    expect(plan.wall! % 2).toBe(0); // párová kola
+    expect(plan.start03! % 2).toBe(0);
     expect(plan.normal).toBeGreaterThanOrEqual(1);
   });
 

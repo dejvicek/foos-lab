@@ -2,6 +2,7 @@ import { buildSchedule } from './schedule';
 import { autoPlan, DEFAULT_SELECTION } from './plan';
 import type { ScheduleRow, TableCount, Training } from './types';
 import { newTraining } from './training';
+import { discipline as disc } from './disciplines';
 import { H } from '../test/fixtures';
 
 const custom = (n: number, tables: TableCount, over: Partial<Training> = {}): Training => ({
@@ -93,4 +94,37 @@ describe('ztráty v konfigurovatelném tréninku', () => {
 
 it('nový trénink má dnešní datum', () => {
   expect(newTraining('x', '2026-11-03', custom(8, 4, { date: '2026-10-01' }), null).date).toBe('2026-11-03');
+});
+
+describe('úpravy plánu 2. 11. 2026', () => {
+  it('výchozí pauzy po sekcích: po cvičeních a po zápasech (před simulací)', () => {
+    const r = rows(custom(8, 4, { plan: { warmupPasses: 1, normal: 2, sim: 1 } }));
+    const kinds = r.map((x) => (x.label === 'Pauza' ? 'P' : x.kind === 'groups' ? 'D' : x.discipline === 'sim' ? 'S' : x.kind === 'break' ? 'Z' : 'M'));
+    expect(kinds.join('')).toBe('DPMMPSSZ');
+  });
+
+  it('Zeď a Start 0:3 + daň: vždy dvě kola, ve druhém stejné zápasy s prohozenými stranami', () => {
+    const plan = autoPlan(DEFAULT_SELECTION, 180, 8, 4);
+    expect(plan.wall! % 2).toBe(0);
+    expect(plan.start03! % 2).toBe(0);
+    expect(plan.wall).toBeGreaterThanOrEqual(2);
+    for (const id of ['wall', 'start03'] as const) {
+      const r = playRows(custom(8, 4, { plan: { [id]: 2 } }));
+      const [a, b] = r.map((x) => x.cells.flatMap((c) => (c?.type === 'match' ? [c.match] : [])));
+      expect(b.map((m) => [m.sideA, m.sideB])).toEqual(a.map((m) => [m.sideB, m.sideA]));
+    }
+  });
+
+  it('Řetězec a Rozehrávka ze zadních tyčí se už nenabízí; Střelba z nastavení je Penalta z místa', () => {
+    expect(DEFAULT_SELECTION).not.toContain('chain');
+    expect(DEFAULT_SELECTION).not.toContain('backRodsBuildUp');
+    const prev = custom(8, 4, { plan: { chain: 1, backRodsBuildUp: 1, normal: 2 } });
+    const t = newTraining('n', '2026-11-03', prev, null);
+    expect(t.plan.chain ?? 0).toBe(0);
+    expect(t.plan.backRodsBuildUp ?? 0).toBe(0);
+    expect(disc('setShooting').name).toBe('Penalta z místa');
+    expect(t.simSplit).toBe('performance');
+    // starý trénink s vyřazenou disciplínou se dál zobrazí
+    expect(playRows(custom(8, 4, { plan: { backRodsBuildUp: 1 } }))[0].rule).toMatch(/^Rozehrávka ze zadních tyčí/);
+  });
 });

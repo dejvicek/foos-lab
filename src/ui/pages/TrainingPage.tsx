@@ -142,10 +142,22 @@ export function TrainingPage({
   const teamsLocked = simStarted || (!!training.simTeams && training.simSplit !== 'manual');
   const firstSim = queueInfo && simItems.length ? queueInfo.queue.indexOf(simItems[0]) : -1;
   // Simulace je na řadě: všechno před ní už je zahájené → panel týmů se sám rozbalí.
+  // Panel „Týmy pro simulaci“ u sekce simulace (organizátor, dokud simulace nezačala).
+  const simSetupNode = (open: boolean) =>
+    manage && schedule?.teams && !teamsLocked ? (
+      <details className="sim-setup no-print" open={open}>
+        <summary>
+          <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
+          <span className="muted"> – nastav před zahájením simulace</span>
+        </summary>
+        <OrderTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
+      </details>
+    ) : null;
   const simNext =
     firstSim >= 0 &&
     !simStarted &&
     queueInfo!.queue.slice(0, firstSim).every((e) => e.kind === 'pause' || queueInfo!.states.get(e.id)?.startedAt !== undefined);
+  const simSetup = simSetupNode(simNext);
   /** PRD 4.8: Zahájit / Ukončit u každého utkání; skóre jde zadat až po zahájení. */
   const itemTiming: ItemTiming | undefined = queueInfo
     ? {
@@ -242,15 +254,7 @@ export function TrainingPage({
         />
       )}
 
-      {manage && schedule?.teams && !teamsLocked && (
-        <details className="sim-setup no-print" open={simNext}>
-          <summary>
-            <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
-            <span className="muted"> – nastav před zahájením simulace</span>
-          </summary>
-          <OrderTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
-        </details>
-      )}
+      {tab === 'active' && simNext && simSetup}
 
       {schedule && queueInfo && tab === 'active' && (
         <ActiveMatches
@@ -298,6 +302,7 @@ export function TrainingPage({
               tap={tap}
               breaks={breakControls}
               timing={itemTiming}
+              simSetup={simSetup}
             />
           ) : (
           <TrainingTable
@@ -314,6 +319,7 @@ export function TrainingPage({
             breaks={breakControls}
             timing={itemTiming}
             onTapSolo={onTapSolo}
+            simSetup={simSetup}
           />
           )}
           <div className="actions-row no-print">

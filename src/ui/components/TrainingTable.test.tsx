@@ -179,6 +179,9 @@ describe('tabulka tréninku', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(8), trainings: [{ ...training(8, 'team', 4), simSplit: 'performance' as const }] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    // panel je v rozpisu u sekce Simulace ligového kola
+    expect(screen.getByText('Týmy pro simulaci', { selector: 'strong' }).closest('tr')).toHaveClass('sim-setup-row');
+    expect(screen.getByText('Týmy pro simulaci', { selector: 'strong' }).closest('tr')!.previousElementSibling).toHaveTextContent('Simulace ligového kola');
     await openTeams(user);
     await user.selectOptions(screen.getByLabelText('Týmy pro simulaci'), 'order');
     expect(screen.getByText('Tým A: H1, H2, H3, H4. Tým B: H5, H6, H7, H8.')).toBeInTheDocument();
@@ -215,7 +218,7 @@ describe('tabulka tréninku', () => {
     expect(entry.querySelector('.entry-card .help-item')).toBeNull();
     expect([...help.querySelectorAll('.help-item h4')].map((h) => h.textContent)).toEqual([
       'Stůl 1: Udržení míče na pětce',
-      'Stůl 2: Střelba jen z nastavení',
+      'Stůl 2: Penalta z místa',
       'Stůl 3: Obrana do držení',
       'Stůl 4: Rozehrávka ze zadních tyčí',
     ]);

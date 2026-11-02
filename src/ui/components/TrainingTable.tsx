@@ -1,4 +1,4 @@
-import { Fragment, useState, type DragEvent } from 'react';
+import { Fragment, useState, type DragEvent, type ReactNode } from 'react';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 import { clockAt, soloKey } from '../../domain/solo';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
@@ -21,6 +21,8 @@ interface Props {
   breaks?: BreakControls;
   timing?: ItemTiming;
   onTapSolo?: TapSolo;
+  /** Panel „Týmy pro simulaci“ – zobrazí se u sekce simulace. */
+  simSetup?: ReactNode;
 }
 
 /** Úpravy pauz (počet, místo, délka) – jen správce konfigurovatelného tréninku. */
@@ -126,7 +128,7 @@ export function soloProgress(row: ScheduleRow, t: Training): string | null {
   return total ? `zapsáno ${done} z ${total}` : null;
 }
 
-export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo }: Props) {
+export function TrainingTable({ schedule: s, training, names, current, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, timing, onTapSolo, simSetup }: Props) {
   const order = flatRows(s).map(rowKey);
   const curIdx = current ? order.indexOf(rowKey(current)) : -1;
   const visible = usedTables(s);
@@ -178,6 +180,11 @@ export function TrainingTable({ schedule: s, training, names, current, expanded,
                   )}
                 </th>
               </tr>
+              {sec.id === 'sim' && simSetup && (
+                <tr className="sim-setup-row no-print">
+                  <td colSpan={cols}>{simSetup}</td>
+                </tr>
+              )}
               {sec.rows.map((row, ri) => {
                 const key = rowKey({ section: si, row: ri });
                 const idx = order.indexOf(key);

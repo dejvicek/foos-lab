@@ -1,3 +1,4 @@
+import { discipline } from './disciplines';
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
 import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION } from './plan';
@@ -8,7 +9,8 @@ export function newTraining(id: string, today: string, last: Training | null, cr
   const prev = last?.format === 'custom' ? last : null;
   const tables = last?.tables ?? 4;
   const durationMin = prev?.durationMin ?? DEFAULT_DURATION;
-  const selection = prev ? selectedDisciplines(prev.plan) : DEFAULT_SELECTION;
+  // Vyřazené disciplíny (Řetězec, Rozehrávka ze zadních tyčí) se do nového tréninku nepřebírají.
+  const selection = prev ? selectedDisciplines(prev.plan).filter((id) => !discipline(id).retired) : DEFAULT_SELECTION;
   return {
     id,
     date: today,
@@ -18,7 +20,7 @@ export function newTraining(id: string, today: string, last: Training | null, cr
     attendees: [],
     scores: {},
     soloResults: {},
-    simSplit: last?.simSplit ?? 'performance',
+    simSplit: 'performance', // výchozí: vyrovnaně podle výkonu v tréninku
     simTeams: null,
     format: 'custom',
     durationMin,

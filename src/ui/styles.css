@@ -694,3 +694,6 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .sim-setup { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; max-width: 980px; }
 .sim-setup[open] { padding-bottom: 12px; }
 .sim-setup summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.plan tr.sim-setup-row td { background: var(--bg); padding: 8px 10px; }
+.plan tr.sim-setup-row .sim-setup { margin: 0; max-width: none; }
+.round-cards .sim-setup { margin: 4px 0; }
