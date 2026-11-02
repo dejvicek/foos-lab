@@ -11,10 +11,11 @@ const custom = (n: number, plan = autoPlan(DEFAULT_SELECTION, 120, n, 4)): Train
 });
 
 describe('trénink pro 2–3 hráče', () => {
-  it('konfigurovatelný jde od 2 hráčů, klasický dál od 4', () => {
-    expect(minPlayers(custom(2))).toBe(2);
+  it('konfigurovatelný jde od 1 hráče, klasický dál od 4', () => {
+    expect(minPlayers(custom(2))).toBe(1); // i trénink pro 1 hráče
     expect(canBuildSchedule(custom(2))).toBe(true);
-    expect(canBuildSchedule(custom(1))).toBe(false);
+    expect(canBuildSchedule(custom(1))).toBe(true);
+    expect(canBuildSchedule(custom(0))).toBe(false);
     expect(canBuildSchedule({ ...custom(3), format: 'classic' })).toBe(false);
   });
 

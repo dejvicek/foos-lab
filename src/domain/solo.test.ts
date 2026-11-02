@@ -18,12 +18,13 @@ describe('clockAt', () => {
 });
 
 describe('SOLO_METRICS', () => {
-  it('šest metrik podle PRD 5.8, jen pětka je „méně je lépe“', () => {
+  it('metriky podle PRD 5.8 (+ cvičení z 2. 11. 2026), jen pětka je „méně je lépe“', () => {
     expect(SOLO_METRICS.map((m) => [m.id, m.max])).toEqual([
-      ['warmupPasses', 20], ['fiveBarControl', 10], ['setShooting', 20],
+      ['warmupPasses', 20], ['passWallLane', 10], ['fiveBarControl', 10], ['fiveBarSolo', 10], ['setShooting', 20],
+      ['penaltyKeeper', 10], ['penaltySolo', 10], ['backShotKeeper', 10], ['backShotSolo', 10],
       ['blockToControl', 10], ['backRodsBuildUp', 10], ['chain', 10],
     ]);
-    expect(SOLO_METRICS.filter((m) => m.lowerIsBetter).map((m) => m.id)).toEqual(['fiveBarControl']);
+    expect(SOLO_METRICS.filter((m) => m.lowerIsBetter).map((m) => m.id)).toEqual(['fiveBarControl', 'fiveBarSolo']);
     expect(soloMetric('setShooting').what).toBe('góly z 20 střel');
   });
 });

@@ -15,8 +15,14 @@ export interface SoloMetricDef {
 /** PRD 5.8 – pořadí určuje i pořadí tabulek v žebříčku stanovišť. */
 export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'warmupPasses', name: 'Přihrávky na pětce', what: 'povedené přihrávky z 20', max: 20, lowerIsBetter: false, ok: 'povedená', fail: 'nepovedená' },
+  { id: 'passWallLane', name: 'Přihrávky ke zdi a po lajně', what: 'povedené přihrávky z 10', max: 10, lowerIsBetter: false, ok: 'povedená', fail: 'nepovedená' },
   { id: 'fiveBarControl', name: 'Udržení míče na pětce', what: 'ztráty z 10 sérií', max: 10, lowerIsBetter: true, ok: 'bez ztráty', fail: 'ztráta' },
-  { id: 'setShooting', name: 'Penalta z místa', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
+  { id: 'fiveBarSolo', name: 'Udržení míče na pětce – sólo', what: 'ztráty z 10 sérií', max: 10, lowerIsBetter: true, ok: 'bez ztráty', fail: 'ztráta' },
+  { id: 'setShooting', name: 'Penalta z místa (20 střel)', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
+  { id: 'penaltyKeeper', name: 'Penalta z místa proti brankáři', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
+  { id: 'penaltySolo', name: 'Penalta z místa bez brankáře', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
+  { id: 'backShotKeeper', name: 'Střela z dvojky proti brankáři', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
+  { id: 'backShotSolo', name: 'Střela z dvojky bez brankáře', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
   { id: 'blockToControl', name: 'Obrana do držení', what: 'bloky do držení z 10', max: 10, lowerIsBetter: false, ok: 'do držení', fail: 'nechytil' },
   { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false, ok: 'dokončená', fail: 'nedokončená' },
   { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },

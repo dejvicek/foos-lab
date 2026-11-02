@@ -19,7 +19,7 @@ describe('newTraining', () => {
     const last = { ...newTraining('l', '2026-10-01', null), durationMin: 120, plan: { normal: 3, setShooting: 1 } };
     const t = newTraining('x', '2026-10-31', last);
     expect(t.durationMin).toBe(120);
-    expect(Object.keys(t.plan).sort()).toEqual(['normal', 'setShooting']);
+    expect(Object.keys(t.plan).sort()).toEqual(['normal', 'penaltyKeeper']); // stará Penalta → proti brankáři
   });
   it('stoly a začátek převezme z posledního tréninku, typ je vždy týmový', () => {
     const last = training('l', '2026-10-01', 'single', H(5), 2);

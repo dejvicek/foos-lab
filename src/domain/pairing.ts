@@ -193,7 +193,7 @@ export function recordDrillRound(c: Counters, def: DisciplineDef, groups: Player
 /**
  * Jedno kolo cvičení: dvojice u stolu. Přednost mají ti, kdo cvičení ještě nehráli.
  * Lichý počet: když je volné místo, přibere se sparing partner (už hrál); jinak je u posledního
- * stolu trojice. Nikdo nehraje sám.
+ * stolu trojice. Sám hraje jen hráč v tréninku pro 1.
  */
 export function drillRound(
   players: PlayerId[],
@@ -216,6 +216,7 @@ export function drillRound(
   const chosen = sorted.slice(0, target);
   const waiting = sorted.slice(target).sort((x, y) => order.get(x)! - order.get(y)!);
   const toGroups = (s: PlayerId[]) => {
+    if (s.length === 1) return [[s[0]]]; // trénink pro 1 hráče
     const gs: PlayerId[][] = [];
     for (let i = 0; i + 1 < s.length; i += 2) gs.push([s[i], s[i + 1]]);
     if (s.length % 2) gs[gs.length - 1].push(s[s.length - 1]); // trojice u posledního stolu

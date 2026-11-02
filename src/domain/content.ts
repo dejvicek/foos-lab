@@ -83,7 +83,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 10 sérií, pak výměna."
+            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 10 sérií, pak výměna. Sám (trénink pro 1 hráče): stejné série bez bránící pětky; výsledky mají v žebříčku vlastní tabulku."
           },
           {
             "label": "Počítá se:",
@@ -105,6 +105,91 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           {
             "label": "Počítá se:",
             "text": "góly z 20 střel."
+          }
+        ]
+      },
+      {
+        "name": "Přihrávky ke zdi a po lajně",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "čistá přihrávka z pětky na trojku bez soupeře."
+          },
+          {
+            "label": "Provedení:",
+            "text": "míč zastavený na pětce, nikdo nebrání. 1. kolo 10 přihrávek ke zdi, 2. kolo 10 přihrávek po lajně. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Každý hráč za sebe, jde i sám."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "povedené přihrávky z 10 v každém kole."
+          }
+        ]
+      },
+      {
+        "name": "Penalta z místa proti brankáři",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "střílet až z kontrolovaného míče, ne z chaosu."
+          },
+          {
+            "label": "Provedení:",
+            "text": "střelec si nastaví míč na trojce, rozehraje ho (3 dotyky) a vystřelí z místa. Celý pokus do 15 s. Soupeř brání brankou a dvojkou. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si střelec určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce). Ve dvojici se po 10 střelách vystřídáte."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "góly z 10 v každém kole."
+          }
+        ]
+      },
+      {
+        "name": "Penalta z místa bez brankáře",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "přesnost střely z místa, i když není s kým trénovat."
+          },
+          {
+            "label": "Provedení:",
+            "text": "jako Penalta z místa proti brankáři, jen nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si hráč určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce)."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "góly z 10 v každém kole; v žebříčku má vlastní tabulku."
+          }
+        ]
+      },
+      {
+        "name": "Střela z dvojky proti brankáři",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "střela z dvojky z nastaveného míče proti bránícímu soupeři."
+          },
+          {
+            "label": "Provedení:",
+            "text": "míč nastavený na dvojce, střela na bránu, soupeř brání. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si střelec určí sám. Ve dvojici se po 10 střelách vystřídáte."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "góly z 10 v každém kole."
+          }
+        ]
+      },
+      {
+        "name": "Střela z dvojky bez brankáře",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "přesnost střely z dvojky, i když není s kým trénovat."
+          },
+          {
+            "label": "Provedení:",
+            "text": "míč nastavený na dvojce, střela na bránu, nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si hráč určí sám."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "góly z 10 v každém kole; v žebříčku má vlastní tabulku."
           }
         ]
       },

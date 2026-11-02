@@ -46,8 +46,11 @@ describe('opravy z kontroly', () => {
     const rows = playRows(t);
     const drills = rows.filter((r) => r.kind === 'groups');
     const locked = lockThrough(buildSchedule(t), [], drills.at(-1)!.roundNo!);
-    const plan = autoPlan(DEFAULT_SELECTION, 180, 9, 4, Object.fromEntries(locked.map((l) => [l.discipline, 1])), new Set(locked.map((l) => l.discipline)));
-    for (const d of ['warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl'] as const) expect(plan[d]).toBe(1);
+    const counts: Partial<Record<string, number>> = {};
+    for (const l of locked) counts[l.discipline] = (counts[l.discipline] ?? 0) + 1;
+    const plan = autoPlan(DEFAULT_SELECTION, 180, 9, 4, counts, new Set(locked.map((l) => l.discipline)));
+    for (const d of ['warmupPasses', 'fiveBarControl', 'blockToControl'] as const) expect(plan[d]).toBe(1);
+    expect(plan.penaltyKeeper).toBe(2); // dvě varianty
   });
 
   it('zamčené kolo s víc stoly se po snížení počtu stolů nerozjede', () => {

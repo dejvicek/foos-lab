@@ -6,6 +6,7 @@ import { H } from '../test/fixtures';
 const team = buildSchedule({ mode: 'team', tables: 4, attendees: H(13) });
 const custom = buildSchedule({ mode: 'team', tables: 4, attendees: H(8), format: 'custom', plan: { warmupPasses: 1, chain: 1, start03: 1, singles: 1 }, lockedRounds: [] });
 const single = buildSchedule({ mode: 'single', tables: 2, attendees: H(5) });
+const drills = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { passWallLane: 2, penaltyKeeper: 2, penaltySolo: 2, backShotKeeper: 2, backShotSolo: 2 }, lockedRounds: [] });
 const ending = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { start45: 2 }, lockedRounds: [] });
 const rowByLabel = (s: typeof team, label: string) => s.sections.flatMap((x) => x.rows).find((r) => r.label === label)!;
 const names = (items: { name: string }[]) => items.map((i) => i.name);
@@ -43,7 +44,7 @@ describe('vysvětlivky u bloků', () => {
 
   it('kritérium 8: každý text vysvětlivek je u nějakého bloku', () => {
     const shown = new Set<string>();
-    for (const s of [team, single, custom, ending])
+    for (const s of [team, single, custom, ending, drills])
       for (const row of s.sections.flatMap((x) => x.rows)) {
         const e = explanationsFor(row);
         [...e.main, ...e.general, ...e.perTable].forEach((i) => i && shown.add(i.name));

@@ -4,7 +4,8 @@ import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded, planSequence, planTimel
 describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
-      'warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl', 'backRodsBuildUp', 'chain',
+      'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
+      'blockToControl', 'backRodsBuildUp', 'chain',
       'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
     ]);
     expect(discipline('start03')).toMatchObject({ kind: 'match', min: 5, lossTax: true, start: [0, 3] });
@@ -39,7 +40,8 @@ describe('časový plán', () => {
     const used = plannedMinutes(plan);
     expect(used).toBeLessThanOrEqual(180);
     expect(used).toBeGreaterThan(165);
-    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, setShooting: 1, blockToControl: 1, sim: 1 });
+    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, penaltyKeeper: 2, blockToControl: 1, sim: 1 });
+    expect(plan.setShooting).toBeUndefined();
     expect(plan.chain).toBeUndefined();
     expect(plan.backRodsBuildUp).toBeUndefined();
     expect(plan.wall! % 2).toBe(0); // párová kola

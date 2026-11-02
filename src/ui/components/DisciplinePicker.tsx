@@ -1,5 +1,5 @@
 import { DISCIPLINES } from '../../domain/disciplines';
-import { DURATION_OPTIONS, plannedMinutes, SIM_MIN_PLAYERS } from '../../domain/plan';
+import { DURATION_OPTIONS, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
 
@@ -59,24 +59,31 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
           <h3>{KIND_TITLE[kind]}</h3>
           <ul className="disc-list">
             {DISCIPLINES.filter((d) => d.kind === kind && (!d.retired || (training.plan[d.id] ?? 0) > 0)).map((d) => {
-              const simOff = d.kind === 'sim' && training.attendees.length < SIM_MIN_PLAYERS;
-              const n = simOff ? 0 : (training.plan[d.id] ?? 0);
+              // Co se při tomto počtu hráčů nehraje (simulace pod 4; zápasy a cvičení s bránícím pro 1 hráče).
+              const off = !playable(d.id, training.attendees.length || undefined);
+              const n = off ? 0 : (training.plan[d.id] ?? 0);
               const min = locked[d.id] ?? 0;
-              // Zeď, Start 0:3: kola po dvou (každý si vyzkouší obě role).
-              const step = d.paired ? 2 : 1;
+              // Zeď, Start 0:3 a cvičení na dvě varianty: kola po dvou.
+              const step = d.paired || d.variants ? 2 : 1;
               return (
                 <li key={d.id} role="group" aria-label={d.name}>
                   <label>
                     <input
                       type="checkbox"
                       checked={n > 0}
-                      disabled={min > 0 || simOff}
+                      disabled={min > 0 || off}
                       onChange={() => setCount(d.id, n > 0 ? 0 : step)}
                     />
                     <span>{d.name}</span>
                   </label>
                   <span className="muted">
-                    {simOff ? `potřebuje aspoň ${SIM_MIN_PLAYERS} hráče` : d.paired ? `${d.min} min, po 2 kolech (obě strany)` : `${d.min} min`}
+                    {off
+                      ? `potřebuje aspoň ${d.kind === 'sim' ? SIM_MIN_PLAYERS : 2} hráče`
+                      : d.paired
+                        ? `${d.min} min, po 2 kolech (obě strany)`
+                        : d.variants
+                          ? `${d.min} min, po 2 kolech (${d.variants.join(' / ')}, po 10)`
+                          : `${d.min} min`}
                   </span>
                   {n > 0 && d.kind !== 'sim' && (
                     <span className="stepper">

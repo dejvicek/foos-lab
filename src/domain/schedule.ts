@@ -21,8 +21,8 @@ import type {
 } from './types';
 
 export const MIN_PLAYERS = 4;
-/** Konfigurovatelný trénink jde i pro 2–3 hráče (zápasy jen singly, bez simulace). */
-export const MIN_PLAYERS_CUSTOM = 2;
+/** Konfigurovatelný trénink jde i pro 2–3 hráče (zápasy jen singly, bez simulace) i pro 1 hráče (jen cvičení bez soupeře). */
+export const MIN_PLAYERS_CUSTOM = 1;
 /** Simulace ligového kola potřebuje dvojice. */
 export const MIN_PLAYERS_SIM = 4;
 

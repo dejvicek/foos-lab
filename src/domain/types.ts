@@ -18,7 +18,19 @@ export interface Score {
   lb?: number | null;
 }
 
-export type SoloMetric = 'warmupPasses' | 'fiveBarControl' | 'setShooting' | 'blockToControl' | 'backRodsBuildUp' | 'chain';
+export type SoloMetric =
+  | 'warmupPasses'
+  | 'passWallLane'
+  | 'fiveBarControl'
+  | 'fiveBarSolo'
+  | 'setShooting'
+  | 'penaltyKeeper'
+  | 'penaltySolo'
+  | 'backShotKeeper'
+  | 'backShotSolo'
+  | 'blockToControl'
+  | 'backRodsBuildUp'
+  | 'chain';
 /** Klíč výsledku: `metrika` (klasický trénink) nebo `metrika@kolo` (konfigurovatelný). */
 export type SoloKey = string;
 /** Výsledky sólové části: hráč → klíč → hodnota (PRD 5.8, 6). */

@@ -21,14 +21,27 @@ export interface DisciplineDef {
   retired?: boolean;
   /** Nabízí se, ale ve výchozím výběru nového tréninku není (zaškrtne se ručně). */
   optional?: boolean;
+  /** Cvičení na dvě varianty: kola po dvou (stejné skupiny), v každém jedna varianta po 10 pokusech. */
+  variants?: [string, string];
+  /** Cvičení s bránícím soupeřem – sám ho hráč hrát nemůže (trénink pro 1 hráče ho vynechá). */
+  needsPartner?: boolean;
+  /** Metrika, když je hráč u stolu sám (sólo varianta do vlastní tabulky žebříčku). */
+  soloMetric?: SoloMetric;
+  /** Vyřazená disciplína: čím ji nahradit v novém tréninku. */
+  successor?: DisciplineId;
 }
 
 /** PRD 4.6 – pořadí je i pořadím v rozpisu. */
 export const DISCIPLINES: DisciplineDef[] = [
-  { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses' },
-  { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 8, explain: 'Udržení míče na pětce', metric: 'fiveBarControl' },
-  { id: 'setShooting', kind: 'drill', name: 'Penalta z místa', min: 8, explain: 'Penalta z místa', metric: 'setShooting' },
-  { id: 'blockToControl', kind: 'drill', name: 'Obrana do držení', min: 8, explain: 'Obrana do držení', metric: 'blockToControl' },
+  { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses', needsPartner: true },
+  { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 4, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], optional: true },
+  { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 8, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo' },
+  { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper' },
+  { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 4, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true },
+  { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 4, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], optional: true },
+  { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 4, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true },
+  { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 4, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], optional: true },
+  { id: 'blockToControl', kind: 'drill', name: 'Obrana do držení', min: 8, explain: 'Obrana do držení', metric: 'blockToControl', needsPartner: true },
   { id: 'backRodsBuildUp', kind: 'drill', name: 'Rozehrávka ze zadních tyčí', min: 8, explain: 'Rozehrávka ze zadních tyčí', metric: 'backRodsBuildUp', retired: true },
   { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec (trénink jedniček)', metric: 'chain', retired: true },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg' },

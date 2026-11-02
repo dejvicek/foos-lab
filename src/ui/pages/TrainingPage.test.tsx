@@ -54,7 +54,7 @@ describe('stránka Trénink', () => {
 
     expect(screen.getByText('Přítomno: 0')).toBeInTheDocument();
     for (const n of NAMES.slice(0, 6)) expect(checkbox(n)).not.toBeChecked();
-    expect(screen.getByText(/Ještě chybí 2 hráči do minima 2./)).toBeInTheDocument();
+    expect(screen.getByText(/Ještě chybí 1 hráč do minima 1./)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Další:/ })).toBeDisabled(); // bez hráčů dál nejde
 
     for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(checkbox(n));

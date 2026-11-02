@@ -115,14 +115,15 @@ describe('úpravy plánu 2. 11. 2026', () => {
     }
   });
 
-  it('Řetězec a Rozehrávka ze zadních tyčí se už nenabízí; Střelba z nastavení je Penalta z místa', () => {
+  it('Řetězec a Rozehrávka ze zadních tyčí se už nenabízí; stará Penalta z místa (20 střel) jen v historii', () => {
     expect(DEFAULT_SELECTION).not.toContain('chain');
     expect(DEFAULT_SELECTION).not.toContain('backRodsBuildUp');
     const prev = custom(8, 4, { plan: { chain: 1, backRodsBuildUp: 1, normal: 2 } });
     const t = newTraining('n', '2026-11-03', prev, null);
     expect(t.plan.chain ?? 0).toBe(0);
     expect(t.plan.backRodsBuildUp ?? 0).toBe(0);
-    expect(disc('setShooting').name).toBe('Penalta z místa');
+    expect(disc('setShooting').name).toBe('Penalta z místa (20 střel)');
+    expect(disc('penaltyKeeper').name).toBe('Penalta z místa proti brankáři');
     expect(t.simSplit).toBe('performance');
     // starý trénink s vyřazenou disciplínou se dál zobrazí
     expect(playRows(custom(8, 4, { plan: { backRodsBuildUp: 1 } }))[0].rule).toMatch(/^Rozehrávka ze zadních tyčí/);

@@ -1,6 +1,6 @@
 import { discipline, type DisciplineDef } from './disciplines';
 import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters, type MatchPlan } from './pairing';
-import { planSequence, planTimeline, FINAL_MIN, SIM_MIN_PLAYERS, type Plan } from './plan';
+import { planSequence, planTimeline, playable, FINAL_MIN, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
 import type {
@@ -69,6 +69,8 @@ export function roundSequence(t: ScheduleInput): DisciplineId[] {
   for (const [id, n] of Object.entries(plan) as [DisciplineId, number][])
     remaining[id] = Math.max(0, n - (lockedCount.get(id) ?? 0));
   if (locked.some((l) => l.discipline === 'sim') || t.attendees.length < SIM_MIN_PLAYERS) remaining.sim = 0;
+  // Co se při tomto počtu hráčů hrát nedá (1 hráč: zápasy a cvičení s bránícím), se vynechá.
+  for (const id of Object.keys(remaining) as DisciplineId[]) if (!playable(id, t.attendees.length)) remaining[id] = 0;
   return [...locked.map((l) => l.discipline), ...planSequence(remaining)];
 }
 
@@ -111,6 +113,8 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   // Párová disciplína (Zeď, Start 0:3): druhé kolo dvojice = stejné zápasy s prohozenými stranami.
   let lastMatchRound: { id: DisciplineId; roundNo: number; plans: MatchPlan[]; waiting: PlayerId[] } | null = null;
   const seenOf = new Map<DisciplineId, number>();
+  const drillSeen = new Map<DisciplineId, number>();
+  let lastDrillRound: { id: DisciplineId; roundNo: number; groups: PlayerId[][]; waiting: PlayerId[] } | null = null;
 
   for (const item of timeline.items) {
     if (item.kind === 'break') {
@@ -125,7 +129,10 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     const def = discipline(item.discipline!);
     const kind = def.kind === 'drill' ? 'drills' : def.kind === 'match' ? 'matches' : 'sim';
     const label = `${roundNo}. kolo`;
-    const rule = `${def.name}, ${def.min} min`;
+    // Cvičení na dvě varianty: liché výskyty varianta 1, sudé varianta 2 (počítají se i zamčená kola).
+    const drillK = def.kind === 'drill' ? (drillSeen.get(def.id) ?? 0) : 0;
+    if (def.kind === 'drill') drillSeen.set(def.id, drillK + 1);
+    const rule = def.variants ? `${def.name} – ${def.variants[drillK % 2]}, ${def.min} min` : `${def.name}, ${def.min} min`;
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 
     if (def.kind === 'sim') {
@@ -181,7 +188,14 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     } else if (def.kind === 'drill') {
       const left = drillsLeft.get(def.id) ?? 1;
       drillsLeft.set(def.id, left - 1);
-      const r = drillRound(players, t.tables, def, c, roundNo, left);
+      // Druhá varianta hraje ve stejných skupinách jako první.
+      const mirror = def.variants && drillK % 2 === 1 && lastDrillRound?.id === def.id && lastDrillRound.roundNo === roundNo - 1 ? lastDrillRound : null;
+      let r: { groups: PlayerId[][]; waiting: PlayerId[] };
+      if (mirror) {
+        r = { groups: mirror.groups, waiting: mirror.waiting };
+        recordDrillRound(c, def, r.groups, r.waiting);
+      } else r = drillRound(players, t.tables, def, c, roundNo, def.variants ? Math.ceil(left / 2) : left);
+      lastDrillRound = { id: def.id, roundNo, groups: r.groups, waiting: r.waiting };
       row = {
         roundNo,
         discipline: def.id,
@@ -190,7 +204,8 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         rule,
         kind: 'groups',
         cells: cellsOf(
-          r.groups.map((g) => ({ type: 'group', players: g, station: def.name, metric: def.metric, soloRound: roundNo, discipline: def.id })),
+          // Hráč sám u stolu: sólová varianta do vlastní tabulky (Udržení míče na pětce – sólo).
+          r.groups.map((g) => ({ type: 'group', players: g, station: def.name, metric: g.length === 1 && def.soloMetric ? def.soloMetric : def.metric, soloRound: roundNo, discipline: def.id })),
           tables,
         ),
         waiting: r.waiting,

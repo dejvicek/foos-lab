@@ -39,7 +39,8 @@ describe('konfigurovatelný trénink v UI', () => {
     expect(screen.getByText(/^Naplánováno \d:\d\d z 3:00$/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Řetězec' })).toBeNull(); // vyřazená disciplína
     expect(screen.queryByRole('checkbox', { name: 'Rozehrávka ze zadních tyčí' })).toBeNull();
-    expect(screen.getByRole('checkbox', { name: 'Penalta z místa' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Penalta z místa proti brankáři' })).toBeChecked();
+    expect(screen.queryByRole('checkbox', { name: 'Penalta z místa (20 střel)' })).toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Zeď' })).toBeChecked();
     // náhled plánu vedle výběru: kolo = jedna disciplína
     expect(within(preview()).getAllByRole('listitem')[0]).toHaveTextContent('1. koloPřihrávky na pětce');
@@ -107,7 +108,7 @@ describe('konfigurovatelný trénink v UI', () => {
     await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
     await next(user);
     await user.click(screen.getByRole('checkbox', { name: 'H1' }));
-    expect(screen.getByText(/Ještě chybí 1 hráč do minima 2./)).toBeInTheDocument();
+    expect(screen.queryByText(/Ještě chybí/)).toBeNull(); // jde i trénink pro 1 hráče
     await user.click(screen.getByRole('checkbox', { name: 'H2' }));
     await next(user);
     expect(preview()).toBeInTheDocument();

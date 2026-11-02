@@ -1,7 +1,7 @@
 import { discipline } from './disciplines';
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
-import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION } from './plan';
+import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
 
@@ -10,7 +10,10 @@ export function newTraining(id: string, today: string, last: Training | null, cr
   const tables = last?.tables ?? 4;
   const durationMin = prev?.durationMin ?? DEFAULT_DURATION;
   // Vyřazené disciplíny (Řetězec, Rozehrávka ze zadních tyčí) se do nového tréninku nepřebírají.
-  const selection = prev ? selectedDisciplines(prev.plan).filter((id) => !discipline(id).retired) : DEFAULT_SELECTION;
+  // Vyřazená s nástupcem (stará Penalta z místa → proti brankáři) se nahradí nástupcem.
+  const selection = prev
+    ? [...new Set(selectedDisciplines(prev.plan).flatMap((id) => (discipline(id).retired ? (discipline(id).successor ? [discipline(id).successor!] : []) : [id])))]
+    : DEFAULT_SELECTION;
   return {
     id,
     date: today,
@@ -182,10 +185,18 @@ export function replan(before: Training, after: Training): Training {
     before.attendees.length !== after.attendees.length ||
     before.tables !== after.tables;
   if (!changed) return after;
+  // Přechod na trénink pro 1 hráče: přidají se sólová cvičení (ostatní zůstanou vybraná, jen se nehrají).
+  // Zpátky na víc hráčů: volitelná sólová cvičení zase odeberou (pokud se už nehrála).
+  const toSolo = after.attendees.length === 1 && before.attendees.length !== 1;
+  const fromSolo = before.attendees.length === 1 && after.attendees.length > 1;
+  const played = lockedCounts(after);
+  let selection = selectedDisciplines(after.plan);
+  if (toSolo) selection = [...new Set([...selection, ...SOLO_SELECTION])];
+  if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && discipline(id).optional && !played[id]));
   return {
     ...after,
     plan: autoPlan(
-      selectedDisciplines(after.plan),
+      selection,
       after.durationMin,
       after.attendees.length,
       after.tables,

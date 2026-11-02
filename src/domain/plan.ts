@@ -13,6 +13,20 @@ export const SIM_MIN_PLAYERS = 4;
 
 /** Výchozí výběr úplně prvního konfigurovatelného tréninku (PRD 4.6). */
 export const DEFAULT_SELECTION: DisciplineId[] = DISCIPLINES.filter((d) => !d.retired && !d.optional).map((d) => d.id);
+/** Výchozí výběr tréninku pro 1 hráče: cvičení, která jde hrát sám. */
+export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo'];
+
+/**
+ * Hraje se disciplína při daném počtu hráčů? Zápasy aspoň 2, simulace aspoň 4, cvičení s bránícím
+ * aspoň 2 (trénink pro 1 hráče je vynechá). Bez počtu hráčů (undefined) se nic nevynechává.
+ */
+export function playable(id: DisciplineId, players?: number): boolean {
+  if (players === undefined) return true;
+  const d = discipline(id);
+  if (d.kind === 'sim') return players >= SIM_MIN_PLAYERS;
+  if (d.kind === 'match' || d.needsPartner) return players >= 2;
+  return true;
+}
 
 /** Kolik kol cvičení je potřeba, aby se ve dvojicích vystřídali všichni. */
 export function drillRoundsNeeded(players: number, tables: number): number {
@@ -75,9 +89,14 @@ export function planTimeline(sequence: DisciplineId[], breaks?: BreakDef[] | nul
   return { items, total: t + FINAL_MIN };
 }
 
-/** Naplánovaný čas; simulace se při méně než 4 hráčích nehraje, takže se nepočítá (zůstává ale vybraná). */
+/** Naplánovaný čas; co se při daném počtu hráčů nehraje (simulace pod 4, zápasy a cvičení s bránícím pro 1), se nepočítá (zůstává ale vybrané). */
 export const plannedMinutes = (plan: Plan, players?: number, breaks?: BreakDef[] | null): number =>
-  planTimeline(planSequence(players !== undefined && players < SIM_MIN_PLAYERS ? { ...plan, sim: 0 } : plan), breaks).total;
+  planTimeline(planSequence(playablePlan(plan, players)), breaks).total;
+
+/** Plán bez disciplín, které se při daném počtu hráčů nehrají. */
+export function playablePlan(plan: Plan, players?: number): Plan {
+  return Object.fromEntries((Object.entries(plan) as [DisciplineId, number][]).map(([id, n]) => [id, playable(id, players) ? n : 0])) as Plan;
+}
 
 /**
  * Rozloží vybrané disciplíny do délky tréninku: cvičení tolik kol, aby se vystřídali všichni,
@@ -98,11 +117,13 @@ export function autoPlan(
   for (const d of DISCIPLINES) {
     if (!selected.includes(d.id)) continue;
     // Asymetrická disciplína (Zeď, Start 0:3) vždy po dvou kolech, aby si každý vyzkoušel obě role.
-    plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables)) : d.paired ? 2 : 1;
+    // Cvičení na dvě varianty: každé vystřídání má dvě kola (varianta 1, varianta 2).
+    const drillRounds = drillRoundsNeeded(players, tables) * (d.variants ? 2 : 1);
+    plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRounds) : d.paired ? 2 : 1;
   }
   for (const [id, n] of Object.entries(minimum) as [DisciplineId, number][]) plan[id] = Math.max(plan[id] ?? 0, n);
 
-  const matches = DISCIPLINES.filter((d) => d.kind === 'match' && selected.includes(d.id)).map((d) => d.id);
+  const matches = DISCIPLINES.filter((d) => d.kind === 'match' && selected.includes(d.id) && playable(d.id, players || undefined)).map((d) => d.id);
   let i = 0;
   let misses = 0;
   while (matches.length && misses < matches.length) {
