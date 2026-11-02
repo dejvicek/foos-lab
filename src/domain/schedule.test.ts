@@ -89,9 +89,9 @@ describe('buildSchedule – meze a invarianty', () => {
     expect(canBuildSchedule({ mode: 'team', tables: 4, attendees: H(13) })).toBe(true);
   });
 
-  it('n=4..13, t=2..4, oba typy: deterministický, unikátní ID, každý hráč v řádku přesně jednou', () => {
+  it('n=4..13, t=1..4, oba typy: deterministický, unikátní ID, každý hráč v řádku přesně jednou', () => {
     for (const n of range(4, 13))
-      for (const t of range(2, 4))
+      for (const t of range(1, 4))
         for (const mode of ['team', 'single'] as Mode[]) {
           const s = T(n, t, mode);
           expect(T(n, t, mode)).toEqual(s);

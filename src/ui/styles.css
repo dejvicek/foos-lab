@@ -820,3 +820,29 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
 .split-option:has(input:checked) { border-color: var(--felt); background: var(--felt-soft); }
 .split-option input { margin: 0; accent-color: var(--felt); }
 .order-fields > button.ghost { margin-bottom: 8px; }
+
+/* Průvodce: délka posuvníkem, stoly linkou s tečkami */
+.field-label { font-weight: 600; font-size: 13px; }
+.setup .range-field { flex: 2 1 260px; }
+.range-row { display: flex; align-items: center; gap: 12px; }
+.range-row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--felt); height: 28px; margin: 0; }
+.range-row output { min-width: 3.2em; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+.range-ticks { position: relative; height: 16px; margin-right: calc(3.2em + 12px); font-size: 11px; color: var(--muted); }
+.range-ticks span { position: absolute; transform: translateX(-50%); }
+.range-ticks span:first-child { transform: none; }
+.range-ticks span:last-child { transform: translateX(-100%); }
+.setup .field:has(.dot-line) { flex: 1 1 200px; }
+.dot-line { position: relative; display: flex; justify-content: space-between; max-width: 260px; padding: 4px 0 0; }
+.dot-line::before { content: ''; position: absolute; left: 14px; right: 14px; top: 17px; height: 2px; background: var(--line-strong); }
+.dot-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 28px; cursor: pointer; font-weight: 600; }
+.dot-step input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.dot-step .dot {
+  width: 26px; height: 26px; box-sizing: border-box; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--line-strong); transition: background 0.15s, border-color 0.15s;
+}
+.dot-step:has(input:checked) .dot { background: var(--felt); border-color: var(--felt); box-shadow: 0 0 0 4px var(--felt-soft); }
+.dot-step:has(input:checked) .dot-num { color: var(--felt); font-weight: 800; }
+.dot-step:has(input:focus-visible) .dot { outline: 2px solid var(--felt); outline-offset: 3px; }
+.dot-num { font-size: 13px; color: var(--muted); }
+.dot-line::after { content: ''; position: absolute; left: 14px; top: 17px; height: 2px; width: calc((100% - 28px) * var(--fill, 0)); background: var(--felt); }
+.dot-step:has(input:checked) ~ .dot-step .dot { background: var(--surface); }

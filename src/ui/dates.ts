@@ -23,3 +23,10 @@ export function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   return `${d}. ${m}. ${y}`;
 }
+
+/** Začátek nového tréninku: aktuální čas zaokrouhlený na 30 min nahoru (HH:MM); přes půlnoc ne. */
+export function nextHalfHour(now: Date): string {
+  const min = now.getHours() * 60 + now.getMinutes();
+  const up = Math.min(23 * 60 + 30, Math.ceil(min / 30) * 30);
+  return `${String(Math.floor(up / 60)).padStart(2, '0')}:${String(up % 60).padStart(2, '0')}`;
+}

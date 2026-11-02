@@ -42,12 +42,27 @@ export function WhenFields({ training, onChange }: PartProps) {
         </div>
       )}
       <div className="field">
-        <label htmlFor="t-tables">Počet stolů</label>
-        <select id="t-tables" value={training.tables} onChange={(e) => onChange({ ...training, tables: Number(e.target.value) as TableCount })}>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
+        <span className="field-label" id="t-tables">
+          Počet stolů
+        </span>
+        <div className="dot-line" role="radiogroup" aria-labelledby="t-tables" style={{ ["--fill" as string]: String((training.tables - 1) / 3) }}>
+          {([1, 2, 3, 4] as TableCount[]).map((n) => (
+            <label key={n} className="dot-step">
+              <input
+                type="radio"
+                name={`tables-${training.id}`}
+                value={n}
+                checked={training.tables === n}
+                aria-label={`${n} ${plural(n, 'stůl', 'stoly', 'stolů')}`}
+                onChange={() => onChange({ ...training, tables: n })}
+              />
+              <span className="dot" aria-hidden="true" />
+              <span className="dot-num" aria-hidden="true">
+                {n}
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );

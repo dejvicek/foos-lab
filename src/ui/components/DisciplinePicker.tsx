@@ -7,17 +7,34 @@ export const hm = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).p
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy', sim: 'Tým' } as const;
 
 /** PRD 4.6 / 7: délka tréninku, výběr disciplín a počty kol. */
+/** Délka tréninku posuvníkem (1:00–4:00 po 15 min); hodnota vedle, pod ním orientační hodiny. */
 export function DurationSelect({ training, onChange }: { training: Training; onChange(next: Training): void }) {
+  const min = DURATION_OPTIONS[0];
+  const max = DURATION_OPTIONS[DURATION_OPTIONS.length - 1];
+  const hours = DURATION_OPTIONS.filter((m) => m % 60 === 0);
   return (
-    <div className="field">
+    <div className="field range-field">
       <label htmlFor="t-duration">Délka tréninku</label>
-      <select id="t-duration" value={training.durationMin} onChange={(e) => onChange({ ...training, durationMin: Number(e.target.value) })}>
-        {DURATION_OPTIONS.map((m) => (
-          <option key={m} value={m}>
+      <div className="range-row">
+        <input
+          id="t-duration"
+          type="range"
+          min={min}
+          max={max}
+          step={DURATION_OPTIONS[1] - DURATION_OPTIONS[0]}
+          value={training.durationMin}
+          aria-valuetext={hm(training.durationMin)}
+          onChange={(e) => onChange({ ...training, durationMin: Number(e.target.value) })}
+        />
+        <output htmlFor="t-duration">{hm(training.durationMin)}</output>
+      </div>
+      <div className="range-ticks" aria-hidden="true">
+        {hours.map((m) => (
+          <span key={m} style={{ left: `${((m - min) / (max - min)) * 100}%` }}>
             {hm(m)}
-          </option>
+          </span>
         ))}
-      </select>
+      </div>
     </div>
   );
 }

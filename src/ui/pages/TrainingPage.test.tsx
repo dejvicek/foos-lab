@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -12,6 +12,19 @@ const checkbox = (name: string) => screen.getByRole('checkbox', { name });
 afterEach(() => vi.restoreAllMocks());
 
 describe('stránka Trénink', () => {
+  it('nový trénink: začátek předvyplněný podle aktuálního času zaokrouhleného na 30 min nahoru; jde i na 1 stůl', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 2, 18, 7));
+    const user = userEvent.setup();
+    const repo = memoryRepository({ players: players(6), trainings: [] });
+    window.location.hash = '#/trenink/novy';
+    render(<App repo={repo} />);
+    expect(await screen.findByLabelText('Začátek')).toHaveValue('18:30');
+    await user.click(screen.getByRole('radio', { name: '1 stůl' }));
+    expect(screen.getByRole('radio', { name: '1 stůl' })).toBeChecked();
+    vi.useRealTimers();
+  });
+
   it('nový trénink v krocích: kdy a kde, přítomní (přidat hráče), shrnutí, Zahájit trénink; další převezme délku a stoly', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(6), trainings: [] });
@@ -21,8 +34,12 @@ describe('stránka Trénink', () => {
     expect(await screen.findByText('Zatím žádný trénink. Začni tlačítkem Nový trénink.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Nový trénink' }));
     expect(screen.getByRole('heading', { name: 'Kdy a kde' })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Délka tréninku'), '120');
-    await user.selectOptions(screen.getByLabelText('Počet stolů'), '2');
+    // délka posuvníkem, stoly linkou se 4 tečkami (1–4)
+    fireEvent.change(screen.getByRole('slider', { name: 'Délka tréninku' }), { target: { value: '120' } });
+    expect(screen.getByText('2:00', { selector: 'output' })).toBeInTheDocument();
+    const tables = within(screen.getByRole('radiogroup', { name: 'Počet stolů' })).getAllByRole('radio');
+    expect(tables.map((r) => r.getAttribute('value'))).toEqual(['1', '2', '3', '4']);
+    await user.click(screen.getByRole('radio', { name: '2 stoly' }));
     await next(user);
 
     expect(screen.getByText('Přítomno: 0')).toBeInTheDocument();
@@ -55,8 +72,8 @@ describe('stránka Trénink', () => {
 
     await user.click(screen.getByRole('button', { name: 'Trénink' }));
     await user.click(screen.getByRole('button', { name: 'Nový trénink' }));
-    expect(screen.getByLabelText('Délka tréninku')).toHaveValue('120');
-    expect(screen.getByLabelText('Počet stolů')).toHaveValue('2');
+    expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('120');
+    expect(screen.getByRole('radio', { name: '2 stoly' })).toBeChecked();
   });
 
   it('změna přítomných, která smaže skóre, se při uložení ptá; při zrušení se nic nezmění', async () => {

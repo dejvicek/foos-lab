@@ -128,3 +128,23 @@ describe('úpravy plánu 2. 11. 2026', () => {
     expect(playRows(custom(8, 4, { plan: { backRodsBuildUp: 1 } }))[0].rule).toMatch(/^Rozehrávka ze zadních tyčí/);
   });
 });
+
+describe('trénink na 1 stůl', () => {
+  it('n=4..13: v každém kole nejvýš jedno utkání / skupina, ostatní mimo stůl; každý si zahraje každé cvičení', () => {
+    for (let n = 4; n <= 13; n++) {
+      const t = custom(n, 1, { plan: autoPlan(DEFAULT_SELECTION, 180, n, 1) });
+      const s = buildSchedule(t);
+      expect(s.tables).toBe(1);
+      for (const r of playRows(t)) {
+        expect(r.cells).toHaveLength(1);
+        if (r.discipline === 'sim') continue;
+        const inRow = [...r.cells.flatMap((c) => (!c ? [] : c.type === 'match' ? [...c.match.sideA, ...c.match.sideB] : c.players)), ...r.waiting];
+        expect([...inRow].sort()).toEqual([...H(n)].sort());
+      }
+      const drills = new Set(playRows(t).filter((r) => r.kind === 'groups').map((r) => r.discipline));
+      for (const d of drills)
+        for (const p of H(n))
+          expect(playRows(t).some((r) => r.discipline === d && r.cells.some((c) => c?.type === 'group' && c.players.includes(p)))).toBe(true);
+    }
+  });
+});

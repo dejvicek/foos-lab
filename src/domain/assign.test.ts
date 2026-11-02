@@ -32,9 +32,9 @@ describe('assign', () => {
     expect(r.waiting).toEqual(['H5']);
   });
 
-  it('invariant: n=4..13, t=2..4 – nejvýš t stolů, každý hráč přesně jednou', () => {
+  it('invariant: n=4..13, t=1..4 – nejvýš t stolů, každý hráč přesně jednou', () => {
     for (const n of range(4, 13))
-      for (const t of range(2, 4))
+      for (const t of range(1, 4))
         for (const singlesOnly of [true, false]) {
           const r = assign(H(n), t, singlesOnly);
           expect(r.tables.length).toBeLessThanOrEqual(t);

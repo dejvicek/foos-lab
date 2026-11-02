@@ -1,7 +1,7 @@
 export type PlayerId = string;
 export type MatchId = string;
 export type Mode = 'team' | 'single';
-export type TableCount = 2 | 3 | 4;
+export type TableCount = 1 | 2 | 3 | 4;
 
 export interface Player {
   id: PlayerId;

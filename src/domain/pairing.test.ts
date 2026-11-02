@@ -25,7 +25,7 @@ function simulate(n: number, t: number) {
 
 describe('vyrovnané sestavy (PRD 5.10)', () => {
   for (const n of range(6, 13))
-    for (const t of range(2, 4))
+    for (const t of range(1, 4))
       it(`n=${n}, t=${t}: nehraní, Zeď, 0:3, spoluhráči, cvičení`, () => {
         const { players, c, rounds } = simulate(n, t);
         const sits = players.map((p) => c.sit.get(p) ?? 0);

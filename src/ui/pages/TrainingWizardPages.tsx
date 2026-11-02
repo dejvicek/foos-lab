@@ -5,7 +5,7 @@ import { addPlayer } from '../../domain/roster';
 import { newTraining, sortTrainings } from '../../domain/training';
 import type { Training } from '../../domain/types';
 import { TrainingWizard } from '../components/TrainingWizard';
-import { todayIso } from '../dates';
+import { nextHalfHour, todayIso } from '../dates';
 import { commitEdit } from '../trainingEdit';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
@@ -22,7 +22,10 @@ const rosterAdd = (store: AppStore) => (name: string) => {
 
 /** Nový trénink v krocích; uloží se a rovnou zahájí až tlačítkem „Zahájit trénink“. */
 export function NewTrainingPage({ store, navigate, viewer }: { store: AppStore; navigate(r: Route): void; viewer: Viewer }) {
-  const [initial] = useState<Training>(() => newTraining(store.newId(), todayIso(), sortTrainings(store.data.trainings)[0] ?? null, viewer.playerId));
+  const [initial] = useState<Training>(() => ({
+    ...newTraining(store.newId(), todayIso(), sortTrainings(store.data.trainings)[0] ?? null, viewer.playerId),
+    startTime: nextHalfHour(new Date()), // aktuální čas zaokrouhlený na 30 min nahoru
+  }));
   return (
     <TrainingWizard
       initial={initial}
