@@ -1,5 +1,5 @@
 import { MIN_TRAININGS, resolveRange, type LadderRange, type LadderView } from './ladder';
-import { parseSoloKey, SOLO_METRICS } from './solo';
+import { parseSoloKey, SOLO_METRICS, soloMetric } from './solo';
 import { pruneEntries } from './training';
 import type { PlayerId, SoloMetric, SoloResults, Training } from './types';
 
@@ -33,18 +33,21 @@ export function aggregateSolo(
   trainings: Training[],
   metric: SoloMetric,
   solo: (t: Training) => SoloResults = validSolo,
-): Map<PlayerId, { trainings: number; records: number; sum: number }> {
-  const out = new Map<PlayerId, { trainings: number; records: number; sum: number }>();
+): Map<PlayerId, { trainings: number; records: number; sum: number; possible: number }> {
+  const max = soloMetric(metric).max;
+  const out = new Map<PlayerId, { trainings: number; records: number; sum: number; possible: number }>();
   for (const t of trainings)
     for (const [p, values] of Object.entries(solo(t))) {
-      const vals = Object.entries(values)
-        .filter(([k, v]) => parseSoloKey(k).metric === metric && v !== undefined && v !== null)
-        .map(([, v]) => v);
+      const vals = Object.entries(values).filter(([k, v]) => parseSoloKey(k).metric === metric && v !== undefined && v !== null);
       if (!vals.length) continue;
-      const cur = out.get(p) ?? { trainings: 0, records: 0, sum: 0 };
+      const cur = out.get(p) ?? { trainings: 0, records: 0, sum: 0, possible: 0 };
       cur.trainings++;
       cur.records += vals.length;
-      cur.sum += vals.reduce((a, b) => a + b, 0);
+      for (const [k, v] of vals) {
+        cur.sum += v;
+        // Nedokončené cvičení se počítá z odehraných pokusů, zapsané číslem z plného počtu.
+        cur.possible += t.soloAttempts?.[p]?.[k] ?? max;
+      }
       out.set(p, cur);
     }
   return out;
@@ -68,9 +71,10 @@ export function computeSoloLadder(
       trainings: x.trainings,
       records: x.records,
       sum: x.sum,
-      sumMax: x.records * def.max,
-      avg: x.sum / x.records,
-      rate: x.sum / (x.records * def.max),
+      sumMax: x.possible,
+      // Průměr na plnou sérii (např. „/ 20“), u nedokončených přepočtený z odehraných pokusů.
+      avg: x.possible ? (x.sum / x.possible) * def.max : 0,
+      rate: x.possible ? x.sum / x.possible : 0,
     }));
     const cmp = (a: SoloLadderRow, b: SoloLadderRow) =>
       (def.lowerIsBetter ? a.rate - b.rate : b.rate - a.rate) ||

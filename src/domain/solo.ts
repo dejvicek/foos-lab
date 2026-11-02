@@ -7,16 +7,19 @@ export interface SoloMetricDef {
   what: string;
   max: number;
   lowerIsBetter: boolean;
+  /** Tlačítka po pokusu (PRD 5.8): povedený / nepovedený. */
+  ok: string;
+  fail: string;
 }
 
 /** PRD 5.8 – pořadí určuje i pořadí tabulek v žebříčku stanovišť. */
 export const SOLO_METRICS: SoloMetricDef[] = [
-  { id: 'warmupPasses', name: 'Přihrávky na pětce', what: 'povedené přihrávky z 20', max: 20, lowerIsBetter: false },
-  { id: 'fiveBarControl', name: 'Udržení míče na pětce', what: 'ztráty z 10 sérií', max: 10, lowerIsBetter: true },
-  { id: 'setShooting', name: 'Střelba jen z nastavení', what: 'góly z 20 střel', max: 20, lowerIsBetter: false },
-  { id: 'blockToControl', name: 'Obrana do držení', what: 'bloky do držení z 10', max: 10, lowerIsBetter: false },
-  { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false },
-  { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false },
+  { id: 'warmupPasses', name: 'Přihrávky na pětce', what: 'povedené přihrávky z 20', max: 20, lowerIsBetter: false, ok: 'povedená', fail: 'nepovedená' },
+  { id: 'fiveBarControl', name: 'Udržení míče na pětce', what: 'ztráty z 10 sérií', max: 10, lowerIsBetter: true, ok: 'bez ztráty', fail: 'ztráta' },
+  { id: 'setShooting', name: 'Střelba jen z nastavení', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
+  { id: 'blockToControl', name: 'Obrana do držení', what: 'bloky do držení z 10', max: 10, lowerIsBetter: false, ok: 'do držení', fail: 'nechytil' },
+  { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false, ok: 'dokončená', fail: 'nedokončená' },
+  { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },
 ];
 
 /** Metrika stanoviště na stole j (pořadí STATIONS v content.ts). */

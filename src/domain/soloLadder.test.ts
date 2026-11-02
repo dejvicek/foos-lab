@@ -59,6 +59,6 @@ describe('žebříček stanovišť – víc záznamů v jednom tréninku', () =>
     const t = training('c1', '2026-10-30', 'team', H(8), 4);
     const raw = (x: typeof t) => x.soloResults;
     const rows = aggregateSolo([{ ...t, soloResults: { H1: { 'setShooting@1': 10, 'setShooting@5': 14 } } }], 'setShooting', raw);
-    expect(rows.get('H1')).toEqual({ trainings: 1, records: 2, sum: 24 });
+    expect(rows.get('H1')).toEqual({ trainings: 1, records: 2, sum: 24, possible: 40 }); // 2 × 20 střel (zapsáno číslem)
   });
 });

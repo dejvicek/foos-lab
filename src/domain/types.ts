@@ -73,6 +73,8 @@ export interface Training {
   lockedRounds: LockedRound[];
   /** Vlastní pauzy (konfigurovatelný trénink); chybí / null = automaticky 10 min po každé hodině. */
   breaks?: BreakDef[] | null;
+  /** Odehrané pokusy cvičení (stejné klíče jako soloResults); chybí = zapsáno číslem = plný počet. */
+  soloAttempts?: SoloResults;
   /** Zahájení a konce utkání (Zdržovači); chybí = nic neměřeno. */
   playTimes?: PlayTimes;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
