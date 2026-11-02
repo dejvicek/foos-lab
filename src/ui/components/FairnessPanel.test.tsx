@@ -23,6 +23,9 @@ describe('kontrola spravedlnosti rozpisu', () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players, trainings: [t] })} auth={auth(true)} />);
     const summary = await screen.findByText('Kontrola rozpisu: kdo s kým kolikrát');
+    // na začátku, před rozpisem (před cvičeními)
+    const schedule = screen.getByRole('table', { name: 'Rozpis tréninku' });
+    expect(summary.compareDocumentPosition(schedule) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await user.click(summary);
     // dvě oddělené tabulky, ať se čísla nepletou: spoluhráči a soupeři
     const mates = screen.getByRole('table', { name: 'Spoluhráči: kolikrát spolu ve dvojici' });

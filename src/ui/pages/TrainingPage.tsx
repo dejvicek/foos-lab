@@ -342,6 +342,7 @@ export function TrainingPage({
 
       {schedule && (
         <>
+          {viewer.isAdmin && <FairnessPanel schedule={schedule} players={training.attendees} names={names} />}
           {mobile ? (
             <RoundCards
               schedule={schedule}
@@ -389,7 +390,6 @@ export function TrainingPage({
               Vytisknout rozpis
             </button>
           </div>
-          {viewer.isAdmin && <FairnessPanel schedule={schedule} players={training.attendees} names={names} />}
           <StandingsView
             schedule={schedule}
             scores={training.scores}
