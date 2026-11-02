@@ -1,6 +1,6 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
-import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef, PlayTime, PlayTimes } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -90,7 +90,7 @@ function scoreFromRow(r: ScoreRow): Score {
   return s;
 }
 
-export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[]): Training {
+export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[], times: PlayTimeRow[] = []): Training {
   const soloResults: SoloResults = {};
   for (const x of solo) {
     if (x.training_id !== r.id) continue;
@@ -113,9 +113,39 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
+    ...(() => {
+      const mine = times.filter((x) => x.training_id === r.id);
+      if (!mine.length) return {};
+      const playTimes: PlayTimes = {};
+      for (const x of mine) playTimes[x.item_id] = playTimeFromRow(x);
+      return { playTimes };
+    })(),
   };
   if (r.notes !== null && r.notes !== undefined) t.notes = r.notes;
   return t;
+}
+
+export interface PlayTimeRow {
+  training_id: string;
+  item_id: string;
+  started_at: string | null;
+  ended_at: string | null;
+}
+
+const iso = (ms: number | undefined) => (ms === undefined ? null : new Date(ms).toISOString());
+
+export const playTimeToRow = (trainingId: string, itemId: string, p: PlayTime): PlayTimeRow => ({
+  training_id: trainingId,
+  item_id: itemId,
+  started_at: iso(p.startedAt),
+  ended_at: iso(p.endedAt),
+});
+
+export function playTimeFromRow(r: PlayTimeRow): PlayTime {
+  const p: PlayTime = {};
+  if (r.started_at) p.startedAt = Date.parse(r.started_at);
+  if (r.ended_at) p.endedAt = Date.parse(r.ended_at);
+  return p;
 }
 
 export const scoreToRow = (trainingId: string, matchId: MatchId, s: Score): ScoreRow => ({

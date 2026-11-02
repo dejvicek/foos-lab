@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isEmptyScore, setSolo } from '../domain/training';
 import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
-import type { Match, MatchId, Player, PlayerId, Score, SoloKey, Training } from '../domain/types';
+import type { Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
@@ -30,6 +30,8 @@ export interface AppStore {
   bumpScore(trainingId: string, match: Match, field: keyof Score, delta: number): void;
   /** Ťuknutí ve cvičení: přičtení k výsledku hráče. */
   bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
+  /** Zdržovači: zahájení / konec utkání (null smaže). */
+  setPlayTime(trainingId: string, itemId: string, p: PlayTime | null): void;
   /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
   lockRounds(t: Training): void;
   /** Lokálně hned, do úložiště s odstupem SCORE_DEBOUNCE_MS za zápas. */
@@ -43,6 +45,15 @@ export const RETRY_DELAYS_MS = [2000, 5000, 10000];
 export const SCORE_DEBOUNCE_MS = 400;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Zapíše / smaže čas utkání v tréninku (prázdný seznam časů se neuchovává). */
+function withPlayTime(t: Training, itemId: string, p: PlayTime | null): Training {
+  const times = { ...t.playTimes };
+  if (!p || (p.startedAt === undefined && p.endedAt === undefined)) delete times[itemId];
+  else times[itemId] = p;
+  const { playTimes: _, ...rest } = t;
+  return Object.keys(times).length ? { ...rest, playTimes: times } : rest;
+}
 
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
@@ -164,6 +175,10 @@ export function useAppState(repo: Repository): AppStore {
           const merged = cur ? mergeTrainingEcho(cur, t, pending) : t;
           return { ...d, trainings: cur ? d.trainings.map((x) => (x.id === id ? merged : x)) : [...d.trainings, merged] };
         }),
+      playTime: (tid, itemId, p) => {
+        if (busy(pendingKey.time(tid, itemId))) return;
+        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? withPlayTime(t, itemId, p) : t)) }));
+      },
       resync,
     });
   }, [repo, status, busy, resync]);
@@ -276,6 +291,10 @@ export function useAppState(repo: Repository): AppStore {
           }),
         }));
         enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max), pendingKey.solo(trainingId, playerId, key));
+      },
+      setPlayTime: (trainingId: string, itemId: string, p: PlayTime | null) => {
+        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === trainingId ? withPlayTime(t, itemId, p) : t)) }));
+        enqueue(() => repo.savePlayTime(trainingId, itemId, p), pendingKey.time(trainingId, itemId));
       },
       lockRounds: (t: Training) => {
         setData((d) => ({ ...d, trainings: d.trainings.map((x) => (x.id === t.id ? { ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams } : x)) }));

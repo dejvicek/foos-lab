@@ -32,6 +32,7 @@ export function memoryRepository(
     solo: (...a) => listeners.forEach((l) => l.solo(...a)),
     training: (...a) => listeners.forEach((l) => l.training(...a)),
     resync: () => listeners.forEach((l) => l.resync()),
+    playTime: (...a) => listeners.forEach((l) => l.playTime(...a)),
   };
 
   return {
@@ -56,6 +57,8 @@ export function memoryRepository(
       write(() => {
         const existing = training(t.id);
         const next = { ...copy(t), scores: existing ? existing.scores : {}, soloResults: existing ? existing.soloResults : {} };
+        if (existing?.playTimes) next.playTimes = existing.playTimes;
+        else delete next.playTimes;
         data.trainings = existing ? data.trainings.map((x) => (x.id === t.id ? next : x)) : [...data.trainings, next];
       }),
     deleteTraining: (id) =>
@@ -107,6 +110,16 @@ export function memoryRepository(
         const mine = { ...t.soloResults[playerId] };
         mine[key] = Math.min(max, Math.max(0, (mine[key] ?? 0) + delta));
         t.soloResults[playerId] = mine;
+      }),
+    savePlayTime: (trainingId, itemId, p) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const times = { ...t.playTimes };
+        if (!p || (p.startedAt === undefined && p.endedAt === undefined)) delete times[itemId];
+        else times[itemId] = copy(p);
+        if (Object.keys(times).length) t.playTimes = times;
+        else delete t.playTimes;
       }),
     subscribe: (h) => {
       listeners.add(h);

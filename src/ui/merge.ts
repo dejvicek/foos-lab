@@ -6,8 +6,15 @@ export const pendingKey = {
   score: (tid: string, mid: string) => `${tid}::${mid}`,
   solo: (tid: string, pid: string, key: string) => `${tid}::solo::${pid}::${key}`,
   training: (tid: string) => `${tid}::training`,
+  time: (tid: string, itemId: string) => `${tid}::time::${itemId}`,
   players: 'players',
 };
+
+/** Časy utkání: prázdný seznam se neukládá (trénink bez měření nemá klíč). */
+function withTimes(t: Training, times: Training['playTimes']): Training {
+  const { playTimes: _, ...rest } = t;
+  return times && Object.keys(times).length ? { ...rest, playTimes: times } : rest;
+}
 
 /** Zamčená kola se jen prodlužují: delší seznam vyhrává, týmy simulace jednou zamčené zůstanou. */
 function keepLocks(local: Training, remote: Training): Pick<Training, 'lockedRounds' | 'simTeams'> {
@@ -22,7 +29,7 @@ function keepLocks(local: Training, remote: Training): Pick<Training, 'lockedRou
  * vlastní změna konfigurace, ponechá se lokální a převezme se jen delší zamčení kol.
  */
 export function mergeTrainingEcho(local: Training, remote: Training, busy: boolean): Training {
-  if (!busy) return { ...remote, scores: local.scores, soloResults: local.soloResults };
+  if (!busy) return { ...withTimes(remote, local.playTimes), scores: local.scores, soloResults: local.soloResults };
   return { ...local, ...keepLocks(local, remote) };
 }
 
@@ -55,7 +62,13 @@ export function mergeRemote(local: AppData, remote: AppData, busy: (key: string)
         }
       if (Object.keys(mine).length) soloResults[pid] = mine;
     }
-    return { ...base, scores, soloResults };
+    const times = { ...r.playTimes };
+    for (const id of new Set([...Object.keys(l.playTimes ?? {}), ...Object.keys(r.playTimes ?? {})]))
+      if (busy(pendingKey.time(r.id, id))) {
+        if (l.playTimes?.[id]) times[id] = l.playTimes[id];
+        else delete times[id];
+      }
+    return withTimes({ ...base, scores, soloResults }, times);
   });
   const remoteIds = new Set(remote.trainings.map((t) => t.id));
   const unsaved = local.trainings.filter((t) => !remoteIds.has(t.id) && busy(pendingKey.training(t.id)));

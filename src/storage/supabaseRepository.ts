@@ -7,6 +7,9 @@ import {
   scoreFromRowPublic,
   soloRow,
   trainingFromRow,
+  playTimeFromRow,
+  playTimeToRow,
+  type PlayTimeRow,
   trainingToRow,
   type PlayerRow,
   type ScoreRow,
@@ -46,15 +49,16 @@ export function supabaseRepository(client: SupabaseClient): Repository {
 
   return {
     async loadAll() {
-      const [players, trainings, scores, solo] = await Promise.all([
+      const [players, trainings, scores, solo, times] = await Promise.all([
         selectAll<PlayerRow>(client, 'players', ['id']),
         selectAll<TrainingRow>(client, 'trainings', ['id']),
         selectAll<ScoreRow>(client, 'scores', ['training_id', 'match_id']),
         selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric', 'round']),
+        selectAll<PlayTimeRow>(client, 'play_times', ['training_id', 'item_id']),
       ]);
       return {
         players: players.map(playerFromRow),
-        trainings: trainings.map((t) => trainingFromRow(t, scores, solo)),
+        trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times)),
       };
     },
     async savePlayer(p) {
@@ -121,6 +125,11 @@ export function supabaseRepository(client: SupabaseClient): Repository {
       });
       if (error) throw fromPostgrest(error, status);
     },
+    async savePlayTime(trainingId, itemId, p) {
+      if (!p || (p.startedAt === undefined && p.endedAt === undefined))
+        check(await client.from('play_times').delete().eq('training_id', trainingId).eq('item_id', itemId));
+      else check(await client.from('play_times').upsert(playTimeToRow(trainingId, itemId, p), { onConflict: 'training_id,item_id' }));
+    },
     subscribe(h) {
       const ch = client
         // Jedinečné jméno: StrictMode / rychlé znovupřihlášení jinak dostane odcházející kanál.
@@ -135,6 +144,11 @@ export function supabaseRepository(client: SupabaseClient): Repository {
           const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as SoloRow;
           if (!row?.training_id) return;
           h.solo(row.training_id, row.player_id, soloKey(row.metric, row.round ?? 0), p.eventType === 'DELETE' ? null : row.value);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'play_times' }, (p) => {
+          const row = (p.new && Object.keys(p.new).length ? p.new : p.old) as PlayTimeRow;
+          if (!row?.training_id) return;
+          h.playTime(row.training_id, row.item_id, p.eventType === 'DELETE' ? null : playTimeFromRow(row));
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trainings' }, (p) => {
           if (p.eventType === 'DELETE') return h.training(null, (p.old as TrainingRow).id);

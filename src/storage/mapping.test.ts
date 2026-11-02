@@ -1,4 +1,4 @@
-import { isEmptyScore, playerFromRow, playerToRow, scoreToRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
+import { isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
 import type { Player, Training } from '../domain/types';
 
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
@@ -73,5 +73,15 @@ describe('mapping', () => {
   it('isEmptyScore: nula je platné skóre', () => {
     expect(isEmptyScore({ ga: null, gb: undefined })).toBe(true);
     expect(isEmptyScore({ ga: 0 })).toBe(false);
+  });
+});
+
+describe('časy utkání (Zdržovači)', () => {
+  it('řádek ↔ PlayTime: ISO čas v databázi, ms v doméně; trénink je dostane podle ID', () => {
+    const row = playTimeToRow('t1', 'league|1|1|a+bvc+d', { startedAt: Date.parse('2026-11-02T18:01:30Z') });
+    expect(row).toEqual({ training_id: 't1', item_id: 'league|1|1|a+bvc+d', started_at: '2026-11-02T18:01:30.000Z', ended_at: null });
+    expect(playTimeFromRow(row)).toEqual({ startedAt: Date.parse('2026-11-02T18:01:30Z') });
+    const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [row, { ...row, training_id: 'jiny' }]);
+    expect(t.playTimes).toEqual({ 'league|1|1|a+bvc+d': { startedAt: Date.parse('2026-11-02T18:01:30Z') } });
   });
 });

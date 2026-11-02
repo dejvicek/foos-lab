@@ -101,3 +101,25 @@ describe('useAppState – ozvěny a dorovnání', () => {
     await waitFor(() => expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 4, gb: 2 }));
   });
 });
+
+describe('useAppState – časy utkání', () => {
+  it('setPlayTime se hned projeví a uloží; null smaže', async () => {
+    const { repo, result } = await setup();
+    act(() => result.current.setPlayTime('t1', m.id, { startedAt: 1000 }));
+    expect(result.current.data.trainings[0].playTimes).toEqual({ [m.id]: { startedAt: 1000 } });
+    await waitFor(() => expect(repo.snapshot().trainings[0].playTimes).toEqual({ [m.id]: { startedAt: 1000 } }));
+    act(() => result.current.setPlayTime('t1', m.id, null));
+    await waitFor(() => expect(repo.snapshot().trainings[0].playTimes ?? {}).toEqual({}));
+  });
+
+  it('čas z jiného telefonu se doplní, ozvěna nepřepíše čekající zápis', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] }, { failSaves: 1 });
+    const { result } = renderHook(() => useAppState(repo));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    act(() => repo.emit().playTime('t1', 'x', { startedAt: 5 }));
+    expect(result.current.data.trainings[0].playTimes).toEqual({ x: { startedAt: 5 } });
+    act(() => result.current.setPlayTime('t1', 'x', { startedAt: 5, endedAt: 9 }));
+    act(() => repo.emit().playTime('t1', 'x', { startedAt: 5 }));
+    expect(result.current.data.trainings[0].playTimes).toEqual({ x: { startedAt: 5, endedAt: 9 } });
+  });
+});
