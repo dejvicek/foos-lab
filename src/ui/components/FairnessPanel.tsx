@@ -4,6 +4,7 @@ import { fairness, fairnessAdvice } from '../../domain/fairness';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import type { DisciplineId, PlayerId, Training } from '../../domain/types';
 import { plural } from '../format';
+import type { Highlight } from './PlanPreview';
 
 /**
  * Kontrola rozpisu v nastavení tréninku (kdo trénink zakládá / upravuje): kolikrát spolu dva hráči hráli ve dvojici,
@@ -14,10 +15,13 @@ export function FairnessPanel({
   training,
   names,
   onAddRounds,
+  hl,
 }: {
   training: Training;
   names: Record<PlayerId, string>;
   onAddRounds?(id: DisciplineId, rounds: number): void;
+  /** Najetí na jméno zvýrazní hráče v náhledu plánu. */
+  hl?: Highlight;
 }) {
   const [open, setOpen] = useState(false);
   const players = training.attendees;
@@ -26,6 +30,8 @@ export function FairnessPanel({
   // Nápověda sestavuje rozpis s koly navíc – jen když je panel otevřený.
   const advice = useMemo(() => (open && ok ? fairnessAdvice(training) : null), [open, ok, training]);
   const nm = (p: PlayerId) => names[p] ?? '?';
+  const hover = (p: PlayerId) =>
+    hl ? { onMouseEnter: () => hl.enter(p), onMouseLeave: () => hl.leave(), onClick: () => hl.toggle(p), className: hl.lit === p ? 'hl' : undefined } : {};
 
   const matrix = (label: string, value: (a: PlayerId, b: PlayerId) => number, max: number) => (
     <div className="fairness-wrap">
@@ -35,7 +41,7 @@ export function FairnessPanel({
           <tr>
             <th />
             {players.map((p) => (
-              <th key={p} scope="col">
+              <th key={p} scope="col" {...hover(p)}>
                 {nm(p)}
               </th>
             ))}
@@ -43,8 +49,10 @@ export function FairnessPanel({
         </thead>
         <tbody>
           {players.map((a) => (
-            <tr key={a}>
-              <th scope="row">{nm(a)}</th>
+            <tr key={a} className={hl?.lit === a ? 'hl' : undefined}>
+              <th scope="row" {...hover(a)}>
+                {nm(a)}
+              </th>
               {players.map((b) => {
                 if (a === b) return <td key={b} className="self">–</td>;
                 const v = value(a, b);
@@ -116,8 +124,10 @@ export function FairnessPanel({
                   </thead>
                   <tbody>
                     {players.map((a) => (
-                      <tr key={a}>
-                        <th scope="row">{nm(a)}</th>
+                      <tr key={a} className={hl?.lit === a ? 'hl' : undefined}>
+                        <th scope="row" {...hover(a)}>
+                          {nm(a)}
+                        </th>
                         <td>{f.games.get(a) ?? 0}</td>
                         <td>{f.sits.get(a) ?? 0}</td>
                       </tr>

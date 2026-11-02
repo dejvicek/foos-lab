@@ -872,3 +872,9 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .fairness-advice li button { margin-left: 8px; min-height: 32px; padding: 2px 12px; }
 .plan-preview li .pp-who { grid-column: 2 / -1; color: var(--ink); font-size: 12px; line-height: 1.4; }
 .fairness { margin-top: 0; }
+/* Zvýraznění hráče v náhledu plánu a v kontrole rozpisu */
+.pp-p { cursor: pointer; border-radius: 3px; transition: background 0.1s; }
+.pp-p:hover, .pp-p.hl { background: #F2C94C; color: #1d1d1b; box-shadow: 0 0 0 2px #F2C94C; }
+.fairness-table th[scope] { cursor: pointer; }
+.fairness-table th.hl { background: #F2C94C; color: #1d1d1b; }
+.fairness-table tr.hl td:not(.self) { box-shadow: inset 0 2px 0 #F2C94C, inset 0 -2px 0 #F2C94C; }

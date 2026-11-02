@@ -9,7 +9,7 @@ import { MODE_LABEL, plural } from '../format';
 import { prepareEdit } from '../trainingEdit';
 import { DisciplinePicker, hm } from './DisciplinePicker';
 import { FairnessPanel } from './FairnessPanel';
-import { PlanPreview } from './PlanPreview';
+import { PlanPreview, type Highlight } from './PlanPreview';
 import { AttendanceFields, WhenFields } from './TrainingSetup';
 
 type StepId = 'when' | 'who' | 'disc' | 'sum';
@@ -49,6 +49,10 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
     return r;
   };
   const byId = new Map(players.map((p) => [p.id, p.name]));
+  // Zvýraznění hráče v náhledu plánu: najetí myší, klepnutím se připne (telefon).
+  const [hover, setHover] = useState<PlayerId | null>(null);
+  const [pin, setPin] = useState<PlayerId | null>(null);
+  const hl: Highlight = { lit: hover ?? pin, enter: setHover, leave: () => setHover(null), toggle: (p) => setPin((x) => (x === p ? null : p)) };
   const n = draft.attendees.length;
   const finishLabel = mode === 'new' ? 'Zahájit trénink' : 'Uložit změny';
 
@@ -62,13 +66,14 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
         return (
           <>
             <FairnessPanel
+              hl={hl}
               training={draft}
               names={Object.fromEntries(byId)}
               onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
             />
             <div className="wizard-disc">
               <DisciplinePicker training={draft} open bare onChange={change} />
-              <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} />
+              <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} hl={hl} />
             </div>
           </>
         );

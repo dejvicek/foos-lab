@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -64,4 +64,32 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     const drill = items.find((li) => li.textContent?.includes('Přihrávky na pětce'))!;
     expect(drill.querySelector('.pp-who')!.textContent).toMatch(/^H\d, H\d · H\d, H\d · H\d, H\d$/);
   });
+
+  it('najetí myší na jméno hráče zvýrazní jeho jméno v náhledu plánu (z náhledu i z tabulek kontroly)', async () => {
+    const user = userEvent.setup();
+    render(<App repo={memoryRepository({ players, trainings: [{ ...t, plan: { warmupPasses: 1, normal: 2 } }] })} auth={auth(true)} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Disciplíny');
+    const preview = screen.getByRole('list', { name: 'Náhled plánu' });
+    const lit = () => [...preview.querySelectorAll('.pp-p.hl')].map((x) => x.textContent);
+    const h3 = [...preview.querySelectorAll('.pp-p')].filter((x) => x.textContent === 'H3');
+    expect(h3.length).toBeGreaterThan(1);
+    fireEvent.mouseEnter(h3[0]);
+    expect(lit().length).toBe(h3.length);
+    expect(new Set(lit())).toEqual(new Set(['H3']));
+    fireEvent.mouseLeave(h3[0]);
+    expect(lit()).toEqual([]);
+    // z tabulky kontroly rozpisu
+    await user.click(screen.getByText('Kontrola rozpisu: kdo s kým kolikrát'));
+    const mates = screen.getByRole('table', { name: 'Spoluhráči: kolikrát spolu ve dvojici' });
+    fireEvent.mouseEnter(within(mates).getByRole('rowheader', { name: 'H5' }));
+    expect(new Set(lit())).toEqual(new Set(['H5']));
+    fireEvent.mouseLeave(within(mates).getByRole('rowheader', { name: 'H5' }));
+    // telefon: klepnutí přepne zvýraznění
+    fireEvent.click(h3[0]);
+    expect(new Set(lit())).toEqual(new Set(['H3']));
+    fireEvent.click(h3[0]);
+    expect(lit()).toEqual([]);
+  });
 });
+
