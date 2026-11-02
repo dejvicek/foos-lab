@@ -6,7 +6,7 @@ import type { DisciplineId, PlayerId, Training } from '../../domain/types';
 import { plural } from '../format';
 
 /**
- * Kontrola rozpisu pro admina v nastavení tréninku: kolikrát spolu dva hráči hráli ve dvojici,
+ * Kontrola rozpisu v nastavení tréninku (kdo trénink zakládá / upravuje): kolikrát spolu dva hráči hráli ve dvojici,
  * kolikrát proti sobě, zápasy a kola mimo stůl, a nápověda, kolik kol přidat, aby hrál každý
  * s každým. Simulace se nepočítá (pevné týmy).
  */
@@ -127,7 +127,7 @@ export function FairnessPanel({
               </div>
             </div>
             <p className="note">
-              <span className="never-key">0</span> = nikdy, <span className="hot-key">n</span> = nejčastěji. Vidí jen admin.
+              <span className="never-key">0</span> = nikdy, <span className="hot-key">n</span> = nejčastěji.
             </p>
           </>
         )

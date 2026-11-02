@@ -2,13 +2,23 @@ import { useState, type DragEvent } from 'react';
 import { addBreak, BREAK_OPTIONS, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from '../../domain/breaks';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { clockAt } from '../../domain/solo';
-import type { Training } from '../../domain/types';
+import type { PlayerId, ScheduleRow, Training } from '../../domain/types';
 
 /**
  * Krok Disciplíny: jak zhruba bude vypadat plán (kola, časy, pauzy) – přepočítá se s každou změnou.
  * S `onChange` jdou pauzy přidat, odebrat, přetáhnout / posunout šipkami a nastavit jim délku.
  */
-export function PlanPreview({ training, onChange }: { training: Training; onChange?(t: Training): void }) {
+/** Kdo s kým: zápasy „A + B vs C + D“, u cvičení skupiny „A, B“; nakonec kdo je mimo stůl. */
+function whoLine(r: ScheduleRow, names: Record<PlayerId, string>): string | null {
+  const nm = (p: PlayerId) => names[p] ?? '?';
+  const parts = r.cells.flatMap((c) =>
+    !c ? [] : c.type === 'match' ? [`${c.match.sideA.map(nm).join(' + ')} vs ${c.match.sideB.map(nm).join(' + ')}`] : c.players.length ? [c.players.map(nm).join(', ')] : [],
+  );
+  if (!parts.length) return null;
+  return [...parts, ...(r.waiting.length ? [`mimo stůl: ${r.waiting.map(nm).join(', ')}`] : [])].join(' · ');
+}
+
+export function PlanPreview({ training, onChange, names }: { training: Training; onChange?(t: Training): void; names?: Record<PlayerId, string> }) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [drop, setDrop] = useState<{ i: number; pos: 'before' | 'after'; after: number } | null>(null);
   if (!canBuildSchedule(training)) return <p className="note">Náhled plánu se ukáže, až bude dost přítomných.</p>;
@@ -106,6 +116,10 @@ export function PlanPreview({ training, onChange }: { training: Training; onChan
               {time}
               <span className="pp-label">{r.label}</span>
               <span className="pp-rule">{r.rule ?? ''}</span>
+              {names && r.kind !== 'break' && (() => {
+                const who = whoLine(r, names);
+                return who ? <span className="pp-who">{who}</span> : null;
+              })()}
             </li>
           );
         })}

@@ -870,3 +870,5 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .fairness-advice ul { margin: 6px 0 4px; padding-left: 18px; }
 .fairness-advice li { margin: 4px 0; }
 .fairness-advice li button { margin-left: 8px; min-height: 32px; padding: 2px 12px; }
+.plan-preview li .pp-who { grid-column: 2 / -1; color: var(--ink); font-size: 12px; line-height: 1.4; }
+.fairness { margin-top: 0; }

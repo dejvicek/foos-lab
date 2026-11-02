@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe('kontrola rozpisu v nastavení tréninku', () => {
-  it('admin: v kroku Disciplíny spoluhráči a soupeři, nápověda kolik kol přidat a tlačítko, které je přidá', async () => {
+  it('v kroku Disciplíny spoluhráči a soupeři, nápověda kolik kol přidat a tlačítko, které je přidá', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players, trainings: [t] });
     render(<App repo={repo} auth={auth(true)} />);
@@ -41,11 +41,27 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].plan.normal).toBe(1 + k));
   });
 
-  it('organizátor, který není admin, ji v nastavení nevidí', async () => {
+  it('vidí ji i organizátor (kdo trénink zakládá), je nahoře v kroku Disciplíny a bez věty o adminovi', async () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players, trainings: [t] })} auth={auth(false, 'id2')} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await openSettings(user, 'Disciplíny');
-    expect(screen.queryByText('Kontrola rozpisu: kdo s kým kolikrát')).toBeNull();
+    const summary = screen.getByText('Kontrola rozpisu: kdo s kým kolikrát');
+    const picker = screen.getByRole('checkbox', { name: 'Normální leg' });
+    expect(summary.compareDocumentPosition(picker) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(summary);
+    expect(screen.queryByText(/Vidí jen admin/)).toBeNull();
+  });
+
+  it('náhled plánu ukazuje, kdo proti komu hraje (u cvičení skupiny) a kdo je mimo stůl', async () => {
+    const user = userEvent.setup();
+    render(<App repo={memoryRepository({ players, trainings: [{ ...t, plan: { warmupPasses: 1, normal: 1 } }] })} auth={auth(true)} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Disciplíny');
+    const items = within(screen.getByRole('list', { name: 'Náhled plánu' })).getAllByRole('listitem');
+    const match = items.find((li) => li.textContent?.includes('Normální leg'))!;
+    expect(match.querySelector('.pp-who')!.textContent).toMatch(/^H\d \+ H\d vs H\d \+ H\d · H\d vs H\d$/);
+    const drill = items.find((li) => li.textContent?.includes('Přihrávky na pětce'))!;
+    expect(drill.querySelector('.pp-who')!.textContent).toMatch(/^H\d, H\d · H\d, H\d · H\d, H\d$/);
   });
 });

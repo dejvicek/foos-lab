@@ -24,12 +24,10 @@ interface Props {
   onAddPlayer(name: string): { id: PlayerId; players: Player[] } | { error: RosterError };
   onFinish(t: Training): void;
   onCancel(): void;
-  /** Admin: kontrola rozpisu (kdo s kým kolikrát) v kroku Disciplíny. */
-  admin?: boolean;
 }
 
 /** PRD 7: založení / úprava tréninku v krocích Kdy a kde → Přítomní → Disciplíny → Shrnutí. */
-export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel, admin }: Props) {
+export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel }: Props) {
   const [draft, setDraft] = useState(initial);
   // Týmy pro simulaci a pořadí se nastavují v tréninku před zahájením simulace.
   const steps: StepId[] = ['when', 'who', ...(draft.format === 'custom' ? (['disc'] as const) : []), 'sum'];
@@ -63,17 +61,15 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
       case 'disc':
         return (
           <>
+            <FairnessPanel
+              training={draft}
+              names={Object.fromEntries(byId)}
+              onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
+            />
             <div className="wizard-disc">
               <DisciplinePicker training={draft} open bare onChange={change} />
-              <PlanPreview training={draft} onChange={change} />
+              <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} />
             </div>
-            {admin && (
-              <FairnessPanel
-                training={draft}
-                names={Object.fromEntries(byId)}
-                onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
-              />
-            )}
           </>
         );
       case 'sum': {

@@ -31,7 +31,6 @@ export function NewTrainingPage({ store, navigate, viewer }: { store: AppStore; 
       initial={initial}
       mode="new"
       players={store.data.players}
-      admin={viewer.isAdmin}
       onAddPlayer={rosterAdd(store)}
       onCancel={() => navigate({ page: 'trainings' })}
       onFinish={(t) => {
@@ -53,7 +52,6 @@ export function EditTrainingPage({ store, id, navigate, viewer }: { store: AppSt
       initial={training}
       mode="edit"
       players={store.data.players}
-      admin={viewer.isAdmin}
       onAddPlayer={rosterAdd(store)}
       onCancel={() => navigate({ page: 'training', id })}
       onFinish={(t) => {
