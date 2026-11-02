@@ -716,7 +716,9 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .timing-hint { margin: 0; color: var(--felt); font-weight: 700; font-size: 13px; }
 
 /* ── Notebook: Moje hra a Živě využijí šířku (kontrola 2. 11. 2026) ── */
-.my-table { max-width: 980px; }
+/* Moje hra: úzký sloupec na střed (jeden stůl, nemá smysl ho roztahovat). */
+.view-my { max-width: 640px; margin: 0 auto; }
+.view-my .my-table { max-width: none; }
 /* V Moje hra je jen můj stůl → vždy jeden sloupec přes celou šířku karty. */
 .my-table .entry-cards:has(.picker),
 .my-table .entry-cards:has(.drill-line) { grid-template-columns: 1fr; }
@@ -728,7 +730,7 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
   .active-queue li { break-inside: avoid; }
 }
 /* Řádek hráče ve cvičení: číslo hned u jména, průběh a tlačítka za ním. */
-.drill-line { grid-template-columns: minmax(90px, 220px) 64px minmax(0, 1fr) auto auto auto; }
+.drill-line { grid-template-columns: minmax(90px, 140px) 64px auto auto auto auto; justify-content: start; }
 .drill-line .drill-progress { white-space: normal; }
 @media (max-width: 520px) {
   .drill-line { grid-template-columns: minmax(80px, 1fr) 60px auto auto auto; }

@@ -242,7 +242,7 @@ export function TrainingPage({
 
   if (view === 'my')
     return (
-      <section>
+      <section className="view-my">
         {viewHead('Moje hra')}
         {schedule && attends ? (
           <MyTable
