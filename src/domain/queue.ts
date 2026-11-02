@@ -1,5 +1,5 @@
 import { resolveRange, type LadderRange, type LadderView } from './ladder';
-import type { Match, PlayerId, PlayTimes, Schedule, Training } from './types';
+import type { Match, PlayerId, PlayTimes, Schedule, ScheduleRow, Training } from './types';
 
 /**
  * Aktivní utkání a Zdržovači (PRD 4.8). Fronta = pořadí z rozpisu; utkání je aktivní, když jsou
@@ -27,8 +27,13 @@ export interface ItemState {
   waitingFor?: 'training' | 'pause';
 }
 
-/** ID utkání ve cvičení: kolo, stůl a hráči skupiny (hráči v ID kvůli právům zápisu jako u zápasů). */
-export const drillItemId = (label: string, table: number, players: PlayerId[]) => `drill|${label}|${table}|${players.join('+')}`;
+/**
+ * ID utkání ve cvičení: kolo, stůl a hráči skupiny (hráči v ID kvůli právům zápisu jako u zápasů).
+ * Kolo je v ID ve stálém tvaru „Kolo N“ (tak se ukládalo před přejmenováním na „N. kolo“),
+ * u klasických řádků bez čísla kola jejich název.
+ */
+export const drillItemId = (row: Pick<ScheduleRow, 'label' | 'roundNo'>, table: number, players: PlayerId[]) =>
+  `drill|${row.roundNo !== undefined ? `Kolo ${row.roundNo}` : row.label}|${table}|${players.join('+')}`;
 
 /** Fronta utkání z rozpisu: kolo po kole, stůl po stole; pauzy jako přehrady; závěrečný zápis se nepočítá. */
 export function queueOf(s: Schedule): QueueEntry[] {
@@ -44,7 +49,7 @@ export function queueOf(s: Schedule): QueueEntry[] {
       if (c.type === 'match')
         out.push({ kind: 'item', id: c.match.id, players: [...c.match.sideA, ...c.match.sideB], table: j + 1, label: row.label, group: false, match: c.match });
       else if (c.players.length)
-        out.push({ kind: 'item', id: drillItemId(row.label, j + 1, c.players), players: c.players, table: j + 1, label: row.label, group: true });
+        out.push({ kind: 'item', id: drillItemId(row, j + 1, c.players), players: c.players, table: j + 1, label: row.label, group: true });
     });
   });
   return out;

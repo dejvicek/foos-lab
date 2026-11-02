@@ -24,4 +24,7 @@ export async function openSettings(user: UserEvent, step: string) {
   await user.click(stepButton(step));
 }
 
+/** Panel „Týmy pro simulaci“ v tréninku (před zahájením simulace). */
+export const openTeams = (user: UserEvent) => user.click(screen.getByText('Týmy pro simulaci', { selector: 'strong' }));
+
 export const saveSettings = (user: UserEvent) => user.click(screen.getByRole('button', { name: 'Uložit změny' }));

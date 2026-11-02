@@ -121,7 +121,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     roundNo++;
     const def = discipline(item.discipline!);
     const kind = def.kind === 'drill' ? 'drills' : def.kind === 'match' ? 'matches' : 'sim';
-    const label = `Kolo ${roundNo}`;
+    const label = `${roundNo}. kolo`;
     const rule = `${def.name}, ${def.min} min`;
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 

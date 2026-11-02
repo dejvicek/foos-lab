@@ -4,7 +4,7 @@ import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import { autoPlan, DEFAULT_SELECTION } from '../../domain/plan';
 import type { Player, Training } from '../../domain/types';
-import { openSettings, saveSettings } from '../../test/wizard';
+import { openSettings, openTeams, saveSettings } from '../../test/wizard';
 
 const players = (n: number): Player[] => Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
 const custom = (n: number, tables: 2 | 3 | 4, over: Partial<Training> = {}): Training => ({
@@ -50,11 +50,11 @@ describe('pauzy v rozpisu (notebook, správce)', () => {
     const { repo } = await setup(custom(8, 4, { breaks: [{ after: 5, min: 10 }] }));
     const handle = within(pauseRows()[0]).getByRole('button', { name: 'Přesunout pauzu' });
     fireEvent.dragStart(handle, { dataTransfer: { setData() {}, effectAllowed: '' } });
-    fireEvent.dragOver(rowOf('Kolo 3'), { clientY: 0 });
-    expect(rowOf('Kolo 3')).toHaveClass('drop-before');
-    fireEvent.drop(rowOf('Kolo 3'), { clientY: 0 });
+    fireEvent.dragOver(rowOf('3. kolo'), { clientY: 0 });
+    expect(rowOf('3. kolo')).toHaveClass('drop-before');
+    fireEvent.drop(rowOf('3. kolo'), { clientY: 0 });
     await vi.waitFor(() => expect(saved(repo)).toEqual([{ after: 2, min: 10 }]));
-    expect(rowOf('Kolo 3').previousElementSibling).toHaveTextContent('Pauza');
+    expect(rowOf('3. kolo').previousElementSibling).toHaveTextContent('Pauza');
   });
 
   it('prázdné sloupce stolů se nezobrazují', async () => {
@@ -87,14 +87,41 @@ describe('pauzy na telefonu', () => {
 });
 
 describe('náhodné pořadí', () => {
-  it('tlačítko v kroku Pořadí a týmy zamíchá přítomné', async () => {
+  it('tlačítko v panelu Týmy pro simulaci zamíchá přítomné', async () => {
     const { repo, user } = await setup(custom(8, 4));
     const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
-    await openSettings(user, 'Pořadí a týmy');
+    await openTeams(user);
     await user.click(screen.getByRole('button', { name: 'Náhodné pořadí' }));
     spy.mockRestore();
-    await saveSettings(user);
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].attendees).not.toEqual(players(8).map((p) => p.id)));
     expect([...repo.snapshot().trainings[0].attendees].sort()).toEqual(players(8).map((p) => p.id).sort());
+  });
+});
+
+describe('pauzy v průvodci (krok Disciplíny)', () => {
+  it('přidat, délka, šipky, přetažení a odebrání pauzy v náhledu plánu; uloží se se změnami', async () => {
+    const { repo, user } = await setup(custom(8, 4, { breaks: [] }));
+    await openSettings(user, 'Disciplíny');
+    const plan = () => screen.getByRole('list', { name: 'Náhled plánu' });
+    const pauses = () => within(plan()).queryAllByRole('listitem').filter((li) => li.textContent?.includes('Pauza'));
+    expect(pauses()).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: '+ Přidat pauzu' }));
+    expect(pauses()).toHaveLength(1);
+    await user.selectOptions(within(pauses()[0]).getByRole('combobox', { name: 'Délka pauzy' }), '15');
+    const before = within(plan()).getAllByRole('listitem').indexOf(pauses()[0]);
+    await user.click(within(pauses()[0]).getByRole('button', { name: 'Pauzu o kolo dřív' }));
+    expect(within(plan()).getAllByRole('listitem').indexOf(pauses()[0])).toBe(before - 1);
+    // přetažení před 3. kolo
+    const third = within(plan()).getAllByRole('listitem').find((li) => li.textContent?.includes('3. kolo'))!;
+    fireEvent.dragStart(pauses()[0], { dataTransfer: { setData() {}, effectAllowed: '' } });
+    fireEvent.dragOver(third, { clientY: 0 });
+    fireEvent.drop(third, { clientY: 0 });
+    const thirdNow = within(plan()).getAllByRole('listitem').find((li) => li.textContent?.includes('3. kolo'))!;
+    expect(thirdNow.previousElementSibling).toHaveTextContent('Pauza');
+    await saveSettings(user);
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].breaks).toEqual([{ after: 2, min: 15 }]));
+    await openSettings(user, 'Disciplíny');
+    await user.click(within(pauses()[0]).getByRole('button', { name: 'Odebrat pauzu' }));
+    expect(pauses()).toHaveLength(0);
   });
 });

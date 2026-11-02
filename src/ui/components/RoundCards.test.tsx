@@ -40,7 +40,7 @@ describe('Celý rozpis na telefonu – karty kol', () => {
   it('kolo je karta s časem a pravidlem; rozbalená ukáže stoly, můj stůl podbarvený', async () => {
     const user = userEvent.setup();
     render(<Harness />);
-    const kolo1 = screen.getByRole('button', { name: /^19:00 Kolo 1/ });
+    const kolo1 = screen.getByRole('button', { name: /^19:00 1. kolo/ });
     expect(kolo1).toHaveAttribute('aria-expanded', 'false');
     await user.click(kolo1);
     const card = kolo1.closest('article')!;
@@ -54,8 +54,8 @@ describe('Celý rozpis na telefonu – karty kol', () => {
   it('ťuknutí na stůl otevře zrcadlo stolu, góly se ťukají', async () => {
     const user = userEvent.setup();
     render(<Harness me="id5" />);
-    await user.click(screen.getByRole('button', { name: /^19:00 Kolo 1/ }));
-    const card = screen.getByRole('button', { name: /^19:00 Kolo 1/ }).closest('article')!;
+    await user.click(screen.getByRole('button', { name: /^19:00 1. kolo/ }));
+    const card = screen.getByRole('button', { name: /^19:00 1. kolo/ }).closest('article')!;
     // můj stůl (2) je otevřený rovnou
     expect(within(card).getByRole('button', { name: /^Gól vlevo \(H5 \+ H6\)/ })).toBeInTheDocument();
     await user.click(within(card).getByRole('button', { name: /^Stůl 1/ }));
@@ -70,8 +70,8 @@ describe('Celý rozpis na telefonu – karty kol', () => {
   it('cizí stůl jde otevřít jen ke čtení', async () => {
     const user = userEvent.setup();
     render(<Harness me="id5" canMatch={(m) => m.sideA.includes('id5') || m.sideB.includes('id5')} />);
-    await user.click(screen.getByRole('button', { name: /^19:00 Kolo 1/ }));
-    const card = screen.getByRole('button', { name: /^19:00 Kolo 1/ }).closest('article')!;
+    await user.click(screen.getByRole('button', { name: /^19:00 1. kolo/ }));
+    const card = screen.getByRole('button', { name: /^19:00 1. kolo/ }).closest('article')!;
     await user.click(within(card).getByRole('button', { name: /^Stůl 1/ }));
     expect(within(card).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
   });

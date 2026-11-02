@@ -40,14 +40,14 @@ describe('konfigurovatelný trénink v UI', () => {
     expect(screen.getByRole('checkbox', { name: 'Řetězec' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Zeď' })).toBeChecked();
     // náhled plánu vedle výběru: kolo = jedna disciplína
-    expect(within(preview()).getAllByRole('listitem')[0]).toHaveTextContent('Kolo 1Přihrávky na pětce');
+    expect(within(preview()).getAllByRole('listitem')[0]).toHaveTextContent('1. koloPřihrávky na pětce');
     await user.click(stepButton('Kdy a kde'));
     expect(screen.getByLabelText('Délka tréninku')).toHaveValue('180');
     expect(screen.queryByLabelText('Typ tréninku')).toBeNull();
     while (screen.queryByRole('button', { name: /^Další:/ })) await next(user);
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
-    expect(await screen.findByRole('button', { name: 'Kolo 1' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Kolo 1' }).closest('tr')).toHaveTextContent('Přihrávky na pětce');
+    expect(await screen.findByRole('button', { name: '1. kolo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1. kolo' }).closest('tr')).toHaveTextContent('Přihrávky na pětce');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0]).toMatchObject({ format: 'custom', durationMin: 180 }));
   });
 
@@ -68,21 +68,21 @@ describe('konfigurovatelný trénink v UI', () => {
 
   it('zápis výsledku zamkne kola; pozdní hráč je nezmění', async () => {
     const { user, repo } = await newTraining(8);
-    await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
-    const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
+    await user.click(screen.getByRole('button', { name: '6. kolo' }));
+    const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
     fireEvent.click(within(card).getByRole('button', { name: 'Zahájit' }));
-    fireEvent.click(within(card).getByRole('button', { name: 'Kolo 6, stůl 1: góly vlevo 6' }));
+    fireEvent.click(within(card).getByRole('button', { name: '6. kolo, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
     // jen jména stran (karta obsahuje i běžící stopky)
-    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!.querySelector('.pick-names')!.textContent;
+    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!.querySelector('.pick-names')!.textContent;
     // pozdní příchod: nový hráč v nastavení
     await openSettings(user, 'Přítomní');
     await user.type(screen.getByLabelText('Jméno nového hráče'), 'Pozdní');
     await user.click(screen.getByRole('button', { name: 'Přidat a zaškrtnout' }));
     await saveSettings(user);
-    if (screen.getByRole('button', { name: 'Kolo 6' }).getAttribute('aria-expanded') !== 'true')
-      await user.click(screen.getByRole('button', { name: 'Kolo 6' }));
-    const again = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('Kolo 6, stůl 1'))!;
+    if (screen.getByRole('button', { name: '6. kolo' }).getAttribute('aria-expanded') !== 'true')
+      await user.click(screen.getByRole('button', { name: '6. kolo' }));
+    const again = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
     expect(again.querySelector('.pick-names')!.textContent).toBe(before);
     expect(again.textContent).not.toContain('Pozdní');
   });

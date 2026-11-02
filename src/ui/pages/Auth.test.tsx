@@ -69,11 +69,11 @@ describe('přihlášení', () => {
     expect(mine).toHaveTextContent('Milan');
 
     await userEvent.setup().click(screen.getByRole('tab', { name: 'Celý rozpis' }));
-    const rowToggles = screen.getAllByRole('button').filter((b) => /^Kolo \d+$/.test(b.textContent ?? ''));
+    const rowToggles = screen.getAllByRole('button').filter((b) => /^\d+\. kolo$/.test(b.textContent ?? ''));
     // v zápasovém kole: vlastní zápas zapisovatelný, cizí jen ke čtení
     const matchRound = rowToggles.find((b) => b.closest('tr')?.textContent?.includes('Normální leg'))!;
     await userEvent.setup().click(matchRound);
-    const groups = screen.getAllByRole('group').filter((g) => /^Kolo \d+, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
+    const groups = screen.getAllByRole('group').filter((g) => /^\d+\. kolo, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
     for (const g of groups) {
       // trénink nezahájil organizátor: hráč nezahájí ani nezapíše nic, ani u svého stolu
       expect(within(g).queryByRole('button', { name: 'Zahájit' })).toBeNull();

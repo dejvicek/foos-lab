@@ -60,3 +60,11 @@ export function setBreakMin<X extends T>(t: X, i: number, min: number): X {
   if (!list[i]) return t;
   return withBreaks(t, list.map((b, j) => (j === i ? { ...b, min } : b)));
 }
+
+/** Kam se pauza posune šipkou: nejbližší volné místo dřív / později (null = nikam). */
+export function stepTarget(t: T, i: number, dir: -1 | 1): number | null {
+  if (!breakMovable(t, i)) return null;
+  const at = breaksOf(t)[i]?.after ?? 0;
+  const free = freeSlots(t, i).filter((a) => (dir < 0 ? a < at : a > at));
+  return free.length ? (dir < 0 ? free[free.length - 1] : free[0]) : null;
+}

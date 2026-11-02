@@ -215,7 +215,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           if (!c.metric) return null;
           const def = soloMetric(c.metric);
           const gkey = soloKey(c.metric, c.soloRound);
-          const gtmr = timer(drillItemId(row.label, j + 1, c.players), c.players, c.players.some((p) => training.soloResults[p]?.[gkey] !== undefined));
+          const gtmr = timer(drillItemId(row, j + 1, c.players), c.players, c.players.some((p) => training.soloResults[p]?.[gkey] !== undefined));
           const canP = (p: PlayerId) => canSolo(c.players, p) && gtmr.open;
           if (tap) {
             const key = gkey;

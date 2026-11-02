@@ -9,10 +9,10 @@ describe('now', () => {
     expect(minutesSinceStart('2026-10-30', '18:00', new Date(2026, 9, 31, 19, 21))).toBeNull();
   });
 
-  it('v 19:21 běží Kolo 3; před začátkem nic', () => {
+  it('v 19:21 běží 3. kolo; před začátkem nic', () => {
     const s = buildSchedule({ mode: 'team', tables: 4, attendees: H(8) });
     const ref = currentRow(s, 81)!;
-    expect(s.sections[ref.section].rows[ref.row].label).toBe('Kolo 3');
+    expect(s.sections[ref.section].rows[ref.row].label).toBe('3. kolo');
     expect(currentRow(s, -5)).toBeNull();
     expect(currentRow(s, null)).toBeNull();
   });
@@ -38,7 +38,7 @@ describe('výchozí rozbalený blok', () => {
     expect(label(defaultOpenRow(s, t, 181))).toBe('Rozehrání s počítáním');
   });
   it('během kola je rozbalené to kolo', () => {
-    expect(label(defaultOpenRow(s, t, 81))).toBe('Kolo 3');
+    expect(label(defaultOpenRow(s, t, 81))).toBe('3. kolo');
   });
 });
 
@@ -48,8 +48,8 @@ describe('štítek tréninku v seznamu', () => {
     expect(liveTag(t, 'H1', new Date(2026, 9, 30, 19, 21))).toBeNull();
     expect(liveTag(t, 'H1', new Date(2026, 9, 31, 17, 30))).toBe('Hraješ, začátek v 18:00');
     expect(liveTag(t, 'X', new Date(2026, 9, 31, 17, 30))).toBe('Dnes v 18:00');
-    expect(liveTag(t, 'H1', new Date(2026, 9, 31, 19, 21))).toBe('Hraješ – Kolo 3 právě běží');
-    expect(liveTag(t, null, new Date(2026, 9, 31, 19, 21))).toBe('Kolo 3 právě běží');
+    expect(liveTag(t, 'H1', new Date(2026, 9, 31, 19, 21))).toBe('Hraješ – 3. kolo právě běží');
+    expect(liveTag(t, null, new Date(2026, 9, 31, 19, 21))).toBe('3. kolo právě běží');
     expect(liveTag(t, 'H1', new Date(2026, 9, 31, 23, 50))).toBe('Dnes, dohráno');
   });
 });

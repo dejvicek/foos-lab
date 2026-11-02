@@ -11,12 +11,12 @@ const names = (items: { name: string }[]) => items.map((i) => i.name);
 
 describe('vysvětlivky u bloků', () => {
   it('kolo 3: Zeď; obecně Každý gól se počítá a Role rozhodčího', () => {
-    const e = explanationsFor(rowByLabel(team, 'Kolo 3'));
+    const e = explanationsFor(rowByLabel(team, '3. kolo'));
     expect(names(e.main)).toEqual(['Zeď']);
     expect(names(e.general)).toEqual(['Každý gól se počítá', 'Role rozhodčího']);
   });
   it('kolo 5: Start 0:3 a Daň za ztrátu', () => {
-    expect(names(explanationsFor(rowByLabel(team, 'Kolo 5')).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
+    expect(names(explanationsFor(rowByLabel(team, '5. kolo')).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
   });
   it('stanoviště: u každého stolu jeho stanoviště', () => {
     const e = explanationsFor(rowByLabel(team, 'Stanoviště, rotace 1'));

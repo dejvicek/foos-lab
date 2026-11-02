@@ -33,15 +33,15 @@ describe('Aktivní utkání', () => {
     expect(within(board).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('trénink ještě nezačal');
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
     const t1 = within(board).getByRole('group', { name: 'Stůl 1' });
-    expect(t1).toHaveTextContent('Kolo 1');
+    expect(t1).toHaveTextContent('1. kolo');
     expect(t1).toHaveTextContent('čeká na zahájení'); // plánovaný začátek 18:00 nehraje roli
-    expect(within(board).getByRole('list', { name: 'Další v pořadí' })).toHaveTextContent('Kolo 2');
+    expect(within(board).getByRole('list', { name: 'Další v pořadí' })).toHaveTextContent('2. kolo');
     await user.click(within(t1).getByRole('button', { name: 'Zahájit' }));
     expect(t1).toHaveTextContent('hraje');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.startedAt).toBe(at(18, 3)));
     vi.setSystemTime(new Date(2026, 10, 2, 18, 11));
     await user.click(within(t1).getByRole('button', { name: 'Ukončit' }));
-    expect(within(board).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('Kolo 2');
+    expect(within(board).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('2. kolo');
   });
 });
 
@@ -123,7 +123,7 @@ describe('pauza řízená organizátorem', () => {
     await user.click(within(bar).getByRole('button', { name: 'Zahájit pauzu' }));
     expect(screen.getByRole('status')).toHaveTextContent('zbývá 10:00');
     await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Spustit další kolo hned' }));
-    expect(within(screen.getByRole('region', { name: 'Aktivní utkání' })).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('Kolo 2');
+    expect(within(screen.getByRole('region', { name: 'Aktivní utkání' })).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('2. kolo');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.['pause|0']).toEqual({ startedAt: at(18, 3), endedAt: at(18, 3) }));
   });
 });

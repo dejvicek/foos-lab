@@ -9,10 +9,10 @@ import { MODE_LABEL, plural } from '../format';
 import { prepareEdit } from '../trainingEdit';
 import { DisciplinePicker, hm } from './DisciplinePicker';
 import { PlanPreview } from './PlanPreview';
-import { AttendanceFields, OrderTeamsFields, SPLIT_TEXT, simOn, WhenFields } from './TrainingSetup';
+import { AttendanceFields, WhenFields } from './TrainingSetup';
 
-type StepId = 'when' | 'who' | 'disc' | 'order' | 'sum';
-const TITLES: Record<StepId, string> = { when: 'Kdy a kde', who: 'Přítomní', disc: 'Disciplíny', order: 'Pořadí a týmy', sum: 'Shrnutí' };
+type StepId = 'when' | 'who' | 'disc' | 'sum';
+const TITLES: Record<StepId, string> = { when: 'Kdy a kde', who: 'Přítomní', disc: 'Disciplíny', sum: 'Shrnutí' };
 
 interface Props {
   initial: Training;
@@ -25,10 +25,11 @@ interface Props {
   onCancel(): void;
 }
 
-/** PRD 7: založení / úprava tréninku v krocích Kdy a kde → Přítomní → Disciplíny → Pořadí a týmy → Shrnutí. */
+/** PRD 7: založení / úprava tréninku v krocích Kdy a kde → Přítomní → Disciplíny → Shrnutí. */
 export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel }: Props) {
   const [draft, setDraft] = useState(initial);
-  const steps: StepId[] = ['when', 'who', ...(draft.format === 'custom' ? (['disc'] as const) : []), 'order', 'sum'];
+  // Týmy pro simulaci a pořadí se nastavují v tréninku před zahájením simulace.
+  const steps: StepId[] = ['when', 'who', ...(draft.format === 'custom' ? (['disc'] as const) : []), 'sum'];
   const [stepId, setStepId] = useState<StepId>(mode === 'new' ? 'when' : 'sum');
   const [reached, setReached] = useState(mode === 'edit' ? steps.length - 1 : 0);
   const step = Math.max(0, steps.indexOf(stepId));
@@ -60,11 +61,9 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
         return (
           <div className="wizard-disc">
             <DisciplinePicker training={draft} open bare onChange={change} />
-            <PlanPreview training={draft} />
+            <PlanPreview training={draft} onChange={change} />
           </div>
         );
-      case 'order':
-        return <OrderTeamsFields training={draft} currentTeams={ready ? buildSchedule(draft).teams : null} players={players} onChange={change} />;
       case 'sum': {
         const rounds = ready ? buildSchedule(draft).sections.flatMap((s) => s.rows).filter((r) => r.kind !== 'break').length : 0;
         const line = (id: StepId, text: string) => (
@@ -85,7 +84,6 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
             {line('who', `${n} ${plural(n, 'hráč', 'hráči', 'hráčů')}: ${draft.attendees.map((p) => byId.get(p) ?? '?').join(', ')}`)}
             {draft.format === 'custom' &&
               line('disc', `${rounds} ${plural(rounds, 'kolo', 'kola', 'kol')}, naplánováno ${hm(plannedMinutes(draft.plan, n, draft.breaks))} z ${hm(draft.durationMin)}`)}
-            {line('order', simOn(draft) ? `týmy ${SPLIT_TEXT[draft.simSplit]}` : 'bez simulace')}
           </div>
         );
       }

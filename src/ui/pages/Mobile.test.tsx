@@ -24,7 +24,7 @@ describe('telefon', () => {
     render(<App repo={memoryRepository({ players, trainings: [training] })} />);
     const cards = await screen.findByLabelText('Rozpis tréninku');
     expect(screen.queryByRole('table', { name: 'Rozpis tréninku' })).toBeNull();
-    await userEvent.setup().click(within(cards).getByRole('button', { name: /^19:00 Kolo 1/ }));
+    await userEvent.setup().click(within(cards).getByRole('button', { name: /^19:00 1. kolo/ }));
     expect(within(cards).getAllByRole('button', { name: /^Stůl \d/ })).toHaveLength(2);
   });
 });
@@ -43,16 +43,15 @@ describe('telefon – žebříček', () => {
 });
 
 describe('telefon – nastavení tréninku', () => {
-  it('nastavení je průvodce v krocích „Krok N z 5“ se shrnutím na konci', async () => {
+  it('nastavení je průvodce v krocích „Krok N z 4“ se shrnutím na konci', async () => {
     const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };
     window.location.hash = '#/trenink/t1';
     render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Upravit nastavení' }));
-    expect(screen.getByText('Krok 5 z 5 · Shrnutí')).toBeInTheDocument();
+    expect(screen.getByText('Krok 4 z 4 · Shrnutí')).toBeInTheDocument();
     expect(screen.getByText(/18:00, 3:00, 4 stoly/)).toBeInTheDocument();
-    expect(screen.getByText('týmy podle nominačního pořadí')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Upravit: Přítomní' }));
-    expect(screen.getByText('Krok 2 z 5 · Přítomní')).toBeInTheDocument();
+    expect(screen.getByText('Krok 2 z 4 · Přítomní')).toBeInTheDocument();
   });
 });

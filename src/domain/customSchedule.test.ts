@@ -1,9 +1,10 @@
 import { buildSchedule } from './schedule';
 import { autoPlan, DEFAULT_SELECTION } from './plan';
-import type { ScheduleRow, Training } from './types';
+import type { ScheduleRow, TableCount, Training } from './types';
+import { newTraining } from './training';
 import { H } from '../test/fixtures';
 
-const custom = (n: number, tables: 2 | 3 | 4, over: Partial<Training> = {}): Training => ({
+const custom = (n: number, tables: TableCount, over: Partial<Training> = {}): Training => ({
   id: 'c',
   date: '2026-11-01',
   startTime: '18:00',
@@ -38,11 +39,11 @@ describe('rozpis konfigurovatelného tréninku', () => {
 
   it('cvičení: dvojice, klíč výsledku s číslem kola, ID zápasů s číslem kola', () => {
     const r = playRows(custom(8, 4));
-    expect(r[0].label).toBe('Kolo 1');
+    expect(r[0].label).toBe('1. kolo');
     expect(r[0].cells[0]).toMatchObject({ type: 'group', metric: 'warmupPasses', soloRound: 1, discipline: 'warmupPasses' });
     const firstMatch = r.find((x) => x.cells.some((c) => c?.type === 'match'))!;
     const m = firstMatch.cells.find((c) => c?.type === 'match');
-    expect(m?.type === 'match' && m.match.id.startsWith(`league|${firstMatch.label.split(' ')[1]}|1|`)).toBe(true);
+    expect(m?.type === 'match' && m.match.id.startsWith(`league|${firstMatch.roundNo}|1|`)).toBe(true);
   });
 
   it('zamčená kola se nemění, když přibude hráč', () => {
@@ -88,4 +89,8 @@ describe('ztráty v konfigurovatelném tréninku', () => {
     expect(league.some((m) => m.discipline === 'start03')).toBe(true);
     expect(s.matches.filter((m) => m.block === 'sim').every((m) => !m.trackLosses)).toBe(true);
   });
+});
+
+it('nový trénink má dnešní datum', () => {
+  expect(newTraining('x', '2026-11-03', custom(8, 4, { date: '2026-10-01' }), null).date).toBe('2026-11-03');
 });

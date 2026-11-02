@@ -151,7 +151,7 @@ function buildTeam(input: ScheduleInput): Schedule {
   ROUNDS.forEach((rd, k) => {
     const a = assign(rotate(players, k), tables, false);
     leagueRows.push(
-      matchRow('league', k + 1, a.tables, a.waiting, start, `Kolo ${k + 1}`, `${rd.name}, ${rd.min} min`, tables, matches, rd),
+      matchRow('league', k + 1, a.tables, a.waiting, start, `${k + 1}. kolo`, `${rd.name}, ${rd.min} min`, tables, matches, rd),
     );
     if (k === 0) {
       const d = a.tables.filter((x) => x.kind === 'doubles').length;
@@ -212,7 +212,7 @@ function buildSingles(players: PlayerId[], tables: TableCount): Schedule {
   let first = { singles: 0, waiting: 0 };
   ROUNDS.slice(0, 5).forEach((rd, k) => {
     const a = assign(rotate(players, k), tables, true);
-    rows.push(matchRow('league', k + 1, a.tables, a.waiting, start, `Kolo ${k + 1}`, `${rd.name}, ${rd.min} min`, tables, matches, rd));
+    rows.push(matchRow('league', k + 1, a.tables, a.waiting, start, `${k + 1}. kolo`, `${rd.name}, ${rd.min} min`, tables, matches, rd));
     if (k === 0) first = { singles: a.tables.length, waiting: a.waiting.length };
     start += rd.min + t.changeover;
   });

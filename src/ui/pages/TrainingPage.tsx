@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
+import { OrderTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
 import { TrainingTable, type BreakControls } from '../components/TrainingTable';
-import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
+import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from '../../domain/breaks';
 import { RoundCards } from '../components/RoundCards';
 import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
@@ -112,11 +113,8 @@ export function TrainingPage({
   const breakControls: BreakControls | undefined =
     manage && training.format === 'custom' && schedule
       ? (() => {
-          const nextSlot = (i: number, dir: -1 | 1) => {
-            const at = breaksOf(training)[i]?.after ?? 0;
-            const free = freeSlots(training, i).filter((a) => (dir < 0 ? a < at : a > at));
-            return free.length ? (dir < 0 ? free.at(-1)! : free[0]) : null;
-          };
+          const nextSlot = (i: number, dir: -1 | 1) => stepTarget(training, i, dir);
+
           return {
             list: breaksOf(training),
             movable: (i) => breakMovable(training, i),
@@ -138,6 +136,16 @@ export function TrainingPage({
   const canItem = (e: Extract<QueueEntry, { kind: 'item' }>) =>
     e.match ? canMatch(e.match) : manage || (!!viewer.playerId && e.players.includes(viewer.playerId));
   const delays = queueInfo ? delayStats(queueInfo.queue, queueInfo.states) : [];
+  // Týmy simulace: nastavují se v tréninku, dokud simulace nezačala (pak jsou zamčené).
+  const simItems = queueInfo?.queue.filter((e): e is Extract<QueueEntry, { kind: 'item' }> => e.kind === 'item' && e.match?.block === 'sim') ?? [];
+  const simStarted = simItems.some((e) => queueInfo!.states.get(e.id)?.startedAt !== undefined);
+  const teamsLocked = simStarted || (!!training.simTeams && training.simSplit !== 'manual');
+  const firstSim = queueInfo && simItems.length ? queueInfo.queue.indexOf(simItems[0]) : -1;
+  // Simulace je na řadě: všechno před ní už je zahájené → panel týmů se sám rozbalí.
+  const simNext =
+    firstSim >= 0 &&
+    !simStarted &&
+    queueInfo!.queue.slice(0, firstSim).every((e) => e.kind === 'pause' || queueInfo!.states.get(e.id)?.startedAt !== undefined);
   /** PRD 4.8: Zahájit / Ukončit u každého utkání; skóre jde zadat až po zahájení. */
   const itemTiming: ItemTiming | undefined = queueInfo
     ? {
@@ -232,6 +240,16 @@ export function TrainingPage({
           onStartPause={(id) => store.setPlayTime(training.id, id, { startedAt: Date.now() })}
           onNextRound={(id) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() })}
         />
+      )}
+
+      {manage && schedule?.teams && !teamsLocked && (
+        <details className="sim-setup no-print" open={simNext}>
+          <summary>
+            <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
+            <span className="muted"> – nastav před zahájením simulace</span>
+          </summary>
+          <OrderTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
+        </details>
       )}
 
       {schedule && queueInfo && tab === 'active' && (

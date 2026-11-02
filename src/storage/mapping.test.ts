@@ -45,7 +45,7 @@ describe('mapping', () => {
   });
 
   it('konfigurovatelný trénink tam a zpět (formát, délka, plán, zamčená kola, výsledky po kolech)', () => {
-    const row = { time: 0, label: 'Kolo 1', kind: 'groups' as const, cells: [null], waiting: [] };
+    const row = { time: 0, label: '1. kolo', kind: 'groups' as const, cells: [null], waiting: [] };
     const t: Training = {
       ...training,
       scores: {},
