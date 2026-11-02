@@ -35,9 +35,12 @@ export function myAssignments(s: Schedule, playerId: PlayerId): Assignment[] {
 
 const attends = (v: Viewer, t: Training) => v.playerId !== null && t.attendees.includes(v.playerId);
 
+/** Admin nebo zakladatel tréninku: nastavení, mazání a zápis všech výsledků. */
+export const canManage = (v: Viewer, t: Training): boolean => v.isAdmin || (!!t.createdBy && t.createdBy === v.playerId);
+
 /** Smí zapsat skóre zápasu? (zrcadlí can_write_score v databázi) */
 export function canWriteMatch(v: Viewer, m: Match, t: Training): boolean {
-  if (v.isAdmin) return true;
+  if (canManage(v, t)) return true;
   if (!attends(v, t)) return false;
   if ([...m.sideA, ...m.sideB].includes(v.playerId!)) return true;
   return t.format === 'custom' && m.referee === v.playerId;
@@ -45,7 +48,7 @@ export function canWriteMatch(v: Viewer, m: Match, t: Training): boolean {
 
 /** Smí zapsat výsledek cvičení hráče `playerId` ve skupině `group`? (zrcadlí can_write_solo) */
 export function canWriteSolo(v: Viewer, group: PlayerId[], playerId: PlayerId, t: Training): boolean {
-  if (v.isAdmin) return true;
+  if (canManage(v, t)) return true;
   if (!attends(v, t)) return false;
   if (playerId === v.playerId) return true;
   return t.format === 'custom' && group.includes(v.playerId!);

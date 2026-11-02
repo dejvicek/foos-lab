@@ -7,9 +7,10 @@ import type { Route } from '../useHashRoute';
 
 export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; navigate: (r: Route) => void; viewer: Viewer }) {
   const trainings = sortTrainings(store.data.trainings);
+  const names = new Map(store.data.players.map((p) => [p.id, p.name]));
 
   const create = () => {
-    const t = newTraining(store.newId(), todayIso(), trainings[0] ?? null);
+    const t = newTraining(store.newId(), todayIso(), trainings[0] ?? null, viewer.playerId);
     store.saveTraining(t);
     navigate({ page: 'training', id: t.id });
   };
@@ -17,15 +18,13 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
   return (
     <section>
       <h1>Trénink</h1>
-      {viewer.isAdmin && (
-        <div className="actions-row">
-          <button type="button" onClick={create}>
-            Nový trénink
-          </button>
-        </div>
-      )}
+      <div className="actions-row">
+        <button type="button" onClick={create}>
+          Nový trénink
+        </button>
+      </div>
       {trainings.length === 0 ? (
-        <p className="note">{viewer.isAdmin ? 'Zatím žádný trénink. Začni tlačítkem Nový trénink.' : 'Zatím žádný trénink.'}</p>
+        <p className="note">Zatím žádný trénink. Začni tlačítkem Nový trénink.</p>
       ) : (
         <ul className="training-list" aria-label="Uložené tréninky">
           {trainings.map((t) => {
@@ -36,6 +35,7 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
                   <span>{formatDateLong(t.date)}</span>
                   <span className="sub">
                     {MODE_LABEL[t.mode]}, {n} {plural(n, 'hráč', 'hráči', 'hráčů')}
+                    {t.createdBy && names.get(t.createdBy) ? `, založil ${names.get(t.createdBy)}` : ''}
                   </span>
                 </button>
               </li>

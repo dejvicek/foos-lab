@@ -4,7 +4,7 @@ import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
 
-export function newTraining(id: string, today: string, last: Training | null): Training {
+export function newTraining(id: string, today: string, last: Training | null, createdBy: PlayerId | null = null): Training {
   const prev = last?.format === 'custom' ? last : null;
   const tables = last?.tables ?? 4;
   const durationMin = prev?.durationMin ?? DEFAULT_DURATION;
@@ -24,6 +24,7 @@ export function newTraining(id: string, today: string, last: Training | null): T
     durationMin,
     plan: autoPlan(selection, durationMin, 0, tables),
     lockedRounds: [],
+    createdBy,
   };
 }
 

@@ -50,12 +50,11 @@ describe('přihlášení', () => {
     expect(auth.passwords.get('id2')).toBe('tajne123');
   });
 
-  it('hráč: žádné zakládání tréninků ani nastavení; „Můj stůl“; zapisuje jen své zápasy', async () => {
+  it('hráč v cizím tréninku: žádné nastavení; „Můj stůl“; zapisuje jen své zápasy', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     window.location.hash = '#/trenink';
     render(<App repo={memoryRepository({ players: roster, trainings: [training] })} auth={auth} />);
     await screen.findByRole('list', { name: 'Uložené tréninky' });
-    expect(screen.queryByRole('button', { name: 'Nový trénink' })).toBeNull();
     await userEvent.setup().click(screen.getByRole('list', { name: 'Uložené tréninky' }).querySelector('button')!);
     expect(await screen.findByRole('tab', { name: 'Můj stůl', selected: true })).toBeInTheDocument();
     expect(screen.queryByLabelText('Délka tréninku')).toBeNull();
@@ -91,5 +90,21 @@ describe('přihlášení', () => {
     expect(await screen.findByText('Heslo hráče Milan je zase jeho přezdívka.')).toBeInTheDocument();
     expect(auth.passwords.get('id2')).toBe('Milan');
     vi.restoreAllMocks();
+  });
+
+  it('hráč založí trénink a jako zakladatel ho spravuje; cizí trénink ne', async () => {
+    const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    const repo = memoryRepository({ players: roster, trainings: [{ ...training, createdBy: 'id1' }] });
+    window.location.hash = '#/trenink';
+    render(<App repo={repo} auth={auth} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+    expect(await screen.findByLabelText('Délka tréninku')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();
+    await vi.waitFor(() => expect(repo.snapshot().trainings.find((t) => t.id !== 't1')?.createdBy).toBe('id2'));
+
+    window.location.hash = '#/trenink/t1';
+    await vi.waitFor(() => expect(screen.queryByLabelText('Délka tréninku')).toBeNull());
+    expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull();
   });
 });

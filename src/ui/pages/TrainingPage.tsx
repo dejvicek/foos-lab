@@ -6,7 +6,7 @@ import { lostEntries, pruneEntries, replan, toggleAttendee, type LostEntries } f
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
-import { canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
+import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
 import { TrainingTable } from '../components/TrainingTable';
 import { currentRow, defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -59,7 +59,9 @@ export function TrainingPage({
   // null = výchozí (běžící / první nevyplněný blok), '' = vše sbalené, jinak klíč řádku
   const [expanded, setExpanded] = useState<string | null>(null);
   const attends = !!training && viewer.playerId !== null && training.attendees.includes(viewer.playerId);
-  const [tab, setTab] = useState<'mine' | 'all'>(() => (attends && !viewer.isAdmin ? 'mine' : 'all'));
+  const [tab, setTab] = useState<'mine' | 'all'>(() =>
+    attends && !viewer.isAdmin && training?.createdBy !== viewer.playerId ? 'mine' : 'all',
+  );
   if (!training) {
     return (
       <section>
@@ -95,10 +97,11 @@ export function TrainingPage({
     else store.saveTraining(next);
   };
 
+  const manage = canManage(viewer, training);
   const canMatch = (m: Match) => canWriteMatch(viewer, m, training);
   const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
   /** Uloží zamčení kol / týmů: admin přímo, hráč přes funkci na serveru. */
-  const persistLock = (next: Training) => (viewer.isAdmin ? store.saveTraining(next) : store.lockRounds(next));
+  const persistLock = (next: Training) => (manage ? store.saveTraining(next) : store.lockRounds(next));
   const onScore = (matchId: MatchId, sc: Score) => {
     // Jedno uložení: zamčení kol i týmů simulace (dvě by se navzájem přepsala).
     let next = withLocked(training, roundOfMatch(schedule!, matchId));
@@ -140,7 +143,7 @@ export function TrainingPage({
         {MODE_LABEL[training.mode]}, {training.attendees.length} {plural(training.attendees.length, 'hráč', 'hráči', 'hráčů')}, {training.tables} stoly
       </p>
 
-      {viewer.isAdmin && (
+      {manage && (
         <TrainingSetup
           training={training}
           currentTeams={schedule?.teams ?? null}
@@ -199,12 +202,12 @@ export function TrainingPage({
             scores={training.scores}
             attendees={training.attendees}
             names={names}
-            onClear={viewer.isAdmin ? () => store.updateTrainingConfig({ ...training, scores: {} }) : undefined}
+            onClear={manage ? () => store.updateTrainingConfig({ ...training, scores: {} }) : undefined}
           />
         </>
       )}
 
-      {viewer.isAdmin && (
+      {manage && (
       <div className="actions-row no-print">
         <button
           type="button"

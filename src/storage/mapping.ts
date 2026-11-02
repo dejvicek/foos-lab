@@ -21,6 +21,7 @@ export interface TrainingRow {
   duration_min: number | null;
   plan: Training['plan'] | null;
   locked_rounds: LockedRound[] | null;
+  created_by: string | null;
   mode: Mode;
   tables: number;
   attendees: string[];
@@ -69,6 +70,7 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   duration_min: t.durationMin,
   plan: t.plan,
   locked_rounds: t.lockedRounds,
+  created_by: t.createdBy ?? null,
   mode: t.mode,
   tables: t.tables,
   attendees: t.attendees,
@@ -104,6 +106,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     durationMin: r.duration_min ?? 180,
     plan: r.plan ?? {},
     lockedRounds: r.locked_rounds ?? [],
+    ...(r.created_by ? { createdBy: r.created_by } : {}),
   };
   if (r.notes !== null && r.notes !== undefined) t.notes = r.notes;
   return t;

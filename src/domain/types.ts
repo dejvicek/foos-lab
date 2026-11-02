@@ -71,6 +71,8 @@ export interface Training {
   plan: Partial<Record<DisciplineId, number>>;
   /** Zamčená (odehraná) kola – jejich sestavy se už nemění (custom). */
   lockedRounds: LockedRound[];
+  /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
+  createdBy?: PlayerId | null;
   notes?: string;
 }
 

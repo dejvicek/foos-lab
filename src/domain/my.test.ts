@@ -1,6 +1,6 @@
 import { buildSchedule } from './schedule';
 import { autoPlan } from './plan';
-import { canWriteMatch, canWriteSolo, myAssignments } from './my';
+import { canManage, canWriteMatch, canWriteSolo, myAssignments } from './my';
 import type { Match, Training } from './types';
 import { H, training } from '../test/fixtures';
 
@@ -52,5 +52,20 @@ describe('práva zápisu', () => {
     expect(canWriteSolo({ playerId: 'H3', isAdmin: false }, g, 'H2', t)).toBe(false);
     expect(canWriteSolo({ playerId: 'H1', isAdmin: false }, g, 'H1', { ...t, format: 'classic' })).toBe(true);
     expect(canWriteSolo({ playerId: 'H1', isAdmin: false }, g, 'H2', { ...t, format: 'classic' })).toBe(false);
+  });
+});
+
+describe('zakladatel tréninku', () => {
+  const t = { ...custom(9), createdBy: 'H9' };
+  const s = buildSchedule(t);
+  const m = s.matches.find((x) => x.block === 'league' && !x.sideA.includes('H9') && !x.sideB.includes('H9') && x.referee !== 'H9')! as Match;
+  it('zapisuje do všech zápasů a za kohokoli ve cvičení', () => {
+    expect(canWriteMatch({ playerId: 'H9', isAdmin: false }, m, t)).toBe(true);
+    expect(canWriteSolo({ playerId: 'H9', isAdmin: false }, ['H1', 'H2'], 'H1', t)).toBe(true);
+  });
+  it('spravuje jen svůj trénink', () => {
+    expect(canManage({ playerId: 'H9', isAdmin: false }, t)).toBe(true);
+    expect(canManage({ playerId: 'H1', isAdmin: false }, t)).toBe(false);
+    expect(canManage({ playerId: 'H1', isAdmin: true }, t)).toBe(true);
   });
 });
