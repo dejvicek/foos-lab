@@ -100,7 +100,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "střelec na trojce, soupeř brání brankou a dvojkou. 20 střel, před každou musí být míč zastavený. Střela z odrazu nebo z pohybu se nepočítá ani jako pokus."
+            "text": "střelec si nastaví míč na trojce, rozehraje ho (3 dotyky) a vystřelí z místa. Celý pokus do 15 s. Soupeř brání brankou a dvojkou. 20 pokusů."
           },
           {
             "label": "Počítá se:",
