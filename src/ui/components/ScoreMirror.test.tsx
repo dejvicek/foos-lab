@@ -134,7 +134,7 @@ describe('ScoreMirror', () => {
 });
 
 describe('DrillMirror – pokusy', () => {
-  const def = soloMetric('blockToControl'); // bloky do držení z 10
+  const def = soloMetric('looseBall'); // míče pod kontrolou z 10
   function DrillHarness({ log = [] as [string, boolean, number][], disabledFor = [] as string[], init = { a: { value: 7, attempts: 9 } } as Record<string, DrillValue> }) {
     const [v, setV] = useState<Record<string, DrillValue>>(init);
     return (
@@ -159,11 +159,11 @@ describe('DrillMirror – pokusy', () => {
     const user = userEvent.setup();
     const log: [string, boolean, number][] = [];
     render(<DrillHarness log={log} />);
-    expect(screen.getAllByRole('button', { name: /^do držení:/ })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: /^pod kontrolou:/ })).toHaveLength(3);
     const lavi = screen.getByRole('group', { name: 'Lavi' });
     expect(lavi).toHaveTextContent('pokus 0 / 10');
-    await user.click(within(lavi).getByRole('button', { name: 'do držení: Lavi' }));
-    await user.click(within(lavi).getByRole('button', { name: 'nechytil: Lavi' }));
+    await user.click(within(lavi).getByRole('button', { name: 'pod kontrolou: Lavi' }));
+    await user.click(within(lavi).getByRole('button', { name: 'nezachycený: Lavi' }));
     expect(lavi).toHaveTextContent('pokus 2 / 10');
     expect(lavi).toHaveTextContent('1');
     await user.click(screen.getByRole('button', { name: /Zpět/ }));
@@ -174,14 +174,14 @@ describe('DrillMirror – pokusy', () => {
     const user = userEvent.setup();
     render(<DrillHarness />);
     const milan = screen.getByRole('group', { name: 'Milan' });
-    await user.click(within(milan).getByRole('button', { name: 'do držení: Milan' }));
+    await user.click(within(milan).getByRole('button', { name: 'pod kontrolou: Milan' }));
     expect(milan).toHaveTextContent('Všechny pokusy: 8 z 10');
     expect(within(milan).queryByRole('button', { name: /: Milan$/ })).toBeNull();
   });
 
   it('za hráče, za kterého nesmím, jen ke čtení', () => {
     render(<DrillHarness disabledFor={['d']} />);
-    expect(within(screen.getByRole('group', { name: 'Luky' })).getByRole('button', { name: 'do držení: Luky' })).toBeDisabled();
+    expect(within(screen.getByRole('group', { name: 'Luky' })).getByRole('button', { name: 'pod kontrolou: Luky' })).toBeDisabled();
   });
 });
 

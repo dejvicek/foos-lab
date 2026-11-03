@@ -104,7 +104,7 @@ function groupRows(
       const gi = (((j - r) % g) + g) % g;
       cells.push(
         withStations
-          ? { type: 'group', players: gr[gi], station: STATIONS[j], metric: STATION_METRICS[j] }
+          ? { type: 'group', players: gr[gi], station: STATIONS[j], ...(STATION_METRICS[j] ? { metric: STATION_METRICS[j] } : {}) }
           : metric
             ? { type: 'group', players: gr[gi], metric }
             : { type: 'group', players: gr[gi] },

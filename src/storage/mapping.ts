@@ -1,5 +1,6 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
+import { DISCIPLINES } from '../domain/disciplines';
 import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef, PlayTime, PlayTimes, GameEvent } from '../domain/types';
 
 export { isEmptyScore };
@@ -92,6 +93,8 @@ function scoreFromRow(r: ScoreRow): Score {
   return s;
 }
 
+const KNOWN = new Set<string>(DISCIPLINES.map((d) => d.id));
+
 export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRow[], times: PlayTimeRow[] = [], events: EventRow[] = []): Training {
   const soloResults: SoloResults = {};
   const soloAttempts: SoloResults = {};
@@ -113,7 +116,8 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     simTeams: r.sim_teams ?? null,
     format: r.format === 'custom' ? 'custom' : 'classic',
     durationMin: r.duration_min ?? 180,
-    plan: r.plan ?? {},
+    // Odstraněné disciplíny (např. Obrana do držení, 3. 11. 2026) se z uloženého plánu vynechají.
+    plan: Object.fromEntries(Object.entries(r.plan ?? {}).filter(([id]) => KNOWN.has(id))) as Training['plan'],
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),

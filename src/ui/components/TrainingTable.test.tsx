@@ -61,7 +61,7 @@ describe('tabulka tréninku', () => {
     await user.clear(input);
     await user.type(input, '11');
     expect(input).toHaveValue(1);
-    expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 8');
+    expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 6'); // Obrana do držení už bez zápisu
   });
 
   it('změna začátku posune časy', async () => {

@@ -1,7 +1,7 @@
 import { DISCIPLINES, discipline } from './disciplines';
 import { autoPlan, DEFAULT_SELECTION, plannedMinutes, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
-import { soloMetric } from './solo';
+import { SOLO_METRICS, soloMetric } from './solo';
 import { newTraining, replan } from './training';
 import type { ScheduleRow, Training } from './types';
 import { H } from '../test/fixtures';
@@ -114,9 +114,8 @@ describe('Zachycení volného míče (3. 11. 2026)', () => {
   });
 });
 
-it('Obrana do držení je vyřazená (3. 11. 2026): nenabízí se, nový trénink ji nepřevezme, historie zůstává', () => {
-  expect(discipline('blockToControl').retired).toBe(true);
-  expect(DEFAULT_SELECTION).not.toContain('blockToControl');
-  expect(newTraining('n', '2026-11-04', custom(8, 4, { blockToControl: 1, normal: 2 }), null).plan.blockToControl ?? 0).toBe(0);
-  expect(play(custom(8, 4, { blockToControl: 1 }))[0].rule).toMatch(/^Obrana do držení/);
+it('Obrana do držení je úplně odstraněná (3. 11. 2026): není v katalogu ani mezi metrikami cvičení', () => {
+  expect(DISCIPLINES.some((d) => (d.id as string) === 'blockToControl')).toBe(false);
+  expect(DEFAULT_SELECTION as string[]).not.toContain('blockToControl');
+  expect(SOLO_METRICS.some((m) => m.name === 'Obrana do držení')).toBe(false);
 });

@@ -22,7 +22,7 @@ describe('SOLO_METRICS', () => {
     expect(SOLO_METRICS.map((m) => [m.id, m.max])).toEqual([
       ['warmupPasses', 20], ['passWallLane', 10], ['fiveBarControl', 10], ['fiveBarSolo', 10], ['setShooting', 20],
       ['penaltyKeeper', 10], ['penaltySolo', 10], ['backShotKeeper', 10], ['backShotSolo', 10],
-      ['blockToControl', 10], ['clearing', 10], ['looseBall', 10], ['backRodsBuildUp', 10], ['chain', 10],
+      ['clearing', 10], ['looseBall', 10], ['backRodsBuildUp', 10], ['chain', 10],
     ]);
     expect(SOLO_METRICS.filter((m) => m.lowerIsBetter).map((m) => m.id)).toEqual(['fiveBarControl', 'fiveBarSolo']);
     expect(soloMetric('setShooting').what).toBe('góly z 20 střel');
@@ -36,9 +36,10 @@ describe('metriky v rozpisu', () => {
     expect(rot2.cells[0]).toEqual({ type: 'group', players: ['H4', 'H8'], station: STATIONS[0], metric: 'fiveBarControl' });
   });
 
-  it('týmový n=8, t=4: každý hráč má rozehrání a každé ze 4 stanovišť právě jednou', () => {
+  it('týmový n=8, t=4: každý hráč má rozehrání a každé stanoviště se zápisem právě jednou (Obrana do držení už bez zápisu)', () => {
     const slots = soloSlots(team(8, 4));
-    for (const m of ['warmupPasses', 'fiveBarControl', 'setShooting', 'blockToControl', 'backRodsBuildUp'] as SoloMetric[])
+    expect(slots.some((x) => (x.metric as string) === 'blockToControl')).toBe(false);
+    for (const m of ['warmupPasses', 'fiveBarControl', 'setShooting', 'backRodsBuildUp'] as SoloMetric[])
       expect(count(slots, m)).toBe(8);
     expect(new Set(slots.map((s) => `${s.playerId}:${s.metric}`)).size).toBe(slots.length);
   });

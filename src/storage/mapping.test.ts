@@ -107,4 +107,10 @@ describe('události her', () => {
     const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [], [row, { ...row, id: 'e2', training_id: 'jiny' }]);
     expect(t.events).toEqual([e]);
   });
+
+  it('neznámá (odstraněná) disciplína v uloženém plánu se při načtení vynechá', () => {
+    const row = { ...trainingToRow({ ...training, format: 'custom', plan: { normal: 2 } }), plan: { normal: 2, blockToControl: 1 } as Training['plan'] };
+    expect(trainingFromRow(row, [], []).plan).toEqual({ normal: 2 });
+  });
 });
+

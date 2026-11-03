@@ -23,15 +23,17 @@ export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'penaltySolo', name: 'Penalta z místa bez brankáře', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
   { id: 'backShotKeeper', name: 'Střela z dvojky proti brankáři', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
   { id: 'backShotSolo', name: 'Střela z dvojky bez brankáře', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
-  { id: 'blockToControl', name: 'Obrana do držení', what: 'bloky do držení z 10', max: 10, lowerIsBetter: false, ok: 'do držení', fail: 'nechytil' },
   { id: 'clearing', name: 'Clearing', what: 'míče za pětku z 10', max: 10, lowerIsBetter: false, ok: 'za pětkou', fail: 'zachycený' },
   { id: 'looseBall', name: 'Zachycení volného míče', what: 'míče pod kontrolou z 10', max: 10, lowerIsBetter: false, ok: 'pod kontrolou', fail: 'nezachycený' },
   { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false, ok: 'dokončená', fail: 'nedokončená' },
   { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },
 ];
 
-/** Metrika stanoviště na stole j (pořadí STATIONS v content.ts). */
-export const STATION_METRICS: SoloMetric[] = ['fiveBarControl', 'setShooting', 'blockToControl', 'backRodsBuildUp'];
+/**
+ * Metrika stanoviště na stole j (pořadí STATIONS v content.ts) – jen starší klasické tréninky.
+ * Obrana do držení byla odstraněna (3. 11. 2026): stanoviště zůstává v rozpisu starých tréninků, ale bez zápisu.
+ */
+export const STATION_METRICS: (SoloMetric | undefined)[] = ['fiveBarControl', 'setShooting', undefined, 'backRodsBuildUp'];
 
 export const soloMetric = (id: SoloMetric): SoloMetricDef => SOLO_METRICS.find((m) => m.id === id)!;
 

@@ -28,7 +28,6 @@ export type SoloMetric =
   | 'penaltySolo'
   | 'backShotKeeper'
   | 'backShotSolo'
-  | 'blockToControl'
   | 'clearing'
   | 'looseBall'
   | 'backRodsBuildUp'
