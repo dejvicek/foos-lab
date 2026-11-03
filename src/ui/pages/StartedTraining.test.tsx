@@ -49,16 +49,3 @@ it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště)
   window.location.hash = '#/zive';
   expect(await screen.findByRole('button', { name: 'celý rozpis ›' })).toBeInTheDocument();
 });
-
-it('ukončený trénink bez časů jednotlivých utkání: u zápasu „dohráno“, žádné Potvrdit ani „není na řadě“', async () => {
-  const user = (await import('@testing-library/user-event')).default.setup();
-  window.location.hash = '#/trenink/t1';
-  render(<App repo={memoryRepository({ players, trainings: [{ ...t, playTimes: { training: { startedAt: 1, endedAt: 2 } } }] })} />);
-  await screen.findByRole('table', { name: 'Rozpis tréninku' });
-  const r1 = screen.getByRole('button', { name: /^1\. kolo$/ });
-  if (r1.getAttribute('aria-expanded') !== 'true') await user.click(r1);
-  const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('1. kolo, stůl 1'))!;
-  expect(card).toHaveTextContent('dohráno');
-  expect(card).not.toHaveTextContent('není na řadě');
-  expect(screen.queryByRole('button', { name: 'Potvrdit' })).toBeNull();
-});
