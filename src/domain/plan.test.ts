@@ -1,5 +1,5 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded, planSequence, planTimeline, plannedMinutes } from './plan';
+import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded, fillPlan, planSequence, planTimeline, plannedMinutes } from './plan';
 
 describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
@@ -78,4 +78,31 @@ it('Start 4:5 (2. 11. 2026): koncovka pozadu o gól, 5 min, bez Daně, vždy 2 k
   // nabízí se, ale ve výchozím výběru není – výchozí 3:00 by se nevešla (minima 189 min)
   expect(DEFAULT_SELECTION).not.toContain('start45');
   expect(discipline('start45').retired).toBeFalsy();
+});
+
+describe('doplnit kola, když zbývá čas (2. 11. 2026)', () => {
+  it('zápasy: přidá kola vybraných zápasů dokola, dokud se vejdou; nic nepřetáhne', () => {
+    const plan = { normal: 1, lossTax: 1 };
+    const filled = fillPlan(plan, 120, 8, []);
+    expect(plannedMinutes(filled, 8, [])).toBeLessThanOrEqual(120);
+    expect(plannedMinutes(filled, 8, [])).toBeGreaterThan(120 - 9);
+    expect(filled.normal! + filled.lossTax!).toBeGreaterThan(2);
+    expect(Math.abs(filled.normal! - filled.lossTax!)).toBeLessThanOrEqual(1);
+  });
+
+  it('bez zápasů (trénink pro 1 hráče): doplní cvičení, dvouvariantní po dvou kolech', () => {
+    const plan = { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1 };
+    const before = plannedMinutes(plan, 1, []);
+    const filled = fillPlan(plan, 60, 1, []);
+    expect(plannedMinutes(filled, 1, [])).toBeGreaterThan(before);
+    expect(plannedMinutes(filled, 1, [])).toBeLessThanOrEqual(60);
+    expect(filled.passWallLane! % 2).toBe(0);
+    expect(filled.penaltySolo! % 2).toBe(0);
+  });
+
+  it('párové zápasy po dvou; když se nic nevejde, plán zůstane', () => {
+    expect(fillPlan({ wall: 2 }, 60, 8, []).wall! % 2).toBe(0);
+    const full = { normal: 5 };
+    expect(fillPlan(full, 50, 8, [])).toEqual(full);
+  });
 });

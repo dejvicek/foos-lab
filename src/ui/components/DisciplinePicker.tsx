@@ -1,5 +1,5 @@
 import { DISCIPLINES } from '../../domain/disciplines';
-import { DURATION_OPTIONS, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
+import { DURATION_OPTIONS, fillPlan, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
 
@@ -42,6 +42,9 @@ export function DurationSelect({ training, onChange }: { training: Training; onC
 export function DisciplinePicker({ training, open, onChange, bare }: { training: Training; open: boolean; onChange(next: Training): void; bare?: boolean }) {
   const used = plannedMinutes(training.plan, training.attendees.length, training.breaks);
   const over = used > training.durationMin;
+  // Zbývá čas: nabídnout doplnění kol (zápasy, bez nich cvičení) do délky tréninku.
+  const filled = over ? training.plan : fillPlan(training.plan, training.durationMin, training.attendees.length, training.breaks ?? null);
+  const canFill = !over && plannedMinutes(filled, training.attendees.length, training.breaks) > used;
   const locked = lockedCounts(training);
   const setCount = (id: DisciplineId, n: number) => onChange({ ...training, plan: { ...training.plan, [id]: Math.max(locked[id] ?? 0, n) } });
   const badge = (
@@ -50,6 +53,14 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
         Naplánováno {hm(used)} z {hm(training.durationMin)}
       </span>
       {over && <span className="error">Nevejde se, uber kola.</span>}
+      {canFill && (
+        <span className="fill-offer">
+          Zbývá {hm(training.durationMin - used)}.
+          <button type="button" className="ghost" onClick={() => onChange({ ...training, plan: filled })}>
+            Doplnit kola
+          </button>
+        </span>
+      )}
     </>
   );
   const body = (

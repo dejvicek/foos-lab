@@ -887,3 +887,6 @@ button.pp-toggle::after { content: ' ▸'; color: var(--muted); font-weight: 400
 button.pp-toggle[aria-expanded='true']::after { content: ' ▾'; }
 .pp-hint button.link { font-size: 12px; }
 button.pp-toggle { white-space: nowrap; align-self: start; }
+.fill-offer { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; color: var(--muted); font-weight: 600; }
+.fill-offer button { min-height: 32px; padding: 2px 12px; }
+.sum-warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 14px; }

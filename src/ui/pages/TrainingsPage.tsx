@@ -4,7 +4,8 @@ import { MODE_LABEL, plural } from '../format';
 import type { Viewer } from '../../domain/my';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
-import { liveTag, useNow } from '../now';
+import { useNow } from '../now';
+import { liveTag } from '../liveTag';
 
 export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; navigate: (r: Route) => void; viewer: Viewer }) {
   const trainings = sortTrainings(store.data.trainings);

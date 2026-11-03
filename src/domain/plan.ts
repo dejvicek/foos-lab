@@ -137,3 +137,28 @@ export function autoPlan(
   }
   return plan;
 }
+
+/**
+ * Doplní kola do zbývajícího času: vybrané zápasy dokola (párové po dvou); bez hratelných zápasů
+ * (např. trénink pro 1 hráče) vybraná cvičení (na dvě varianty po dvou). Simulace se nepřidává.
+ * Nic nepřetáhne délku tréninku; když se nic nevejde, vrátí stejný plán.
+ */
+export function fillPlan(plan: Plan, durationMin: number, players: number, breaks: BreakDef[] | null = null): Plan {
+  const selected = DISCIPLINES.filter((d) => (plan[d.id] ?? 0) > 0 && d.kind !== 'sim' && !d.retired && playable(d.id, players || undefined));
+  const matches = selected.filter((d) => d.kind === 'match');
+  const pool = matches.length ? matches : selected.filter((d) => d.kind === 'drill');
+  const out: Plan = { ...plan };
+  let i = 0;
+  let misses = 0;
+  while (pool.length && misses < pool.length) {
+    const d = pool[i % pool.length];
+    const step = d.paired || d.variants ? 2 : 1;
+    const next = { ...out, [d.id]: (out[d.id] ?? 0) + step };
+    if (plannedMinutes(next, players || undefined, breaks) <= durationMin) {
+      Object.assign(out, next);
+      misses = 0;
+    } else misses++;
+    i++;
+  }
+  return out;
+}

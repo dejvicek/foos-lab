@@ -104,6 +104,11 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
             {line('who', `${n} ${plural(n, 'hráč', 'hráči', 'hráčů')}: ${draft.attendees.map((p) => byId.get(p) ?? '?').join(', ')}`)}
             {draft.format === 'custom' &&
               line('disc', `${rounds} ${plural(rounds, 'kolo', 'kola', 'kol')}, naplánováno ${hm(plannedMinutes(draft.plan, n, draft.breaks))} z ${hm(draft.durationMin)}`)}
+            {draft.format === 'custom' && plannedMinutes(draft.plan, n, draft.breaks) > draft.durationMin && (
+              <p className="sum-warn" role="alert">
+                Plán ({hm(plannedMinutes(draft.plan, n, draft.breaks))}) je delší než trénink ({hm(draft.durationMin)}). Zahájit jde i tak – časy jsou orientační; kola jde ubrat v kroku Disciplíny.
+              </p>
+            )}
           </div>
         );
       }
