@@ -12,6 +12,8 @@ import { TimingBar, type ItemTiming } from './Timing';
 import { DrillMarks, MatchLanes, TimelineBox } from './GameTimeline';
 import { drillItemId } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
+import { discipline } from '../../domain/disciplines';
+import { SkillTags } from './SkillTags';
 
 /** Zápis ťukáním (telefon, Můj stůl) místo číselných políček. */
 export interface TapEntry {
@@ -306,6 +308,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         {hasHelp && (
           <details className="help">
             <summary>{helpTitle}</summary>
+            {row.discipline && <SkillTags skills={discipline(row.discipline)?.skills} />}
             {ex.perTable.some(Boolean) && (
               <div className="help-grid">
                 {ex.perTable.map((it, j) =>

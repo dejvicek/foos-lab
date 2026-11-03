@@ -1,4 +1,5 @@
 import { DISCIPLINES } from '../../domain/disciplines';
+import { SkillTags } from './SkillTags';
 import { DURATION_OPTIONS, fillPlan, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
@@ -87,6 +88,7 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
                     />
                     <span>{d.name}</span>
                   </label>
+                  <SkillTags skills={d.skills} />
                   <span className="muted">
                     {off
                       ? `potřebuje aspoň ${d.kind === 'sim' ? SIM_MIN_PLAYERS : 2} hráče`

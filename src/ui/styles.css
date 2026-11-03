@@ -216,7 +216,7 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .count-badge.over { color: var(--warn); }
 .disc-group h3 { font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
 .disc-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2px 20px; }
-.disc-list li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); min-height: 40px; }
+.disc-list > li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 2px 10px; padding: 3px 0; border-bottom: 1px solid var(--line); min-height: 40px; }
 .disc-list label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
 .disc-list input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
 .disc-list .muted { font-size: 12px; }
@@ -900,3 +900,13 @@ button.pp-toggle { white-space: nowrap; align-self: start; }
   .active-table .pick-row { grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr); column-gap: 6px; }
   .active-table .pick-score { font-size: 22px; }
 }
+
+/* Štítky dovedností disciplíny */
+.skill-tags { list-style: none; margin: 2px 0 0 26px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.skill-tags li { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; line-height: 18px; }
+.skill-tags li.main { color: var(--felt); border-color: var(--felt); background: var(--felt-soft); }
+details.help .skill-tags { margin: 6px 0 8px; }
+/* štítky v seznamu disciplín: pod názvem přes celý řádek */
+.disc-list > li > .skill-tags { grid-column: 1 / -1; grid-row: 2; margin: 0 0 2px 26px; }
+.skill-tags li { display: inline-block; min-height: 0; border-bottom: 1px solid var(--line); }
+.skill-tags li.main { border-bottom-color: var(--felt); }

@@ -290,3 +290,15 @@ describe('tabulka tréninku – stav kol podle skutečnosti', () => {
     expect(screen.getByRole('group', { name: '2. kolo, stůl 1' })).toBeInTheDocument();
   });
 });
+
+it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
+  const user = userEvent.setup();
+  const t = { ...training(8, 'team', 4), format: 'custom' as const, plan: { penaltyKeeper: 2 } };
+  window.location.hash = '#/trenink/t1';
+  render(<App repo={memoryRepository({ players: players(8), trainings: [t] })} />);
+  await screen.findByRole('table', { name: 'Rozpis tréninku' });
+  const r1 = screen.getByRole('button', { name: /^1\. kolo$/ });
+  if (r1.getAttribute('aria-expanded') !== 'true') await user.click(r1); // bývá rozbalené jako výchozí
+  const help = document.querySelector<HTMLDetailsElement>('details.help')!;
+  expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana zadkuČtení soupeře');
+});

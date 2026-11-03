@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -37,4 +37,16 @@ describe('čas plánu v průvodci', () => {
     await user.click(fill);
     expect(badge()).not.toBe(before);
   });
+});
+
+it('štítky dovedností: u disciplín v kroku Disciplíny', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trenink/novy';
+  render(<App repo={memoryRepository({ players, trainings: [] })} />);
+  await screen.findByRole('heading', { name: 'Kdy a kde' });
+  await next(user);
+  for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
+  await next(user);
+  const penalty = screen.getByRole('group', { name: 'Penalta z místa proti brankáři' });
+  expect(within(penalty).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana zadkuČtení soupeře');
 });
