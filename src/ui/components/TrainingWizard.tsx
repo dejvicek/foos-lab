@@ -52,7 +52,14 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
   // Zvýraznění hráče v náhledu plánu: najetí myší, klepnutím se připne (telefon).
   const [hover, setHover] = useState<PlayerId | null>(null);
   const [pin, setPin] = useState<PlayerId | null>(null);
-  const hl: Highlight = { lit: hover ?? pin, enter: setHover, leave: () => setHover(null), toggle: (p) => setPin((x) => (x === p ? null : p)) };
+  const hl: Highlight = {
+    lit: hover ?? pin,
+    pinned: pin,
+    enter: setHover,
+    leave: () => setHover(null),
+    toggle: (p) => setPin((x) => (x === p ? null : p)),
+    clear: () => setPin(null),
+  };
   const n = draft.attendees.length;
   const finishLabel = mode === 'new' ? 'Zahájit trénink' : 'Uložit změny';
 

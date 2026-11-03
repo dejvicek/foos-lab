@@ -85,9 +85,17 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     fireEvent.mouseEnter(within(mates).getByRole('rowheader', { name: 'H5' }));
     expect(new Set(lit())).toEqual(new Set(['H5']));
     fireEvent.mouseLeave(within(mates).getByRole('rowheader', { name: 'H5' }));
-    // telefon: klepnutí přepne zvýraznění
+    // kliknutí zvýraznění připne (zůstane i po odjetí myší); nad náhledem je štítek, kterým jde zrušit
+    expect(screen.getByText(/Klikni na jméno/)).toBeInTheDocument();
     fireEvent.click(h3[0]);
+    fireEvent.mouseLeave(h3[0]);
     expect(new Set(lit())).toEqual(new Set(['H3']));
+    expect(screen.getByRole('status', { name: 'Zvýrazněný hráč' })).toHaveTextContent('Zvýrazněno: H3');
+    fireEvent.click(screen.getByRole('button', { name: 'Zrušit zvýraznění' }));
+    expect(lit()).toEqual([]);
+    expect(screen.queryByRole('status', { name: 'Zvýrazněný hráč' })).toBeNull();
+    // druhé kliknutí na totéž jméno také zruší
+    fireEvent.click(h3[0]);
     fireEvent.click(h3[0]);
     expect(lit()).toEqual([]);
   });

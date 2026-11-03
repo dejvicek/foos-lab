@@ -11,16 +11,19 @@ import type { PlayerId, ScheduleRow, Training } from '../../domain/types';
 /** Zvýraznění hráče v náhledu (najetí myší; klepnutím se připne – telefon). */
 export interface Highlight {
   lit: PlayerId | null;
+  /** Připnutý hráč (klik) – zůstane zvýrazněný i po odjetí myší. */
+  pinned: PlayerId | null;
   enter(p: PlayerId): void;
   leave(): void;
   toggle(p: PlayerId): void;
+  clear(): void;
 }
 
 /** Jméno hráče, které umí zvýraznit sebe i ostatní výskyty. */
 export function PlayerName({ id, names, hl }: { id: PlayerId; names: Record<PlayerId, string>; hl?: Highlight }) {
   return (
     <span
-      className={hl?.lit === id ? 'pp-p hl' : 'pp-p'}
+      className={['pp-p', hl?.lit === id ? 'hl' : '', hl?.pinned === id ? 'pinned' : ''].filter(Boolean).join(' ')}
       onMouseEnter={hl ? () => hl.enter(id) : undefined}
       onMouseLeave={hl ? () => hl.leave() : undefined}
       onClick={hl ? () => hl.toggle(id) : undefined}
@@ -83,6 +86,20 @@ export function PlanPreview({ training, onChange, names, hl }: { training: Train
   return (
     <section className="plan-preview">
       <h3>Náhled plánu</h3>
+      {names && hl && (
+        <p className="pp-hint">
+          {hl.pinned ? (
+            <span className="pp-pin" role="status" aria-label="Zvýrazněný hráč">
+              Zvýrazněno: <b>{names[hl.pinned] ?? '?'}</b>
+              <button type="button" className="icon" aria-label="Zrušit zvýraznění" onClick={hl.clear}>
+                ✕
+              </button>
+            </span>
+          ) : (
+            <span className="muted">Najeď na jméno – zvýrazní se v celém plánu. Klikni na jméno, ať zůstane zvýrazněné.</span>
+          )}
+        </p>
+      )}
       <ol aria-label="Náhled plánu">
         {rows.map((r, i) => {
           const bi = r.breakIndex;

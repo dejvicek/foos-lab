@@ -878,3 +878,7 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .fairness-table th[scope] { cursor: pointer; }
 .fairness-table th.hl { background: #F2C94C; color: #1d1d1b; }
 .fairness-table tr.hl td:not(.self) { box-shadow: inset 0 2px 0 #F2C94C, inset 0 -2px 0 #F2C94C; }
+.pp-hint { margin: 0 0 6px; font-size: 12px; position: sticky; top: -10px; background: var(--bg); z-index: 2; padding: 4px 0; }
+.pp-pin { display: inline-flex; align-items: center; gap: 6px; background: #F2C94C; color: #1d1d1b; border-radius: 14px; padding: 2px 4px 2px 10px; }
+.pp-pin button.icon { min-width: 26px; min-height: 26px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.08); border: 0; color: inherit; }
+.pp-p.pinned { box-shadow: 0 0 0 2px #F2C94C, 0 0 0 3px var(--ink); }
