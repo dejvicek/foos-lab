@@ -47,6 +47,10 @@ it('štítky dovedností: u disciplín v kroku Disciplíny', async () => {
   await next(user);
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user);
+  // výchozí stav: štítky schované
+  expect(screen.queryByRole('list', { name: 'Trénuje' })).toBeNull();
+  expect(screen.queryByRole('list', { name: 'Sekce dovedností' })).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Ukázat štítky' }));
   const penalty = screen.getByRole('group', { name: 'Penalta z místa proti brankáři' });
   expect(within(penalty).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObranaČtení soupeře');
   // barva podle sekce, žádné zvýraznění „hlavního“; nad seznamem legenda sekcí
@@ -65,6 +69,7 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
   await next(user);
   const shown = () => screen.getAllByRole('group').filter((g) => g.closest('.disc-list')).map((g) => g.getAttribute('aria-label'));
   const all = shown().length;
+  await user.click(screen.getByRole('button', { name: 'Ukázat štítky' }));
   // konkrétní štítek Clearing (u disciplíny Clearing)
   await user.click(within(screen.getByRole('group', { name: 'Clearing' })).getByRole('button', { name: 'Clearing' }));
   expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Daň za ztrátu']));
@@ -76,4 +81,9 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
   expect(shown()).not.toContain('Normální leg');
   await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
   expect(shown()).toHaveLength(all);
+  // skrytí štítků zruší i filtr
+  await user.click(within(screen.getByRole('list', { name: 'Sekce dovedností' })).getByRole('button', { name: 'Útok' }));
+  await user.click(screen.getByRole('button', { name: 'Skrýt štítky' }));
+  expect(shown()).toHaveLength(all);
+  expect(screen.queryByRole('list', { name: 'Trénuje' })).toBeNull();
 });

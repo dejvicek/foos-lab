@@ -45,6 +45,8 @@ export function DurationSelect({ training, onChange }: { training: Training; onC
 export function DisciplinePicker({ training, open, onChange, bare }: { training: Training; open: boolean; onChange(next: Training): void; bare?: boolean }) {
   // Filtr podle štítků (sekce v legendě, štítek u disciplíny); skryté disciplíny zůstávají v plánu.
   const [filter, setFilter] = useState<SkillFilter>({ skills: [], groups: [] });
+  // Štítky jsou ve výchozím stavu schované; skrytí zruší i filtr.
+  const [showTags, setShowTags] = useState(false);
   const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
   const toggleSkill = (s: Skill) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }));
   const toggleGroup = (g: SkillGroupId) => setFilter((f) => ({ ...f, groups: toggle(f.groups, g) }));
@@ -76,7 +78,18 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
   );
   const body = (
     <>
-      <SkillLegend filter={filter} onToggle={toggleGroup} />
+      <button
+        type="button"
+        className="link tags-toggle"
+        aria-pressed={showTags}
+        onClick={() => {
+          if (showTags) setFilter({ skills: [], groups: [] });
+          setShowTags(!showTags);
+        }}
+      >
+        {showTags ? 'Skrýt štítky' : 'Ukázat štítky'}
+      </button>
+      {showTags && <SkillLegend filter={filter} onToggle={toggleGroup} />}
       {filtering && (
         <p className="filter-line">
           Filtr: {[...filter.groups.map((g) => SKILL_GROUPS.find((x) => x.id === g)!.name), ...filter.skills].join(', ')} · zobrazeno {visible.length} z {offered.length}
@@ -107,7 +120,7 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
                     />
                     <span>{d.name}</span>
                   </label>
-                  <SkillTags skills={d.skills} filter={filter} onToggle={toggleSkill} />
+                  {showTags && <SkillTags skills={d.skills} filter={filter} onToggle={toggleSkill} />}
                   <span className="muted">
                     {off
                       ? `potřebuje aspoň ${d.kind === 'sim' ? SIM_MIN_PLAYERS : 2} hráče`
