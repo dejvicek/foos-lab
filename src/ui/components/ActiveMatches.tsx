@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import type { ItemState, QueueEntry } from '../../domain/queue';
-import type { PlayerId } from '../../domain/types';
+import type { SoloMetricDef } from '../../domain/solo';
+import { parseScoreValue } from '../../domain/standings';
+import type { MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { clockOf, fmtDur, itemNames } from '../queue';
+import { ScorePicker } from './ScorePicker';
 
 type Item = Extract<QueueEntry, { kind: 'item' }>;
 
@@ -17,10 +21,58 @@ interface Props {
   onEnd(e: Item): void;
   /** Přechod do Moje hry (moje utkání čeká na zahájení). */
   onMyGame?(): void;
+  /** Organizátor zadá nahlášený výsledek (hráči nepoužívají telefon). */
+  entry?: ResultEntryProps;
+}
+
+/** Zápis výsledku z Živě: skóre zápasu, u cvičení počty hráčů. */
+export interface ResultEntryProps {
+  training: Training;
+  onScore(id: MatchId, s: Score): void;
+  onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
+  /** Metrika a klíč výsledku cvičení pro utkání ve frontě (null = není cvičení se zápisem). */
+  drillOf(e: Item): { def: SoloMetricDef; key: SoloKey } | null;
+}
+
+function ResultEntry({ e, table, names, entry }: { e: Item; table: number; names: Record<PlayerId, string>; entry: ResultEntryProps }) {
+  const label = `${e.label}, stůl ${table}`;
+  if (e.match)
+    return <ScorePicker label={label} match={e.match} score={entry.training.scores[e.match.id]} names={names} disabled={false} onChange={(sc) => entry.onScore(e.match!.id, sc)} />;
+  const drill = entry.drillOf(e);
+  if (!drill) return null;
+  return (
+    <div className="active-entry-drill">
+      <small className="muted">{drill.def.what}</small>
+      {e.players.map((p) => {
+        const v = entry.training.soloResults[p]?.[drill.key];
+        return (
+          <label key={p} className="solo-line">
+            <span>{names[p] ?? '?'}</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={drill.def.max}
+              placeholder="–"
+              aria-label={`${label}: ${names[p] ?? '?'}`}
+              value={v === undefined ? '' : String(v)}
+              onChange={(ev) => {
+                const n = parseScoreValue(ev.target.value);
+                if (n !== null && n > drill.def.max) return;
+                entry.onSolo(p, drill.key, n);
+              }}
+            />
+          </label>
+        );
+      })}
+    </div>
+  );
 }
 
 /** PRD 4.8: stoly a co se na nich právě hraje / čeká na zahájení, pod tím fronta. */
-export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame }: Props) {
+export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame, entry }: Props) {
+  // Otevřený zápis výsledku (ID utkání).
+  const [open, setOpen] = useState<string | null>(null);
   const items = queue.filter((e): e is Item => e.kind === 'item');
   const onTable = (t: number) => items.find((e) => {
     const s = states.get(e.id);
@@ -50,7 +102,7 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
           const s = e ? states.get(e.id)! : null;
           const mine = !!e && !!me && e.players.includes(me);
           return (
-            <div key={t} role="group" aria-label={`Stůl ${t}`} className={['active-table', s?.state ?? 'free', mine ? 'mine' : ''].filter(Boolean).join(' ')}>
+            <div key={t} role="group" aria-label={`Stůl ${t}`} className={['active-table', s?.state ?? 'free', mine ? 'mine' : '', e && open === e.id ? 'entry-open' : ''].filter(Boolean).join(' ')}>
               <div className="active-head">
                 <span>
                   Stůl {t}
@@ -68,9 +120,27 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                 <>
                   <div className="active-names">{itemNames(e, names)}</div>
                   {manage && canWrite(e) ? (
-                    <button type="button" className="ghost" onClick={() => onEnd(e)}>
-                      {s?.state === 'ready' ? 'Potvrdit' : 'Potvrdit konec'}
-                    </button>
+                    // Organizátor: nahlášený výsledek zadá a potvrdí konec; rozehrané (z telefonu) jen potvrdí.
+                    <div className="active-actions">
+                      {open === e.id && entry && <ResultEntry e={e} table={t} names={names} entry={entry} />}
+                      {open !== e.id && entry && (
+                        <button type="button" className={s?.state === 'playing' ? 'link' : undefined} onClick={() => setOpen(e.id)}>
+                          Zadat výsledek
+                        </button>
+                      )}
+                      {(s?.state === 'playing' || open === e.id || !entry) && (
+                        <button
+                          type="button"
+                          className="ghost"
+                          onClick={() => {
+                            onEnd(e);
+                            setOpen(null);
+                          }}
+                        >
+                          Potvrdit konec
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     mine &&
                     s?.state === 'ready' &&

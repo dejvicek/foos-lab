@@ -3,7 +3,7 @@ import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
-import { parseSoloKey, soloKey } from '../../domain/solo';
+import { parseSoloKey, soloKey, soloMetric } from '../../domain/solo';
 import { tapDrill } from '../../domain/drillTap';
 import { bump } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
@@ -176,6 +176,16 @@ export function TrainingPage({
       }
     : undefined;
 
+  /** Živě: metrika a klíč výsledku cvičení podle kola, stolu a hráčů ve frontě. */
+  const drillEntryOf = (label: string, table: number, players: PlayerId[]) => {
+    for (const sec of schedule?.sections ?? [])
+      for (const r of sec.rows) {
+        if (r.label !== label) continue;
+        const c = r.cells[table - 1];
+        if (c?.type === 'group' && c.metric && c.players.join() === players.join()) return { def: soloMetric(c.metric), key: soloKey(c.metric, c.soloRound) };
+      }
+    return null;
+  };
   /** ID utkání cvičení (stůl, kde hráč s danou metrikou a kolem cvičí). */
   const drillItemOf = (playerId: PlayerId, key: SoloKey): string | null => {
     for (const sec of schedule?.sections ?? [])
@@ -286,6 +296,7 @@ export function TrainingPage({
             canWrite={canItem}
             manage={manage}
             onEnd={(e) => itemTiming?.end(e.id)}
+            entry={{ training, onScore, onSolo, drillOf: (e) => drillEntryOf(e.label, e.table, e.players) }}
             onMyGame={attends ? () => navigate({ page: 'my' }) : undefined}
           />
         )}

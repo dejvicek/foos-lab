@@ -618,7 +618,7 @@ button.pick-clear { align-self: center; font-size: 12px; }
 .active-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; color: var(--muted); font-size: 12px; font-weight: 600; }
 .active-names { font-weight: 700; font-size: 15px; }
 .active-names.muted { color: var(--muted); font-weight: 500; }
-.active-table button { align-self: flex-start; min-height: 44px; padding: 0 20px; border-radius: 22px; }
+.active-table > button, .active-actions > button { align-self: flex-start; min-height: 44px; padding: 0 20px; border-radius: 22px; }
 .chip { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .chip.play { background: var(--felt); color: var(--felt-ink); }
 .chip.wait { background: var(--warn-soft); color: var(--warn); }
@@ -890,3 +890,13 @@ button.pp-toggle { white-space: nowrap; align-self: start; }
 .fill-offer { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; color: var(--muted); font-weight: 600; }
 .fill-offer button { min-height: 32px; padding: 2px 12px; }
 .sum-warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 14px; }
+
+/* Živě: zápis nahlášeného výsledku organizátorem */
+.active-actions { display: flex; flex-direction: column; gap: 8px; }
+.active-table.entry-open { grid-column: 1 / -1; }
+.active-entry-drill { display: flex; flex-direction: column; gap: 4px; max-width: 360px; }
+.active-entry-drill .solo-line input { width: 64px; }
+@media (max-width: 767px) {
+  .active-table .pick-row { grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr); column-gap: 6px; }
+  .active-table .pick-score { font-size: 22px; }
+}

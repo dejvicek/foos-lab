@@ -27,7 +27,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('Živě', () => {
-  it('Živě je v navigaci až po zahájení tréninku; organizátor nezahajuje, Potvrdit → čas od vypsání, na stůl jde další', async () => {
+  it('Živě je v navigaci až po zahájení tréninku; organizátor nezahajuje, zadá nahlášený výsledek a potvrdí konec → čas od vypsání, na stůl jde další', async () => {
     window.location.hash = '#/trenink/t1';
     const repo = memoryRepository({ players, trainings: [{ ...t, createdBy: 'id1' }] });
     render(<App repo={repo} auth={organizer()} />);
@@ -44,10 +44,17 @@ describe('Živě', () => {
     expect(within(board).getByRole('list', { name: 'Další v pořadí' })).toHaveTextContent('2. kolo');
     expect(within(t1).queryByRole('button', { name: 'Zahájit' })).toBeNull(); // zahájit jde jen v Moje hry
     vi.setSystemTime(new Date(2026, 10, 2, 18, 11));
-    await user.click(within(t1).getByRole('button', { name: 'Potvrdit' }));
+    // hráči výsledek jen nahlásí: organizátor ho zadá v Živě a potvrdí konec
+    expect(within(t1).queryByRole('button', { name: 'Potvrdit' })).toBeNull();
+    await user.click(within(t1).getByRole('button', { name: 'Zadat výsledek' }));
+    await user.click(within(t1).getByRole('button', { name: '1. kolo, stůl 1: góly vlevo 6' }));
+    await user.click(within(t1).getByRole('button', { name: '1. kolo, stůl 1: góly vpravo 3' }));
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].scores[ids[0]]).toMatchObject({ ga: 6, gb: 3 }));
+    await user.click(within(t1).getByRole('button', { name: 'Potvrdit konec' }));
     expect(within(board).getByRole('group', { name: 'Stůl 1' })).toHaveTextContent('2. kolo');
     // potvrzeno organizátorem bez zahájení: čas od vypsání (zahájení tréninku 18:03) do potvrzení
-    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]).toEqual({ startedAt: at(18, 3), endedAt: at(18, 11) }));
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.startedAt).toBe(at(18, 3)));
+    expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBeGreaterThanOrEqual(at(18, 11)); // (falešné hodiny při čekání na uložení kousek poběží)
   });
 });
 
@@ -211,7 +218,7 @@ describe('organizátor, který nehraje', () => {
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
     expect(within(nav).getByRole('button', { name: 'Živě' })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).queryByRole('button', { name: /^Moje hry/ })).toBeNull();
-    expect(within(within(board).getByRole('group', { name: 'Stůl 1' })).getByRole('button', { name: 'Potvrdit' })).toBeInTheDocument();
+    expect(within(within(board).getByRole('group', { name: 'Stůl 1' })).getByRole('button', { name: 'Zadat výsledek' })).toBeInTheDocument();
     expect(within(board).queryByRole('button', { name: 'Zahájit' })).toBeNull();
   });
 });
