@@ -43,6 +43,7 @@ export const DISCIPLINES: DisciplineDef[] = [
   { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 4, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], optional: true },
   { id: 'blockToControl', kind: 'drill', name: 'Obrana do držení', min: 8, explain: 'Obrana do držení', metric: 'blockToControl', needsPartner: true },
   { id: 'clearing', kind: 'drill', name: 'Clearing', min: 4, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true },
+  { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 4, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, optional: true },
   { id: 'backRodsBuildUp', kind: 'drill', name: 'Rozehrávka ze zadních tyčí', min: 8, explain: 'Rozehrávka ze zadních tyčí', metric: 'backRodsBuildUp', retired: true },
   { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec (trénink jedniček)', metric: 'chain', retired: true },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg' },

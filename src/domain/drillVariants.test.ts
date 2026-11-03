@@ -32,7 +32,7 @@ describe('nová cvičení (2. 11. 2026)', () => {
     expect(DEFAULT_SELECTION).not.toContain('setShooting');
     for (const id of ['penaltySolo', 'backShotSolo', 'backShotKeeper', 'passWallLane'] as const) expect(DEFAULT_SELECTION).not.toContain(id);
     expect(DISCIPLINES.filter((d) => d.kind === 'drill' && !d.retired).map((d) => d.id)).toEqual([
-      'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'blockToControl', 'clearing',
+      'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'blockToControl', 'clearing', 'looseBall',
     ]);
   });
 
@@ -102,5 +102,14 @@ describe('Clearing (3. 11. 2026)', () => {
     expect(r.map((x) => x.rule)).toEqual(['Clearing – varianta 1, 4 min', 'Clearing – varianta 2, 4 min']);
     // sám ho hráč hrát nemůže
     expect(play(custom(1, 1, { clearing: 2, passWallLane: 2 })).every((x) => x.discipline !== 'clearing')).toBe(true);
+  });
+});
+
+describe('Zachycení volného míče (3. 11. 2026)', () => {
+  it('pro dva, 1. kolo míče po zdi, 2. kolo středem, po 10; stačí dostat míč pod kontrolu', () => {
+    expect(discipline('looseBall')).toMatchObject({ kind: 'drill', name: 'Zachycení volného míče', min: 4, metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, optional: true });
+    expect(soloMetric('looseBall')).toMatchObject({ what: 'míče pod kontrolou z 10', max: 10, lowerIsBetter: false, ok: 'pod kontrolou', fail: 'nezachycený' });
+    const r = play(custom(4, 1, { looseBall: 2 }));
+    expect(r.map((x) => x.rule)).toEqual(['Zachycení volného míče – po zdi, 4 min', 'Zachycení volného míče – středem, 4 min']);
   });
 });

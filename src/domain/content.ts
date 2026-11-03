@@ -228,6 +228,23 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
+        "name": "Zachycení volného míče",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "míč, který se dostane do zóny obránce, zachytit a dostat pod kontrolu – nenechat ho odskočit ani ho odpálit pryč."
+          },
+          {
+            "label": "Provedení:",
+            "text": "obránce na brance a dvojce, partner posílá míč do jeho zóny, ale ne střelou: odrazem, pomalu kutálený nebo nepřesnou přihrávkou. 1. kolo míče po zdi, 2. kolo míče středem, po 10 pokusech. Ve dvojici se po 10 pokusech vystřídáte."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "míče pod kontrolou z 10 v každém kole – stačí míč zastavit a mít ho pod kontrolou v zadních tyčích."
+          }
+        ]
+      },
+      {
         "name": "Rozehrávka ze zadních tyčí",
         "parts": [
           {
