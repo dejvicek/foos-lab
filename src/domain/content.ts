@@ -3,7 +3,6 @@
 export const STATIONS: string[] = [
   'Udržení míče na pětce',
   'Penalta z místa',
-  'Obrana do držení',
   'Rozehrávka ze zadních tyčí',
 ];
 
@@ -190,23 +189,6 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           {
             "label": "Počítá se:",
             "text": "góly z 10 v každém kole; v žebříčku má vlastní tabulku."
-          }
-        ]
-      },
-      {
-        "name": "Obrana do držení",
-        "parts": [
-          {
-            "label": "Cíl:",
-            "text": "po bloku míč zastavit a zpracovat, ne jen odpálit pryč."
-          },
-          {
-            "label": "Provedení:",
-            "text": "obránce na brance a dvojce, soupeř střílí z trojky středním tempem. 10 bloků. Blok platí, když obránce míč následně dostane pod kontrolu v zadních tyčích. Odpal naslepo neplatí."
-          },
-          {
-            "label": "Počítá se:",
-            "text": "bloky do držení z 10."
           }
         ]
       },

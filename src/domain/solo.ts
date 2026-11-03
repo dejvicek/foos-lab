@@ -29,11 +29,8 @@ export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },
 ];
 
-/**
- * Metrika stanoviště na stole j (pořadí STATIONS v content.ts) – jen starší klasické tréninky.
- * Obrana do držení byla odstraněna (3. 11. 2026): stanoviště zůstává v rozpisu starých tréninků, ale bez zápisu.
- */
-export const STATION_METRICS: (SoloMetric | undefined)[] = ['fiveBarControl', 'setShooting', undefined, 'backRodsBuildUp'];
+/** Metrika stanoviště na stole j (pořadí STATIONS v content.ts) – jen starší klasické tréninky. */
+export const STATION_METRICS: SoloMetric[] = ['fiveBarControl', 'setShooting', 'backRodsBuildUp'];
 
 export const soloMetric = (id: SoloMetric): SoloMetricDef => SOLO_METRICS.find((m) => m.id === id)!;
 

@@ -22,7 +22,7 @@ describe('vysvětlivky u bloků', () => {
   });
   it('stanoviště: u každého stolu jeho stanoviště', () => {
     const e = explanationsFor(rowByLabel(team, 'Stanoviště, rotace 1'));
-    expect(e.perTable.map((x) => x?.name)).toEqual(['Udržení míče na pětce', 'Penalta z místa', 'Obrana do držení', 'Rozehrávka ze zadních tyčí']);
+    expect(e.perTable.map((x) => x?.name)).toEqual(['Udržení míče na pětce', 'Penalta z místa', 'Rozehrávka ze zadních tyčí', undefined]);
   });
   it('jedničky: rozehrání a řetězec', () => {
     expect(names(explanationsFor(rowByLabel(single, 'Rozehrání: rozehrávka ze zadku')).main)).toEqual(['Rozehrávka ze zadních tyčí']);

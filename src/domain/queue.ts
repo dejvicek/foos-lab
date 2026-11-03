@@ -61,6 +61,15 @@ export function queueOf(s: Schedule): QueueEntry[] {
  */
 export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[], nowMs: number): Map<string, ItemState> {
   const out = new Map<string, ItemState>();
+  // Ukončený trénink (konec u zahájení tréninku): vše odehrané, i bez časů jednotlivých utkání.
+  if (times[TRAINING_ITEM]?.endedAt !== undefined) {
+    for (const e of queue) {
+      if (e.kind !== 'item') continue;
+      const tm = times[e.id] ?? {};
+      out.set(e.id, { id: e.id, table: e.table, activeAt: null, ...(tm.startedAt !== undefined ? { startedAt: tm.startedAt } : {}), ...(tm.endedAt !== undefined ? { endedAt: tm.endedAt } : {}), state: 'done' });
+    }
+    return out;
+  }
   const origin = trainingStart(queue, times);
   const startMs = origin ?? nowMs;
   // null = obsazený / zaneprázdněný na neurčito
@@ -161,9 +170,11 @@ export interface PauseState {
 /** Stav pauz tréninku v pořadí fronty. */
 export function pauseStates(queue: QueueEntry[], times: PlayTimes, nowMs: number): PauseState[] {
   let k = 0;
+  const ended = times[TRAINING_ITEM]?.endedAt !== undefined;
   return queue.flatMap((e): PauseState[] => {
     if (e.kind !== 'pause') return [];
     const id = pauseId(k++);
+    if (ended) return [{ id, min: e.min, state: 'over' as const }];
     const end = pauseEnd(times[id], e.min);
     if (end === null) return [{ id, min: e.min, state: 'waiting' as const }];
     return [{ id, min: e.min, state: end > nowMs ? ('running' as const) : ('over' as const), ...(end > nowMs ? { endsAt: end } : {}) }];

@@ -49,19 +49,19 @@ describe('tabulka tréninku', () => {
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].scores['league|1|1|id1+id2vid3+id4']).toEqual({ ga: 6, gb: 2 }));
   });
 
-  it('zápis stanoviště: rotace 2, stůl 1 = H4 na pětce; nad max se nepřijme', async () => {
+  it('zápis stanoviště: rotace 2, stůl 1 = H3 na pětce; nad max se nepřijme', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] });
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await user.click(screen.getByRole('button', { name: /^Stanoviště, rotace 2/ }));
-    const input = screen.getByLabelText('Stanoviště, rotace 2, stůl 1: H4');
+    const input = screen.getByLabelText('Stanoviště, rotace 2, stůl 1: H3');
     await user.type(input, '3');
-    await vi.waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ id4: { fiveBarControl: 3 } }));
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ id3: { fiveBarControl: 3 } }));
     await user.clear(input);
     await user.type(input, '11');
     expect(input).toHaveValue(1);
-    expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 6'); // Obrana do držení už bez zápisu
+    expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 8');
   });
 
   it('změna začátku posune časy', async () => {
@@ -220,8 +220,7 @@ describe('tabulka tréninku', () => {
     expect([...help.querySelectorAll('.help-item h4')].map((h) => h.textContent)).toEqual([
       'Stůl 1: Udržení míče na pětce',
       'Stůl 2: Penalta z místa',
-      'Stůl 3: Obrana do držení',
-      'Stůl 4: Rozehrávka ze zadních tyčí',
+      'Stůl 3: Rozehrávka ze zadních tyčí',
     ]);
     expect(help).toHaveTextContent('Teprve po třetím zastavení smí přihrát na trojku');
 

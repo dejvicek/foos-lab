@@ -99,19 +99,16 @@ describe('výsledky sólové části při změně konfigurace', () => {
     expect(t.soloResults).toEqual({});
   });
 
-  it('odebraný hráč přijde o své výsledky (a se 7 hráči jsou jen 3 stanoviště)', () => {
+  it('odebraný hráč přijde o své výsledky', () => {
     const before = base();
     const after = { ...before, attendees: H(7) };
-    expect(lostEntries(before, after).solo).toEqual([
-      { playerId: 'H1', metric: 'backRodsBuildUp', key: 'backRodsBuildUp' },
-      { playerId: 'H8', metric: 'setShooting', key: 'setShooting' },
-    ]);
+    expect(lostEntries(before, after).solo).toEqual([{ playerId: 'H8', metric: 'setShooting', key: 'setShooting' }]);
     expect(pruneEntries(after).soloResults.H8).toBeUndefined();
   });
 
-  it('4 → 3 stoly: zmizí jen stanoviště 4', () => {
+  it('4 → 2 stoly: zmizí jen stanoviště 3', () => {
     const before = base();
-    const after = { ...before, tables: 3 as const };
+    const after = { ...before, tables: 2 as const };
     expect(lostEntries(before, after).solo).toEqual([{ playerId: 'H1', metric: 'backRodsBuildUp', key: 'backRodsBuildUp' }]);
     expect(pruneEntries(after).soloResults.H1).toEqual({ fiveBarControl: 2 });
   });

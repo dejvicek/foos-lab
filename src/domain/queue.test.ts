@@ -116,3 +116,15 @@ describe('Zdržovači', () => {
     expect(form[0]).toMatchObject({ playerId: 'p1', trainings: 1, waitSum: 6 * M });
   });
 });
+
+describe('ukončený trénink (3. 11. 2026)', () => {
+  it('konec tréninku = všechna utkání odehraná a pauzy skončily, i bez časů jednotlivých utkání (Zdržovači je nepočítají)', () => {
+    const q = [item('a', ['p1', 'p2'], 1), pause(10), item('b', ['p1', 'p2'], 1)];
+    const times: PlayTimes = { [TRAINING_ITEM]: { startedAt: at(0), endedAt: at(180) } };
+    const s = runQueue(q, times, [1], at(300));
+    expect([...s.values()].map((x) => x.state)).toEqual(['done', 'done']);
+    expect(s.get('a')!.startedAt).toBeUndefined();
+    expect(pauseStates(q, times, at(300)).map((p) => p.state)).toEqual(['over']);
+    expect(delayStats(q, s)).toEqual([]);
+  });
+});

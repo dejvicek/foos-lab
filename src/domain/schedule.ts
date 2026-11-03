@@ -94,7 +94,8 @@ function groupRows(
   withStations: boolean,
   metric?: SoloMetric,
 ): { rows: ScheduleRow[]; g: number; end: number } {
-  const g = Math.min(tables, Math.floor(players.length / 2));
+  // Stanoviště jsou jen tři (Obrana do držení odstraněna 3. 11. 2026) – víc skupin než stanovišť nejde.
+  const g = Math.min(tables, Math.floor(players.length / 2), withStations ? STATIONS.length : tables);
   const gr = groups(players, g);
   const rotations = withStations ? g : 1;
   const rows: ScheduleRow[] = [];
@@ -104,7 +105,7 @@ function groupRows(
       const gi = (((j - r) % g) + g) % g;
       cells.push(
         withStations
-          ? { type: 'group', players: gr[gi], station: STATIONS[j], ...(STATION_METRICS[j] ? { metric: STATION_METRICS[j] } : {}) }
+          ? { type: 'group', players: gr[gi], station: STATIONS[j], metric: STATION_METRICS[j] }
           : metric
             ? { type: 'group', players: gr[gi], metric }
             : { type: 'group', players: gr[gi] },

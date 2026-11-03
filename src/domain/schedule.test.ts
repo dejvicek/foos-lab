@@ -14,8 +14,8 @@ describe('content', () => {
     expect(clock(75)).toBe('1:15');
     expect(clock(106)).toBe('1:46');
   });
-  it('má 4 stanoviště, 7 kol a vysvětlivky', () => {
-    expect(STATIONS).toHaveLength(4);
+  it('má 3 stanoviště (Obrana do držení odstraněna 3. 11. 2026), 7 kol a vysvětlivky', () => {
+    expect(STATIONS).toHaveLength(3);
     expect(ROUNDS.map((r) => r.min)).toEqual([8, 8, 8, 8, 5, 3, 3]);
     expect(EXPLANATIONS.flatMap((g) => g.items.map((i) => i.name))).toContain('Daň za ztrátu');
   });
@@ -41,11 +41,11 @@ describe('buildSchedule – týmový', () => {
     expect(matchRows(s, 'league')[4].rule).toBe('Start 0:3 + daň (levá strana začíná 0:3), 5 min');
   });
 
-  it('sólová část: rozehrání 0:00, rotace po 8 min, pauza (g=4)', () => {
-    expect(section(T(8, 4), 'solo').rows.map((r) => r.time)).toEqual([0, 15, 23, 31, 39, 47]);
+  it('sólová část: rozehrání 0:00, rotace po 8 min, pauza (3 stanoviště)', () => {
+    expect(section(T(8, 4), 'solo').rows.map((r) => r.time)).toEqual([0, 15, 23, 31, 39]);
     const rot2 = section(T(8, 4), 'solo').rows[2];
-    // rotace 2: stůl 1 hostí skupinu ((0-1) mod 4) = 3, stanoviště 1
-    expect(rot2.cells[0]).toEqual({ type: 'group', players: ['H4', 'H8'], station: STATIONS[0], metric: 'fiveBarControl' });
+    // rotace 2: stůl 1 hostí skupinu ((0-1) mod 3) = 2, stanoviště 1
+    expect(rot2.cells[0]).toEqual({ type: 'group', players: ['H3', 'H6'], station: STATIONS[0], metric: 'fiveBarControl' });
   });
 
   it('simulace: vlny 2:00 a 2:20, vyhodnocení 2:45, týmy A/B', () => {

@@ -30,22 +30,21 @@ describe('SOLO_METRICS', () => {
 });
 
 describe('metriky v rozpisu', () => {
-  it('kritérium 15: n=8, t=4, rotace 2, stůl 1 = H4+H8 na pětce', () => {
+  it('kritérium 15 (3 stanoviště od 3. 11. 2026): n=8, t=4, rotace 2, stůl 1 = H3+H6 na pětce', () => {
     const solo = team(8, 4).sections.find((s) => s.id === 'solo')!;
     const rot2 = solo.rows.find((r) => r.label === 'Stanoviště, rotace 2')!;
-    expect(rot2.cells[0]).toEqual({ type: 'group', players: ['H4', 'H8'], station: STATIONS[0], metric: 'fiveBarControl' });
+    expect(rot2.cells[0]).toEqual({ type: 'group', players: ['H3', 'H6'], station: STATIONS[0], metric: 'fiveBarControl' });
   });
 
-  it('týmový n=8, t=4: každý hráč má rozehrání a každé stanoviště se zápisem právě jednou (Obrana do držení už bez zápisu)', () => {
+  it('týmový n=8, t=4: každý hráč má rozehrání a každé ze 3 stanovišť právě jednou', () => {
     const slots = soloSlots(team(8, 4));
-    expect(slots.some((x) => (x.metric as string) === 'blockToControl')).toBe(false);
     for (const m of ['warmupPasses', 'fiveBarControl', 'setShooting', 'backRodsBuildUp'] as SoloMetric[])
       expect(count(slots, m)).toBe(8);
     expect(new Set(slots.map((s) => `${s.playerId}:${s.metric}`)).size).toBe(slots.length);
   });
 
-  it('týmový n=8, t=3: stanoviště 4 se nehraje', () => {
-    expect(count(soloSlots(team(8, 3)), 'backRodsBuildUp')).toBe(0);
+  it('týmový n=8, t=2: stanoviště 3 se nehraje', () => {
+    expect(count(soloSlots(team(8, 2)), 'backRodsBuildUp')).toBe(0);
   });
 
   it('jedničky n=5: rozehrání = rozehrávka ze zadku, plus řetězec', () => {
