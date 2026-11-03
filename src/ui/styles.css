@@ -882,3 +882,7 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .pp-pin { display: inline-flex; align-items: center; gap: 6px; background: #F2C94C; color: #1d1d1b; border-radius: 14px; padding: 2px 4px 2px 10px; }
 .pp-pin button.icon { min-width: 26px; min-height: 26px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.08); border: 0; color: inherit; }
 .pp-p.pinned { box-shadow: 0 0 0 2px #F2C94C, 0 0 0 3px var(--ink); }
+button.pp-toggle { background: none; border: 0; padding: 0; min-height: 0; color: inherit; font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+button.pp-toggle::after { content: ' ▸'; color: var(--muted); font-weight: 400; }
+button.pp-toggle[aria-expanded='true']::after { content: ' ▾'; }
+.pp-hint button.link { font-size: 12px; }

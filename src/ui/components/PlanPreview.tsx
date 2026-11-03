@@ -72,6 +72,17 @@ function WhoLine({ r, names, hl }: { r: ScheduleRow; names: Record<PlayerId, str
 export function PlanPreview({ training, onChange, names, hl }: { training: Training; onChange?(t: Training): void; names?: Record<PlayerId, string>; hl?: Highlight }) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [drop, setDrop] = useState<{ i: number; pos: 'before' | 'after'; after: number } | null>(null);
+  // Hráči v kolech jen na požádání: klik na kolo, přepínač „u všech kol“, nebo připnutý hráč.
+  const [openRounds, setOpenRounds] = useState<Set<string>>(() => new Set());
+  const [all, setAll] = useState(false);
+  const shown = (label: string) => all || !!hl?.pinned || openRounds.has(label);
+  const toggleRound = (label: string) =>
+    setOpenRounds((s) => {
+      const n = new Set(s);
+      if (n.has(label)) n.delete(label);
+      else n.add(label);
+      return n;
+    });
   if (!canBuildSchedule(training)) return <p className="note">Náhled plánu se ukáže, až bude dost přítomných.</p>;
   const rows = buildSchedule(training).sections.flatMap((s) => s.rows);
   const editable = !!onChange && training.format === 'custom';
@@ -86,9 +97,9 @@ export function PlanPreview({ training, onChange, names, hl }: { training: Train
   return (
     <section className="plan-preview">
       <h3>Náhled plánu</h3>
-      {names && hl && (
+      {names && (
         <p className="pp-hint">
-          {hl.pinned ? (
+          {hl?.pinned ? (
             <span className="pp-pin" role="status" aria-label="Zvýrazněný hráč">
               Zvýrazněno: <b>{names[hl.pinned] ?? '?'}</b>
               <button type="button" className="icon" aria-label="Zrušit zvýraznění" onClick={hl.clear}>
@@ -96,7 +107,12 @@ export function PlanPreview({ training, onChange, names, hl }: { training: Train
               </button>
             </span>
           ) : (
-            <span className="muted">Najeď na jméno – zvýrazní se v celém plánu. Klikni na jméno, ať zůstane zvýrazněné.</span>
+            <>
+              <button type="button" className="link" aria-pressed={all} onClick={() => setAll(!all)}>
+                {all ? 'Skrýt hráče' : 'Ukázat hráče u všech kol'}
+              </button>
+              <span className="muted"> Klikni na kolo – ukáže, kdo s kým hraje. Klikni na jméno, ať zůstane zvýrazněné.</span>
+            </>
           )}
         </p>
       )}
@@ -179,9 +195,15 @@ export function PlanPreview({ training, onChange, names, hl }: { training: Train
               }
             >
               {time}
-              <span className="pp-label">{r.label}</span>
+              {names && r.kind !== 'break' ? (
+                <button type="button" className="pp-label pp-toggle" aria-expanded={shown(r.label)} onClick={() => toggleRound(r.label)}>
+                  {r.label}
+                </button>
+              ) : (
+                <span className="pp-label">{r.label}</span>
+              )}
               <span className="pp-rule">{r.rule ?? ''}</span>
-              {names && r.kind !== 'break' && <WhoLine r={r} names={names} hl={hl} />}
+              {names && r.kind !== 'break' && shown(r.label) && <WhoLine r={r} names={names} hl={hl} />}
             </li>
           );
         })}

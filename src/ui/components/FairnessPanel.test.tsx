@@ -58,10 +58,20 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     render(<App repo={memoryRepository({ players, trainings: [{ ...t, plan: { warmupPasses: 1, normal: 1 } }] })} auth={auth(true)} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await openSettings(user, 'Disciplíny');
-    const items = within(screen.getByRole('list', { name: 'Náhled plánu' })).getAllByRole('listitem');
-    const match = items.find((li) => li.textContent?.includes('Normální leg'))!;
+    const items = () => within(screen.getByRole('list', { name: 'Náhled plánu' })).getAllByRole('listitem');
+    // ve výchozím stavu bez hráčů (náhled nepřehlcený); klik na kolo je ukáže jen u něj
+    expect(screen.getByRole('list', { name: 'Náhled plánu' }).querySelector('.pp-who')).toBeNull();
+    const round = (label: string) => items().find((li) => li.textContent?.includes(label))!;
+    await user.click(within(round('Normální leg')).getByRole('button', { name: /kolo$/ }));
+    expect(round('Normální leg').querySelector('.pp-who')).not.toBeNull();
+    expect(round('Přihrávky na pětce').querySelector('.pp-who')).toBeNull();
+    await user.click(within(round('Normální leg')).getByRole('button', { name: /kolo$/ }));
+    expect(round('Normální leg').querySelector('.pp-who')).toBeNull();
+    // přepínač pro všechna kola
+    await user.click(screen.getByRole('button', { name: 'Ukázat hráče u všech kol' }));
+    const match = round('Normální leg');
     expect(match.querySelector('.pp-who')!.textContent).toMatch(/^H\d \+ H\d vs H\d \+ H\d · H\d vs H\d$/);
-    const drill = items.find((li) => li.textContent?.includes('Přihrávky na pětce'))!;
+    const drill = round('Přihrávky na pětce');
     expect(drill.querySelector('.pp-who')!.textContent).toMatch(/^H\d, H\d · H\d, H\d · H\d, H\d$/);
   });
 
@@ -70,6 +80,7 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     render(<App repo={memoryRepository({ players, trainings: [{ ...t, plan: { warmupPasses: 1, normal: 2 } }] })} auth={auth(true)} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await openSettings(user, 'Disciplíny');
+    await user.click(screen.getByRole('button', { name: 'Ukázat hráče u všech kol' }));
     const preview = screen.getByRole('list', { name: 'Náhled plánu' });
     const lit = () => [...preview.querySelectorAll('.pp-p.hl')].map((x) => x.textContent);
     const h3 = [...preview.querySelectorAll('.pp-p')].filter((x) => x.textContent === 'H3');
@@ -86,7 +97,7 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     expect(new Set(lit())).toEqual(new Set(['H5']));
     fireEvent.mouseLeave(within(mates).getByRole('rowheader', { name: 'H5' }));
     // kliknutí zvýraznění připne (zůstane i po odjetí myší); nad náhledem je štítek, kterým jde zrušit
-    expect(screen.getByText(/Klikni na jméno/)).toBeInTheDocument();
+    expect(screen.getByText(/Klikni na jméno, ať zůstane zvýrazněné/)).toBeInTheDocument();
     fireEvent.click(h3[0]);
     fireEvent.mouseLeave(h3[0]);
     expect(new Set(lit())).toEqual(new Set(['H3']));
@@ -98,6 +109,21 @@ describe('kontrola rozpisu v nastavení tréninku', () => {
     fireEvent.click(h3[0]);
     fireEvent.click(h3[0]);
     expect(lit()).toEqual([]);
+  });
+
+  it('připnutý hráč z kontroly rozpisu ukáže hráče u všech kol; po zrušení se zase schovají', async () => {
+    const user = userEvent.setup();
+    render(<App repo={memoryRepository({ players, trainings: [{ ...t, plan: { warmupPasses: 1, normal: 2 } }] })} auth={auth(true)} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await openSettings(user, 'Disciplíny');
+    const preview = screen.getByRole('list', { name: 'Náhled plánu' });
+    expect(preview.querySelector('.pp-who')).toBeNull();
+    await user.click(screen.getByText('Kontrola rozpisu: kdo s kým kolikrát'));
+    await user.click(within(screen.getByRole('table', { name: 'Soupeři: kolikrát proti sobě' })).getByRole('rowheader', { name: 'H2' }));
+    expect(preview.querySelectorAll('.pp-who').length).toBeGreaterThan(1);
+    expect(new Set([...preview.querySelectorAll('.pp-p.hl')].map((x) => x.textContent))).toEqual(new Set(['H2']));
+    await user.click(screen.getByRole('button', { name: 'Zrušit zvýraznění' }));
+    expect(preview.querySelector('.pp-who')).toBeNull();
   });
 });
 
