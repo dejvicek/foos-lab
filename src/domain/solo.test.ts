@@ -47,7 +47,7 @@ describe('metriky v rozpisu', () => {
     expect(count(soloSlots(team(8, 2)), 'backRodsBuildUp')).toBe(0);
   });
 
-  it('jedničky n=5: rozehrání = rozehrávka ze zadku, plus řetězec', () => {
+  it('jedničky n=5: rozehrání = rozehrávka z dvojky, plus řetězec', () => {
     const slots = soloSlots(buildSchedule({ mode: 'single', tables: 2, attendees: H(5) }));
     expect(count(slots, 'backRodsBuildUp')).toBe(5);
     expect(count(slots, 'chain')).toBe(5);

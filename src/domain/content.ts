@@ -231,7 +231,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "parts": [
           {
             "label": "Cíl:",
-            "text": "dostat míč ze zadku na vlastní pětku přes aktivní soupeřovu trojku. Nejdražší místo na stole, kde se dá ztratit míč."
+            "text": "dostat míč z branky a dvojky na vlastní pětku přes aktivní soupeřovu trojku. Nejdražší místo na stole, kde se dá ztratit míč."
           },
           {
             "label": "Provedení:",
@@ -248,7 +248,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "parts": [
           {
             "label": "Provedení:",
-            "text": "hráč musí dokončit celý řetězec: blok → zastavení v zadku → rozehrávka na pětku → zastavení → přihrávka na trojku → zastavení → střela. Soupeř hraje normálně, střílí jen středním tempem. Řetězec se přeruší první ztrátou nebo prvním krokem bez zastavení."
+            "text": "hráč musí dokončit celý řetězec: blok → zastavení v brance nebo na dvojce → rozehrávka na pětku → zastavení → přihrávka na trojku → zastavení → střela. Soupeř hraje normálně, střílí jen středním tempem. Řetězec se přeruší první ztrátou nebo prvním krokem bez zastavení."
           },
           {
             "label": "Počítá se:",

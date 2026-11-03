@@ -206,7 +206,7 @@ function buildTeam(input: ScheduleInput): Schedule {
 function buildSingles(players: PlayerId[], tables: TableCount): Schedule {
   const matches: Match[] = [];
   const t = TIMES.single;
-  const warm = groupRows(players, tables, 0, t.warmup, () => 'Rozehrání: rozehrávka ze zadku', false, 'backRodsBuildUp');
+  const warm = groupRows(players, tables, 0, t.warmup, () => 'Rozehrání: rozehrávka z dvojky', false, 'backRodsBuildUp');
   const chain = groupRows(players, tables, t.warmup, t.chain, () => 'Řetězec (střídání po 10 pokusech)', false, 'chain');
   const rows: ScheduleRow[] = [...warm.rows, ...chain.rows];
   let start = t.leagueStart;

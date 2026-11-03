@@ -25,7 +25,7 @@ describe('vysvětlivky u bloků', () => {
     expect(e.perTable.map((x) => x?.name)).toEqual(['Udržení míče na pětce', 'Penalta z místa', 'Rozehrávka ze zadních tyčí', undefined]);
   });
   it('jedničky: rozehrání a řetězec', () => {
-    expect(names(explanationsFor(rowByLabel(single, 'Rozehrání: rozehrávka ze zadku')).main)).toEqual(['Rozehrávka ze zadních tyčí']);
+    expect(names(explanationsFor(rowByLabel(single, 'Rozehrání: rozehrávka z dvojky')).main)).toEqual(['Rozehrávka ze zadních tyčí']);
     expect(names(explanationsFor(rowByLabel(single, 'Řetězec (střídání po 10 pokusech)')).main)).toEqual(['Řetězec (trénink jedniček)']);
   });
   it('konfigurovatelný trénink: nápověda podle disciplíny kola, cvičení jednou za kolo', () => {

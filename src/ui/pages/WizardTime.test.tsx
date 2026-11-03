@@ -48,5 +48,5 @@ it('štítky dovedností: u disciplín v kroku Disciplíny', async () => {
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user);
   const penalty = screen.getByRole('group', { name: 'Penalta z místa proti brankáři' });
-  expect(within(penalty).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana zadkuČtení soupeře');
+  expect(within(penalty).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana brankou a dvojkouČtení soupeře');
 });

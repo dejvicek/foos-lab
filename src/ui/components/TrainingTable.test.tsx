@@ -89,7 +89,7 @@ describe('tabulka tréninku', () => {
     await openSettings(user, 'Kdy a kde');
     await user.selectOptions(screen.getByLabelText('Typ tréninku'), 'single');
     await saveSettings(user);
-    expect(screen.getByLabelText('Rozehrání: rozehrávka ze zadku, stůl 1: H1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rozehrání: rozehrávka z dvojky, stůl 1: H1')).toBeInTheDocument();
   });
 
   it('Zeď: v kole 3 hraje zeď levá strana, v kole 4 pravá', async () => {
@@ -300,5 +300,5 @@ it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
   const r1 = screen.getByRole('button', { name: /^1\. kolo$/ });
   if (r1.getAttribute('aria-expanded') !== 'true') await user.click(r1); // bývá rozbalené jako výchozí
   const help = document.querySelector<HTMLDetailsElement>('details.help')!;
-  expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana zadkuČtení soupeře');
+  expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana brankou a dvojkouČtení soupeře');
 });

@@ -113,7 +113,7 @@ describe('výsledky sólové části při změně konfigurace', () => {
     expect(pruneEntries(after).soloResults.H1).toEqual({ fiveBarControl: 2 });
   });
 
-  it('týmový → jedničky: zůstane jen rozehrávka ze zadku', () => {
+  it('týmový → jedničky: zůstane jen rozehrávka z dvojky', () => {
     const after = pruneEntries({ ...base(), mode: 'single' as const, tables: 4 as const });
     expect(after.soloResults).toEqual({ H1: { backRodsBuildUp: 7 } });
   });

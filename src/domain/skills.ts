@@ -4,11 +4,11 @@
  */
 export const SKILLS = [
   'Střela z trojky',
-  'Střela ze zadku',
+  'Střela z dvojky',
   'Přihrávka z pětky',
   'Kontrola míče',
-  'Obrana zadku',
-  'Rozehrávka ze zadku',
+  'Obrana brankou a dvojkou',
+  'Rozehrávka z dvojky',
   'Clearing',
   'Zachycení volného míče',
   'Čtení soupeře',
