@@ -136,7 +136,7 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
   return (
     <section>
       <h1>Hráči</h1>
-      <p className="lead">Soupiska klubu. Pořadí na soupisce je výchozí nominační pořadí pro trénink.</p>
+      <p className="lead">Soupiska klubu.</p>
       {notice && (
         <p className="notice" role="status">
           {notice}

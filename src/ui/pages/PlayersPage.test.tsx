@@ -32,6 +32,7 @@ describe('stránka Hráči', () => {
     // podle abecedy, ne podle pořadí přidání; ruční posouvání už není
     expect(activeNames()).toEqual(['Čeněk', 'Honza', 'Petr']);
     expect(screen.queryByRole('button', { name: /^Posunout/ })).toBeNull();
+    expect(screen.queryByText(/nominační pořadí/)).toBeNull(); // zastaralý text pryč
 
     await addPlayer('honza');
     expect(screen.getByText('Hráč s tímto jménem už je na soupisce')).toBeInTheDocument();

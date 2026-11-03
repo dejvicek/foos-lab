@@ -60,8 +60,8 @@ export function DrillMarks({ players, events, names }: { players: PlayerId[]; ev
             </ol>
             <span className="tl-sum">
               {r.marks.filter(Boolean).length}/{r.marks.length}
-              {r.streak && r.streak.length > 1 ? ` · série ${r.streak.length}` : ''}
-              {r.marks.length >= 4 ? ` · ${r.halves[0]} → ${r.halves[1]}` : ''}
+              {r.streak && r.streak.length > 1 ? ` · nejdelší série ${r.streak.length}` : ''}
+              {r.marks.length >= 4 ? ` · 1. půlka ${r.halves[0]}, 2. půlka ${r.halves[1]}` : ''}
             </span>
           </div>
         );

@@ -145,8 +145,10 @@ export function TrainingPage({
     manage && schedule?.teams && !teamsLocked ? (
       <details className="sim-setup no-print" open={open}>
         <summary>
-          <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
-          <span className="muted"> – nastav před zahájením simulace</span>
+          <span>
+            <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
+            <span className="muted"> – nastav před zahájením simulace</span>
+          </span>
         </summary>
         <SimTeamsFields training={training} currentTeams={schedule.teams} players={store.data.players} onChange={apply} />
       </details>
