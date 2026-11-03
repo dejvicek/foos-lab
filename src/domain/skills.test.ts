@@ -1,5 +1,5 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { SKILL_GROUPS, SKILLS, skillGroup } from './skills';
+import { matchesSkillFilter, SKILL_GROUPS, SKILLS, skillGroup } from './skills';
 
 describe('štítky dovedností u disciplín (3. 11. 2026)', () => {
   it('každá nabízená disciplína má 1–3 štítky ze sady, hlavní první', () => {
@@ -33,4 +33,12 @@ describe('sekce štítků (barvy)', () => {
     expect(skillGroup('Střela z trojky').id).toBe('attack');
     expect(skillGroup('Koncovky pod tlakem').id).toBe('mind');
   });
+});
+
+it('filtr podle štítků: prázdný pustí vše; jinak stačí shoda se štítkem nebo sekcí', () => {
+  expect(matchesSkillFilter(['Clearing'], { skills: [], groups: [] })).toBe(true);
+  expect(matchesSkillFilter(['Clearing'], { skills: ['Clearing'], groups: [] })).toBe(true);
+  expect(matchesSkillFilter(['Střela z trojky', 'Obrana'], { skills: [], groups: ['defense'] })).toBe(true);
+  expect(matchesSkillFilter(['Zápasová praxe'], { skills: ['Clearing'], groups: ['attack'] })).toBe(false);
+  expect(matchesSkillFilter(undefined, { skills: ['Clearing'], groups: [] })).toBe(false);
 });

@@ -54,3 +54,26 @@ it('štítky dovedností: u disciplín v kroku Disciplíny', async () => {
   expect(tags.map((li) => li.className)).toEqual(['g-attack', 'g-defense', 'g-tactics']);
   expect(screen.getByRole('list', { name: 'Sekce dovedností' })).toHaveTextContent('ÚtokObranaTechnikaTaktikaHlavaZápas');
 });
+
+it('filtrování disciplín podle štítků: sekce v legendě i konkrétní štítek; zrušit filtr', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trenink/novy';
+  render(<App repo={memoryRepository({ players, trainings: [] })} />);
+  await screen.findByRole('heading', { name: 'Kdy a kde' });
+  await next(user);
+  for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
+  await next(user);
+  const shown = () => screen.getAllByRole('group').filter((g) => g.closest('.disc-list')).map((g) => g.getAttribute('aria-label'));
+  const all = shown().length;
+  // konkrétní štítek Clearing (u disciplíny Clearing)
+  await user.click(within(screen.getByRole('group', { name: 'Clearing' })).getByRole('button', { name: 'Clearing' }));
+  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Daň za ztrátu']));
+  expect(shown()).not.toContain('Normální leg');
+  expect(screen.getByText(/zobrazeno \d+ z \d+/)).toBeInTheDocument();
+  // + sekce Útok (sčítá se)
+  await user.click(within(screen.getByRole('list', { name: 'Sekce dovedností' })).getByRole('button', { name: 'Útok' }));
+  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Daň za ztrátu', 'Penalta z místa proti brankáři', 'Přihrávky ke zdi a po lajně']));
+  expect(shown()).not.toContain('Normální leg');
+  await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
+  expect(shown()).toHaveLength(all);
+});

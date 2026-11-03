@@ -34,3 +34,14 @@ export const SKILL_GROUPS: { id: SkillGroupId; name: string; skills: readonly Sk
 ];
 
 export const skillGroup = (s: Skill) => SKILL_GROUPS.find((g) => g.skills.includes(s))!;
+
+/** Filtr disciplín podle štítků: vybrané štítky a sekce se sčítají (stačí jedna shoda). */
+export interface SkillFilter {
+  skills: Skill[];
+  groups: SkillGroupId[];
+}
+
+export function matchesSkillFilter(skills: readonly Skill[] | undefined, f: SkillFilter): boolean {
+  if (!f.skills.length && !f.groups.length) return true;
+  return (skills ?? []).some((s) => f.skills.includes(s) || f.groups.includes(skillGroup(s).id));
+}
