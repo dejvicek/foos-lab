@@ -300,5 +300,5 @@ it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
   const r1 = screen.getByRole('button', { name: /^1\. kolo$/ });
   if (r1.getAttribute('aria-expanded') !== 'true') await user.click(r1); // bývá rozbalené jako výchozí
   const help = document.querySelector<HTMLDetailsElement>('details.help')!;
-  expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObrana brankou a dvojkouČtení soupeře');
+  expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObranaČtení soupeře');
 });

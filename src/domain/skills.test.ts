@@ -13,10 +13,10 @@ describe('štítky dovedností u disciplín (3. 11. 2026)', () => {
   it('sada štítků a příklady přiřazení (bez slova „zadek“)', () => {
     for (const k of SKILLS) expect(k).not.toMatch(/zad(ek|ku)/i);
     expect(SKILLS).toEqual([
-      'Střela z trojky', 'Střela z dvojky', 'Přihrávka z pětky', 'Kontrola míče', 'Obrana brankou a dvojkou', 'Rozehrávka z dvojky', 'Clearing',
+      'Střela z trojky', 'Střela z dvojky', 'Přihrávka z pětky', 'Kontrola míče', 'Obrana', 'Rozehrávka z dvojky', 'Clearing',
       'Zachycení volného míče', 'Čtení soupeře', 'Tempo a trpělivost', 'Koncovky pod tlakem', 'Dotahování', 'Dvojice', 'Zápasová praxe',
     ]);
-    expect(discipline('penaltyKeeper').skills).toEqual(['Střela z trojky', 'Obrana brankou a dvojkou', 'Čtení soupeře']);
+    expect(discipline('penaltyKeeper').skills).toEqual(['Střela z trojky', 'Obrana', 'Čtení soupeře']);
     expect(discipline('clearing').skills![0]).toBe('Clearing');
     expect(discipline('looseBall').skills![0]).toBe('Zachycení volného míče');
     expect(discipline('start55').skills).toEqual(['Koncovky pod tlakem']);

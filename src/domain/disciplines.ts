@@ -40,9 +40,9 @@ export const DISCIPLINES: DisciplineDef[] = [
   { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 4, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], optional: true, skills: ['Přihrávka z pětky'] },
   { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 8, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['Kontrola míče', 'Přihrávka z pětky'] },
   { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper' },
-  { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 4, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['Střela z trojky', 'Obrana brankou a dvojkou', 'Čtení soupeře'] },
+  { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 4, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['Střela z trojky', 'Obrana', 'Čtení soupeře'] },
   { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 4, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], optional: true, skills: ['Střela z trojky'] },
-  { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 4, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true, skills: ['Střela z dvojky', 'Obrana brankou a dvojkou'] },
+  { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 4, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true, skills: ['Střela z dvojky', 'Obrana'] },
   { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 4, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], optional: true, skills: ['Střela z dvojky'] },
   { id: 'clearing', kind: 'drill', name: 'Clearing', min: 4, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true, skills: ['Clearing'] },
   { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 4, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, optional: true, skills: ['Zachycení volného míče', 'Kontrola míče'] },
@@ -55,7 +55,7 @@ export const DISCIPLINES: DisciplineDef[] = [
   { id: 'start44', kind: 'match', name: 'Start 4:4', min: 5, explain: 'Start 4:4', start: [4, 4], skills: ['Koncovky pod tlakem'] },
   { id: 'start45', kind: 'match', name: 'Start 4:5', min: 5, explain: 'Start 4:5', start: [4, 5], paired: true, optional: true, skills: ['Koncovky pod tlakem'] },
   { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5], skills: ['Koncovky pod tlakem'] },
-  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['Zápasová praxe', 'Rozehrávka z dvojky', 'Obrana brankou a dvojkou'] },
+  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['Zápasová praxe', 'Rozehrávka z dvojky', 'Obrana'] },
   { id: 'sim', kind: 'sim', name: 'Simulace ligového kola', min: 40, explain: 'Simulace ligového kola', skills: ['Dvojice', 'Zápasová praxe', 'Koncovky pod tlakem'] },
 ];
 

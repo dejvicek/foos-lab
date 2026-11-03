@@ -7,7 +7,7 @@ export const SKILLS = [
   'Střela z dvojky',
   'Přihrávka z pětky',
   'Kontrola míče',
-  'Obrana brankou a dvojkou',
+  'Obrana',
   'Rozehrávka z dvojky',
   'Clearing',
   'Zachycení volného míče',
