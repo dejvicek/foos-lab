@@ -38,6 +38,15 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
+  // Odehrané bez vlastních časů (ukončený trénink, který proběhl před měřením časů): jen „dohráno“.
+  if (s.state === 'done' && ended === undefined)
+    return (
+      <div className="timing done">
+        <div className="timing-main">
+          <span className="timing-label">dohráno</span>
+        </div>
+      </div>
+    );
   const playerStart = allowStart && canWrite && started === undefined && s.state === 'ready';
   // Konec potvrzuje hráč utkání v Moje hry, nebo organizátor kdekoli (i bez zahájení).
   const confirm = ended === undefined && ((manage && canWrite) || (allowStart && canWrite && started !== undefined));
