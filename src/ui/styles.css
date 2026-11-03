@@ -703,7 +703,7 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .plan-preview { position: sticky; top: 64px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; max-height: 70vh; overflow: auto; }
 .plan-preview h3 { margin: 0 0 6px; }
 .plan-preview ol { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-.plan-preview li { display: grid; grid-template-columns: 44px 62px 1fr; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.plan-preview li { display: grid; grid-template-columns: 44px 80px 1fr; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--line); }
 .plan-preview li.brk { color: var(--muted); font-style: italic; }
 .pp-time { font-weight: 700; font-variant-numeric: tabular-nums; }
 .pp-label { font-weight: 600; }
@@ -725,7 +725,7 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 }
 
 /* Náhled plánu: úprava pauz; týmy pro simulaci v tréninku */
-.plan-preview li.pp-break { grid-template-columns: 44px 62px 1fr; align-items: center; background: var(--surface); border-radius: 6px; font-style: normal; color: var(--ink); }
+.plan-preview li.pp-break { grid-template-columns: 44px 80px 1fr; align-items: center; background: var(--surface); border-radius: 6px; font-style: normal; color: var(--ink); }
 .plan-preview li.pp-break[draggable='true'] { cursor: grab; }
 .plan-preview li.dragging { opacity: 0.45; }
 .plan-preview li.drop-before { box-shadow: inset 0 3px 0 var(--felt); }
@@ -886,3 +886,4 @@ button.pp-toggle { background: none; border: 0; padding: 0; min-height: 0; color
 button.pp-toggle::after { content: ' ▸'; color: var(--muted); font-weight: 400; }
 button.pp-toggle[aria-expanded='true']::after { content: ' ▾'; }
 .pp-hint button.link { font-size: 12px; }
+button.pp-toggle { white-space: nowrap; align-self: start; }
