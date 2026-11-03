@@ -32,3 +32,20 @@ describe('zahájený trénink nejde upravovat', () => {
     expect(await screen.findByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument();
   });
 });
+
+it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště); Živě ho má', async () => {
+  window.location.hash = '#/moje-hry';
+  const players4 = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
+  const { memoryAuth } = await import('../../storage/auth');
+  const auth = memoryAuth({ players: players4.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+  render(
+    <App
+      repo={memoryRepository({ players: players4, trainings: [{ ...t, date: new Date().toISOString().slice(0, 10), createdBy: 'id1', playTimes: { training: { startedAt: Date.now() } } }] })}
+      auth={auth}
+    />,
+  );
+  await screen.findByRole('heading', { name: 'Moje hry' });
+  expect(screen.queryByRole('button', { name: 'celý rozpis ›' })).toBeNull();
+  window.location.hash = '#/zive';
+  expect(await screen.findByRole('button', { name: 'celý rozpis ›' })).toBeInTheDocument();
+});

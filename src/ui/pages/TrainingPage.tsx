@@ -256,13 +256,16 @@ export function TrainingPage({
       onNextRound={onNextRound}
     />
   );
-  const viewHead = (title: string) => (
+  // Moje hry bez odkazu na celý rozpis – stačí Trénink v navigaci (na telefonu se nevešel).
+  const viewHead = (title: string, scheduleLink = true) => (
     <div className="view-head">
       <h1>{title}</h1>
       <span className="muted">{formatDateLong(training.date)}</span>
-      <button type="button" className="link" onClick={() => navigate({ page: 'training', id: training.id })}>
-        celý rozpis ›
-      </button>
+      {scheduleLink && (
+        <button type="button" className="link" onClick={() => navigate({ page: 'training', id: training.id })}>
+          celý rozpis ›
+        </button>
+      )}
     </div>
   );
 
@@ -292,7 +295,7 @@ export function TrainingPage({
   if (view === 'my')
     return (
       <section className="view-my">
-        {viewHead('Moje hry')}
+        {viewHead('Moje hry', false)}
         {schedule && attends ? (
           <MyTable
             schedule={schedule}
