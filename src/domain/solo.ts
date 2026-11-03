@@ -24,6 +24,7 @@ export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'backShotKeeper', name: 'Střela z dvojky proti brankáři', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
   { id: 'backShotSolo', name: 'Střela z dvojky bez brankáře', what: 'góly z 10 střel', max: 10, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
   { id: 'blockToControl', name: 'Obrana do držení', what: 'bloky do držení z 10', max: 10, lowerIsBetter: false, ok: 'do držení', fail: 'nechytil' },
+  { id: 'clearing', name: 'Clearing', what: 'míče za pětku z 10', max: 10, lowerIsBetter: false, ok: 'za pětkou', fail: 'zachycený' },
   { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false, ok: 'dokončená', fail: 'nedokončená' },
   { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },
 ];

@@ -211,6 +211,23 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
+        "name": "Clearing",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "dostat míč z obrany za soupeřovu pětku, aby nezůstal soupeři na útočných tyčích."
+          },
+          {
+            "label": "Provedení:",
+            "text": "obránce má míč v brance nebo na dvojce, soupeř brání trojkou i pětkou. Obránce míč vyčistí dopředu. Dvě kola po 10 pokusech, v každém kole jedna varianta, kterou si obránce určí sám. Ve dvojici se po 10 pokusech vystřídáte."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "povedené clearingy z 10 v každém kole – míč se dostal za soupeřovu pětku."
+          }
+        ]
+      },
+      {
         "name": "Rozehrávka ze zadních tyčí",
         "parts": [
           {

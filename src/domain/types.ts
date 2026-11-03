@@ -29,6 +29,7 @@ export type SoloMetric =
   | 'backShotKeeper'
   | 'backShotSolo'
   | 'blockToControl'
+  | 'clearing'
   | 'backRodsBuildUp'
   | 'chain';
 /** Klíč výsledku: `metrika` (klasický trénink) nebo `metrika@kolo` (konfigurovatelný). */

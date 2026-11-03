@@ -5,7 +5,7 @@ describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
       'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
-      'blockToControl', 'backRodsBuildUp', 'chain',
+      'blockToControl', 'clearing', 'backRodsBuildUp', 'chain',
       'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
     ]);
     expect(discipline('start03')).toMatchObject({ kind: 'match', min: 5, lossTax: true, start: [0, 3] });
