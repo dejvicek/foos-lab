@@ -904,9 +904,31 @@ button.pp-toggle { white-space: nowrap; align-self: start; }
 /* Štítky dovedností disciplíny */
 .skill-tags { list-style: none; margin: 2px 0 0 26px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .skill-tags li { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; line-height: 18px; }
-.skill-tags li.main { color: var(--felt); border-color: var(--felt); background: var(--felt-soft); }
 details.help .skill-tags { margin: 6px 0 8px; }
 /* štítky v seznamu disciplín: pod názvem přes celý řádek */
 .disc-list > li > .skill-tags { grid-column: 1 / -1; grid-row: 2; margin: 0 0 2px 26px; }
 .skill-tags li { display: inline-block; min-height: 0; border-bottom: 1px solid var(--line); }
-.skill-tags li.main { border-bottom-color: var(--felt); }
+/* barvy sekcí štítků (světlý i tmavý režim) */
+.skill-tags li { --c: var(--muted); color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 10%, transparent); }
+.skill-tags li.g-attack { --c: #C2410C; }
+.skill-tags li.g-defense { --c: #2D5FA8; }
+.skill-tags li.g-technique { --c: #1F7A4C; }
+.skill-tags li.g-tactics { --c: #7C4DB8; }
+.skill-tags li.g-mind { --c: #A16207; }
+.skill-tags li.g-match { --c: #5B6470; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .skill-tags li.g-attack { --c: #FB923C; }
+  :root:not([data-theme='light']) .skill-tags li.g-defense { --c: #7AA7F0; }
+  :root:not([data-theme='light']) .skill-tags li.g-technique { --c: #4FC98A; }
+  :root:not([data-theme='light']) .skill-tags li.g-tactics { --c: #B794F4; }
+  :root:not([data-theme='light']) .skill-tags li.g-mind { --c: #F2C94C; }
+  :root:not([data-theme='light']) .skill-tags li.g-match { --c: #A3ACB8; }
+}
+.skill-legend { margin: 0 0 8px; }
+.skill-legend li { cursor: help; }
+:root[data-theme='dark'] .skill-tags li.g-attack { --c: #FB923C; }
+:root[data-theme='dark'] .skill-tags li.g-defense { --c: #7AA7F0; }
+:root[data-theme='dark'] .skill-tags li.g-technique { --c: #4FC98A; }
+:root[data-theme='dark'] .skill-tags li.g-tactics { --c: #B794F4; }
+:root[data-theme='dark'] .skill-tags li.g-mind { --c: #F2C94C; }
+:root[data-theme='dark'] .skill-tags li.g-match { --c: #A3ACB8; }

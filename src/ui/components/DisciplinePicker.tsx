@@ -1,5 +1,5 @@
 import { DISCIPLINES } from '../../domain/disciplines';
-import { SkillTags } from './SkillTags';
+import { SkillLegend, SkillTags } from './SkillTags';
 import { DURATION_OPTIONS, fillPlan, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { lockedCounts } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
@@ -66,6 +66,7 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
   );
   const body = (
     <>
+      <SkillLegend />
       {(['drill', 'match', 'sim'] as const).map((kind) => (
         <div key={kind} className="disc-group">
           <h3>{KIND_TITLE[kind]}</h3>

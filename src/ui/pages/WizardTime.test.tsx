@@ -49,4 +49,8 @@ it('štítky dovedností: u disciplín v kroku Disciplíny', async () => {
   await next(user);
   const penalty = screen.getByRole('group', { name: 'Penalta z místa proti brankáři' });
   expect(within(penalty).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObranaČtení soupeře');
+  // barva podle sekce, žádné zvýraznění „hlavního“; nad seznamem legenda sekcí
+  const tags = within(penalty).getAllByRole('listitem');
+  expect(tags.map((li) => li.className)).toEqual(['g-attack', 'g-defense', 'g-tactics']);
+  expect(screen.getByRole('list', { name: 'Sekce dovedností' })).toHaveTextContent('ÚtokObranaTechnikaTaktikaHlavaZápas');
 });

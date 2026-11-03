@@ -1,5 +1,5 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { SKILLS } from './skills';
+import { SKILL_GROUPS, SKILLS, skillGroup } from './skills';
 
 describe('štítky dovedností u disciplín (3. 11. 2026)', () => {
   it('každá nabízená disciplína má 1–3 štítky ze sady, hlavní první', () => {
@@ -22,5 +22,15 @@ describe('štítky dovedností u disciplín (3. 11. 2026)', () => {
     expect(discipline('start55').skills).toEqual(['Koncovky pod tlakem']);
     // každý štítek je u nějaké nabízené disciplíny
     for (const s of SKILLS) expect(DISCIPLINES.some((d) => !d.retired && d.skills?.includes(s)), s).toBe(true);
+  });
+});
+
+describe('sekce štítků (barvy)', () => {
+  it('každý štítek patří do jedné sekce; sekce v pořadí Útok, Obrana, Technika, Taktika, Hlava, Zápas', () => {
+    expect(SKILL_GROUPS.map((g) => g.name)).toEqual(['Útok', 'Obrana', 'Technika', 'Taktika', 'Hlava', 'Zápas']);
+    for (const s of SKILLS) expect(SKILL_GROUPS.filter((g) => (g.skills as readonly string[]).includes(s)), s).toHaveLength(1);
+    expect(skillGroup('Clearing').id).toBe('defense');
+    expect(skillGroup('Střela z trojky').id).toBe('attack');
+    expect(skillGroup('Koncovky pod tlakem').id).toBe('mind');
   });
 });
