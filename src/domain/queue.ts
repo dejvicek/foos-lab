@@ -257,3 +257,7 @@ export function computeDelayLadder(
   }
   return [...acc].map(([p, a]) => toRow(p, a)).sort(byWait(view === 'avg' ? 'waitAvg' : 'waitSum'));
 }
+
+/** Trénink už začal: zahájený organizátorem, nebo už se nějaké utkání / pauza zahájilo či potvrdilo. */
+export const trainingStarted = (t: Pick<Training, 'playTimes'>): boolean =>
+  Object.values(t.playTimes ?? {}).some((p) => p.startedAt !== undefined || p.endedAt !== undefined);

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import type { Player } from '../../domain/types';
-import { next, openSettings, saveSettings, stepButton } from '../../test/wizard';
+import { next, stepButton } from '../../test/wizard';
 
 const players = (n: number): Player[] =>
   Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
@@ -69,24 +69,14 @@ describe('konfigurovatelný trénink v UI', () => {
     expect(within(preview()).getAllByRole('listitem').length).toBe(rows + 2); // náhled se přepočítá
   });
 
-  it('zápis výsledku zamkne kola; pozdní hráč je nezmění', async () => {
+  it('zápis výsledku zamkne kola; běžící trénink už nastavení nemění (pozdní hráč ho nepřeskupí)', async () => {
     const { user, repo } = await newTraining(8);
     await user.click(screen.getByRole('button', { name: '6. kolo' }));
     const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
     fireEvent.click(within(card).getByRole('button', { name: '6. kolo, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
-    // jen jména stran (karta obsahuje i běžící stopky)
-    const before = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!.querySelector('.pick-names')!.textContent;
-    // pozdní příchod: nový hráč v nastavení
-    await openSettings(user, 'Přítomní');
-    await user.type(screen.getByLabelText('Jméno nového hráče'), 'Pozdní');
-    await user.click(screen.getByRole('button', { name: 'Přidat a zaškrtnout' }));
-    await saveSettings(user);
-    if (screen.getByRole('button', { name: '6. kolo' }).getAttribute('aria-expanded') !== 'true')
-      await user.click(screen.getByRole('button', { name: '6. kolo' }));
-    const again = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
-    expect(again.querySelector('.pick-names')!.textContent).toBe(before);
-    expect(again.textContent).not.toContain('Pozdní');
+    expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull();
+    expect(screen.getByText('Trénink běží – nastavení už nejde měnit.')).toBeInTheDocument();
   });
 
   it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {

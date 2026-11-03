@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { canManage, type Viewer } from '../../domain/my';
-import { TRAINING_ITEM } from '../../domain/queue';
+import { TRAINING_ITEM, trainingStarted } from '../../domain/queue';
 import { addPlayer } from '../../domain/roster';
 import { newTraining, sortTrainings } from '../../domain/training';
 import type { Training } from '../../domain/types';
@@ -47,6 +47,8 @@ export function EditTrainingPage({ store, id, navigate, viewer }: { store: AppSt
   const training = store.data.trainings.find((t) => t.id === id);
   if (!training) return <p>Trénink nenalezen.</p>;
   if (!canManage(viewer, training)) return <p>Nastavení tréninku může měnit jen jeho zakladatel nebo admin.</p>;
+  // Zahájený trénink se už neupravuje – změna by přeskupila rozehraná kola.
+  if (trainingStarted(training)) return <p>Trénink běží – nastavení už nejde měnit.</p>;
   return (
     <TrainingWizard
       initial={training}

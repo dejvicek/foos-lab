@@ -158,13 +158,14 @@ describe('přihlášení', () => {
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
     await createTraining(user, ['Milan', 'Lavi']);
-    expect(await screen.findByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument();
+    // zakladatel spravuje (trénink je rovnou zahájený, takže nastavení už nejde měnit, mazat ano)
+    expect(await screen.findByText('Trénink běží – nastavení už nejde měnit.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings.find((t) => t.id !== 't1')?.createdBy).toBe('id2'));
 
     window.location.hash = '#/trenink/t1';
-    await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull());
-    expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull();
+    await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull());
+    expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull();
     window.location.hash = '#/trenink/t1/nastaveni'; // ani přímou adresou
     expect(await screen.findByText(/Nastavení tréninku může měnit jen/)).toBeInTheDocument();
   });
