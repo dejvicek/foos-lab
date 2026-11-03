@@ -7,10 +7,9 @@ interface Props {
   scores: Record<MatchId, Score>;
   attendees: PlayerId[];
   names: Record<PlayerId, string>;
-  onClear?(): void;
 }
 
-export function StandingsView({ schedule, scores, attendees, names, onClear }: Props) {
+export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const hasSim = sim !== null;
   const empty = legsDone === 0 && (!sim || sim.played === 0);
@@ -67,13 +66,6 @@ export function StandingsView({ schedule, scores, attendees, names, onClear }: P
             Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty na leg se počítají jen z legů, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při simulaci kola se počítají výhry, ne góly, protože se hraje na sety.
           </p>
         </>
-      )}
-      {onClear && (
-        <div className="actions-row no-print">
-          <button type="button" className="ghost danger" onClick={() => confirm('Opravdu smazat všechna skóre tohoto tréninku?') && onClear()}>
-            Vymazat všechna skóre tohoto tréninku
-          </button>
-        </div>
       )}
     </section>
   );

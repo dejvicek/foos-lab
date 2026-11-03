@@ -396,7 +396,6 @@ export function TrainingPage({
             scores={training.scores}
             attendees={training.attendees}
             names={names}
-            onClear={manage ? () => store.updateTrainingConfig({ ...training, scores: {} }) : undefined}
           />
           {delays.length > 0 && (
             <section className="delays">

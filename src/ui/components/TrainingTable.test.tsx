@@ -74,16 +74,11 @@ describe('tabulka tréninku', () => {
     expect(within(rowOf('1. kolo')).getByText('18:30')).toBeInTheDocument();
   });
 
-  it('vymazání skóre nechá výsledky sólové části', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const t = { ...training(8, 'team', 4), scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } }, soloResults: { id1: { warmupPasses: 15 } } };
-    const repo = memoryRepository({ players: players(8), trainings: [t] });
-    render(<App repo={repo} />);
-    await user.click(await screen.findByRole('button', { name: 'Vymazat všechna skóre tohoto tréninku' }));
-    await vi.waitFor(() => expect(repo.snapshot().trainings[0].scores).toEqual({}));
-    expect(repo.snapshot().trainings[0].soloResults).toEqual({ id1: { warmupPasses: 15 } });
-    vi.restoreAllMocks();
+  it('tlačítko na vymazání všech skóre už není (2. 11. 2026)', async () => {
+    const t = { ...training(8, 'team', 4), scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
+    render(<App repo={memoryRepository({ players: players(8), trainings: [t] })} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    expect(screen.queryByRole('button', { name: /Vymazat všechna skóre/ })).toBeNull();
   });
 
   it('po změně typu tréninku je zase rozbalený výchozí blok', async () => {
