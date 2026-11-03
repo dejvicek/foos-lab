@@ -49,7 +49,7 @@ describe('opravy z kontroly', () => {
     const counts: Partial<Record<string, number>> = {};
     for (const l of locked) counts[l.discipline] = (counts[l.discipline] ?? 0) + 1;
     const plan = autoPlan(DEFAULT_SELECTION, 180, 9, 4, counts, new Set(locked.map((l) => l.discipline)));
-    for (const d of ['warmupPasses', 'fiveBarControl', 'blockToControl'] as const) expect(plan[d]).toBe(1);
+    for (const d of ['warmupPasses', 'fiveBarControl'] as const) expect(plan[d]).toBe(1);
     expect(plan.penaltyKeeper).toBe(2); // dvě varianty
   });
 

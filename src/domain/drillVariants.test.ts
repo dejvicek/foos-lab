@@ -32,7 +32,7 @@ describe('nová cvičení (2. 11. 2026)', () => {
     expect(DEFAULT_SELECTION).not.toContain('setShooting');
     for (const id of ['penaltySolo', 'backShotSolo', 'backShotKeeper', 'passWallLane'] as const) expect(DEFAULT_SELECTION).not.toContain(id);
     expect(DISCIPLINES.filter((d) => d.kind === 'drill' && !d.retired).map((d) => d.id)).toEqual([
-      'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'blockToControl', 'clearing', 'looseBall',
+      'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'clearing', 'looseBall',
     ]);
   });
 
@@ -112,4 +112,11 @@ describe('Zachycení volného míče (3. 11. 2026)', () => {
     const r = play(custom(4, 1, { looseBall: 2 }));
     expect(r.map((x) => x.rule)).toEqual(['Zachycení volného míče – po zdi, 4 min', 'Zachycení volného míče – středem, 4 min']);
   });
+});
+
+it('Obrana do držení je vyřazená (3. 11. 2026): nenabízí se, nový trénink ji nepřevezme, historie zůstává', () => {
+  expect(discipline('blockToControl').retired).toBe(true);
+  expect(DEFAULT_SELECTION).not.toContain('blockToControl');
+  expect(newTraining('n', '2026-11-04', custom(8, 4, { blockToControl: 1, normal: 2 }), null).plan.blockToControl ?? 0).toBe(0);
+  expect(play(custom(8, 4, { blockToControl: 1 }))[0].rule).toMatch(/^Obrana do držení/);
 });

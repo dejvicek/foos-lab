@@ -40,7 +40,8 @@ describe('časový plán', () => {
     const used = plannedMinutes(plan);
     expect(used).toBeLessThanOrEqual(180);
     expect(used).toBeGreaterThan(165);
-    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, penaltyKeeper: 2, blockToControl: 1, sim: 1 });
+    expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, penaltyKeeper: 2, sim: 1 });
+    expect(plan.blockToControl).toBeUndefined();
     expect(plan.setShooting).toBeUndefined();
     expect(plan.chain).toBeUndefined();
     expect(plan.backRodsBuildUp).toBeUndefined();
