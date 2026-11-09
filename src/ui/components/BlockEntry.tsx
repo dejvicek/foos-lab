@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ExplanationItem } from '../../domain/content';
-import { explanationsFor } from '../../domain/explain';
+import { explanationsFor, explanationTitle } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric, type SoloMetricDef } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
@@ -128,10 +128,10 @@ interface Props {
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
-function HelpItem({ title, item }: { title: string; item: ExplanationItem }) {
+export function HelpItem({ title, item }: { title?: string; item: ExplanationItem }) {
   return (
     <section className="help-item">
-      <h4>{title}</h4>
+      {title && <h4>{title}</h4>}
       {item.parts.map((p, i) => (
         <p key={i}>
           {p.label && <span className="k">{p.label}</span>} {p.text}
@@ -312,12 +312,12 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             {ex.perTable.some(Boolean) && (
               <div className="help-grid">
                 {ex.perTable.map((it, j) =>
-                  it ? <HelpItem key={j} title={`Stůl ${j + 1}: ${it.name}`} item={it} /> : <div key={j} />,
+                  it ? <HelpItem key={j} title={`Stůl ${j + 1}: ${explanationTitle(it.name)}`} item={it} /> : <div key={j} />,
                 )}
               </div>
             )}
             {[...ex.main, ...ex.general].map((it) => (
-              <HelpItem key={it.name} title={it.name} item={it} />
+              <HelpItem key={it.name} title={explanationTitle(it.name)} item={it} />
             ))}
           </details>
         )}

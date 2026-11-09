@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isEmptyScore, setAttempts, setSolo } from '../domain/training';
 import { tapDelta, tapDrill } from '../domain/drillTap';
 import type { SoloMetricDef } from '../domain/solo';
+import type { CatalogData } from '../domain/catalog';
 import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
 import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
@@ -23,6 +24,8 @@ export interface AppStore {
   reload(): void;
   savePlayer(p: Player): void;
   deletePlayer(id: PlayerId): void;
+  /** Katalog disciplín a štítků (admin). */
+  saveCatalog(c: CatalogData): void;
   /** Jen konfigurace tréninku; skóre nemění. */
   saveTraining(t: Training): void;
   /** Konfigurace + smazání skóre zápasů, které v `t.scores` nejsou (po pruneEntries). */
@@ -260,6 +263,10 @@ export function useAppState(repo: Repository): AppStore {
       savePlayer: (p: Player) => {
         setData((d) => ({ ...d, players: upsert(d.players, p) }));
         enqueue(() => repo.savePlayer(p), pendingKey.players);
+      },
+      saveCatalog: (c: CatalogData) => {
+        setData((d) => ({ ...d, catalog: c }));
+        enqueue(() => repo.saveCatalog(c), pendingKey.catalog);
       },
       deletePlayer: (id: PlayerId) => {
         setData((d) => ({ ...d, players: d.players.filter((p) => p.id !== id) }));

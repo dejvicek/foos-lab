@@ -8,6 +8,7 @@ export const pendingKey = {
   training: (tid: string) => `${tid}::training`,
   time: (tid: string, itemId: string) => `${tid}::time::${itemId}`,
   players: 'players',
+  catalog: 'catalog',
 };
 
 function withEvents(t: Training, events: Training['events']): Training {
@@ -79,5 +80,6 @@ export function mergeRemote(local: AppData, remote: AppData, busy: (key: string)
   });
   const remoteIds = new Set(remote.trainings.map((t) => t.id));
   const unsaved = local.trainings.filter((t) => !remoteIds.has(t.id) && busy(pendingKey.training(t.id)));
-  return { players: busy(pendingKey.players) ? local.players : remote.players, trainings: [...trainings, ...unsaved] };
+  const catalog = busy(pendingKey.catalog) ? local.catalog : remote.catalog;
+  return { players: busy(pendingKey.players) ? local.players : remote.players, trainings: [...trainings, ...unsaved], ...(catalog ? { catalog } : {}) };
 }

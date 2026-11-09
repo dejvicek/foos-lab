@@ -25,14 +25,15 @@ describe('časový plán', () => {
     expect(planSequence({ wall: 2, warmupPasses: 1, sim: 1, normal: 1 })).toEqual(['warmupPasses', 'normal', 'wall', 'wall', 'sim']);
   });
 
-  it('časová osa: přechod 1 min, výchozí pauza 10 min po každé sekci, na konci Zápis 10 min', () => {
+  it('časová osa: přechod 1 min, výchozí pauza 10 min po každé sekci, Zápis na konci už ne (9. 11. 2026)', () => {
     // jen zápasy = jedna sekce → žádná pauza
-    expect(planTimeline(['normal', 'normal', 'normal']).items.map((i) => i.kind)).toEqual(['round', 'round', 'round', 'final']);
+    expect(planTimeline(['normal', 'normal', 'normal']).items.map((i) => i.kind)).toEqual(['round', 'round', 'round']);
     const tl = planTimeline(['warmupPasses', 'normal', 'normal', 'sim']);
-    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'break', 'round', 'round', 'break', 'round', 'final']);
+    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'break', 'round', 'round', 'break', 'round']);
     expect(tl.items[1]).toMatchObject({ kind: 'break', start: 9, min: 10 });
     expect(tl.items[2]).toMatchObject({ start: 19 });
-    expect(tl.items.at(-1)).toMatchObject({ kind: 'final', start: 19 + 18 + 10 + 41, min: 10 });
+    expect(tl.items.at(-1)).toMatchObject({ kind: 'round', start: 19 + 18 + 10, min: 40 });
+    expect(tl.total).toBe(19 + 18 + 10 + 41);
   });
 
   it('kritérium 18: n=8, 4 stoly, 3:00, výchozí výběr se vejde a naplní čas', () => {
@@ -51,10 +52,10 @@ describe('časový plán', () => {
 
   it('doplňuje jen zápasy, dokola v pořadí katalogu', () => {
     const plan = autoPlan(['normal', 'wall', 'start44'], 60, 8, 4);
-    // 1 kolo každého (9+9+4=22) + final 10 = 32; dál dokola normal(9), wall(9), start44(4) …
+    // 1 kolo každého (Zeď po dvou); dál dokola normal (+1), wall (+2), start44 (+1) …
     expect(plannedMinutes(plan)).toBeLessThanOrEqual(60);
-    expect(plan.normal! - plan.wall!).toBeGreaterThanOrEqual(0);
-    expect(plan.normal! - plan.wall!).toBeLessThanOrEqual(1);
+    expect(plan.normal! - plan.wall! / 2).toBeGreaterThanOrEqual(0);
+    expect(plan.normal! - plan.wall! / 2).toBeLessThanOrEqual(1);
   });
 
   it('respektuje minimum zamčených kol', () => {

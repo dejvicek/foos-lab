@@ -1,0 +1,46 @@
+import type { ExplanationItem } from './content';
+import { DISCIPLINES, discipline, type DisciplineDef } from './disciplines';
+import { explanation } from './explain';
+import { SIM_MIN_PLAYERS } from './plan';
+import type { DisciplineId } from './types';
+
+/** Stránka Disciplíny: co se nabízí (vyřazené ne), v pořadí rozpisu. */
+export const offeredDisciplines = (): DisciplineDef[] => DISCIPLINES.filter((d) => !d.retired);
+
+/** Vysvětlivky disciplíny – stejné jako nápověda kola v rozpisu (Start 0:3 navíc Daň za ztrátu). */
+export function disciplineHelp(id: DisciplineId): ExplanationItem[] {
+  const d = discipline(id);
+  const out = [explanation(d.explain)];
+  if (d.id === 'start03') out.push(explanation('Daň za ztrátu'));
+  return out;
+}
+
+/** Obecná pravidla všech zápasových kol (v rozpisu sbalená pod nápovědou kola). */
+export const MATCH_GENERAL_HELP: ExplanationItem[] = [explanation('Každý gól se počítá'), explanation('Role rozhodčího')];
+
+/** Délka v řádku: kolik kol jde za sebou (párová / na dvě varianty = 2) a délka kola (aktuální katalog). */
+export function disciplineDuration(id: DisciplineId): { rounds: 1 | 2; min: number } {
+  const d = discipline(id);
+  return { rounds: d.paired || d.variants ? 2 : 1, min: d.min };
+}
+
+/** Kdo hraje (ikona v řádku): cvičení s bránícím soupeřem / sám, párový zápas s prohozením stran. */
+export function disciplineWho(id: DisciplineId): { icon: 'pair' | 'solo' | 'swap'; label: string } | null {
+  const d = discipline(id);
+  if (d.kind === 'drill') return d.needsPartner ? { icon: 'pair', label: 's bránícím soupeřem' } : { icon: 'solo', label: 'jde i sám' };
+  if (d.paired) return { icon: 'swap', label: '2 kola, strany si prohodí role' };
+  return null;
+}
+
+/** Podrobnosti v rozbaleném řádku – jen z definice disciplíny. */
+export function disciplineFacts(id: DisciplineId): string[] {
+  const d = discipline(id);
+  const out: string[] = [];
+  if (d.variants)
+    out.push(d.variants.every((v) => /^varianta \d$/.test(v)) ? '2 kola po 10 pokusech, variantu si určí hráč' : `2 kola po 10: ${d.variants.join(' / ')}`);
+  if (d.paired) out.push('2 kola, strany si prohodí role');
+  if (d.kind === 'drill') out.push(d.needsPartner ? 's bránícím soupeřem' : 'jde i sám');
+  if (d.singlesOnly) out.push('jen singly');
+  if (d.kind === 'sim') out.push(`od ${SIM_MIN_PLAYERS} hráčů`);
+  return out;
+}

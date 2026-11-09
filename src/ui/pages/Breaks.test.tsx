@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import { autoPlan, DEFAULT_SELECTION } from '../../domain/plan';
-import type { Player, Training } from '../../domain/types';
+import type { BreakDef, Player, Training } from '../../domain/types';
 import { openSettings, openTeams, saveSettings } from '../../test/wizard';
 
 const players = (n: number): Player[] => Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
@@ -21,7 +21,7 @@ const setup = async (t: Training, n = 8) => {
 };
 const rowOf = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}$`) }).closest('tr')!;
 const pauseRows = () => screen.getAllByRole('row').filter((r) => r.textContent?.includes('Pauza'));
-const saved = (repo: ReturnType<typeof memoryRepository>) => repo.snapshot().trainings[0].breaks;
+const saved = (repo: ReturnType<typeof memoryRepository>) => repo.snapshot().trainings[0].breaks as BreakDef[] | null | undefined;
 
 describe('pauzy v rozpisu (notebook, správce)', () => {
   it('délka pauzy jde změnit, časy dalších kol se posunou', async () => {

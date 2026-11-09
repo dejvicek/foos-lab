@@ -50,6 +50,10 @@ export function memoryRepository(
         const i = data.players.findIndex((x) => x.id === p.id);
         data.players = i < 0 ? [...data.players, copy(p)] : data.players.map((x) => (x.id === p.id ? copy(p) : x));
       }),
+    saveCatalog: (c) =>
+      write(() => {
+        data.catalog = copy(c);
+      }),
     deletePlayer: (id) =>
       write(() => {
         data.players = data.players.filter((p) => p.id !== id);

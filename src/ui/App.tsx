@@ -8,6 +8,9 @@ import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
 import { MainNav } from './components/MainNav';
 import { LadderPage } from './pages/LadderPage';
+import { DisciplinesPage } from './pages/DisciplinesPage';
+import { TemplatesPage } from './pages/TemplatesPage';
+import { applyCatalog } from '../domain/catalog';
 import { ChangePasswordPage, LoginPage } from './pages/LoginPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { PlayersPage } from './pages/PlayersPage';
@@ -79,6 +82,12 @@ function SignedIn({
   onSignOut(): void;
 }) {
   const store = useAppState(repo);
+  // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
+  const appliedCatalog = useRef<unknown>(null);
+  if (appliedCatalog.current !== (store.data.catalog ?? null)) {
+    applyCatalog(store.data.catalog);
+    appliedCatalog.current = store.data.catalog ?? null;
+  }
   const [route, navigate] = useHashRoute();
   const [prefs, setPrefsState] = useState<UiPrefs>(loadPrefs);
   const setPrefs = (p: UiPrefs) => {
@@ -133,6 +142,8 @@ function SignedIn({
     ) : (
       noLive
     );
+  else if (route.page === 'disciplines') body = <DisciplinesPage store={store} admin={viewer.isAdmin} />;
+  else if (route.page === 'templates') body = <TemplatesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} />;
   else body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
 

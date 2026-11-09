@@ -1,19 +1,24 @@
-import { discipline } from './disciplines';
+import { catalogMins, discipline, DISCIPLINES } from './disciplines';
+import { currentTemplates, templateBreaks, type TrainingTemplate } from './catalog';
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
-import { autoPlan, DEFAULT_DURATION, DEFAULT_SELECTION, SOLO_SELECTION } from './plan';
+import { manualPlan, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
 
-export function newTraining(id: string, today: string, last: Training | null, createdBy: PlayerId | null = null): Training {
-  const prev = last?.format === 'custom' ? last : null;
+export function newTraining(id: string, today: string, last: Training | null, createdBy: PlayerId | null = null, template: TrainingTemplate = currentTemplates()[0]): Training {
   const tables = last?.tables ?? 4;
-  const durationMin = prev?.durationMin ?? DEFAULT_DURATION;
-  // Vyřazené disciplíny (Řetězec, Rozehrávka ze zadních tyčí) se do nového tréninku nepřebírají.
-  // Vyřazená s nástupcem (stará Penalta z místa → proti brankáři) se nahradí nástupcem.
-  const selection = prev
-    ? [...new Set(selectedDisciplines(prev.plan).flatMap((id) => (discipline(id).retired ? (discipline(id).successor ? [discipline(id).successor!] : []) : [id])))]
-    : DEFAULT_SELECTION;
+  // Výběr a délka podle šablony (9. 11. 2026, dřív z posledního tréninku). Vyřazené disciplíny se
+  // nepřebírají; vyřazená s nástupcem (stará Penalta z místa → proti brankáři) se nahradí nástupcem.
+  const selection = [...new Set(template.selection.flatMap((id) => {
+    const d = DISCIPLINES.find((x) => x.id === id);
+    if (!d) return [];
+    return d.retired ? (d.successor ? [d.successor] : []) : [id];
+  }))];
+  const durationMin = template.durationMin;
+  // Délky kol podle aktuálního katalogu – trénink si je nese, pozdější změna katalogu jeho časy nehne.
+  const disciplineMin = catalogMins();
+  const breaks = templateBreaks(template);
   return {
     id,
     date: today,
@@ -27,9 +32,26 @@ export function newTraining(id: string, today: string, last: Training | null, cr
     simTeams: null,
     format: 'custom',
     durationMin,
-    plan: autoPlan(selection, durationMin, 0, tables),
+    // Přesně kola ze šablony (cvičení se dopočítají podle přítomných), nic se nedoplňuje.
+    plan: manualPlan(selection, 0, tables, template.rounds),
     lockedRounds: [],
     createdBy,
+    disciplineMin,
+    // Pořadí disciplín ze šablony.
+    disciplineOrder: selection,
+    // Pauzy po sekcích podle šablony, jinak žádné (9. 11. 2026); další jde přidat v náhledu plánu.
+    breaks,
+  };
+}
+
+/** Použije šablonu na trénink v průvodci: délka a výběr disciplín (kola rozloží replan). */
+export function withTemplate(t: Training, template: TrainingTemplate): Training {
+  return {
+    ...t,
+    durationMin: template.durationMin,
+    breaks: templateBreaks(template),
+    disciplineOrder: [...template.selection],
+    plan: manualPlan(template.selection, t.attendees.length, t.tables, template.rounds, lockedCounts(t), new Set(t.lockedRounds.map((l) => l.discipline))),
   };
 }
 
@@ -173,8 +195,8 @@ export function lockedCounts(t: Training): Partial<Record<DisciplineId, number>>
 }
 
 /**
- * Konfigurovatelný trénink: změna výběru disciplín, délky, přítomných nebo stolů rozloží kola znovu
- * (PRD 4.6); pouhá změna počtu kol (+/−) zůstane, jak ji administrátor nastavil.
+ * Konfigurovatelný trénink: změna výběru disciplín, přítomných nebo stolů přepočítá kola cvičení
+ * (aby se vystřídali všichni); zápasy si nechají počet kol a čas se nedoplňuje (9. 11. 2026, PRD 4.6).
  */
 export function replan(before: Training, after: Training): Training {
   if (after.format !== 'custom') return after;
@@ -195,14 +217,7 @@ export function replan(before: Training, after: Training): Training {
   if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && discipline(id).optional && !played[id]));
   return {
     ...after,
-    plan: autoPlan(
-      selection,
-      after.durationMin,
-      after.attendees.length,
-      after.tables,
-      lockedCounts(after),
-      new Set(after.lockedRounds.map((l) => l.discipline)),
-      after.breaks ?? null,
-    ),
+    // Bez doplňování (9. 11. 2026): cvičení podle přítomných, zápasy s počtem kol, jak jsou.
+    plan: manualPlan(selection, after.attendees.length, after.tables, after.plan, lockedCounts(after), new Set(after.lockedRounds.map((l) => l.discipline))),
   };
 }

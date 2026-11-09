@@ -25,6 +25,18 @@ const ICON: Record<string, ReactNode> = {
       <path d="M6 20V10M12 20V4M18 20v-7" />
     </svg>
   ),
+  disciplines: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
+      <path d="M4 21V5M9 8h6M9 12h6" />
+    </svg>
+  ),
+  templates: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </svg>
+  ),
   players: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="9" cy="8" r="3" />
@@ -45,7 +57,7 @@ interface Item {
 
 /**
  * Hlavní navigace: Živě (běžící trénink, na kterém hráč hraje nebo který organizuje) · Moje hry (jen když hraje) · Trénink · Žebříček
- * · Hráči (jen admin). Na telefonu dole s ikonami.
+ * · Disciplíny · Šablony a Hráči (jen admin). Na telefonu dole s ikonami.
  */
 export function MainNav({
   route,
@@ -79,6 +91,8 @@ export function MainNav({
       : []),
     { key: 'trainings', label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit'] },
     { key: 'ladder', label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
+    { key: 'disciplines', label: 'Disciplíny', route: { page: 'disciplines' }, match: ['disciplines'] },
+    ...(admin ? [{ key: 'templates', label: 'Šablony', route: { page: 'templates' } as Route, match: ['templates'] as Route['page'][] }] : []),
     ...(admin ? [{ key: 'players', label: 'Hráči', route: { page: 'players' } as Route, match: ['players'] as Route['page'][] }] : []),
   ];
   return (

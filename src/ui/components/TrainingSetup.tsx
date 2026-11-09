@@ -41,28 +41,29 @@ export function WhenFields({ training, onChange }: PartProps) {
           </select>
         </div>
       )}
-      <div className="field">
-        <span className="field-label" id="t-tables">
-          Počet stolů
-        </span>
-        <div className="dot-line" role="radiogroup" aria-labelledby="t-tables" style={{ ["--fill" as string]: String((training.tables - 1) / 3) }}>
-          {([1, 2, 3, 4] as TableCount[]).map((n) => (
-            <label key={n} className={n <= training.tables ? 'dot-step on' : 'dot-step'}>
-              <input
-                type="radio"
-                name={`tables-${training.id}`}
-                value={n}
-                checked={training.tables === n}
-                aria-label={`${n} ${plural(n, 'stůl', 'stoly', 'stolů')}`}
-                onChange={() => onChange({ ...training, tables: n })}
-              />
-              <span className="dot" aria-hidden="true" />
-              <span className="dot-num" aria-hidden="true">
-                {n}
-              </span>
-            </label>
-          ))}
-        </div>
+      <TablesField name={`tables-${training.id}`} value={training.tables} onChange={(n) => onChange({ ...training, tables: n })} />
+    </div>
+  );
+}
+
+/** Počet stolů 1–4 jako linka s tečkami (průvodce, šablony). */
+export function TablesField({ name, value, onChange, label = 'Počet stolů' }: { name: string; value: number; onChange(n: TableCount): void; label?: string }) {
+  const labelId = `${name}-label`;
+  return (
+    <div className="field">
+      <span className="field-label" id={labelId}>
+        {label}
+      </span>
+      <div className="dot-line" role="radiogroup" aria-labelledby={labelId} style={{ ['--fill' as string]: String((value - 1) / 3) }}>
+        {([1, 2, 3, 4] as TableCount[]).map((n) => (
+          <label key={n} className={n <= value ? 'dot-step on' : 'dot-step'}>
+            <input type="radio" name={name} value={n} checked={value === n} aria-label={`${n} ${plural(n, 'stůl', 'stoly', 'stolů')}`} onChange={() => onChange(n)} />
+            <span className="dot" aria-hidden="true" />
+            <span className="dot-num" aria-hidden="true">
+              {n}
+            </span>
+          </label>
+        ))}
       </div>
     </div>
   );

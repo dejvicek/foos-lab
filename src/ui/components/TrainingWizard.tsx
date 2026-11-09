@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { RosterError } from '../../domain/roster';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
-import { toggleAttendee } from '../../domain/training';
+import { selectedDisciplines, toggleAttendee, withTemplate } from '../../domain/training';
+import { currentTemplates, matchingTemplate } from '../../domain/catalog';
 import type { Player, PlayerId, Training } from '../../domain/types';
 import { plannedMinutes } from '../../domain/plan';
 import { formatDate } from '../dates';
@@ -78,6 +79,7 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
               names={Object.fromEntries(byId)}
               onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
             />
+            <TemplatePicker training={draft} onChange={change} />
             <div className="wizard-disc">
               <DisciplinePicker training={draft} open bare onChange={change} />
               <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} hl={hl} />
@@ -103,10 +105,10 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
             )}
             {line('who', `${n} ${plural(n, 'hráč', 'hráči', 'hráčů')}: ${draft.attendees.map((p) => byId.get(p) ?? '?').join(', ')}`)}
             {draft.format === 'custom' &&
-              line('disc', `${rounds} ${plural(rounds, 'kolo', 'kola', 'kol')}, naplánováno ${hm(plannedMinutes(draft.plan, n, draft.breaks))} z ${hm(draft.durationMin)}`)}
-            {draft.format === 'custom' && plannedMinutes(draft.plan, n, draft.breaks) > draft.durationMin && (
+              line('disc', `${rounds} ${plural(rounds, 'kolo', 'kola', 'kol')}, naplánováno ${hm(plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin))} z ${hm(draft.durationMin)}`)}
+            {draft.format === 'custom' && plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin) > draft.durationMin && (
               <p className="sum-warn" role="alert">
-                Plán ({hm(plannedMinutes(draft.plan, n, draft.breaks))}) je delší než trénink ({hm(draft.durationMin)}). Zahájit jde i tak – časy jsou orientační; kola jde ubrat v kroku Disciplíny.
+                Plán ({hm(plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin))}) je delší než trénink ({hm(draft.durationMin)}). Zahájit jde i tak – časy jsou orientační; kola jde ubrat v kroku Disciplíny.
               </p>
             )}
           </div>
@@ -159,5 +161,32 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
         </span>
       </div>
     </section>
+  );
+}
+
+/** Šablona tréninku v kroku Disciplíny (jen když je jich víc): nastaví délku a výběr disciplín. */
+function TemplatePicker({ training, onChange }: { training: Training; onChange(t: Training): void }) {
+  const templates = currentTemplates();
+  if (templates.length < 2) return null;
+  const current = matchingTemplate(templates, training.durationMin, selectedDisciplines(training.plan));
+  return (
+    <div className="field tpl-picker">
+      <label htmlFor="t-template">Šablona</label>
+      <select
+        id="t-template"
+        value={current?.id ?? ''}
+        onChange={(e) => {
+          const t = templates.find((x) => x.id === e.target.value);
+          if (t) onChange(withTemplate(training, t));
+        }}
+      >
+        {!current && <option value="">Vlastní výběr</option>}
+        {templates.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name} ({hm(t.durationMin)})
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

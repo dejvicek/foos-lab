@@ -1,17 +1,16 @@
 import { roundSequence } from './customSchedule';
-import { autoBreaks, normalizeBreaks } from './plan';
+import { BREAK_OPTIONS, normalizeBreaks, resolveBreaks } from './plan';
 import { pauseId } from './queue';
 import type { BreakDef, Training } from './types';
 
-/** Délky pauzy na výběr (min). */
-export const BREAK_OPTIONS = [5, 10, 15, 20, 25, 30];
+export { BREAK_OPTIONS };
 
-type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode' | 'playTimes'>;
+type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode' | 'playTimes'> & Partial<Pick<Training, 'disciplineMin'>>;
 
-/** Pauzy tréninku srovnané podle pozice: vlastní, jinak automatické (10 min po každé hodině). */
+/** Pauzy tréninku srovnané podle pozice: vlastní, jinak dopočítané po sekcích. Úprava je převezme jako vlastní. */
 export function breaksOf(t: T): BreakDef[] {
   const seq = roundSequence(t);
-  return normalizeBreaks(t.breaks ?? autoBreaks(seq), seq.length);
+  return normalizeBreaks(resolveBreaks(t.breaks, seq), seq.length);
 }
 
 /** Počet hracích kol (pauza může být po 1. až předposledním). */

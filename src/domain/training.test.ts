@@ -1,5 +1,5 @@
 import { lostEntries, moveAttendee, newTraining, pruneEntries, setScore, setSolo, sortTrainings, toggleAttendee } from './training';
-import type { Player, Training } from './types';
+import type { DisciplineId, Player, Training } from './types';
 import { H, training } from '../test/fixtures';
 
 const roster = (ids: string[]): Player[] => ids.map((id, order) => ({ id, name: id, order, archived: false }));
@@ -15,11 +15,13 @@ describe('newTraining', () => {
     expect(t.plan.wall).toBeGreaterThanOrEqual(1);
     expect(t.plan.sim).toBe(1);
   });
-  it('z posledního konfigurovatelného převezme délku a výběr disciplín', () => {
-    const last = { ...newTraining('l', '2026-10-01', null), durationMin: 120, plan: { normal: 3, setShooting: 1 } };
-    const t = newTraining('x', '2026-10-31', last);
-    expect(t.durationMin).toBe(120);
+  it('výběr a délka z šablony, ne z posledního tréninku (9. 11. 2026); bez automatických pauz', () => {
+    const last = { ...newTraining('l', '2026-10-01', null), durationMin: 120, plan: { normal: 3 } };
+    const tpl = { id: 'k', name: 'Krátký', durationMin: 60, selection: ['normal', 'setShooting'] as DisciplineId[] };
+    const t = newTraining('x', '2026-10-31', last, null, tpl);
+    expect(t.durationMin).toBe(60);
     expect(Object.keys(t.plan).sort()).toEqual(['normal', 'penaltyKeeper']); // stará Penalta → proti brankáři
+    expect(t.breaks).toEqual([]);
   });
   it('stoly a začátek převezme z posledního tréninku, typ je vždy týmový', () => {
     const last = training('l', '2026-10-01', 'single', H(5), 2);

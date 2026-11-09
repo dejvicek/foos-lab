@@ -9,6 +9,8 @@ export type Route =
   | { page: 'my' }
   | { page: 'ladder' }
   | { page: 'player'; id: string }
+  | { page: 'disciplines' }
+  | { page: 'templates' }
   | { page: 'players' };
 
 export function parseHash(hash: string): Route {
@@ -20,6 +22,8 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'moje-hry' || parts[0] === 'moje-hra') return { page: 'my' };
   if (parts[0] === 'zebricek' && parts[1] === 'hrac' && parts[2]) return { page: 'player', id: parts[2] };
   if (parts[0] === 'zebricek') return { page: 'ladder' };
+  if (parts[0] === 'discipliny') return { page: 'disciplines' };
+  if (parts[0] === 'sablony') return { page: 'templates' };
   if (parts[0] === 'hraci') return { page: 'players' };
   return { page: 'trainings' };
 }
@@ -42,6 +46,10 @@ export function toHash(r: Route): string {
       return '#/zebricek';
     case 'player':
       return `#/zebricek/hrac/${encodeURIComponent(r.id)}`;
+    case 'disciplines':
+      return '#/discipliny';
+    case 'templates':
+      return '#/sablony';
     case 'players':
       return '#/hraci';
   }

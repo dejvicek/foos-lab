@@ -1,3 +1,4 @@
+import type { CatalogData } from '../domain/catalog';
 import type { SoloSlot } from '../domain/solo';
 import type { LockedRound, MatchId, Player, PlayerId, Score, SimTeams, SoloKey, Training, PlayTime, GameEvent } from '../domain/types';
 
@@ -5,6 +6,8 @@ export interface AppData {
   players: Player[];
   /** Tréninky včetně skóre. */
   trainings: Training[];
+  /** Katalog disciplín a štítků (úpravy admina); chybí = výchozí. */
+  catalog?: CatalogData;
 }
 
 export interface RemoteHandlers {
@@ -49,4 +52,6 @@ export interface Repository {
   lockRounds(trainingId: string, locked: LockedRound[], simTeams: SimTeams | null): Promise<void>;
   /** Smaže výsledky sólové části tréninku mimo `keep`. */
   replaceSolo(trainingId: string, keep: SoloSlot[]): Promise<void>;
+  /** Katalog disciplín (jen admin); ukládá se celý. */
+  saveCatalog(c: CatalogData): Promise<void>;
 }

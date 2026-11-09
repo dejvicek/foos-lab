@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ActionIconButton } from '../components/ActionIcon';
 import { addPlayer, alphabetical, canDeletePlayer, renamePlayer, setArchived, type RosterError } from '../../domain/roster';
 import type { Player } from '../../domain/types';
 import { exportJson } from '../../storage/backup';
@@ -73,15 +74,9 @@ function PlayerRow({
         <>
           <span className="player-name">{player.name}</span>
           <span className="row-actions">
-            <button type="button" className="ghost" aria-label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)}>
-              Přejmenovat
-            </button>
-            <button type="button" className="ghost" aria-label={`Resetovat heslo ${player.name}`} onClick={() => onReset(player)}>
-              Reset hesla
-            </button>
-            <button type="button" className="ghost" aria-label={`Archivovat ${player.name}`} onClick={() => persistPlayers(store, setArchived(players, player.id, true))}>
-              Archivovat
-            </button>
+            <ActionIconButton icon="rename" label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)} />
+            <ActionIconButton icon="key" label={`Resetovat heslo ${player.name}`} onClick={() => onReset(player)} />
+            <ActionIconButton icon="archive" label={`Archivovat ${player.name}`} onClick={() => persistPlayers(store, setArchived(players, player.id, true))} />
           </span>
         </>
       )}
@@ -176,18 +171,14 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
               <li key={p.id} data-name={p.name} className="player-row">
                 <span className="player-name muted">{p.name}</span>
                 <span className="row-actions">
-                  <button type="button" className="ghost" aria-label={`Obnovit ${p.name}`} onClick={() => persistPlayers(store, setArchived(players, p.id, false))}>
-                    Obnovit
-                  </button>
+                  <ActionIconButton icon="restore" label={`Obnovit ${p.name}`} onClick={() => persistPlayers(store, setArchived(players, p.id, false))} />
                   {canDeletePlayer(store.data.trainings, p.id) && (
-                    <button
-                      type="button"
-                      className="ghost danger"
-                      aria-label={`Smazat ${p.name}`}
+                    <ActionIconButton
+                      icon="trash"
+                      danger
+                      label={`Smazat ${p.name}`}
                       onClick={() => confirm(`Smazat hráče ${p.name}? Nebyl na žádném tréninku.`) && store.deletePlayer(p.id)}
-                    >
-                      Smazat
-                    </button>
+                    />
                   )}
                 </span>
               </li>

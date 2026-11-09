@@ -1,6 +1,6 @@
 import { discipline, type DisciplineDef } from './disciplines';
 import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters, type MatchPlan } from './pairing';
-import { planSequence, planTimeline, playable, FINAL_MIN, SIM_MIN_PLAYERS, type Plan } from './plan';
+import { planSequence, planTimeline, playable, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
 import type {
@@ -71,7 +71,7 @@ export function roundSequence(t: ScheduleInput): DisciplineId[] {
   if (locked.some((l) => l.discipline === 'sim') || t.attendees.length < SIM_MIN_PLAYERS) remaining.sim = 0;
   // Co se při tomto počtu hráčů hrát nedá (1 hráč: zápasy a cvičení s bránícím), se vynechá.
   for (const id of Object.keys(remaining) as DisciplineId[]) if (!playable(id, t.attendees.length)) remaining[id] = 0;
-  return [...locked.map((l) => l.discipline), ...planSequence(remaining)];
+  return [...locked.map((l) => l.discipline), ...planSequence(remaining, t.disciplineOrder)];
 }
 
 /** PRD 4.6 + 5.10: rozpis konfigurovatelného tréninku. Zamčená kola jsou vstupem a nemění se. */
@@ -87,7 +87,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   const drillsLeft = new Map<DisciplineId, number>();
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);
 
-  const timeline = planTimeline(seq, t.breaks);
+  const timeline = planTimeline(seq, t.breaks, t.disciplineMin);
   // Sekce jdou chronologicky: při změně druhu kola začne nová (cvičení přidané později je za zápasy).
   const META = {
     drills: { title: 'Cvičení', waitingLabel: 'Počítá' },
@@ -121,10 +121,6 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
       pushBreak({ ...breakRow(item.start, 'Pauza', tables, `${item.min} min`), breakIndex: item.index });
       continue;
     }
-    if (item.kind === 'final') {
-      pushBreak(breakRow(item.start, 'Zápis a vyhodnocení', tables, `${FINAL_MIN} min`));
-      continue;
-    }
     roundNo++;
     const def = discipline(item.discipline!);
     const kind = def.kind === 'drill' ? 'drills' : def.kind === 'match' ? 'matches' : 'sim';
@@ -132,7 +128,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     // Cvičení na dvě varianty: liché výskyty varianta 1, sudé varianta 2 (počítají se i zamčená kola).
     const drillK = def.kind === 'drill' ? (drillSeen.get(def.id) ?? 0) : 0;
     if (def.kind === 'drill') drillSeen.set(def.id, drillK + 1);
-    const rule = def.variants ? `${def.name} – ${def.variants[drillK % 2]}, ${def.min} min` : `${def.name}, ${def.min} min`;
+    const rule = def.variants ? `${def.name} – ${def.variants[drillK % 2]}, ${item.min} min` : `${def.name}, ${item.min} min`;
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 
     if (def.kind === 'sim') {

@@ -1,4 +1,4 @@
-import { SKILL_GROUPS, skillGroup, type Skill, type SkillFilter, type SkillGroupId } from '../../domain/skills';
+import { SKILL_GROUPS, skillGroup, skillName, skillsIn, type Skill, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 
 /** Štítky dovedností disciplíny, barva podle sekce. S `onToggle` jdou kliknutím vybrat do filtru. */
 export function SkillTags({ skills, filter, onToggle }: { skills?: Skill[]; filter?: SkillFilter; onToggle?(s: Skill): void }) {
@@ -9,10 +9,10 @@ export function SkillTags({ skills, filter, onToggle }: { skills?: Skill[]; filt
         <li key={s} className={`g-${skillGroup(s).id}`}>
           {onToggle ? (
             <button type="button" aria-pressed={!!filter?.skills.includes(s)} onClick={() => onToggle(s)}>
-              {s}
+              {skillName(s)}
             </button>
           ) : (
-            s
+            skillName(s)
           )}
         </li>
       ))}
@@ -25,7 +25,7 @@ export function SkillLegend({ filter, onToggle }: { filter?: SkillFilter; onTogg
   return (
     <ul className="skill-tags skill-legend" aria-label="Sekce dovedností">
       {SKILL_GROUPS.map((g) => (
-        <li key={g.id} className={`g-${g.id}`} title={g.skills.join(', ')}>
+        <li key={g.id} className={`g-${g.id}`} title={skillsIn(g.id).map((s) => s.name).join(', ')}>
           {onToggle ? (
             <button type="button" aria-pressed={!!filter?.groups.includes(g.id)} onClick={() => onToggle(g.id)}>
               {g.name}

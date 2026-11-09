@@ -1,5 +1,5 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { autoPlan, DEFAULT_SELECTION, plannedMinutes, SOLO_SELECTION } from './plan';
+import { autoPlan, DEFAULT_SELECTION, manualPlan, plannedMinutes, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { SOLO_METRICS, soloMetric } from './solo';
 import { newTraining, replan } from './training';
@@ -66,7 +66,7 @@ describe('trénink pro 1 hráče', () => {
     expect(r[2].cells[0]).toMatchObject({ type: 'group', metric: 'fiveBarSolo' });
     expect(r[0].cells[0]).toMatchObject({ type: 'group', metric: 'passWallLane' });
     // čas počítá jen to, co se hraje
-    expect(plannedMinutes(t.plan, 1, [])).toBe(39); // 4 kola po 4+1, Udržení 8+1, zápis 10
+    expect(plannedMinutes(t.plan, 1, [])).toBe(29); // 4 kola po 4+1, Udržení 8+1
   });
 
   it('se 2 a víc hráči je Udržení míče na pětce s bránícím (původní metrika)', () => {
@@ -88,7 +88,8 @@ describe('trénink pro 1 hráče', () => {
     const one = replan(zero, { ...zero, attendees: H(1) });
     const eight = replan(one, { ...one, attendees: H(8) });
     for (const id of ['penaltySolo', 'backShotSolo', 'passWallLane'] as const) expect(eight.plan[id] ?? 0).toBe(0);
-    expect(eight.plan).toEqual(autoPlan(DEFAULT_SELECTION, 180, 8, 4, {}, new Set(), []));
+    // bez doplňování (9. 11. 2026): zápasy si nechají počet kol, cvičení podle přítomných
+    expect(eight.plan).toEqual(manualPlan(DEFAULT_SELECTION, 8, 4, zero.plan));
   });
 });
 

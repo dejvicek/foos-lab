@@ -86,13 +86,17 @@ export interface Training {
   /** Zamčená (odehraná) kola – jejich sestavy se už nemění (custom). */
   lockedRounds: LockedRound[];
   /** Vlastní pauzy (konfigurovatelný trénink); chybí / null = automaticky 10 min po každé hodině. */
-  breaks?: BreakDef[] | null;
+  breaks?: Breaks;
   /** Odehrané pokusy cvičení (stejné klíče jako soloResults); chybí = zapsáno číslem = plný počet. */
   soloAttempts?: SoloResults;
   /** Události her (průběh, PRD 4.9); chybí = nic neťukáno. */
   events?: GameEvent[];
   /** Zahájení a konce utkání (Zdržovači); chybí = nic neměřeno. */
   playTimes?: PlayTimes;
+  /** Pořadí disciplín (ze šablony, 9. 11. 2026); chybí = pořadí katalogu. */
+  disciplineOrder?: DisciplineId[] | null;
+  /** Délky kol disciplín (snímek katalogu při založení / úpravě); chybí = výchozí z kódu (PRD 4.6). */
+  disciplineMin?: Partial<Record<DisciplineId, number>> | null;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
   createdBy?: PlayerId | null;
   notes?: string;
@@ -154,6 +158,23 @@ export interface BreakDef {
   after: number;
   min: number;
 }
+
+/** Pauza šablony tréninku (9. 11. 2026): po posledním kole disciplíny `after`, délka v min. */
+export interface TemplateBreak {
+  after: DisciplineId;
+  min: number;
+}
+
+/** Pauzy ze šablony: v tréninku se dopočítají z pořadí kol (po poslední kole dané disciplíny). */
+export interface DisciplineBreaks {
+  afterDisciplines: TemplateBreak[];
+}
+
+/**
+ * Pauzy tréninku: pole = vlastní (po N. kole); DisciplineBreaks = ze šablony, po disciplínách;
+ * null / chybí = starší výchozí 10 min po každé sekci.
+ */
+export type Breaks = BreakDef[] | DisciplineBreaks | null;
 
 export interface ScheduleRow {
   /** Pauza: index v seznamu pauz tréninku (jen konfigurovatelný trénink). */

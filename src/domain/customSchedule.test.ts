@@ -26,7 +26,7 @@ const rows = (t: Training) => buildSchedule(t).sections.flatMap((s) => s.rows);
 const playRows = (t: Training) => rows(t).filter((r) => r.kind !== 'break');
 
 describe('rozpis konfigurovatelného tréninku', () => {
-  it('kolo = jedna disciplína pro všechny stoly; cvičení, zápasy, simulace, zápis', () => {
+  it('kolo = jedna disciplína pro všechny stoly; cvičení, zápasy, simulace; bez Zápisu na konci (9. 11. 2026)', () => {
     const s = buildSchedule(custom(8, 4));
     expect(s.sections.map((x) => x.id)).toEqual(['drills', 'matches', 'sim']);
     for (const r of playRows(custom(8, 4))) {
@@ -34,8 +34,8 @@ describe('rozpis konfigurovatelného tréninku', () => {
       expect(ds.size).toBe(1);
     }
     const all = rows(custom(8, 4));
-    expect(all.at(-1)).toMatchObject({ label: 'Zápis a vyhodnocení', kind: 'break' });
-    expect(all.at(-1)!.time + 10).toBeLessThanOrEqual(180);
+    expect(all.some((r) => r.label === 'Zápis a vyhodnocení')).toBe(false);
+    expect(all.at(-1)!.discipline).toBe('sim');
   });
 
   it('cvičení: dvojice, klíč výsledku s číslem kola, ID zápasů s číslem kola', () => {
@@ -100,7 +100,7 @@ describe('úpravy plánu 2. 11. 2026', () => {
   it('výchozí pauzy po sekcích: po cvičeních a po zápasech (před simulací)', () => {
     const r = rows(custom(8, 4, { plan: { warmupPasses: 1, normal: 2, sim: 1 } }));
     const kinds = r.map((x) => (x.label === 'Pauza' ? 'P' : x.kind === 'groups' ? 'D' : x.discipline === 'sim' ? 'S' : x.kind === 'break' ? 'Z' : 'M'));
-    expect(kinds.join('')).toBe('DPMMPSSZ');
+    expect(kinds.join('')).toBe('DPMMPSS');
   });
 
   it('Zeď a Start 0:3 + daň: vždy dvě kola, ve druhém stejné zápasy s prohozenými stranami', () => {

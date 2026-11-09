@@ -21,6 +21,7 @@ import {
 } from './mapping';
 import { parseSoloKey, soloKey } from '../domain/solo';
 import type { SoloMetric } from '../domain/types';
+import type { CatalogData } from '../domain/catalog';
 import { fromPostgrest } from './errors';
 import type { Repository } from './repository';
 
@@ -60,10 +61,17 @@ export function supabaseRepository(client: SupabaseClient): Repository {
         selectAll<PlayTimeRow>(client, 'play_times', ['training_id', 'item_id']),
         selectAll<EventRow>(client, 'game_events', ['training_id', 'at', 'id']),
       ]);
+      const catalogRes = await client.from('catalog').select('data').eq('id', 1).maybeSingle();
+      check(catalogRes);
+      const catalog = catalogRes.data as { data: CatalogData } | null;
       return {
         players: players.map(playerFromRow),
         trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times, events)),
+        catalog: catalog?.data ?? {},
       };
+    },
+    async saveCatalog(c) {
+      check(await client.from('catalog').upsert({ id: 1, data: c, updated_at: new Date().toISOString() }));
     },
     async savePlayer(p) {
       check(await client.from('players').upsert(playerToRow(p)));

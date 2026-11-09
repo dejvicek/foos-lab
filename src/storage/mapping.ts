@@ -1,7 +1,7 @@
 import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
 import { DISCIPLINES } from '../domain/disciplines';
-import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, BreakDef, PlayTime, PlayTimes, GameEvent } from '../domain/types';
+import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, Breaks, PlayTime, PlayTimes, GameEvent } from '../domain/types';
 
 export { isEmptyScore };
 
@@ -23,7 +23,11 @@ export interface TrainingRow {
   plan: Training['plan'] | null;
   locked_rounds: LockedRound[] | null;
   /** Vlastní pauzy (migrace 11); null = automatické. */
-  breaks: BreakDef[] | null;
+  breaks: Breaks;
+  /** Délky kol (snímek katalogu, migrace 18); null = výchozí z kódu. */
+  discipline_min?: Training['disciplineMin'];
+  /** Pořadí disciplín ze šablony (migrace 19); null = pořadí katalogu. */
+  discipline_order?: Training['disciplineOrder'];
   created_by: string | null;
   mode: Mode;
   tables: number;
@@ -76,6 +80,8 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   plan: t.plan,
   locked_rounds: t.lockedRounds,
   breaks: t.breaks ?? null,
+  discipline_min: t.disciplineMin ?? null,
+  discipline_order: t.disciplineOrder ?? null,
   created_by: t.createdBy ?? null,
   mode: t.mode,
   tables: t.tables,
@@ -121,6 +127,8 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
+    ...(r.discipline_min ? { disciplineMin: r.discipline_min } : {}),
+    ...(r.discipline_order ? { disciplineOrder: r.discipline_order.filter((id) => KNOWN.has(id)) } : {}),
     ...(Object.keys(soloAttempts).length ? { soloAttempts } : {}),
     ...(() => {
       const mine = events.filter((x) => x.training_id === r.id).map(eventFromRow);

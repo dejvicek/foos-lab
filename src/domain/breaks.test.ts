@@ -2,7 +2,7 @@ import { addBreak, breakMovable, breaksOf, BREAK_OPTIONS, freeSlots, moveBreak, 
 import { buildSchedule } from './schedule';
 import { autoPlan, DEFAULT_SELECTION, planTimeline } from './plan';
 import { shuffleAttendees } from './training';
-import type { LockedRound, Training } from './types';
+import type { BreakDef, LockedRound, Training } from './types';
 import { H } from '../test/fixtures';
 
 const custom = (over: Partial<Training> = {}): Training => ({
@@ -27,9 +27,9 @@ describe('pauzy (PRD 4.6)', () => {
 
   it('časová osa s vlastními pauzami: pozice po kole, délka, přepočet časů', () => {
     const tl = planTimeline(['normal', 'normal', 'normal'], [{ after: 1, min: 15 }]);
-    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'break', 'round', 'round', 'final']);
+    expect(tl.items.map((i) => i.kind)).toEqual(['round', 'break', 'round', 'round']);
     expect(tl.items[2].start).toBe(8 + 1 + 15);
-    expect(tl.total).toBe(3 * 9 + 15 + 10);
+    expect(tl.total).toBe(3 * 9 + 15);
     // pozice mimo rozsah se srovná, stejná pozice dvakrát jen jednou
     expect(planTimeline(['normal', 'normal'], [{ after: 5, min: 5 }, { after: 1, min: 10 }]).items.filter((i) => i.kind === 'break')).toHaveLength(1);
     expect(planTimeline(['normal', 'normal'], []).items.some((i) => i.kind === 'break')).toBe(false);
@@ -69,7 +69,7 @@ describe('pauzy (PRD 4.6)', () => {
     expect(moveBreak(t, 0, 5)).toBe(t); // pauza v odehrané části
     expect(removeBreak(t, 0)).toBe(t);
     expect(moveBreak(t, 1, 4).breaks).toEqual([{ after: 2, min: 10 }, { after: 4, min: 10 }]); // hned za odehranými ano
-    expect(setBreakMin(t, 0, 15).breaks![0].min).toBe(15); // délku opravit jde
+    expect((setBreakMin(t, 0, 15).breaks as BreakDef[])[0].min).toBe(15); // délku opravit jde
   });
 
   it('zahájená pauza se nepřesouvá ani neodebírá (ani jiná pauza před ni); délka jde změnit', () => {

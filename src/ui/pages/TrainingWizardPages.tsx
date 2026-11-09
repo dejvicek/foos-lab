@@ -3,6 +3,7 @@ import { canManage, type Viewer } from '../../domain/my';
 import { TRAINING_ITEM, trainingStarted } from '../../domain/queue';
 import { addPlayer } from '../../domain/roster';
 import { newTraining, sortTrainings } from '../../domain/training';
+import { catalogMins } from '../../domain/disciplines';
 import type { Training } from '../../domain/types';
 import { TrainingWizard } from '../components/TrainingWizard';
 import { nextHalfHour, todayIso } from '../dates';
@@ -49,9 +50,10 @@ export function EditTrainingPage({ store, id, navigate, viewer }: { store: AppSt
   if (!canManage(viewer, training)) return <p>Nastavení tréninku může měnit jen jeho zakladatel nebo admin.</p>;
   // Zahájený trénink se už neupravuje – změna by přeskupila rozehraná kola.
   if (trainingStarted(training)) return <p>Trénink běží – nastavení už nejde měnit.</p>;
+  // Nezahájený trénink si při úpravě vezme aktuální délky kol z katalogu (PRD 4.6, katalog 9. 11. 2026).
   return (
     <TrainingWizard
-      initial={training}
+      initial={{ ...training, disciplineMin: catalogMins() }}
       mode="edit"
       players={store.data.players}
       onAddPlayer={rosterAdd(store)}

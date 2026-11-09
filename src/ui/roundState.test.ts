@@ -83,16 +83,6 @@ describe('stav kol v rozpisu (odehrané / hraje se / bude se hrát)', () => {
     expect(run({ ...base, [pauseId(0)]: { startedAt: at(8), endedAt: at(9) } }, at(10))!.get(rowKey(pauseRow.ref))!.state).toBe('done');
   });
 
-  it('závěrečný zápis je odehraný, až když je odehrané vše', () => {
-    const last = rows.at(-1)!;
-    const all: PlayTimes = { [TRAINING_ITEM]: { startedAt: at(0) }, ...done(0, 0, 8), [pauseId(0)]: { startedAt: at(8), endedAt: at(9) }, ...done(1, 10, 16), ...done(2, 17, 24) };
-    const pauses = rows.filter((x) => x.row.label === 'Pauza').length;
-    for (let k = 1; k < pauses; k++) all[pauseId(k)] = { startedAt: at(16), endedAt: at(17) };
-    expect(run(all, at(30))!.get(rowKey(last.ref))!.state).toBe('done');
-    const { [ids(2)[0]]: _, ...notAll } = all;
-    expect(run(notAll, at(30))!.get(rowKey(last.ref))!.state).toBe('upcoming');
-  });
-
   it('výchozí rozbalené kolo je první hrané', () => {
     const r = run({ [TRAINING_ITEM]: { startedAt: at(0) }, ...done(0, 0, 8), [pauseId(0)]: { startedAt: at(8), endedAt: at(9) } }, at(10))!;
     expect(playingRow(s, r)).toEqual(play[1].ref);

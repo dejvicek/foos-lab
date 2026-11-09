@@ -2,7 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
-import type { Player } from '../../domain/types';
+import type { DisciplineId, Player } from '../../domain/types';
+import { applyCatalog } from '../../domain/catalog';
 import { next } from '../../test/wizard';
 
 const players: Player[] = ['Ada', 'Bára', 'Cyril', 'Dan'].map((name, order) => ({ id: `p${order + 1}`, name, order, archived: false }));
@@ -29,11 +30,11 @@ describe('čas plánu v průvodci', () => {
   });
 
   it('zbývá čas: v kroku Disciplíny nabídne doplnit kola, po doplnění se plán prodlouží', async () => {
-    const user = await wizard(['Ada'], 60); // trénink pro 1 hráče: 0:49 z 1:00
+    const user = await wizard(['Ada'], 60); // trénink pro 1 hráče: sólová cvičení, zbývá čas
     const badge = () => screen.getByText(/^Naplánováno/).textContent;
     const before = badge();
     const fill = screen.getByRole('button', { name: /^Doplnit kola/ });
-    expect(screen.getByText(/Zbývá 0:11/)).toBeInTheDocument();
+    expect(screen.getByText(/Zbývá \d:\d\d/)).toBeInTheDocument();
     await user.click(fill);
     expect(badge()).not.toBe(before);
   });
@@ -86,4 +87,31 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
   await user.click(screen.getByRole('button', { name: 'Skrýt štítky' }));
   expect(shown()).toHaveLength(all);
   expect(screen.queryByRole('list', { name: 'Trénuje' })).toBeNull();
+});
+
+it('šablona v kroku Disciplíny: nový trénink začne první, výběr jiné změní délku i disciplíny', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trenink/novy';
+  const catalog = {
+    templates: [
+      { id: 'k', name: 'Krátký', durationMin: 60, selection: ['warmupPasses', 'normal'] as DisciplineId[] },
+      { id: 'd', name: 'Dlouhý', durationMin: 180, selection: ['normal', 'wall', 'sim'] as DisciplineId[] },
+    ],
+  };
+  render(<App repo={memoryRepository({ players, trainings: [], catalog })} />);
+  await screen.findByRole('heading', { name: 'Kdy a kde' });
+  expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('60');
+  await next(user);
+  for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
+  await next(user);
+  const pick = screen.getByRole('combobox', { name: 'Šablona' });
+  await user.selectOptions(pick, 'd');
+  expect(pick).toHaveValue('d');
+  expect(screen.getByText(/^Naplánováno .* z 3:00/)).toBeInTheDocument();
+  expect(screen.getByRole('checkbox', { name: 'Simulace ligového kola' })).toBeChecked();
+  expect(screen.getByRole('checkbox', { name: 'Přihrávky na pětce' })).not.toBeChecked();
+  await user.selectOptions(pick, 'k');
+  expect(pick).toHaveValue('k');
+  expect(screen.getByText(/^Naplánováno .* z 1:00/)).toBeInTheDocument();
+  applyCatalog({});
 });

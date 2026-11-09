@@ -35,7 +35,7 @@ describe('stránka Trénink', () => {
     vi.useRealTimers();
   });
 
-  it('nový trénink v krocích: kdy a kde, přítomní (přidat hráče), shrnutí, Zahájit trénink; další převezme délku a stoly', async () => {
+  it('nový trénink v krocích: kdy a kde, přítomní (přidat hráče), shrnutí, Zahájit trénink; další převezme stoly, délku dá šablona', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(6), trainings: [] });
     window.location.hash = '#/trenink';
@@ -82,7 +82,7 @@ describe('stránka Trénink', () => {
 
     await user.click(screen.getByRole('button', { name: 'Trénink' }));
     await user.click(screen.getByRole('button', { name: 'Nový trénink' }));
-    expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('120');
+    expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('180'); // délka ze šablony (9. 11. 2026)
     expect(screen.getByRole('radio', { name: '2 stoly' })).toBeChecked();
   });
 
