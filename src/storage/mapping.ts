@@ -3,7 +3,8 @@ import { isEmptyScore } from '../domain/training';
 import { DISCIPLINES } from '../domain/disciplines';
 import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, Breaks, PlayTime, PlayTimes, GameEvent } from '../domain/types';
 
-import type { DrillTap, ScoreTap } from './repository';
+import type { CatalogData } from '../domain/catalog';
+import type { AppData, DrillTap, Loaded, ScoreTap } from './repository';
 
 export { isEmptyScore };
 
@@ -231,4 +232,49 @@ export function soloRow(trainingId: string, playerId: PlayerId, key: SoloKey, va
   const k = parseSoloKey(key);
   // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
   return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: null };
+}
+
+/** Odpověď funkce changes_since (migrace 23): řádky tabulek tak, jak jsou v databázi. */
+export interface ChangesJson {
+  full: boolean;
+  cursor: string;
+  players: PlayerRow[];
+  trainings: TrainingRow[];
+  scores: ScoreRow[];
+  solo_results: SoloRow[];
+  play_times: PlayTimeRow[];
+  catalog: CatalogData | null;
+  deleted: { tbl: string; key: Record<string, string | number> }[];
+}
+
+/** Kompletní data, nebo změny od kurzoru – podle toho, co server poslal. */
+export function loadedFromJson(j: ChangesJson): Loaded {
+  if (j.full) {
+    const full: AppData = {
+      players: j.players.map(playerFromRow),
+      trainings: j.trainings.map((t) => trainingFromRow(t, j.scores, j.solo_results, j.play_times)),
+      catalog: j.catalog ?? {},
+      cursor: j.cursor,
+    };
+    return { full };
+  }
+  const del = (tbl: string) => j.deleted.filter((d) => d.tbl === tbl).map((d) => d.key);
+  return {
+    changes: {
+      cursor: j.cursor,
+      players: j.players.map(playerFromRow),
+      trainings: j.trainings.map((t) => trainingFromRow(t, [], [])),
+      scores: j.scores.map((r) => ({ trainingId: r.training_id, matchId: r.match_id, score: scoreFromRow(r) })),
+      solo: j.solo_results.map((r) => ({ trainingId: r.training_id, playerId: r.player_id, key: soloKey(r.metric, r.round ?? 0), value: r.value, attempts: r.attempts ?? null })),
+      playTimes: j.play_times.map((r) => ({ trainingId: r.training_id, itemId: r.item_id, time: playTimeFromRow(r) })),
+      ...(j.catalog ? { catalog: j.catalog } : {}),
+      deleted: {
+        players: del('players').map((k) => String(k.id)),
+        trainings: del('trainings').map((k) => String(k.id)),
+        scores: del('scores').map((k) => ({ trainingId: String(k.training_id), matchId: String(k.match_id) })),
+        solo: del('solo_results').map((k) => ({ trainingId: String(k.training_id), playerId: String(k.player_id), key: soloKey(k.metric as SoloMetric, Number(k.round ?? 0)) })),
+        playTimes: del('play_times').map((k) => ({ trainingId: String(k.training_id), itemId: String(k.item_id) })),
+      },
+    },
+  };
 }

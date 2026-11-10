@@ -1,4 +1,4 @@
-import { drillTapToJson, eventFromRow, scoreTapToJson, isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
+import { drillTapToJson, eventFromRow, loadedFromJson, scoreTapToJson, type ChangesJson, isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
 import type { Player, Training } from '../domain/types';
 
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
@@ -123,3 +123,62 @@ describe('události her', () => {
   });
 });
 
+
+describe('odpověď changes_since', () => {
+  const trainingRow = { id: 't1', date: '2026-11-10', start_time: '18:00', sim_split: 'order', sim_teams: null, format: 'custom', duration_min: 120, plan: {}, locked_rounds: [], breaks: null, created_by: null, mode: 'team', tables: 2, attendees: ['a'], notes: null, updated_at: 'x' };
+  const base = { cursor: '2026-11-10T10:00:00+00:00', players: [], trainings: [], scores: [], solo_results: [], play_times: [], catalog: null, deleted: [] };
+  /** Odpověď serveru tak, jak přijde (řádky mají i sloupce, které appka nezná). */
+  const json = (x: object) => x as unknown as ChangesJson;
+
+  it('kompletní data: tréninky se skóre, výsledky a časy; kurzor pro příště', () => {
+    const out = loadedFromJson(json({
+      ...base,
+      full: true,
+      players: [{ id: 'a', name: 'A', archived: false, sort_order: 1, is_admin: true, is_organizer: true }],
+      trainings: [trainingRow],
+      scores: [{ training_id: 't1', match_id: 'm1', ga: 1, gb: 0, la: null, lb: null }],
+      solo_results: [{ training_id: 't1', player_id: 'a', metric: 'chain', round: 0, value: 3, attempts: 5 }],
+      play_times: [{ training_id: 't1', item_id: 'm1', started_at: '2026-11-10T10:00:00Z', ended_at: null }],
+      catalog: { skills: [] },
+    }));
+    if (!('full' in out)) throw new Error('má být kompletní');
+    expect(out.full.cursor).toBe('2026-11-10T10:00:00+00:00');
+    expect(out.full.players).toEqual([{ id: 'a', name: 'A', archived: false, order: 1, organizer: true }]);
+    expect(out.full.trainings[0]).toMatchObject({ id: 't1', scores: { m1: { ga: 1, gb: 0 } }, soloResults: { a: { chain: 3 } }, soloAttempts: { a: { chain: 5 } }, playTimes: { m1: { startedAt: Date.parse('2026-11-10T10:00:00Z') } } });
+    expect(out.full.catalog).toEqual({ skills: [] });
+  });
+
+  it('změny: řádky podle tabulek a smazané klíče; katalog jen když se změnil', () => {
+    const out = loadedFromJson(json({
+      ...base,
+      full: false,
+      trainings: [trainingRow],
+      scores: [{ training_id: 't1', match_id: 'm1', ga: 2, gb: 0, la: null, lb: null }],
+      solo_results: [{ training_id: 't1', player_id: 'a', metric: 'chain', round: 2, value: 3, attempts: null }],
+      play_times: [{ training_id: 't1', item_id: 'm1', started_at: null, ended_at: '2026-11-10T10:05:00Z' }],
+      deleted: [
+        { tbl: 'players', key: { id: 'p9' } },
+        { tbl: 'trainings', key: { id: 't9' } },
+        { tbl: 'scores', key: { training_id: 't1', match_id: 'm2' } },
+        { tbl: 'solo_results', key: { training_id: 't1', player_id: 'a', metric: 'chain', round: 0 } },
+        { tbl: 'play_times', key: { training_id: 't1', item_id: 'm2' } },
+        { tbl: 'neznama', key: {} },
+      ],
+    }));
+    if (!('changes' in out)) throw new Error('mají být změny');
+    const c = out.changes;
+    expect(c.cursor).toBe('2026-11-10T10:00:00+00:00');
+    expect(c.trainings[0]).toMatchObject({ id: 't1', tables: 2, scores: {} });
+    expect(c.scores).toEqual([{ trainingId: 't1', matchId: 'm1', score: { ga: 2, gb: 0 } }]);
+    expect(c.solo).toEqual([{ trainingId: 't1', playerId: 'a', key: 'chain@2', value: 3, attempts: null }]);
+    expect(c.playTimes).toEqual([{ trainingId: 't1', itemId: 'm1', time: { endedAt: Date.parse('2026-11-10T10:05:00Z') } }]);
+    expect(c.catalog).toBeUndefined();
+    expect(c.deleted).toEqual({
+      players: ['p9'],
+      trainings: ['t9'],
+      scores: [{ trainingId: 't1', matchId: 'm2' }],
+      solo: [{ trainingId: 't1', playerId: 'a', key: 'chain' }],
+      playTimes: [{ trainingId: 't1', itemId: 'm2' }],
+    });
+  });
+});

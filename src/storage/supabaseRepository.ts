@@ -12,6 +12,8 @@ import {
   type EventRow,
   scoreTapToJson,
   drillTapToJson,
+  loadedFromJson,
+  type ChangesJson,
   playTimeToRow,
   type PlayTimeRow,
   trainingToRow,
@@ -23,7 +25,7 @@ import {
 import { parseSoloKey, soloKey } from '../domain/solo';
 import type { SoloMetric } from '../domain/types';
 import type { CatalogData } from '../domain/catalog';
-import { fromPostgrest } from './errors';
+import { fromPostgrest, StorageError } from './errors';
 import type { AppData, Repository } from './repository';
 
 const PAGE = 1000; // PostgREST vrací nejvýš 1000 řádků na dotaz
@@ -58,7 +60,12 @@ export const createSupabase = (url: string, anonKey: string): SupabaseClient =>
 let channelSeq = 0;
 
 export function supabaseRepository(client: SupabaseClient): Repository {
-  /** Průběh her (game_events) je největší tabulka – načítá se jen do zálohy; jinak po trénincích (loadEvents). */
+  /** Všechna data (bez průběhu her), nebo jen změny od kurzoru – funkce changes_since (migrace 23). */
+  async function changesSince(cursor: string | null) {
+    return loadedFromJson(check<ChangesJson>(await client.rpc('changes_since', { p_since: cursor })));
+  }
+
+  /** Tabulky po stránkách včetně průběhu her (game_events, největší tabulka) – jen pro zálohu. */
   async function load(withEvents: boolean): Promise<AppData> {
     const [players, trainings, scores, solo, times, events, catalogRes] = await Promise.all([
       selectAll<PlayerRow>(client, 'players', ['id']),
@@ -79,7 +86,13 @@ export function supabaseRepository(client: SupabaseClient): Repository {
   }
 
   return {
-    loadAll: () => load(false),
+    // Jeden dotaz místo šesti: na pomalém spojení rozhoduje počet odpovědí, na které se čeká.
+    async loadAll() {
+      const loaded = await changesSince(null);
+      if (!('full' in loaded)) throw new StorageError('Databáze nevrátila kompletní data', false, 'server změnu odmítl');
+      return loaded.full;
+    },
+    loadChanges: (cursor) => changesSince(cursor),
     loadBackup: () => load(true),
     async loadEvents(trainingId) {
       const rows = await selectAll<EventRow>(client, 'game_events', ['at', 'id'], { column: 'training_id', value: trainingId });

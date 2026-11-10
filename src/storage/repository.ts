@@ -8,7 +8,35 @@ export interface AppData {
   trainings: Training[];
   /** Katalog disciplín a štítků (úpravy admina); chybí = výchozí. */
   catalog?: CatalogData;
+  /** Kurzor pro loadChanges (čas serveru v okamžiku načtení); chybí = úložiště změny neumí. */
+  cursor?: string;
 }
+
+/**
+ * Změny od minulého načtení: změněné (i nové) řádky a klíče smazaných. Skóre, výsledky cvičení a časy
+ * utkání chodí po řádcích; `trainings` nese jen konfiguraci (se skóre a výsledky prázdnými).
+ */
+export interface Changes {
+  /** Kurzor pro příští dotaz. */
+  cursor: string;
+  players: Player[];
+  trainings: Training[];
+  scores: { trainingId: string; matchId: MatchId; score: Score }[];
+  solo: { trainingId: string; playerId: PlayerId; key: SoloKey; value: number; attempts: number | null }[];
+  playTimes: { trainingId: string; itemId: string; time: PlayTime }[];
+  /** Jen když se katalog změnil. */
+  catalog?: CatalogData;
+  deleted: {
+    players: PlayerId[];
+    trainings: string[];
+    scores: { trainingId: string; matchId: MatchId }[];
+    solo: { trainingId: string; playerId: PlayerId; key: SoloKey }[];
+    playTimes: { trainingId: string; itemId: string }[];
+  };
+}
+
+/** Odpověď na dotaz o změny: změny, nebo znovu kompletní data (starý kurzor, úložiště změny neumí). */
+export type Loaded = { changes: Changes } | { full: AppData };
 
 /**
  * Jedno ťuknutí do skóre. `id` je zároveň ID události průběhu hry: databáze ťuknutí se stejným ID
@@ -61,6 +89,8 @@ export interface Repository {
    * Průběh je zdaleka největší a je potřeba jen u tréninku na obrazovce: loadEvents.
    */
   loadAll(): Promise<AppData>;
+  /** Co se změnilo od `cursor` (z minulého loadAll / loadChanges) – dorovnání bez stahování všeho znovu. */
+  loadChanges(cursor: string): Promise<Loaded>;
   /** Průběh her jednoho tréninku (události ťuknutí). */
   loadEvents(trainingId: string): Promise<GameEvent[]>;
   /** Všechno včetně průběhu všech her – pro zálohu. */

@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useAppState } from './useAppState';
 import { memoryRepository } from '../storage/memoryRepository';
 import type { Match, Training } from '../domain/types';
+import type { Changes, Repository } from '../storage/repository';
 
 const t: Training = { id: 't1', date: '2026-11-10', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: {}, lockedRounds: [], mode: 'team', tables: 2, attendees: [], scores: {} };
 const m: Match = { id: 'league|1|1|a+bvc+d', block: 'league', round: 1, table: 1, kind: 'doubles', sideA: ['a', 'b'], sideB: ['c', 'd'] };
@@ -101,5 +102,62 @@ describe('useAppState – průběh her jen u tréninku na obrazovce', () => {
     const { repo, result } = await setup();
     await repo.tapScore('t1', m.id, [goal('e1')]);
     expect((await result.current.loadBackup()).trainings[0].events).toHaveLength(1);
+  });
+});
+
+describe('useAppState – dorovnání jen o změny', () => {
+  const none = (cursor: string): Changes => ({ cursor, players: [], trainings: [], scores: [], solo: [], playTimes: [], deleted: { players: [], trainings: [], scores: [], solo: [], playTimes: [] } });
+
+  /** Úložiště, které umí změny: první načtení vrací kurzor, další dotazy jdou přes loadChanges. */
+  function withChanges(reply: (cursor: string) => Awaited<ReturnType<Repository['loadChanges']>>) {
+    const base = memoryRepository({ players: [], trainings: [{ ...t, scores: { [m.id]: { ga: 1, gb: 0 }, stary: { ga: 2, gb: 2 } } }] });
+    const asked: string[] = [];
+    const repo: Repository & { loads(): number } = {
+      ...base,
+      loadAll: async () => ({ ...(await base.loadAll()), cursor: 'c1' }),
+      loadChanges: async (cursor) => {
+        asked.push(cursor);
+        return reply(cursor);
+      },
+    };
+    return { repo, asked, base };
+  }
+
+  it('po prvním načtení se ptá jen na změny od kurzoru a kurzor posouvá', async () => {
+    const { repo, asked, base } = withChanges((cursor) => ({
+      changes: { ...none(cursor === 'c1' ? 'c2' : 'c3'), scores: [{ trainingId: 't1', matchId: m.id, score: { ga: 4, gb: 1 } }], deleted: { players: [], trainings: [], scores: [{ trainingId: 't1', matchId: 'stary' }], solo: [], playTimes: [] } },
+    }));
+    const { result } = renderHook(() => useAppState(repo, { loadWaitMs: 30 }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    await idle();
+    expect(asked).toEqual([]);
+    visible();
+    await waitFor(() => expect(result.current.data.trainings[0].scores).toEqual({ [m.id]: { ga: 4, gb: 1 } }));
+    visible();
+    await idle();
+    expect(asked).toEqual(['c1', 'c2']);
+    expect(base.loads()).toBe(1);
+  });
+
+  it('když server místo změn pošle kompletní data (starý kurzor), nahradí stav', async () => {
+    const { repo } = withChanges(() => ({ full: { players: [{ id: 'a', name: 'A', archived: false, order: 0 }], trainings: [], cursor: 'c9' } }));
+    const { result } = renderHook(() => useAppState(repo, { loadWaitMs: 30 }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    await idle();
+    visible();
+    await waitFor(() => expect(result.current.data.trainings).toEqual([]));
+    expect(result.current.data.players).toHaveLength(1);
+  });
+
+  it('odmítnutý zápis srovná stav kompletním načtením, ne jen změnami', async () => {
+    const { repo, asked, base } = withChanges((cursor) => ({ changes: none(cursor) }));
+    const failing = { ...repo, savePlayer: async () => Promise.reject(Object.assign(new (await import('../storage/errors')).StorageError('odmítnuto', true, 'chybí oprávnění'))) };
+    const { result } = renderHook(() => useAppState(failing, { loadWaitMs: 30 }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    act(() => result.current.savePlayer({ id: 'x', name: 'X', archived: false, order: 0 }));
+    await waitFor(() => expect(result.current.saveError).toMatch(/nepodařilo uložit/));
+    await waitFor(() => expect(result.current.data.players).toEqual([]));
+    expect(asked).toEqual([]);
+    expect(base.loads()).toBe(2);
   });
 });

@@ -84,6 +84,10 @@ export function memoryRepository(
       if (gate) await gate;
       return { ...snap, trainings: snap.trainings.map(({ events: _, ...rest }) => rest) };
     },
+    // Úložiště v paměti změny nesleduje: na dotaz o změny vrací znovu všechno.
+    async loadChanges() {
+      return { full: await this.loadAll() };
+    },
     async loadEvents(trainingId) {
       if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
       return copy(training(trainingId)?.events ?? []);

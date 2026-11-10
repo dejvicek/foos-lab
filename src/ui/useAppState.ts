@@ -11,7 +11,7 @@ import { configOf, mergeHead, opKey, runOp, type Op, type OpResult } from '../st
 import { freshOnly, noOutbox, type Outbox, type Queued } from '../storage/outbox';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
-import { mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
+import { applyChanges, mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
 
 export type Status = 'loading' | 'error' | 'ready';
 export type SaveState = 'idle' | 'saving' | 'retrying';
@@ -165,18 +165,24 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
   const loaded = useRef(false);
   const syncing = useRef<Promise<void> | null>(null);
   const again = useRef(false);
+  /** Kurzor z posledního načtení: další dorovnání se ptá jen na změny od něj. */
+  const cursor = useRef<string | null>(null);
+  /** Příští dorovnání načte všechno (lokální stav se rozešel se serverem – odmítnutý zápis). */
+  const fullNext = useRef(false);
   /** Živé změny, které dorazily během načítání: po načtení se uplatní znovu (jsou novější než načtený snímek). */
   const late = useRef<(() => void)[] | null>(null);
 
   /**
    * Načtení dat ze serveru a sloučení s lokálním stavem (server vyhrává kromě vlastních neuložených změn).
    * Běží vždy jen jedno; další žádost se k němu připojí. `rerun` = po doběhnutí načíst ještě jednou
-   * (běžící načtení mohlo začít dřív než událost, kvůli které se dorovnává).
+   * (běžící načtení mohlo začít dřív než událost, kvůli které se dorovnává). Poprvé se načte všechno,
+   * potom jen změny od kurzoru; `full` vynutí kompletní načtení.
    */
   const sync = useCallback(
-    (rerun: boolean): Promise<void> => {
+    (rerun: boolean, full = false): Promise<void> => {
+      if (full) fullNext.current = true;
       if (syncing.current) {
-        if (rerun) again.current = true;
+        if (rerun || full) again.current = true;
         return syncing.current;
       }
       const run = async () => {
@@ -184,9 +190,17 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
           again.current = false;
           late.current = [];
           try {
-            const remote = await repo.loadAll();
+            const since = fullNext.current ? null : cursor.current;
+            fullNext.current = false;
+            const res = since ? await repo.loadChanges(since) : { full: await repo.loadAll() };
             const replay = late.current;
-            update((d) => mergeRemote(d, remote, busy));
+            if ('full' in res) {
+              update((d) => mergeRemote(d, res.full, busy));
+              cursor.current = res.full.cursor ?? null;
+            } else {
+              update((d) => applyChanges(d, res.changes, busy));
+              cursor.current = res.changes.cursor;
+            }
             for (const apply of replay) apply();
             loaded.current = true;
             setStatus('ready');
@@ -263,8 +277,10 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
       }
     }
     if ((rejected || restored.current) && !stopped.current) {
+      // Odmítnutý zápis: lokální stav se rozešel se serverem, změny od kurzoru by ho nesrovnaly.
+      const full = rejected;
       restored.current = false;
-      await sync(true);
+      await sync(true, full);
     }
     running.current = false;
     setSaveState('idle');
@@ -307,6 +323,7 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
   useEffect(() => {
     setStatus('loading');
     loaded.current = false;
+    cursor.current = null;
     const timer = setTimeout(() => void sync(true), loadWaitMs);
     // Změna, která dorazí během načítání, se uplatní hned a po načtení ještě jednou.
     const live =
