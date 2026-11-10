@@ -1,5 +1,5 @@
 import { resolveRange, type LadderRange, type LadderView } from './ladder';
-import type { Match, PlayerId, PlayTimes, Schedule, ScheduleRow, Training } from './types';
+import type { DisciplineId, Match, PlayerId, PlayTimes, Schedule, ScheduleRow, Training } from './types';
 
 /**
  * Aktivní utkání a Zdržovači (PRD 4.8). Fronta = pořadí z rozpisu; utkání je aktivní, když jsou
@@ -7,7 +7,7 @@ import type { Match, PlayerId, PlayTimes, Schedule, ScheduleRow, Training } from
  * je první zahájení. Čas v ms (epoch); „teď“ dodává volající, doména nečte hodiny.
  */
 export type QueueEntry =
-  | { kind: 'item'; id: string; players: PlayerId[]; table: number; label: string; group: boolean; match?: Match }
+  | { kind: 'item'; id: string; players: PlayerId[]; table: number; label: string; group: boolean; match?: Match; discipline?: DisciplineId }
   | { kind: 'pause'; min: number; label: string };
 
 export type ItemStateKind = 'queued' | 'ready' | 'playing' | 'done';
@@ -49,7 +49,7 @@ export function queueOf(s: Schedule): QueueEntry[] {
       if (c.type === 'match')
         out.push({ kind: 'item', id: c.match.id, players: [...c.match.sideA, ...c.match.sideB], table: j + 1, label: row.label, group: false, match: c.match });
       else if (c.players.length)
-        out.push({ kind: 'item', id: drillItemId(row, j + 1, c.players), players: c.players, table: j + 1, label: row.label, group: true });
+        out.push({ kind: 'item', id: drillItemId(row, j + 1, c.players), players: c.players, table: j + 1, label: row.label, group: true, discipline: c.discipline });
     });
   });
   return out;

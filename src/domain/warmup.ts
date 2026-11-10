@@ -1,4 +1,6 @@
 import { WARMUP_PHASES, WARMUP_PREP_SEC, type WarmupPhase } from './content';
+import { drillItemId } from './queue';
+import type { Schedule } from './types';
 
 /** Stav timeru Rozcvičky v daném okamžiku (sekundy od zahájení). */
 export type WarmupState =
@@ -25,3 +27,12 @@ export function warmupState(elapsedSec: number): WarmupState {
 }
 
 export const rodName = (rod: WarmupPhase['rod']): string => (rod === 'twoBar' ? 'dvojka' : 'pětka');
+
+/** Je utkání (id z fronty) skupina Rozcvičky? */
+export function isWarmupItem(s: Schedule, itemId: string): boolean {
+  for (const sec of s.sections)
+    for (const row of sec.rows)
+      for (const [j, c] of row.cells.entries())
+        if (c?.type === 'group' && c.discipline === 'warmup' && drillItemId(row, j + 1, c.players) === itemId) return true;
+  return false;
+}

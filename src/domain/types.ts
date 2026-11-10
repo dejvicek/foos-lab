@@ -190,6 +190,8 @@ export interface ScheduleRow {
   kind: 'groups' | 'matches' | 'break';
   cells: (Cell | null)[];
   waiting: PlayerId[];
+  /** Popisek mimo stůl pro tento řádek (přebíjí sekci), např. Rozcvička „Čeká“. */
+  waitingLabel?: string;
 }
 
 export interface ScheduleSection {

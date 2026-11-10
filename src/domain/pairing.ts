@@ -211,7 +211,8 @@ export function drillRound(
   );
   const fresh = players.filter((p) => played(p) === 0).length;
   let target = Math.min(fresh > 0 ? Math.ceil(fresh / Math.max(1, roundsLeft)) : cap, players.length);
-  if (target % 2 && target + 1 <= Math.min(cap, players.length)) target++;
+  // Sparing partner jen u cvičení ve dvojici; individuální (Rozcvička) nechá lichého samotného.
+  if (!def.individual && target % 2 && target + 1 <= Math.min(cap, players.length)) target++;
   if (target > cap + 1 || (target > cap && target % 2 === 0)) target = cap;
   const chosen = sorted.slice(0, target);
   const waiting = sorted.slice(target).sort((x, y) => order.get(x)! - order.get(y)!);
@@ -219,7 +220,11 @@ export function drillRound(
     if (s.length === 1) return [[s[0]]]; // trénink pro 1 hráče
     const gs: PlayerId[][] = [];
     for (let i = 0; i + 1 < s.length; i += 2) gs.push([s[i], s[i + 1]]);
-    if (s.length % 2) gs[gs.length - 1].push(s[s.length - 1]); // trojice u posledního stolu
+    if (s.length % 2) {
+      // Individuální cvičení: lichý sám u volného stolu; jinak trojice u posledního stolu.
+      if (def.individual && gs.length < tables) gs.push([s[s.length - 1]]);
+      else gs[gs.length - 1].push(s[s.length - 1]);
+    }
     return gs;
   };
   const cost = (s: PlayerId[]) =>

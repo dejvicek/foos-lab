@@ -3,7 +3,13 @@ import { disciplineHelp } from './disciplineInfo';
 import { DEFAULT_SELECTION } from './plan';
 import { SOLO_METRICS } from './solo';
 import { WARMUP_PHASES } from './content';
-import { WARMUP_TOTAL_SEC, warmupState } from './warmup';
+import { isWarmupItem, WARMUP_TOTAL_SEC, warmupState } from './warmup';
+import { drillRoundsNeeded } from './plan';
+import { buildSchedule } from './schedule';
+import { soloSlots } from './solo';
+import { drillItemId, queueOf } from './queue';
+import type { ScheduleRow, Training } from './types';
+import { H } from '../test/fixtures';
 
 describe('Rozcvička – disciplína a timer', () => {
   it('Rozcvička: cvičení bez metriky, individuální, volitelná, první v katalogu', () => {
@@ -42,5 +48,51 @@ describe('Rozcvička – disciplína a timer', () => {
     expect(warmupState(395)).toMatchObject({ index: 6, prep: false, remainingSec: 120, next: null });
     expect(warmupState(514.1)).toMatchObject({ index: 6, remainingSec: 1 });
     expect(warmupState(515)).toEqual({ done: true, total: 7 });
+  });
+});
+
+const custom = (n: number, tables: 1 | 2 | 3 | 4, plan: Training['plan']): Training => ({
+  id: 'w', date: '2026-11-10', startTime: '18:00', mode: 'team', tables, attendees: H(n), scores: {}, soloResults: {},
+  simSplit: 'performance', simTeams: null, format: 'custom', durationMin: 180, plan, lockedRounds: [], breaks: [],
+});
+const play = (t: Training) => buildSchedule(t).sections.flatMap((s) => s.rows).filter((r) => r.kind !== 'break');
+const groupsOf = (r: ScheduleRow) => r.cells.flatMap((c) => (c?.type === 'group' ? [c.players] : []));
+
+describe('Rozcvička v rozpisu', () => {
+  for (let n = 4; n <= 13; n++)
+    for (const tables of [2, 3, 4] as const)
+      it(`n=${n}, stoly=${tables}: každý jednou, u stolu nejvýš 2 (lichý sám u volného)`, () => {
+        const rounds = drillRoundsNeeded(n, tables);
+        const rows = play(custom(n, tables, { warmup: rounds }));
+        expect(rows).toHaveLength(rounds);
+        const seen = rows.flatMap((r) => groupsOf(r).flat());
+        expect([...seen].sort()).toEqual([...H(n)].sort());
+        for (const r of rows) {
+          expect(groupsOf(r).every((g) => g.length <= 2)).toBe(true);
+          expect(groupsOf(r).length).toBeLessThanOrEqual(tables);
+          expect(r.waitingLabel).toBe('Čeká');
+          expect(r.cells.every((c) => c?.type !== 'group' || c.metric === undefined)).toBe(true);
+        }
+      });
+
+  it('7 hráčů / 4 stoly: 3 dvojice + 1 sám', () => {
+    expect(groupsOf(play(custom(7, 4, { warmup: 1 }))[0]).map((g) => g.length)).toEqual([2, 2, 2, 1]);
+  });
+
+  it('ostatní cvičení beze změny: 7 / 4 u Přihrávek na pětce = trojice u posledního stolu', () => {
+    const r = play(custom(7, 4, { warmupPasses: 1 }))[0];
+    expect(groupsOf(r).map((g) => g.length)).toEqual([2, 2, 3]);
+    expect(r.waitingLabel).toBeUndefined();
+  });
+
+  it('Rozcvička nemá sólové sloty a fronta zná disciplínu', () => {
+    const s = buildSchedule(custom(8, 4, { warmup: 1, normal: 1 }));
+    expect(soloSlots(s)).toEqual([]);
+    const row = s.sections[0].rows[0];
+    const id = drillItemId(row, 1, groupsOf(row)[0]);
+    expect(isWarmupItem(s, id)).toBe(true);
+    expect(isWarmupItem(s, 'nic')).toBe(false);
+    const items = queueOf(s).filter((e) => e.kind === 'item');
+    expect(items.find((e) => e.id === id)).toMatchObject({ discipline: 'warmup' });
   });
 });

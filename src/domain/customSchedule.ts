@@ -180,7 +180,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     let row: ScheduleRow;
     if (lockedRound) {
       const lr = lockedRound.rows[0];
-      row = { ...lr, cells: cellsOf(lr.cells.filter(Boolean) as Cell[], tables), roundNo, discipline: def.id, time: item.start, label, rule };
+      row = { ...lr, cells: cellsOf(lr.cells.filter(Boolean) as Cell[], tables), roundNo, discipline: def.id, time: item.start, label, rule, ...(def.individual ? { waitingLabel: 'Čeká' } : {}) };
     } else if (def.kind === 'drill') {
       const left = drillsLeft.get(def.id) ?? 1;
       drillsLeft.set(def.id, left - 1);
@@ -205,6 +205,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
           tables,
         ),
         waiting: r.waiting,
+        ...(def.individual ? { waitingLabel: 'Čeká' } : {}),
       };
     } else {
       const k = seenOf.get(def.id) ?? 0;
