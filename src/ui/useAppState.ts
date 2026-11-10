@@ -7,7 +7,7 @@ import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
 import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
-import { configOf, opKey, runOp, type Op } from '../storage/ops';
+import { configOf, opKey, runOp, type Op, type OpResult } from '../storage/ops';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
 import { mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
@@ -90,6 +90,20 @@ const inTraining = (d: AppData, id: string, fn: (t: Training) => Training): AppD
   ...d,
   trainings: d.trainings.map((t) => (t.id === id ? fn(t) : t)),
 });
+
+/** Převezme stav po zápisu vrácený serverem. */
+function withResult(d: AppData, r: OpResult): AppData {
+  return inTraining(d, r.trainingId, (t) => {
+    if (r.kind === 'score') {
+      const scores = { ...t.scores };
+      if (isEmptyScore(r.score)) delete scores[r.matchId];
+      else scores[r.matchId] = r.score;
+      return { ...t, scores };
+    }
+    if (r.kind === 'solo') return setAttempts(setSolo(t, r.playerId, r.key, r.value), r.playerId, r.key, r.attempts);
+    return withPlayTime(t, r.itemId, r.time);
+  });
+}
 
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
@@ -195,8 +209,10 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
     while (queue.current.length) {
       const op = queue.current[0];
       try {
-        await runOp(repo, op);
+        const result = await runOp(repo, op);
         queue.current.shift();
+        // Stav ze serveru platí, jakmile k témuž nečeká další vlastní zápis.
+        if (result && !busy(opKey(op))) update((d) => withResult(d, result));
         attempt = 0;
         setSaveState('saving');
       } catch (e) {
@@ -238,7 +254,7 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
     if (rejected) await sync(true);
     running.current = false;
     setSaveState('idle');
-  }, [repo, update, sync]);
+  }, [repo, update, sync, busy]);
 
   const enqueue = useCallback(
     (op: Op) => {

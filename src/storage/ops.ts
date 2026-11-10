@@ -69,42 +69,47 @@ export function opKey(op: Op): string {
   }
 }
 
-/** Provede zápis v úložišti. */
-export async function runOp(repo: Repository, op: Op): Promise<void> {
+/**
+ * Stav po zápisu, jak ho vrátil server – včetně změn z jiných telefonů. Appka ho převezme, jakmile
+ * k témuž klíči nečeká další vlastní zápis (živá změna mohla mezitím dorazit dřív a být zahozena).
+ */
+export type OpResult =
+  | { kind: 'score'; trainingId: string; matchId: MatchId; score: Score }
+  | { kind: 'solo'; trainingId: string; playerId: PlayerId; key: SoloKey; value: number; attempts: number | null }
+  | { kind: 'playTime'; trainingId: string; itemId: string; time: PlayTime };
+
+/** Provede zápis v úložišti; u ťuknutí a časů utkání vrací stav po zápisu. */
+export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefined> {
   switch (op.kind) {
     case 'savePlayer':
-      return repo.savePlayer(op.player);
+      return void (await repo.savePlayer(op.player));
     case 'deletePlayer':
-      return repo.deletePlayer(op.id);
+      return void (await repo.deletePlayer(op.id));
     case 'saveCatalog':
-      return repo.saveCatalog(op.catalog);
+      return void (await repo.saveCatalog(op.catalog));
     case 'saveTraining':
-      return repo.saveTraining(op.training);
+      return void (await repo.saveTraining(op.training));
     case 'deleteTraining':
-      return repo.deleteTraining(op.id);
+      return void (await repo.deleteTraining(op.id));
     case 'lockRounds':
-      return repo.lockRounds(op.trainingId, op.locked, op.simTeams);
+      return void (await repo.lockRounds(op.trainingId, op.locked, op.simTeams));
     case 'replaceScores':
-      return repo.replaceScores(op.trainingId, op.keep);
+      return void (await repo.replaceScores(op.trainingId, op.keep));
     case 'replaceSolo':
-      return repo.replaceSolo(op.trainingId, op.keep);
+      return void (await repo.replaceSolo(op.trainingId, op.keep));
     case 'saveScore':
-      return repo.saveScore(op.trainingId, op.matchId, op.score);
+      return void (await repo.saveScore(op.trainingId, op.matchId, op.score));
     case 'saveSolo':
-      return repo.saveSolo(op.trainingId, op.playerId, op.key, op.value);
+      return void (await repo.saveSolo(op.trainingId, op.playerId, op.key, op.value));
     case 'tapScore':
-      await repo.tapScore(op.trainingId, op.matchId, op.taps);
-      return;
+      return { kind: 'score', trainingId: op.trainingId, matchId: op.matchId, score: await repo.tapScore(op.trainingId, op.matchId, op.taps) };
     case 'tapDrill':
-      await repo.tapDrill(op.trainingId, op.playerId, op.key, op.max, op.taps);
-      return;
+      return { kind: 'solo', trainingId: op.trainingId, playerId: op.playerId, key: op.key, ...(await repo.tapDrill(op.trainingId, op.playerId, op.key, op.max, op.taps)) };
     case 'startItem':
-      await repo.startItem(op.trainingId, op.itemId, op.at);
-      return;
+      return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.startItem(op.trainingId, op.itemId, op.at) };
     case 'endItem':
-      await repo.endItem(op.trainingId, op.itemId, op.startedAt, op.endedAt);
-      return;
+      return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.endItem(op.trainingId, op.itemId, op.startedAt, op.endedAt) };
     case 'savePlayTime':
-      return repo.savePlayTime(op.trainingId, op.itemId, op.time);
+      return void (await repo.savePlayTime(op.trainingId, op.itemId, op.time));
   }
 }

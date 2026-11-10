@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useAppState } from './useAppState';
 import { memoryRepository } from '../storage/memoryRepository';
+import { soloMetric } from '../domain/solo';
 import type { Match, Training } from '../domain/types';
 
 const t: Training = { id: 't1', date: '2026-11-10', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: {}, lockedRounds: [], mode: 'team', tables: 2, attendees: [], scores: {} };
@@ -82,5 +83,44 @@ describe('useAppState – pomalé a vypadávající spojení', () => {
     await waitFor(() => expect(result.current.saveError).toMatch(/nepodařilo uložit/));
     await waitFor(() => expect(result.current.data.trainings[0].scores[m.id]).toBeUndefined());
     expect(result.current.data.trainings[0].events ?? []).toEqual([]);
+  });
+});
+
+describe('useAppState – po uložení platí stav ze serveru', () => {
+  it('skóre: převezme se i ťuknutí jiného telefonu, jehož živá změna nedorazila', async () => {
+    const { repo, result } = await setup({});
+    await repo.tapScore('t1', m.id, [{ id: 'cizi', at: 1, field: 'gb', delta: 1, max: 6 }]);
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 1, gb: 0 });
+    await waitFor(() => expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 1, gb: 1 }));
+  });
+
+  it('skóre: dokud čekají další vlastní ťuknutí, stav ze serveru je nepřepíše', async () => {
+    const { repo, result } = await setup({});
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    expect(result.current.data.trainings[0].scores[m.id]?.ga).toBe(3);
+    await waitFor(() => expect(result.current.saveState).toBe('idle'));
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 3, gb: 0 });
+    expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 3, gb: 0 });
+  });
+
+  it('cvičení: převezme se výsledek ze serveru (pokus jiného telefonu)', async () => {
+    const { repo, result } = await setup({});
+    const def = soloMetric('warmupPasses');
+    await repo.tapDrill('t1', 'p1', 'warmupPasses@1', def.max, [{ id: 'cizi', at: 1, itemId: 'drill|x', ok: true, delta: 1, dValue: 1, dAttempts: 1 }]);
+    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', def, true, 1, 'drill|x'));
+    await waitFor(() => expect(result.current.data.trainings[0].soloResults).toEqual({ p1: { 'warmupPasses@1': 2 } }));
+    expect(result.current.data.trainings[0].soloAttempts).toEqual({ p1: { 'warmupPasses@1': 2 } });
+  });
+
+  it('časy: opožděné Zahájit převezme časy utkání, které mezitím dohrál jiný telefon', async () => {
+    const { repo, result } = await setup({ failSaves: 1 });
+    act(() => result.current.startItem('t1', m.id));
+    await waitFor(() => expect(result.current.saveState).toBe('retrying'));
+    await repo.endItem('t1', m.id, 1000, 2000);
+    online();
+    await waitFor(() => expect(result.current.data.trainings[0].playTimes).toEqual({ [m.id]: { startedAt: 1000, endedAt: 2000 } }));
   });
 });
