@@ -23,8 +23,9 @@ describe('computeSoloLadder', () => {
     expect(avg.lowData.map((r) => r.playerId)).toEqual(['H3', 'H1', 'H2']);
     expect(avg.lowData[1]).toMatchObject({ trainings: 2, sum: 6, sumMax: 20, avg: 3 });
     const total = five(computeSoloLadder([t1, t2], { kind: 'all' }, 'total', TODAY));
-    expect(total.lowData).toEqual([]);
-    expect(total.ranked.map((r) => r.playerId)).toEqual(['H3', 'H1', 'H2']);
+    expect(total.ranked).toEqual([]);
+    expect(total.lowData.map((r) => r.playerId)).toEqual(['H3', 'H1', 'H2']);
+    expect(total.lowData[1]).toMatchObject({ sum: 6, sumMax: 20 });
   });
 
   it('s 3 tréninky se v Průměru řadí: 9 / 30 před 15 / 30', () => {
@@ -32,6 +33,9 @@ describe('computeSoloLadder', () => {
     expect(avg.ranked.map((r) => r.playerId)).toEqual(['H1', 'H2']);
     expect(avg.ranked[0]).toMatchObject({ trainings: 3, sum: 9, sumMax: 30, avg: 3 });
     expect(avg.lowData.map((r) => r.playerId)).toEqual(['H3']);
+    const total = five(computeSoloLadder([t1, t2, t3], { kind: 'all' }, 'total', TODAY));
+    expect(total.ranked.map((r) => r.playerId)).toEqual(['H1', 'H2']);
+    expect(total.lowData.map((r) => r.playerId)).toEqual(['H3']);
   });
 
   it('střelba: víc je lépe', () => {
@@ -47,7 +51,7 @@ describe('computeSoloLadder', () => {
   it('období: forma od 4. 10. vyřadí starší trénink', () => {
     const old = t('old', '2026-09-01', [['H4', 'fiveBarControl', 0]]);
     const res = five(computeSoloLadder([old, t1, t2], { kind: 'form' }, 'total', TODAY));
-    expect(res.ranked.map((r) => r.playerId)).not.toContain('H4');
+    expect([...res.ranked, ...res.lowData].map((r) => r.playerId)).not.toContain('H4');
   });
 
   it('hodnota bez místa v rozpisu se nepočítá', () => {

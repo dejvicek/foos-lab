@@ -42,12 +42,13 @@ describe('žebříček stanovišť z odehraných pokusů', () => {
       soloAttempts: { A: { [key]: 14 } }, // A stihl 14 pokusů, B zapsán číslem (20)
     };
     const [table] = computeSoloLadder([t], { kind: 'all' }, 'total', '2026-10-31').filter((x) => x.metric === 'warmupPasses');
-    const a = table.ranked.find((r) => r.playerId === 'A')!;
-    const b = table.ranked.find((r) => r.playerId === 'B')!;
+    const rows = table.lowData; // 1 trénink → „málo dat“, pořadí ve skupině platí
+    const a = rows.find((r) => r.playerId === 'A')!;
+    const b = rows.find((r) => r.playerId === 'B')!;
     expect(a).toMatchObject({ sum: 9, sumMax: 14 });
     expect(a.rate).toBeCloseTo(9 / 14);
     expect(a.avg).toBeCloseTo((9 / 14) * 20);
     expect(b).toMatchObject({ sum: 10, sumMax: 20, rate: 0.5, avg: 10 });
-    expect(table.ranked[0].playerId).toBe('A'); // 64 % > 50 %
+    expect(rows[0].playerId).toBe('A'); // 64 % > 50 %
   });
 });

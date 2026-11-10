@@ -94,9 +94,10 @@ export function computeLadder(
     .filter(([, v]) => v.s.legs > 0)
     .map(([id, v]) => toRow(id, v.s, v.trainings));
 
-  if (view === 'total') return { ranked: rows.sort(compareTotal), lowData: [] };
-  const ranked = rows.filter((r) => r.trainings >= MIN_TRAININGS).sort(compareAvg);
-  const lowData = rows.filter((r) => r.trainings < MIN_TRAININGS).sort(compareAvg);
+  // Pořadí jen od MIN_TRAININGS tréninků v období – v Průměru i v Celkem (10. 11. 2026).
+  rows.sort(view === 'total' ? compareTotal : compareAvg);
+  const ranked = rows.filter((r) => r.trainings >= MIN_TRAININGS);
+  const lowData = rows.filter((r) => r.trainings < MIN_TRAININGS);
   return { ranked, lowData };
 }
 

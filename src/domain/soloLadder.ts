@@ -53,11 +53,14 @@ export function aggregateSolo(
   return out;
 }
 
-/** PRD 5.9: žebříček pro každou metriku sólové části. */
+/**
+ * PRD 5.9: žebříček pro každou metriku sólové části. Řazení i hranice „málo dat“ jsou v Průměru
+ * i v Celkem stejné (od 10. 11. 2026); zobrazení mění jen to, jak UI hodnotu ukáže.
+ */
 export function computeSoloLadder(
   trainings: Training[],
   range: LadderRange,
-  view: LadderView,
+  _view: LadderView,
   today: string,
 ): SoloLadderTable[] {
   const r = resolveRange(range, today);
@@ -81,7 +84,6 @@ export function computeSoloLadder(
       b.trainings - a.trainings ||
       (a.playerId < b.playerId ? -1 : a.playerId > b.playerId ? 1 : 0);
     rows.sort(cmp);
-    if (view === 'total') return [{ metric: def.id, ranked: rows, lowData: [] }];
     return [
       {
         metric: def.id,

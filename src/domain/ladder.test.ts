@@ -43,11 +43,18 @@ describe('resolveRange', () => {
 });
 
 describe('computeLadder', () => {
-  it('Celkem: součty a řazení podle rozdílu (Y nad X)', () => {
+  it('Celkem: součty; hráč s 1 tréninkem je „málo dat“ i tady', () => {
     const { ranked, lowData } = computeLadder(all, { kind: 'all' }, 'total', TODAY);
-    expect(lowData).toEqual([]);
     const x = ranked[find(ranked, 'X')];
     expect(x).toMatchObject({ trainings: 3, legs: 12, diff: 5, wins: 6 });
+    expect(find(ranked, 'Y')).toBe(-1);
+    expect(lowData[find(lowData, 'Y')]).toMatchObject({ trainings: 1, legs: 7, diff: 10 });
+  });
+
+  it('Celkem řadí podle rozdílu (Y se 3 tréninky nad X)', () => {
+    const t4s = scoreFor(training('t4', '2026-10-29', 'team', ['Y', 'R2', 'R3', 'R4']), 'Y', [[6, 6]]);
+    const t5s = scoreFor(training('t5', '2026-10-30', 'team', ['Y', 'R2', 'R3', 'R4']), 'Y', [[6, 6]]);
+    const { ranked } = computeLadder([...all, t4s, t5s], { kind: 'all' }, 'total', TODAY);
     expect(find(ranked, 'Y')).toBeLessThan(find(ranked, 'X'));
   });
 
@@ -72,15 +79,15 @@ describe('computeLadder', () => {
   it('forma: trénink 2026-10-03 se nezapočte, 2026-10-04 ano', () => {
     const before = scoreFor(training('a', '2026-10-03', 'single', ['Z', 'Z2', 'Z3', 'Z4'], 2), 'Z', [[6, 0]]);
     const edge = scoreFor(training('b', '2026-10-04', 'single', ['Z', 'Z2', 'Z3', 'Z4'], 2), 'Z', [[6, 1]]);
-    const { ranked } = computeLadder([before, edge], { kind: 'form' }, 'total', TODAY);
-    expect(ranked[find(ranked, 'Z')]).toMatchObject({ trainings: 1, legs: 1, diff: 5 });
+    const { lowData } = computeLadder([before, edge], { kind: 'form' }, 'total', TODAY);
+    expect(lowData[find(lowData, 'Z')]).toMatchObject({ trainings: 1, legs: 1, diff: 5 });
   });
 
   it('vlastní období s prohozenými mezemi dává stejný výsledek', () => {
     const a = computeLadder(all, { kind: 'custom', from: '2026-10-01', to: '2026-10-26' }, 'total', TODAY);
     const b = computeLadder(all, { kind: 'custom', from: '2026-10-26', to: '2026-10-01' }, 'total', TODAY);
     expect(b).toEqual(a);
-    expect(find(a.ranked, 'Y')).toBe(-1); // t3 je mimo období
+    expect(find([...a.ranked, ...a.lowData], 'Y')).toBe(-1); // t3 je mimo období
   });
 
   it('přítomný hráč bez zapsaného legu se nezobrazí', () => {
