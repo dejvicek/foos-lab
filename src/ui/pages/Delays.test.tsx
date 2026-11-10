@@ -97,28 +97,48 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     window.matchMedia = original;
   });
 
-  it('skóre jde ťukat až po Zahájit; dohraný leg utkání sám neukončí – potvrdí ho člověk', async () => {
+  const openMine = async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     window.location.hash = ''; // otevření appky: jsem na řadě → rovnou Moje hry
     const repo = memoryRepository({ players, trainings: [{ ...t, playTimes: { training: { startedAt: at(18, 0) } } }] });
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    return { repo, mine, user: userEvent.setup() };
+  };
+
+  it('skóre jde ťukat až po Zahájit; dohraný leg čeká na potvrzení (odpočet 15 s), potvrdit jde hned', async () => {
+    const { repo, mine, user } = await openMine();
     expect(screen.getByRole('button', { name: 'Moje hry – jsi na řadě' })).toHaveAttribute('aria-current', 'page');
-    const user = userEvent.setup();
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
     expect(mine).toHaveTextContent('Skóre jde zapsat po zahájení utkání.');
     await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
     expect(within(mine).queryByLabelText('Zahájeno')).toBeNull(); // časy se ručně neupravují
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    expect(mine).toHaveTextContent('Hotovo – zkontroluj výsledek a potvrď konec.');
-    expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBeUndefined(); // samo se neukončí
+    expect(mine).toHaveTextContent('Utkání skončí samo za 15 s, potvrdit jde hned');
+    expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBeUndefined();
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     await vi.waitFor(() => {
       const pt = repo.snapshot().trainings[0].playTimes?.[ids[0]];
       expect(pt?.startedAt).toBe(at(18, 3));
       expect(pt?.endedAt).toBe(at(18, 3));
     });
+  });
+
+  it('dohraný leg bez potvrzení skončí sám 15 s po posledním ťuknutí; oprava výsledku odpočet zastaví (10. 11. 2026)', async () => {
+    const { repo, mine, user } = await openMine();
+    await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
+    for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    // oprava (−1 gól přes Zpět): leg už není dohraný, odpočet zmizí
+    await user.click(within(mine).getByRole('button', { name: '↶ Zpět' }));
+    expect(mine).not.toHaveTextContent('skončí samo');
+    vi.setSystemTime(at(18, 4)); // poslední ťuknutí v 18:04
+    await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    expect(mine).toHaveTextContent('Utkání skončí samo za 15 s');
+    vi.setSystemTime(at(18, 4) + 16_000);
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBe(at(18, 4) + 15_000), { timeout: 6000 });
+    // utkání skončilo → Moje hry přejde na další kolo, odpočet zmizí
+    await vi.waitFor(() => expect(screen.getByRole('region', { name: 'Moje kolo' })).not.toHaveTextContent('skončí samo'));
   });
 });
 

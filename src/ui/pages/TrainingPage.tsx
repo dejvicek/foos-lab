@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { autoEndIn as autoEndAfter, dueAutoEnds } from '../../domain/autoEnd';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
@@ -63,9 +64,27 @@ export function TrainingPage({
   const warmupLive = Object.entries(training?.playTimes ?? {}).some(
     ([k, v]) => v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000 && !!schedule && isWarmupItem(schedule, k),
   );
-  const tick = useTick(view === 'schedule' && !pauseRunning && !warmupLive ? 30_000 : 1000, !!training);
+  // Dohraný výsledek čeká na potvrzení nejdéle 15 s – odpočet po sekundě i v rozpisu.
+  const autoLive = !!training && !!schedule && Object.keys(training.playTimes ?? {}).some((k) => autoEndAfter(training, schedule, k, Date.now()) !== null);
+  const tick = useTick(view === 'schedule' && !pauseRunning && !warmupLive && !autoLive ? 30_000 : 1000, !!training);
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
+  // Dohraný výsledek bez potvrzení: po 15 s od posledního ťuknutí utkání skončí samo (10. 11. 2026).
+  // Zapíše ho kterýkoli otevřený telefon s právem zápisu; konec = poslední ťuknutí + 15 s.
+  const autoSent = useRef(new Set<string>());
+  useEffect(() => {
+    if (!training || !schedule || !queueInfo) return;
+    for (const e of dueAutoEnds(training, schedule, Math.max(tick, Date.now()))) {
+      const item = queueInfo.queue.find((q) => q.kind === 'item' && q.id === e.id);
+      if (!item || item.kind !== 'item' || autoSent.current.has(e.id)) continue;
+      const may = item.match
+        ? canWriteMatch(viewer, item.match, training)
+        : canManage(viewer, training) || (!!viewer.playerId && item.players.includes(viewer.playerId));
+      if (!may) continue;
+      autoSent.current.add(e.id);
+      store.setPlayTime(training.id, e.id, { startedAt: e.startedAt, endedAt: e.endedAt });
+    }
+  }, [training, schedule, queueInfo, tick]);
   if (!training) {
     return (
       <section>
@@ -171,8 +190,9 @@ export function TrainingPage({
         canWrite: (_id, players, m) => (m ? canMatch(m) : manage || (!!viewer.playerId && players.includes(viewer.playerId))),
         allowStart: view === 'my',
         manage,
+        autoEndIn: (id) => (schedule ? autoEndAfter(training, schedule, id, Math.max(tick, Date.now())) : null),
         start: (id) => store.setPlayTime(training.id, id, { startedAt: Date.now() }),
-        // Konec vždy potvrzuje člověk. Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
+        // Konec potvrzuje člověk (dohraný výsledek nejdéle 15 s, pak skončí sám). Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
         end: (id) => {
           const now = Date.now();
           // Rozcvička: timer ještě běží → ukončit jen po potvrzení.

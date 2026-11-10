@@ -168,6 +168,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         manage={timing.manage}
         finished={finished}
         countdown={countdown}
+        autoEndIn={timing.autoEndIn?.(id)}
         onStart={() => timing.start(id)}
         onEnd={() => timing.end(id)}
       />

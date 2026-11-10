@@ -5,8 +5,8 @@ import { clockOf, fmtDur } from '../queue';
 
 /**
  * Zahájení / konec utkání pro zápis (PRD 4.8). Zahájit jde jen v Moje hry (hráč utkání);
- * konec vždy potvrzuje člověk („Potvrdit konec“). Organizátor nezahajuje: zapíše skóre a potvrdí
- * (čas od vypsání utkání do potvrzení).
+ * konec potvrzuje člověk („Potvrdit konec“); dohraný výsledek nejdéle 15 s, pak utkání skončí samo
+ * (10. 11. 2026). Organizátor nezahajuje: zapíše skóre a potvrdí (čas od vypsání utkání do potvrzení).
  */
 export interface ItemTiming {
   state(itemId: string): ItemState | undefined;
@@ -16,6 +16,8 @@ export interface ItemTiming {
   allowStart: boolean;
   /** Organizátor (zakladatel / admin) – zapisuje bez zahájení a potvrzuje. */
   manage: boolean;
+  /** Za kolik ms utkání s dohraným výsledkem skončí samo (null = neskončí). */
+  autoEndIn?(itemId: string): number | null;
   start(itemId: string): void;
   /** Potvrzení konce; u nezahájeného utkání (organizátor) se počítá od vypsání. */
   end(itemId: string): void;
@@ -31,12 +33,14 @@ interface BarProps {
   finished?: boolean;
   /** Vlastní odpočet (Rozcvička): bez stopek „Doba hry“ a bez výzvy ke kontrole výsledku. */
   countdown?: boolean;
+  /** Dohraný výsledek: za kolik ms utkání skončí samo (null = čeká na potvrzení bez limitu). */
+  autoEndIn?: number | null;
   onStart(): void;
   onEnd(): void;
 }
 
 /** Stopky utkání: Zahájit (jen Moje hry) a Potvrdit konec; časy se ručně neupravují. */
-export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, countdown, onStart, onEnd }: BarProps) {
+export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, countdown, autoEndIn, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
@@ -75,7 +79,13 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
         )}
         {ended !== undefined && <span className="timing-label">dohráno</span>}
       </div>
-      {finished && !countdown && ended === undefined && <p className="timing-hint">Hotovo – zkontroluj výsledek a potvrď konec.</p>}
+      {finished && !countdown && ended === undefined && (
+        <p className="timing-hint" role="status">
+          {autoEndIn !== null && autoEndIn !== undefined
+            ? `Hotovo – zkontroluj výsledek. Utkání skončí samo za ${Math.ceil(autoEndIn / 1000)} s, potvrdit jde hned; oprava výsledku odpočet zastaví.`
+            : 'Hotovo – zkontroluj výsledek a potvrď konec.'}
+        </p>
+      )}
       {(s.activeAt !== null || started !== undefined) && (
         <div className="timing-times">
           {s.activeAt !== null && <span>aktivní od {clockOf(s.activeAt)}</span>}
