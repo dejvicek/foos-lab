@@ -45,6 +45,9 @@ describe('stránka Žebříček', () => {
     expect(rowOf(table, 'Yvona')).toBe(-1);
     const low = screen.getByRole('table', { name: 'Málo dat' });
     expect(rowOf(low, 'Yvona')).toBeGreaterThan(0);
+    // první tři mají medaili, neřazení („Málo dat“) ne
+    expect(within(within(table).getAllByRole('row')[1]).getByTitle('1. místo')).toBeInTheDocument();
+    expect(within(low).queryByTitle(/místo/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
     const total = screen.getByRole('table', { name: 'Žebříček' });

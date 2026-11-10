@@ -14,6 +14,7 @@ import { canBuildSchedule } from '../../domain/schedule';
 import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
+import { Medal, podiumRow } from '../components/Rank';
 
 interface Props {
   store: AppStore;
@@ -59,8 +60,10 @@ function LadderTable({
         {rows.map((r, i) => {
           const d = avg ? r.diffPerLeg : r.diff;
           return (
-            <li key={r.playerId}>
-              <span className="ll-rank">{ranked ? `${i + 1}.` : '–'}</span>
+            <li key={r.playerId} className={podiumRow(i + 1, ranked)}>
+              <span className="ll-rank">
+                <Medal place={i + 1} ranked={ranked} />
+              </span>
               <span className="ll-who">
                 <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                   {name(r.playerId)}
@@ -83,7 +86,7 @@ function LadderTable({
       <table aria-label={label} className={ranked ? undefined : 'low-data'}>
         <thead>
           <tr>
-            <th className="n">#</th>
+            <th className="n rank">#</th>
             <th>Hráč</th>
             <th className="n">Tréninky</th>
             <th className="n">Legy</th>
@@ -99,8 +102,10 @@ function LadderTable({
           {rows.map((r, i) => {
             const d = avg ? r.diffPerLeg : r.diff;
             return (
-              <tr key={r.playerId}>
-                <td className="n">{ranked ? `${i + 1}.` : '–'}</td>
+              <tr key={r.playerId} className={podiumRow(i + 1, ranked)}>
+                <td className="n rank">
+                  <Medal place={i + 1} ranked={ranked} />
+                </td>
                 <td>
                   <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                     {name(r.playerId)}
@@ -145,7 +150,7 @@ function SoloTable({
       <table aria-label={label} className={ranked ? 'solo-table' : 'solo-table low-data'}>
         <thead>
           <tr>
-            <th className="n">#</th>
+            <th className="n rank">#</th>
             <th>Hráč</th>
             <th className="n">Tréninky</th>
             <th className="n">{view === 'avg' ? 'Průměr' : 'Celkem'}</th>
@@ -153,8 +158,10 @@ function SoloTable({
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.playerId}>
-              <td className="n">{ranked ? `${i + 1}.` : '–'}</td>
+            <tr key={r.playerId} className={podiumRow(i + 1, ranked)}>
+              <td className="n rank">
+                <Medal place={i + 1} ranked={ranked} />
+              </td>
               <td>
                 <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                   {name(r.playerId)}

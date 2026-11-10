@@ -2,6 +2,7 @@ import type { DelayRow } from '../../domain/queue';
 import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
+import { isShamed, ShameRank, Snail } from './Rank';
 
 /**
  * Zahájení / konec utkání pro zápis (PRD 4.8). Zahájit jde jen v Moje hry (hráč utkání);
@@ -111,7 +112,7 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
       <table aria-label="Zdržovači" className="delay-table">
         <thead>
           <tr>
-            <th className="n">#</th>
+            <th className="n rank">#</th>
             <th>Hráč</th>
             {showTrainings && <th className="n">Tréninky</th>}
             <th className="n">Utkání</th>
@@ -121,17 +122,25 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.playerId}>
-              <td className="n">{i + 1}.</td>
+          {rows.map((r, i) => {
+            const shamed = isShamed(i + 1, r.waitSum > 0);
+            return (
+            <tr key={r.playerId} className={shamed ? (i === 0 ? 'shame shame-1' : 'shame') : undefined}>
+              <td className="n rank">
+                <ShameRank place={i + 1} shamed={shamed} />
+              </td>
               <td>
-                {open ? (
-                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                    {names[r.playerId] ?? '?'}
-                  </button>
-                ) : (
-                  names[r.playerId] ?? '?'
-                )}
+                <span className="delay-who">
+                  {open ? (
+                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                      {names[r.playerId] ?? '?'}
+                    </button>
+                  ) : (
+                    names[r.playerId] ?? '?'
+                  )}
+                  {shamed && <Snail big={i === 0} />}
+                  {shamed && i === 0 && <span className="shame-tag">Brzda</span>}
+                </span>
               </td>
               {showTrainings && <td className="n">{r.trainings}</td>}
               <td className="n">{r.items}</td>
@@ -139,7 +148,8 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
               <td className="n">{fmtDur(r.waitSum)}</td>
               <td className="n">{r.playAvg === null ? '–' : fmtDur(r.playAvg)}</td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
