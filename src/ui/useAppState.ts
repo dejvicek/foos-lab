@@ -101,7 +101,7 @@ const inTraining = (d: AppData, id: string, fn: (t: Training) => Training): AppD
 });
 
 /** Převezme stav po zápisu vrácený serverem. */
-function withResult(d: AppData, r: OpResult): AppData {
+function withResult(d: AppData, r: Exclude<OpResult, { kind: 'training' }>): AppData {
   return inTraining(d, r.trainingId, (t) => {
     if (r.kind === 'score') {
       const scores = { ...t.scores };
@@ -256,8 +256,18 @@ export function useAppState(
         const result = await runOp(repo, op);
         queue.current.splice(0, count);
         persist();
-        // Stav ze serveru platí, jakmile k témuž nečeká další vlastní zápis.
-        if (result && !busy(opKey(op))) update((d) => withResult(d, result));
+        if (result?.kind === 'training') {
+          // Uložené nastavení má novou verzi: platí pro lokální stav i pro vlastní úpravy, které na ni navazují.
+          const { trainingId, version } = result;
+          if (version !== undefined) {
+            for (const q of queue.current) if (q.op.kind === 'saveTraining' && q.op.training.id === trainingId) q.op = { ...q.op, expected: version };
+            persist();
+            update((d) => inTraining(d, trainingId, (t) => ({ ...t, version })));
+          }
+        } else if (result && !busy(opKey(op))) {
+          // Stav ze serveru platí, jakmile k témuž nečeká další vlastní zápis.
+          update((d) => withResult(d, result));
+        }
         attempt = 0;
         setSaveState('saving');
       } catch (e) {
@@ -504,12 +514,12 @@ export function useAppState(
           ...d,
           trainings: upsert(d.trainings, { ...t, scores: d.trainings.find((x) => x.id === t.id)?.scores ?? {} }),
         }));
-        enqueue({ kind: 'saveTraining', training: configOf(t) });
+        enqueue({ kind: 'saveTraining', training: configOf(t), expected: t.version });
       },
       updateTrainingConfig: (t: Training) => {
         cancelPending(t.id, stillValid, t);
         update((d) => ({ ...d, trainings: upsert(d.trainings, t) }));
-        enqueue({ kind: 'saveTraining', training: configOf(t) });
+        enqueue({ kind: 'saveTraining', training: configOf(t), expected: t.version });
         enqueue({ kind: 'replaceScores', trainingId: t.id, keep: Object.keys(t.scores) });
         enqueue({
           kind: 'replaceSolo',

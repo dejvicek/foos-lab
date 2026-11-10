@@ -1,9 +1,15 @@
 import { isEmptyScore } from '../domain/training';
 import { StorageError } from './errors';
-import type { GameEvent, PlayTime, Score } from '../domain/types';
+import type { GameEvent, PlayTime, Score, Training } from '../domain/types';
 import type { AppData, RemoteHandlers, Repository } from './repository';
 
 const copy = <T>(v: T): T => structuredClone(v);
+
+/** Nastavení tréninku, jehož změna zvedá verzi (klíče seřazené – porovnává se text). */
+function settingsOf(t: Training): string {
+  const { scores: _s, soloResults: _r, soloAttempts: _a, events: _e, playTimes: _p, lockedRounds: _l, simTeams: _t, version: _v, ...rest } = t;
+  return JSON.stringify(Object.fromEntries(Object.entries(rest).sort(([a], [b]) => (a < b ? -1 : 1))));
+}
 
 /** Repozitář v paměti – pro testy a vývoj bez sítě. */
 export function memoryRepository(
@@ -116,16 +122,20 @@ export function memoryRepository(
       write(() => {
         data.players = data.players.filter((p) => p.id !== id);
       }),
-    saveTraining: (t) =>
+    saveTraining: (t, expected) =>
       write(() => {
         const existing = training(t.id);
+        if (expected !== undefined && !existing) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        if (expected !== undefined && (existing?.version ?? 1) !== expected) throw new StorageError('Zastaralá verze', true, 'trénink mezitím změnil někdo jiný');
         const next = { ...copy(t), scores: existing ? existing.scores : {}, soloResults: existing ? existing.soloResults : {} };
         if (existing?.playTimes) next.playTimes = existing.playTimes;
         else delete next.playTimes;
         if (existing?.events) next.events = existing.events;
         else delete next.events;
+        // Verze roste jen se změnou nastavení – ne se zamčením kol a týmů simulace (jako v databázi).
+        next.version = !existing ? 1 : (existing.version ?? 1) + (settingsOf(existing) === settingsOf(next) ? 0 : 1);
         data.trainings = existing ? data.trainings.map((x) => (x.id === t.id ? next : x)) : [...data.trainings, next];
-      }),
+      }).then(() => copy(training(t.id)!)),
     deleteTraining: (id) =>
       write(() => {
         data.trainings = data.trainings.filter((t) => t.id !== id);

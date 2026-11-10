@@ -99,8 +99,12 @@ export interface Repository {
   loadBackup(): Promise<AppData>;
   savePlayer(p: Player): Promise<void>;
   deletePlayer(id: PlayerId): Promise<void>;
-  /** Uloží konfiguraci tréninku; skóre nemění. */
-  saveTraining(t: Training): Promise<void>;
+  /**
+   * Uloží konfiguraci tréninku; skóre nemění. `expected` = verze, ze které úprava vycházela: když je
+   * v úložišti jiná (trénink mezitím změnilo jiné zařízení), uložení se odmítne. Bez ní (nový trénink)
+   * ukládá vždy. Vrací uloženou konfiguraci s novou verzí.
+   */
+  saveTraining(t: Training, expected?: number): Promise<Training>;
   /** Smaže trénink i jeho skóre. */
   deleteTraining(id: string): Promise<void>;
   /** Prázdné skóre řádek smaže, jinak upsert. */

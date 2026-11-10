@@ -182,3 +182,12 @@ describe('odpověď changes_since', () => {
     });
   });
 });
+
+describe('verze nastavení tréninku', () => {
+  it('řádek → trénink nese verzi; do řádku k uložení se neposílá (očekávaná verze jde zvlášť)', () => {
+    const row = { ...trainingToRow({ ...training, scores: {} }), version: 7 };
+    expect(trainingFromRow(row, [], []).version).toBe(7);
+    expect('version' in trainingToRow({ ...training, version: 7 })).toBe(false);
+    expect(trainingFromRow(trainingToRow(training), [], []).version).toBeUndefined();
+  });
+});

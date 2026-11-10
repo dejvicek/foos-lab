@@ -107,8 +107,9 @@ export function supabaseRepository(client: SupabaseClient): Repository {
     async deletePlayer(id) {
       check(await client.from('players').delete().eq('id', id));
     },
-    async saveTraining(t) {
-      check(await client.from('trainings').upsert(trainingToRow(t)));
+    async saveTraining(t, expected) {
+      const res = await client.rpc('save_training', { p_row: trainingToRow(t), p_expected: expected ?? null });
+      return trainingFromRow(check<TrainingRow>(res), [], []);
     },
     async deleteTraining(id) {
       check(await client.from('trainings').delete().eq('id', id));

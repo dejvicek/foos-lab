@@ -34,6 +34,8 @@ export interface TrainingRow {
   /** Pořadí disciplín ze šablony (migrace 19); null = pořadí katalogu. */
   discipline_order?: Training['disciplineOrder'];
   created_by: string | null;
+  /** Verze nastavení (migrace 25); k uložení se neposílá – očekávaná verze jde zvlášť. */
+  version?: number;
   mode: Mode;
   tables: number;
   attendees: string[];
@@ -133,6 +135,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     plan: Object.fromEntries(Object.entries(r.plan ?? {}).filter(([id]) => KNOWN.has(id))) as Training['plan'],
     lockedRounds: r.locked_rounds ?? [],
     ...(r.created_by ? { createdBy: r.created_by } : {}),
+    ...(r.version ? { version: r.version } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
     ...(r.discipline_min ? { disciplineMin: r.discipline_min } : {}),
     ...(r.discipline_order ? { disciplineOrder: r.discipline_order.filter((id) => KNOWN.has(id)) } : {}),

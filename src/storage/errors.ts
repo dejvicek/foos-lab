@@ -11,7 +11,11 @@ export class StorageError extends Error {
   }
 }
 
+/** Uložení nastavení tréninku vycházelo ze stavu, který mezitím změnilo jiné zařízení (migrace 25). */
+export const STALE_TRAINING = 'FL409';
+
 function describe(code: string, status: number): string {
+  if (code === STALE_TRAINING) return 'trénink mezitím změnil někdo jiný';
   if (code === '23505') return 'jméno hráče už existuje';
   if (code === '23503') return 'trénink už neexistuje';
   if (code.startsWith('22')) return 'neplatná hodnota';
@@ -22,7 +26,7 @@ function describe(code: string, status: number): string {
 export function fromPostgrest(err: { message: string; code?: string }, status: number): Error {
   const code = err.code ?? '';
   const permanent =
-    /^(22|23|42)/.test(code) || (status >= 400 && status < 500 && status !== 408 && status !== 429);
+    code === STALE_TRAINING || /^(22|23|42)/.test(code) || (status >= 400 && status < 500 && status !== 408 && status !== 429);
   return new StorageError(err.message, permanent, describe(code, status), code || undefined);
 }
 

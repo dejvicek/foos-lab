@@ -23,7 +23,7 @@ export type Op =
   | { kind: 'deletePlayer'; id: PlayerId }
   | { kind: 'saveCatalog'; catalog: CatalogData }
   /** Jen konfigurace – skóre, výsledky, časy a události se v tréninku neposílají. */
-  | { kind: 'saveTraining'; training: Training }
+  | { kind: 'saveTraining'; training: Training; /** Verze, ze které úprava vycházela (chybí = nový trénink). */ expected?: number }
   | { kind: 'deleteTraining'; id: string }
   | { kind: 'lockRounds'; trainingId: string; locked: LockedRound[]; simTeams: SimTeams | null }
   | { kind: 'replaceScores'; trainingId: string; keep: MatchId[] }
@@ -106,7 +106,9 @@ export function mergeHead(ops: Op[]): { op: Op; count: number } {
 export type OpResult =
   | { kind: 'score'; trainingId: string; matchId: MatchId; score: Score }
   | { kind: 'solo'; trainingId: string; playerId: PlayerId; key: SoloKey; value: number; attempts: number | null }
-  | { kind: 'playTime'; trainingId: string; itemId: string; time: PlayTime };
+  | { kind: 'playTime'; trainingId: string; itemId: string; time: PlayTime }
+  /** Uložené nastavení tréninku – appka z něj převezme novou verzi. */
+  | { kind: 'training'; trainingId: string; version: number | undefined };
 
 /** Provede zápis v úložišti; u ťuknutí a časů utkání vrací stav po zápisu. */
 export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefined> {
@@ -118,7 +120,7 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
     case 'saveCatalog':
       return void (await repo.saveCatalog(op.catalog));
     case 'saveTraining':
-      return void (await repo.saveTraining(op.training));
+      return { kind: 'training', trainingId: op.training.id, version: (await repo.saveTraining(op.training, op.expected)).version };
     case 'deleteTraining':
       return void (await repo.deleteTraining(op.id));
     case 'lockRounds':

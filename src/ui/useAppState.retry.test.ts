@@ -167,3 +167,50 @@ describe('useAppState – fronta zápisů přežije zavření appky', () => {
     expect(repo.writes()).toBe(2); // nepovedený první pokus + jedna dávka
   });
 });
+
+describe('useAppState – nastavení tréninku se nepřepíše zastaralým stavem', () => {
+  const versioned = { ...t, version: 1 };
+  async function start() {
+    const repo = memoryRepository({ players: [], trainings: [versioned] });
+    const hook = renderHook(() => useAppState(repo));
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'));
+    return { repo, ...hook };
+  }
+
+  it('úprava založená na stavu, který mezitím změnilo jiné zařízení, se odmítne a ukáže se aktuální stav', async () => {
+    const { repo, result } = await start();
+    await repo.saveTraining({ ...versioned, startTime: '19:00' }, 1); // jiné zařízení; živá změna nedorazila
+    act(() => result.current.saveTraining({ ...result.current.data.trainings[0], tables: 4 }));
+    await waitFor(() => expect(result.current.saveError).toMatch(/změnil někdo jiný/));
+    await waitFor(() => expect(result.current.data.trainings[0]).toMatchObject({ startTime: '19:00', tables: 2, version: 2 }));
+    expect(repo.snapshot().trainings[0].tables).toBe(2);
+  });
+
+  it('dvě vlastní úpravy rychle po sobě projdou obě (druhá navazuje na první)', async () => {
+    const { repo, result } = await start();
+    act(() => result.current.saveTraining({ ...result.current.data.trainings[0], tables: 3 }));
+    act(() => result.current.saveTraining({ ...result.current.data.trainings[0], tables: 4 }));
+    await waitFor(() => expect(result.current.saveState).toBe('idle'));
+    expect(result.current.saveError).toBeNull();
+    expect(repo.snapshot().trainings[0]).toMatchObject({ tables: 4, version: 3 });
+    expect(result.current.data.trainings[0].version).toBe(3);
+  });
+
+  it('po živé změně z jiného zařízení další vlastní úprava projde', async () => {
+    const { repo, result } = await start();
+    const saved = await repo.saveTraining({ ...versioned, startTime: '19:00' }, 1);
+    act(() => repo.emit().training(saved, 't1'));
+    expect(result.current.data.trainings[0].version).toBe(2);
+    act(() => result.current.saveTraining({ ...result.current.data.trainings[0], tables: 4 }));
+    await waitFor(() => expect(result.current.saveState).toBe('idle'));
+    expect(result.current.saveError).toBeNull();
+    expect(repo.snapshot().trainings[0]).toMatchObject({ startTime: '19:00', tables: 4, version: 3 });
+  });
+
+  it('nový trénink se založí bez kontroly verze a hned ji dostane', async () => {
+    const { repo, result } = await start();
+    act(() => result.current.saveTraining({ ...t, id: 't2' }));
+    await waitFor(() => expect(result.current.data.trainings.find((x) => x.id === 't2')?.version).toBe(1));
+    expect(repo.snapshot().trainings).toHaveLength(2);
+  });
+});

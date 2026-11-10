@@ -111,8 +111,11 @@ export function TrainingPage({
   const manage = canManage(viewer, training);
   const canMatch = (m: Match) => canWriteMatch(viewer, m, training);
   const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
-  /** Uloží zamčení kol / týmů: admin přímo, hráč přes funkci na serveru. */
-  const persistLock = (next: Training) => (manage ? store.saveTraining(next) : store.lockRounds(next));
+  /**
+   * Uloží zamčení kol / týmů – vždy jen je (funkce lock_rounds: kola se jen prodlužují). Dřív organizátor
+   * ukládal celý řádek tréninku a zařízení se zastaralým stavem tím mohlo vrátit cizí změnu nastavení.
+   */
+  const persistLock = (next: Training) => store.lockRounds(next);
   /** Před zápisem výsledku zamkne kola (a týmy simulace) – jedno uložení, jinak by se přepsala. */
   const lockForMatch = (matchId: MatchId) => {
     let next = withLocked(training, roundOfMatch(schedule!, matchId));

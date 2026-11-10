@@ -170,3 +170,30 @@ describe('memoryRepository – načítání po částech', () => {
     expect((await p).trainings[0].scores).toEqual({});
   });
 });
+
+describe('memoryRepository – verze nastavení tréninku', () => {
+  it('saveTraining vrací verzi; úprava se správnou verzí ji zvedne, se zastaralou se odmítne', async () => {
+    const repo = memoryRepository();
+    expect((await repo.saveTraining(t)).version).toBe(1);
+    expect((await repo.saveTraining({ ...t, tables: 3 }, 1)).version).toBe(2);
+    await expect(repo.saveTraining({ ...t, tables: 2 }, 1)).rejects.toMatchObject({ permanent: true, userMessage: 'trénink mezitím změnil někdo jiný' });
+    expect(repo.snapshot().trainings[0].tables).toBe(3);
+    expect((await repo.saveTraining({ ...t, tables: 2 })).version).toBe(3); // bez očekávané verze projde
+  });
+
+  it('zamčení kol ani uložení beze změny verzi nemění', async () => {
+    const repo = memoryRepository();
+    await repo.saveTraining(t);
+    await repo.lockRounds('t1', [], null);
+    expect((await repo.saveTraining(t, 1)).version).toBe(1);
+    expect((await repo.loadAll()).trainings[0].version).toBe(1);
+  });
+
+  it('úprava smazaného tréninku ho nezaloží znovu', async () => {
+    const repo = memoryRepository();
+    await repo.saveTraining(t);
+    await repo.deleteTraining('t1');
+    await expect(repo.saveTraining({ ...t, tables: 2 }, 1)).rejects.toMatchObject({ permanent: true });
+    expect(repo.snapshot().trainings).toEqual([]);
+  });
+});

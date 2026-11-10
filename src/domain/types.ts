@@ -100,6 +100,11 @@ export interface Training {
   disciplineOrder?: DisciplineId[] | null;
   /** Délky kol disciplín (snímek katalogu při založení / úpravě); chybí = výchozí z kódu (PRD 4.6). */
   disciplineMin?: Partial<Record<DisciplineId, number>> | null;
+  /**
+   * Verze nastavení v úložišti (roste s každou změnou nastavení). Uložení pošle verzi, ze které úprava
+   * vycházela – když ji mezitím změnilo jiné zařízení, uložení se odmítne. Chybí = ještě neuloženo.
+   */
+  version?: number;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
   createdBy?: PlayerId | null;
   notes?: string;
