@@ -21,6 +21,8 @@ export function memoryRepository(
   loads(): number;
   /** Kolik zápisů úložiště dostalo (včetně nepovedených). */
   writes(): number;
+  /** Testy: načítání od teď selhává / zase funguje (výpadek spojení). */
+  failLoads(fail: boolean): void;
   /** Testy: další načtení vezmou stav hned, ale vrátí ho až po release() (pomalé spojení). */
   hold(): void;
   release(): void;
@@ -31,6 +33,7 @@ export function memoryRepository(
   let loseResponses = opts.loseResponses ?? 0;
   let loads = 0;
   let writes = 0;
+  let failLoad = !!opts.failLoad;
   let gate: Promise<void> | null = null;
   let open: (() => void) | null = null;
 
@@ -60,6 +63,7 @@ export function memoryRepository(
     resync: () => listeners.forEach((l) => l.resync()),
     playTime: (...a) => listeners.forEach((l) => l.playTime(...a)),
     event: (...a) => listeners.forEach((l) => l.event(...a)),
+    live: (...a) => listeners.forEach((l) => l.live?.(...a)),
   };
 
   return {
@@ -69,6 +73,9 @@ export function memoryRepository(
     subscribers: () => listeners.size,
     loads: () => loads,
     writes: () => writes,
+    failLoads: (fail) => {
+      failLoad = fail;
+    },
     hold: () => {
       gate = new Promise((r) => (open = r));
     },
@@ -79,7 +86,7 @@ export function memoryRepository(
     },
     async loadAll() {
       loads++;
-      if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
+      if (failLoad) throw new Error('Simulovaná chyba načtení');
       const snap = copy(data);
       if (gate) await gate;
       return { ...snap, trainings: snap.trainings.map(({ events: _, ...rest }) => rest) };
@@ -89,11 +96,11 @@ export function memoryRepository(
       return { full: await this.loadAll() };
     },
     async loadEvents(trainingId) {
-      if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
+      if (failLoad) throw new Error('Simulovaná chyba načtení');
       return copy(training(trainingId)?.events ?? []);
     },
     async loadBackup() {
-      if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
+      if (failLoad) throw new Error('Simulovaná chyba načtení');
       return copy(data);
     },
     savePlayer: (p) =>

@@ -77,6 +77,8 @@ export interface RemoteHandlers {
   training(t: Training | null, id: string): void;
   /** Spojení se (znovu) navázalo – zmeškané změny se musí dočíst. */
   resync(): void;
+  /** Odběr živých změn je připojený (true) / odpojený (false) – appka ukáže, že data nemusí být aktuální. */
+  live?(connected: boolean): void;
   /** Zahájení / konec utkání (null = smazáno). */
   playTime(trainingId: string, itemId: string, p: PlayTime | null): void;
   /** Nová událost hry (průběh). */

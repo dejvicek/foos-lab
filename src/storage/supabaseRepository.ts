@@ -216,7 +216,10 @@ export function supabaseRepository(client: SupabaseClient): Repository {
         })
         .subscribe((status) => {
           // Při každém (znovu)připojení dočíst, co mezitím proběhlo (i mezera mezi načtením a odběrem).
-          if (status === 'SUBSCRIBED') h.resync();
+          if (status === 'SUBSCRIBED') {
+            h.live?.(true);
+            h.resync();
+          } else h.live?.(false); // CHANNEL_ERROR, TIMED_OUT, CLOSED – knihovna se připojuje znovu sama
         });
       return () => {
         void client.removeChannel(ch);

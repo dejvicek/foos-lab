@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
 import { memoryRepository } from '../storage/memoryRepository';
@@ -62,5 +62,18 @@ describe('přihlášení zapamatované v zařízení', () => {
     rememberMe(null);
     expect(cachedMe()).toBeNull();
     expect(localStorage.length).toBe(0);
+  });
+});
+
+describe('App – stav spojení', () => {
+  it('bez spojení ukáže klidnou lištu, že jsou vidět uložená data; po obnovení zmizí', async () => {
+    const repo = memoryRepository({ players, trainings: [t] });
+    render(<App repo={repo} auth={memoryAuth({ signedIn: me })} />);
+    await screen.findByRole('heading', { name: 'Trénink' });
+    expect(screen.queryByText(/Bez spojení/)).toBeNull();
+    act(() => repo.emit().live?.(false));
+    expect(await screen.findByText(/Bez spojení/)).toBeInTheDocument();
+    act(() => repo.emit().live?.(true));
+    await waitFor(() => expect(screen.queryByText(/Bez spojení/)).toBeNull());
   });
 });

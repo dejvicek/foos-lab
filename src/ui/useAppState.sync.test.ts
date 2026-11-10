@@ -161,3 +161,27 @@ describe('useAppState – dorovnání jen o změny', () => {
     expect(base.loads()).toBe(2);
   });
 });
+
+describe('useAppState – stav spojení', () => {
+  it('nepovedené dorovnání = bez spojení; povedené ho vrátí', async () => {
+    const { repo, result } = await setup();
+    await idle();
+    expect(result.current.offline).toBe(false);
+    repo.failLoads(true);
+    visible();
+    await waitFor(() => expect(result.current.offline).toBe(true));
+    expect(result.current.status).toBe('ready');
+    repo.failLoads(false);
+    visible();
+    await waitFor(() => expect(result.current.offline).toBe(false));
+  });
+
+  it('odpojený odběr živých změn = bez spojení; po připojení zpět', async () => {
+    const { repo, result } = await setup();
+    await idle();
+    act(() => repo.emit().live?.(false));
+    expect(result.current.offline).toBe(true);
+    act(() => repo.emit().live?.(true));
+    expect(result.current.offline).toBe(false);
+  });
+});

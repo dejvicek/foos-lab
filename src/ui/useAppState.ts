@@ -21,6 +21,11 @@ export interface AppStore {
   status: Status;
   data: AppData;
   saveState: SaveState;
+  /**
+   * Bez spojení se serverem: poslední dorovnání se nepovedlo, nebo je odpojený odběr živých změn.
+   * Na obrazovce je poslední známý stav; zápisy čekají ve frontě.
+   */
+  offline: boolean;
   /** Zpráva o zápisu, který server trvale odmítl (zahozen, data znovu načtena). */
   saveError: string | null;
   dismissSaveError(): void;
@@ -133,6 +138,8 @@ export function useAppState(
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [loadNonce, setLoadNonce] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
+  const [liveDown, setLiveDown] = useState(false);
 
   /** Fronta zápisů (data, ne funkce); klíč zápisu říká, čeho se týká – ozvěny ze serveru ho do uložení nepřepíšou. */
   const queue = useRef<Queued[]>([]);
@@ -215,11 +222,13 @@ export function useAppState(
             for (const apply of replay) apply();
             loaded.current = true;
             fromServer.current = true;
+            setSyncFailed(false);
             setStatus('ready');
             for (const id of watched.current.keys()) fetchEvents(id);
           } catch {
             // Chyba je jen u prvního načtení; později zůstávají data na obrazovce a zkusí to další dorovnání.
             if (!loaded.current) setStatus('error');
+            setSyncFailed(true);
           } finally {
             late.current = null;
           }
@@ -388,6 +397,7 @@ export function useAppState(
         clearTimeout(timer);
         void sync(true);
       },
+      live: (connected) => alive && setLiveDown(!connected),
     });
     return () => {
       alive = false;
@@ -596,5 +606,5 @@ export function useAppState(
     [repo, enqueue, cancelPending, debounce, update, fetchEvents],
   );
 
-  return { status, data, saveState, saveError, ...actions };
+  return { status, data, saveState, saveError, offline: syncFailed || liveDown, ...actions };
 }

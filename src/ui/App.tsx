@@ -232,6 +232,11 @@ function SignedIn({
           </button>
         </div>
       )}
+      {store.offline && store.status === 'ready' && store.saveState !== 'retrying' && (
+        <div className="offline-banner" role="status">
+          Bez spojení – vidíš poslední uložený stav. Změny se odešlou, až se spojení vrátí.
+        </div>
+      )}
       {store.saveState === 'retrying' && (
         <div className="save-banner" role="status">
           Neuloženo – zkouším znovu

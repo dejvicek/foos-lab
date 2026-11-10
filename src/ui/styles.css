@@ -174,6 +174,8 @@ label { font-weight: 600; font-size: 13px; }
   background: var(--warn); color: #fff; padding: 8px 24px; font-weight: 600;
 }
 .save-banner .banner-ok { background: transparent; color: #fff; border-color: #fff; min-height: 26px; padding: 0 10px; margin-left: 8px; }
+/* Bez spojení: tichá informace, že data nemusí být aktuální (zápisy čekají ve frontě). */
+.offline-banner { background: var(--line); color: var(--ink); padding: 6px 24px; font-size: 13px; font-weight: 600; }
 /* Nová verze appky: klidná lišta (není to chyba), tlačítko Obnovit. */
 .update-banner { background: var(--felt-soft); color: var(--ink); border-bottom: 1px solid var(--felt); padding: 8px 24px; font-weight: 600; }
 .update-banner .banner-ok { background: var(--action); color: var(--action-ink); border-color: var(--action); min-height: 30px; padding: 0 12px; margin-left: 8px; }
