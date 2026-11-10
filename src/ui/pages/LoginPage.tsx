@@ -34,6 +34,9 @@ export function LoginPage({ auth, onDone }: { auth: AuthService; onDone(me: Me, 
           Přihlásit
         </button>
       </form>
+      <p className="auth-guide">
+        <a href="#/navod">Jak appka funguje ›</a>
+      </p>
     </main>
   );
 }

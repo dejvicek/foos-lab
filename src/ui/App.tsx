@@ -12,6 +12,7 @@ import { DisciplinesPage } from './pages/DisciplinesPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { applyCatalog } from '../domain/catalog';
 import { ChangePasswordPage, LoginPage } from './pages/LoginPage';
+import { GuidePage } from './pages/GuidePage';
 import { PlayerPage } from './pages/PlayerPage';
 import { PlayersPage } from './pages/PlayersPage';
 import { TrainingPage } from './pages/TrainingPage';
@@ -26,6 +27,8 @@ export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: Aut
   const [me, setMe] = useState<Me | null | 'loading'>('loading');
   const [nick, setNick] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
+  // Návod pro hráče je vidět i bez přihlášení (10. 11. 2026).
+  const [route] = useHashRoute();
 
   useEffect(() => {
     let alive = true;
@@ -38,6 +41,15 @@ export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: Aut
     };
   }, [auth]);
 
+  if (route.page === 'guide')
+    return (
+      <GuidePage
+        signedIn={me !== 'loading' && !!me}
+        onBack={() => {
+          window.location.hash = '#/trenink';
+        }}
+      />
+    );
   if (me === 'loading') return <main className="page"><p className="note">Načítám…</p></main>;
   if (!me) return <LoginPage auth={auth} onDone={(m, n) => (setNick(n), setMe(m))} />;
   if (me.mustChangePassword || changing)
@@ -147,7 +159,7 @@ function SignedIn({
   else if (route.page === 'disciplines') body = <DisciplinesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'templates') body = <TemplatesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} />;
-  else body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
+  else if (route.page === 'player') body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
 
   return (
     <>

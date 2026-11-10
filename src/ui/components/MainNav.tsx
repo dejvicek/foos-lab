@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Route } from '../useHashRoute';
 
-const ICON: Record<string, ReactNode> = {
+/** Ikony záložek (i v Návodu – stejné jako v appce). */
+export const NAV_ICONS: Record<string, ReactNode> = {
   live: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
@@ -97,7 +98,10 @@ export function MainNav({
   ];
   return (
     <nav className="main-nav" aria-label="Hlavní navigace" style={{ ['--nav-items' as string]: items.length }}>
-      <span className="brand">Foos Lab</span>
+      <span className="brand">
+        <BrandMark />
+        Foos Lab
+      </span>
       {items.map((it) => {
         const active = it.match.includes(route.page);
         return (
@@ -109,7 +113,7 @@ export function MainNav({
             aria-label={it.dot ? `${it.label} – jsi na řadě` : undefined}
             onClick={() => navigate(it.route)}
           >
-            <span className="nav-icon">{ICON[it.key]}</span>
+            <span className="nav-icon">{NAV_ICONS[it.key]}</span>
             <span className="nav-label">{it.label}</span>
             {it.dot && <i className="nav-dot" aria-hidden="true" />}
           </button>
@@ -118,6 +122,9 @@ export function MainNav({
       {onSignOut && (
         <span className="nav-user">
           {myName && <span className="nav-name">{myName}</span>}
+          <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
+            Návod
+          </button>
           <button type="button" className="link" onClick={onChangePassword}>
             Heslo
           </button>
@@ -127,5 +134,16 @@ export function MainNav({
         </span>
       )}
     </nav>
+  );
+}
+
+/** Logo (10. 11. 2026): baňka se zlatou náplní a míčkem; barvy z tokenů (světlý i tmavý režim). */
+export function BrandMark() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+      <path className="bm-flask" d="M26 10h12v4h-2v13l14 22a4 4 0 0 1-3.4 6H17.4A4 4 0 0 1 14 49l14-22V14h-2z" />
+      <path className="bm-liquid" d="M21 41h22l4.6 7.6a1.6 1.6 0 0 1-1.4 2.4H17.8a1.6 1.6 0 0 1-1.4-2.4z" />
+      <circle className="bm-ball" cx="32" cy="43" r="6" />
+    </svg>
   );
 }

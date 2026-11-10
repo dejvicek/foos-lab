@@ -11,7 +11,9 @@ export type Route =
   | { page: 'player'; id: string }
   | { page: 'disciplines' }
   | { page: 'templates' }
-  | { page: 'players' };
+  | { page: 'players' }
+  /** Návod pro hráče (landing page, 10. 11. 2026) – i bez přihlášení. */
+  | { page: 'guide' };
 
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
@@ -25,6 +27,7 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'discipliny') return { page: 'disciplines' };
   if (parts[0] === 'sablony') return { page: 'templates' };
   if (parts[0] === 'hraci') return { page: 'players' };
+  if (parts[0] === 'navod') return { page: 'guide' };
   return { page: 'trainings' };
 }
 
@@ -52,6 +55,8 @@ export function toHash(r: Route): string {
       return '#/sablony';
     case 'players':
       return '#/hraci';
+    case 'guide':
+      return '#/navod';
   }
 }
 
