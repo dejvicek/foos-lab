@@ -1,4 +1,4 @@
-import { canonicalHash, parseHash, toHash, type Route } from './useHashRoute';
+import { parseHash, toHash, type Route } from './useHashRoute';
 
 const routes: [Route, string][] = [
   [{ page: 'trainings' }, '#/trainings'],
@@ -19,34 +19,17 @@ describe('adresy stránek (anglicky od 10. 11. 2026)', () => {
   it.each(routes)('%o ↔ %s', (route, hash) => {
     expect(toHash(route)).toBe(hash);
     expect(parseHash(hash)).toEqual(route);
-    expect(canonicalHash(hash)).toBeNull();
   });
 
-  it('staré české adresy dál fungují a přepíšou se na anglické', () => {
-    const legacy: [string, string][] = [
-      ['#/trenink', '#/trainings'],
-      ['#/trenink/t1', '#/trainings/t1'],
-      ['#/trenink/novy', '#/trainings/new'],
-      ['#/trenink/t1/nastaveni', '#/trainings/t1/settings'],
-      ['#/zive', '#/live'],
-      ['#/moje-hry', '#/my-games'],
-      ['#/moje-hra', '#/my-games'],
-      ['#/zebricek', '#/ladder'],
-      ['#/zebricek/hrac/p1', '#/ladder/player/p1'],
-      ['#/discipliny', '#/disciplines'],
-      ['#/sablony', '#/templates'],
-      ['#/hraci', '#/players'],
-      ['#/navod', '#/guide'],
-    ];
-    for (const [old, now] of legacy) {
-      expect(toHash(parseHash(old))).toBe(now);
-      expect(canonicalHash(old)).toBe(now);
-    }
+  it('staré české a neznámé adresy: stránka nenalezena', () => {
+    for (const h of ['#/trenink', '#/trenink/t1', '#/trenink/novy', '#/zive', '#/moje-hry', '#/zebricek', '#/zebricek/hrac/p1', '#/discipliny', '#/sablony', '#/hraci', '#/navod', '#/nic'])
+      expect(parseHash(h)).toEqual({ page: 'not-found' });
+    expect(parseHash('#/ladder/hrac/p1')).toEqual({ page: 'not-found' });
+    expect(parseHash('#/trainings/t1/nastaveni')).toEqual({ page: 'not-found' });
   });
 
-  it('prázdná adresa se nepřepisuje', () => {
+  it('prázdná adresa je úvod (Trénink)', () => {
     expect(parseHash('')).toEqual({ page: 'trainings' });
-    expect(canonicalHash('')).toBeNull();
-    expect(canonicalHash('#/')).toBeNull();
+    expect(parseHash('#/')).toEqual({ page: 'trainings' });
   });
 });

@@ -59,11 +59,15 @@ describe('stránka Žebříček', () => {
     expect(within(within(total).getAllByRole('row')[rowOf(total, 'Yvona')]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
   });
 
-  it('stará česká adresa #/zebricek otevře žebříček a přepíše se na #/ladder', async () => {
+  it('stará česká adresa: Stránka nenalezena, tlačítko vede na úvod', async () => {
+    const user = userEvent.setup();
     window.location.hash = '#/zebricek';
     render(<App repo={repo()} />);
-    expect(await screen.findByRole('table', { name: 'Žebříček' })).toBeInTheDocument();
-    expect(window.location.hash).toBe('#/ladder');
+    expect(await screen.findByRole('heading', { name: 'Stránka nenalezena' })).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Na úvodní stránku' }));
+    expect(window.location.hash).toBe('#/trainings');
+    expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
   });
 
   it('volby se pamatují po novém otevření', async () => {
