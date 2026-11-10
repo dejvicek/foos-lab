@@ -24,7 +24,7 @@ import { parseSoloKey, soloKey } from '../domain/solo';
 import type { SoloMetric } from '../domain/types';
 import type { CatalogData } from '../domain/catalog';
 import { fromPostgrest } from './errors';
-import type { Repository } from './repository';
+import type { AppData, Repository } from './repository';
 
 const PAGE = 1000; // PostgREST vrací nejvýš 1000 řádků na dotaz
 
@@ -33,10 +33,11 @@ function check<T>(res: { data: T | null; error: { message: string; code?: string
   return res.data as T;
 }
 
-async function selectAll<T>(client: SupabaseClient, table: string, orderBy: string[]): Promise<T[]> {
+async function selectAll<T>(client: SupabaseClient, table: string, orderBy: string[], only?: { column: string; value: string }): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += PAGE) {
     let q = client.from(table).select('*');
+    if (only) q = q.eq(only.column, only.value);
     for (const col of orderBy) q = q.order(col);
     const rows = check<T[]>(await q.range(from, from + PAGE - 1));
     out.push(...rows);
@@ -57,25 +58,32 @@ export const createSupabase = (url: string, anonKey: string): SupabaseClient =>
 let channelSeq = 0;
 
 export function supabaseRepository(client: SupabaseClient): Repository {
+  /** Průběh her (game_events) je největší tabulka – načítá se jen do zálohy; jinak po trénincích (loadEvents). */
+  async function load(withEvents: boolean): Promise<AppData> {
+    const [players, trainings, scores, solo, times, events, catalogRes] = await Promise.all([
+      selectAll<PlayerRow>(client, 'players', ['id']),
+      selectAll<TrainingRow>(client, 'trainings', ['id']),
+      selectAll<ScoreRow>(client, 'scores', ['training_id', 'match_id']),
+      selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric', 'round']),
+      selectAll<PlayTimeRow>(client, 'play_times', ['training_id', 'item_id']),
+      withEvents ? selectAll<EventRow>(client, 'game_events', ['training_id', 'at', 'id']) : Promise.resolve([]),
+      client.from('catalog').select('data').eq('id', 1).maybeSingle(),
+    ]);
+    check(catalogRes);
+    const catalog = catalogRes.data as { data: CatalogData } | null;
+    return {
+      players: players.map(playerFromRow),
+      trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times, events)),
+      catalog: catalog?.data ?? {},
+    };
+  }
 
   return {
-    async loadAll() {
-      const [players, trainings, scores, solo, times, events] = await Promise.all([
-        selectAll<PlayerRow>(client, 'players', ['id']),
-        selectAll<TrainingRow>(client, 'trainings', ['id']),
-        selectAll<ScoreRow>(client, 'scores', ['training_id', 'match_id']),
-        selectAll<SoloRow>(client, 'solo_results', ['training_id', 'player_id', 'metric', 'round']),
-        selectAll<PlayTimeRow>(client, 'play_times', ['training_id', 'item_id']),
-        selectAll<EventRow>(client, 'game_events', ['training_id', 'at', 'id']),
-      ]);
-      const catalogRes = await client.from('catalog').select('data').eq('id', 1).maybeSingle();
-      check(catalogRes);
-      const catalog = catalogRes.data as { data: CatalogData } | null;
-      return {
-        players: players.map(playerFromRow),
-        trainings: trainings.map((t) => trainingFromRow(t, scores, solo, times, events)),
-        catalog: catalog?.data ?? {},
-      };
+    loadAll: () => load(false),
+    loadBackup: () => load(true),
+    async loadEvents(trainingId) {
+      const rows = await selectAll<EventRow>(client, 'game_events', ['at', 'id'], { column: 'training_id', value: trainingId });
+      return rows.map(eventFromRow);
     },
     async saveCatalog(c) {
       check(await client.from('catalog').upsert({ id: 1, data: c, updated_at: new Date().toISOString() }));

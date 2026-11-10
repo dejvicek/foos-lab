@@ -49,6 +49,13 @@ export interface AppStore {
   endItem(trainingId: string, itemId: string, times?: { startedAt?: number; endedAt?: number }): void;
   /** Celý řádek časů utkání – jen mazání (null) a opravy; Zahájit / Ukončit jde přes startItem / endItem. */
   setPlayTime(trainingId: string, itemId: string, p: PlayTime | null): void;
+  /**
+   * Průběh her (události ťuknutí) se načítá jen tréninku, který je na obrazovce – a znovu při každém dorovnání.
+   * Vrací funkci, která sledování ukončí.
+   */
+  watchEvents(trainingId: string): () => void;
+  /** Všechna data včetně průběhu všech her (záloha) – čte se ze serveru. */
+  loadBackup(): Promise<AppData>;
   /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
   lockRounds(t: Training): void;
   /** Lokálně hned, do úložiště s odstupem SCORE_DEBOUNCE_MS za zápas. */
@@ -59,6 +66,8 @@ export interface AppStore {
 }
 
 export const RETRY_DELAYS_MS = [2000, 5000, 10000];
+/** Jak dlouho se při startu čeká na připojení odběru živých změn, než se data načtou i bez něj. */
+export const LOAD_WAIT_MS = 3000;
 export const SCORE_DEBOUNCE_MS = 400;
 
 
@@ -85,7 +94,8 @@ const inTraining = (d: AppData, id: string, fn: (t: Training) => Training): AppD
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 
-export function useAppState(repo: Repository): AppStore {
+export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}): AppStore {
+  const loadWaitMs = opts.loadWaitMs ?? LOAD_WAIT_MS;
   const [status, setStatus] = useState<Status>('loading');
   const [data, setData] = useState<AppData>({ players: [], trainings: [] });
   /** Aktuální stav i mezi vykresleními: dvě rychlá ťuknutí po sobě počítají s výsledkem toho prvního. */
@@ -105,21 +115,75 @@ export function useAppState(repo: Repository): AppStore {
   /** Ukončí čekání před dalším pokusem (spojení se vrátilo). */
   const wake = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    setStatus('loading');
-    repo.loadAll().then(
-      (d) => {
-        if (!alive) return;
-        update(() => d);
-        setStatus('ready');
-      },
-      () => alive && setStatus('error'),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [repo, loadNonce, update]);
+  /** Čeká na uložení vlastní změna s tímto klíčem (ve frontě nebo odložená)? */
+  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((op) => opKey(op) === key), []);
+
+  /** Tréninky na obrazovce (a kolikrát) – jen těm se načítá průběh her. */
+  const watched = useRef(new Map<string, number>());
+  const fetchEvents = useCallback(
+    (trainingId: string) => {
+      repo.loadEvents(trainingId).then(
+        (events) =>
+          update((d) =>
+            inTraining(d, trainingId, (t) => {
+              // Server + vlastní události, které ještě neodešly.
+              const known = new Set(events.map((e) => e.id));
+              const all = [...events, ...(t.events ?? []).filter((e) => !known.has(e.id))];
+              return all.length ? { ...t, events: all } : t;
+            }),
+          ),
+        () => {
+          /* další dorovnání to zkusí znovu */
+        },
+      );
+    },
+    [repo, update],
+  );
+
+  const loaded = useRef(false);
+  const syncing = useRef<Promise<void> | null>(null);
+  const again = useRef(false);
+  /** Živé změny, které dorazily během načítání: po načtení se uplatní znovu (jsou novější než načtený snímek). */
+  const late = useRef<(() => void)[] | null>(null);
+
+  /**
+   * Načtení dat ze serveru a sloučení s lokálním stavem (server vyhrává kromě vlastních neuložených změn).
+   * Běží vždy jen jedno; další žádost se k němu připojí. `rerun` = po doběhnutí načíst ještě jednou
+   * (běžící načtení mohlo začít dřív než událost, kvůli které se dorovnává).
+   */
+  const sync = useCallback(
+    (rerun: boolean): Promise<void> => {
+      if (syncing.current) {
+        if (rerun) again.current = true;
+        return syncing.current;
+      }
+      const run = async () => {
+        do {
+          again.current = false;
+          late.current = [];
+          try {
+            const remote = await repo.loadAll();
+            const replay = late.current;
+            update((d) => mergeRemote(d, remote, busy));
+            for (const apply of replay) apply();
+            loaded.current = true;
+            setStatus('ready');
+            for (const id of watched.current.keys()) fetchEvents(id);
+          } catch {
+            // Chyba je jen u prvního načtení; později zůstávají data na obrazovce a zkusí to další dorovnání.
+            if (!loaded.current) setStatus('error');
+          } finally {
+            late.current = null;
+          }
+        } while (again.current);
+      };
+      syncing.current = run().finally(() => {
+        syncing.current = null;
+      });
+      return syncing.current;
+    },
+    [repo, busy, update, fetchEvents],
+  );
 
   // Sériová fronta: zápisy v pořadí, chyba → opakování se stejným zápisem.
   const pump = useCallback(async () => {
@@ -129,8 +193,9 @@ export function useAppState(repo: Repository): AppStore {
     let attempt = 0;
     let rejected = false;
     while (queue.current.length) {
+      const op = queue.current[0];
       try {
-        await runOp(repo, queue.current[0]);
+        await runOp(repo, op);
         queue.current.shift();
         attempt = 0;
         setSaveState('saving');
@@ -140,6 +205,18 @@ export function useAppState(repo: Repository): AppStore {
           queue.current.shift();
           attempt = 0;
           rejected = true;
+          if (op.kind === 'tapScore' || op.kind === 'tapDrill') {
+            // Odmítnuté ťuknutí nenechá stopu ani v průběhu hry.
+            const ids = new Set(op.taps.map((x) => x.id));
+            update((d) =>
+              inTraining(d, op.trainingId, (t) => {
+                if (!t.events) return t;
+                const { events, ...rest } = t;
+                const kept = events.filter((x) => !ids.has(x.id));
+                return kept.length ? { ...rest, events: kept } : rest;
+              }),
+            );
+          }
           setSaveError(`Změnu se nepodařilo uložit (${userMessageOf(e)}). Zobrazuji data ze serveru.`);
           setSaveState('saving');
           continue;
@@ -158,17 +235,10 @@ export function useAppState(repo: Repository): AppStore {
         attempt++;
       }
     }
-    if (rejected) {
-      try {
-        const fresh = await repo.loadAll();
-        update(() => fresh);
-      } catch {
-        /* necháme lokální stav; další načtení to srovná */
-      }
-    }
+    if (rejected) await sync(true);
     running.current = false;
     setSaveState('idle');
-  }, [repo, update]);
+  }, [repo, update, sync]);
 
   const enqueue = useCallback(
     (op: Op) => {
@@ -178,24 +248,23 @@ export function useAppState(repo: Repository): AppStore {
     [pump],
   );
 
-  /** Čeká na uložení vlastní změna s tímto klíčem (ve frontě nebo odložená)? */
-  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((op) => opKey(op) === key), []);
-
-  /** Po výpadku spojení / návratu do appky: dorovnat se serverem (Realtime zmeškané změny neposílá). */
-  const resync = useCallback(() => {
-    repo.loadAll().then(
-      (r) => update((d) => mergeRemote(d, r, busy)),
-      () => {
-        /* další pokus při příštím připojení */
-      },
-    );
-  }, [repo, busy, update]);
-
-  // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky).
+  // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky) a načtení dat.
+  // Odběr se přihlásí hned a data se načtou až po jeho připojení: změny mezi načtením a připojením by se
+  // jinak ztratily a muselo by se načítat dvakrát. Když se odběr do loadWaitMs nepřipojí, načte se i tak.
+  // Stejná cesta slouží i po výpadku spojení (Realtime zmeškané změny neposílá).
   useEffect(() => {
-    if (status !== 'ready') return;
-    return repo.subscribe({
-      score: (tid, mid, s) => {
+    setStatus('loading');
+    loaded.current = false;
+    const timer = setTimeout(() => void sync(true), loadWaitMs);
+    // Změna, která dorazí během načítání, se uplatní hned a po načtení ještě jednou.
+    const live =
+      <A extends unknown[]>(fn: (...a: A) => void) =>
+      (...a: A): void => {
+        late.current?.push(() => fn(...a));
+        fn(...a);
+      };
+    const off = repo.subscribe({
+      score: live((tid, mid, s) => {
         if (busy(pendingKey.score(tid, mid))) return; // ozvěna staršího stavu, vlastní ťuknutí ještě čekají
         update((d) =>
           inTraining(d, tid, (t) => {
@@ -205,12 +274,12 @@ export function useAppState(repo: Repository): AppStore {
             return { ...t, scores };
           }),
         );
-      },
-      solo: (tid, pid, key, value, attempts) => {
+      }),
+      solo: live((tid, pid, key, value, attempts) => {
         if (busy(pendingKey.solo(tid, pid, key))) return;
         update((d) => inTraining(d, tid, (t) => setAttempts(setSolo(t, pid, key, value), pid, key, value === null ? null : (attempts ?? null))));
-      },
-      training: (t, id) =>
+      }),
+      training: live((t, id) =>
         update((d) => {
           const pending = busy(pendingKey.training(id));
           if (!t) return pending ? d : { ...d, trainings: d.trainings.filter((x) => x.id !== id) };
@@ -218,22 +287,31 @@ export function useAppState(repo: Repository): AppStore {
           const merged = cur ? mergeTrainingEcho(cur, t, pending) : t;
           return { ...d, trainings: cur ? d.trainings.map((x) => (x.id === id ? merged : x)) : [...d.trainings, merged] };
         }),
-      playTime: (tid, itemId, p) => {
+      ),
+      playTime: live((tid, itemId, p) => {
         if (busy(pendingKey.time(tid, itemId))) return;
         update((d) => inTraining(d, tid, (t) => withPlayTime(t, itemId, p)));
+      }),
+      event: live((tid, e) => update((d) => inTraining(d, tid, (t) => withEvent(t, e)))),
+      resync: () => {
+        clearTimeout(timer);
+        void sync(true);
       },
-      event: (tid, e) => update((d) => inTraining(d, tid, (t) => withEvent(t, e))),
-      resync,
     });
-  }, [repo, status, busy, resync, update]);
+    return () => {
+      clearTimeout(timer);
+      off();
+    };
+  }, [repo, loadNonce, loadWaitMs, sync, busy, update]);
 
   // Telefon se zamčenou obrazovkou / appka na pozadí: po návratu dorovnat.
   useEffect(() => {
-    if (status !== 'ready') return;
-    const on = () => document.visibilityState === 'visible' && resync();
+    const on = () => {
+      if (document.visibilityState === 'visible' && loaded.current) void sync(false);
+    };
     document.addEventListener('visibilitychange', on);
     return () => document.removeEventListener('visibilitychange', on);
-  }, [status, resync]);
+  }, [sync]);
 
   // Spojení se vrátilo: čekající zápis zopakovat hned.
   useEffect(() => {
@@ -398,9 +476,19 @@ export function useAppState(repo: Repository): AppStore {
         update((d) => inTraining(d, trainingId, (t) => setAttempts(setSolo(t, playerId, key, value), playerId, key, null)));
         debounce({ kind: 'saveSolo', trainingId, playerId, key, value });
       },
+      watchEvents: (trainingId: string) => {
+        watched.current.set(trainingId, (watched.current.get(trainingId) ?? 0) + 1);
+        fetchEvents(trainingId);
+        return () => {
+          const n = (watched.current.get(trainingId) ?? 1) - 1;
+          if (n > 0) watched.current.set(trainingId, n);
+          else watched.current.delete(trainingId);
+        };
+      },
+      loadBackup: () => repo.loadBackup(),
       newId: newUuid,
     }),
-    [enqueue, cancelPending, debounce, update],
+    [repo, enqueue, cancelPending, debounce, update, fetchEvents],
   );
 
   return { status, data, saveState, saveError, ...actions };

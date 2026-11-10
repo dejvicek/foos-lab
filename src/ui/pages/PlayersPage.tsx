@@ -102,6 +102,7 @@ function PlayerRow({
 export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?: Viewer; auth?: AuthService }) {
   const isAdmin = viewer?.isAdmin ?? true;
   const [notice, setNotice] = useState<string | null>(null);
+  const [backup, setBackup] = useState<'idle' | 'loading' | 'error'>('idle');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const players = store.data.players;
@@ -210,16 +211,30 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
       )}
 
       <h2>Záloha dat</h2>
-      <p className="note">Stáhne soupisku, tréninky i skóre jako soubor JSON.</p>
+      <p className="note">Stáhne soupisku, tréninky, skóre i průběh her jako soubor JSON.</p>
       <button
         type="button"
+        disabled={backup === 'loading'}
         onClick={() => {
-          const { filename, json } = exportJson(store.data, todayIso());
-          download(filename, json);
+          // Záloha se čte celá ze serveru – průběh her appka jinak načítá jen u otevřeného tréninku.
+          setBackup('loading');
+          store.loadBackup().then(
+            (all) => {
+              const { filename, json } = exportJson(all, todayIso());
+              download(filename, json);
+              setBackup('idle');
+            },
+            () => setBackup('error'),
+          );
         }}
       >
-        Stáhnout zálohu
+        {backup === 'loading' ? 'Stahuji…' : 'Stáhnout zálohu'}
       </button>
+      {backup === 'error' && (
+        <p className="note" role="alert">
+          Zálohu se nepodařilo stáhnout – zkontroluj připojení a zkus to znovu.
+        </p>
+      )}
     </section>
   );
 }

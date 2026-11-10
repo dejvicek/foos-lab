@@ -56,7 +56,15 @@ export interface RemoteHandlers {
 }
 
 export interface Repository {
+  /**
+   * Hráči, katalog a tréninky se skóre, výsledky cvičení a časy utkání – bez průběhu her (události).
+   * Průběh je zdaleka největší a je potřeba jen u tréninku na obrazovce: loadEvents.
+   */
   loadAll(): Promise<AppData>;
+  /** Průběh her jednoho tréninku (události ťuknutí). */
+  loadEvents(trainingId: string): Promise<GameEvent[]>;
+  /** Všechno včetně průběhu všech her – pro zálohu. */
+  loadBackup(): Promise<AppData>;
   savePlayer(p: Player): Promise<void>;
   deletePlayer(id: PlayerId): Promise<void>;
   /** Uloží konfiguraci tréninku; skóre nemění. */

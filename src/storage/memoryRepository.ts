@@ -8,13 +8,28 @@ const copy = <T>(v: T): T => structuredClone(v);
 /** Repozitář v paměti – pro testy a vývoj bez sítě. */
 export function memoryRepository(
   initial?: AppData,
-  /** `loseResponses`: zápis proběhne, ale skončí chybou sítě (ztracená odpověď serveru). */
-  opts: { failLoad?: boolean; failSaves?: number; failPermanent?: number; loseResponses?: number } = {},
-): Repository & { snapshot(): AppData; emit(): RemoteHandlers; subscribers(): number } {
+  /**
+   * `loseResponses`: zápis proběhne, ale skončí chybou sítě (ztracená odpověď serveru).
+   * `silentSubscribe`: odběr se nikdy neohlásí jako připojený (Realtime nedostupný).
+   */
+  opts: { failLoad?: boolean; failSaves?: number; failPermanent?: number; loseResponses?: number; silentSubscribe?: boolean } = {},
+): Repository & {
+  snapshot(): AppData;
+  emit(): RemoteHandlers;
+  subscribers(): number;
+  /** Kolikrát se načítala všechna data (loadAll). */
+  loads(): number;
+  /** Testy: další načtení vezmou stav hned, ale vrátí ho až po release() (pomalé spojení). */
+  hold(): void;
+  release(): void;
+} {
   let data: AppData = copy(initial ?? { players: [], trainings: [] });
   let failSaves = opts.failSaves ?? 0;
   let failPermanent = opts.failPermanent ?? 0;
   let loseResponses = opts.loseResponses ?? 0;
+  let loads = 0;
+  let gate: Promise<void> | null = null;
+  let open: (() => void) | null = null;
 
   const write = async (fn: () => void) => {
     if (failPermanent > 0) {
@@ -48,7 +63,27 @@ export function memoryRepository(
     /** Testy: simulace změny z jiného telefonu (do úložiště nic nezapíše). */
     emit: () => fanOut,
     subscribers: () => listeners.size,
+    loads: () => loads,
+    hold: () => {
+      gate = new Promise((r) => (open = r));
+    },
+    release: () => {
+      open?.();
+      gate = null;
+      open = null;
+    },
     async loadAll() {
+      loads++;
+      if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
+      const snap = copy(data);
+      if (gate) await gate;
+      return { ...snap, trainings: snap.trainings.map(({ events: _, ...rest }) => rest) };
+    },
+    async loadEvents(trainingId) {
+      if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
+      return copy(training(trainingId)?.events ?? []);
+    },
+    async loadBackup() {
       if (opts.failLoad) throw new Error('Simulovaná chyba načtení');
       return copy(data);
     },
@@ -179,6 +214,8 @@ export function memoryRepository(
       }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
     subscribe: (h) => {
       listeners.add(h);
+      // Jako Realtime: po připojení odběru se ohlásí (appka pak načte / dorovná data).
+      if (!opts.silentSubscribe) void Promise.resolve().then(() => listeners.has(h) && h.resync());
       return () => {
         listeners.delete(h);
       };

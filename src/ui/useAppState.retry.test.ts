@@ -75,4 +75,12 @@ describe('useAppState – pomalé a vypadávající spojení', () => {
     await waitFor(() => expect(result.current.saveState).toBe('idle'));
     expect(repo.snapshot().trainings[0].playTimes).toEqual({ [m.id]: { startedAt: 500, endedAt: 900 } });
   });
+
+  it('ťuknutí, které server odmítl, zmizí ze skóre i z průběhu hry', async () => {
+    const { result } = await setup({ failPermanent: 1 });
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    await waitFor(() => expect(result.current.saveError).toMatch(/nepodařilo uložit/));
+    await waitFor(() => expect(result.current.data.trainings[0].scores[m.id]).toBeUndefined());
+    expect(result.current.data.trainings[0].events ?? []).toEqual([]);
+  });
 });

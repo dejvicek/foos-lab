@@ -127,3 +127,46 @@ describe('memoryRepository – zápisy, které jde opakovat', () => {
     expect(repo.snapshot().trainings[0].scores).toEqual({ m1: { ga: 1, gb: 0 } });
   });
 });
+
+describe('memoryRepository – načítání po částech', () => {
+  const goal = { id: 'e1', at: 1000, field: 'ga' as const, delta: 1, max: 6 };
+
+  it('loadAll průběh her nenačítá; loadEvents ho vrátí pro jeden trénink; loadBackup vrací všechno', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t, { ...t, id: 't2', scores: {} }] });
+    await repo.tapScore('t1', 'm1', [goal]);
+    await repo.tapScore('t2', 'm1', [{ ...goal, id: 'e2' }]);
+    const all = await repo.loadAll();
+    expect(all.trainings.map((x) => x.events)).toEqual([undefined, undefined]);
+    expect(all.trainings[0].scores).toEqual({ m1: { ga: 1, gb: 0 } });
+    expect((await repo.loadEvents('t1')).map((e) => e.id)).toEqual(['e1']);
+    expect(await repo.loadEvents('neexistuje')).toEqual([]);
+    expect((await repo.loadBackup()).trainings.map((x) => x.events?.map((e) => e.id))).toEqual([['e1'], ['e2']]);
+  });
+
+  it('po přihlášení k odběru ohlásí připojení (jako Realtime) a počítá načtení', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    let joined = 0;
+    const off = repo.subscribe({ score() {}, solo() {}, training() {}, playTime() {}, event() {}, resync: () => joined++ });
+    await Promise.resolve();
+    expect(joined).toBe(1);
+    off();
+    expect(repo.loads()).toBe(0);
+    await repo.loadAll();
+    expect(repo.loads()).toBe(1);
+  });
+
+  it('hold / release: načtení vezme stav hned, ale vrátí ho až po uvolnění', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    repo.hold();
+    let done = false;
+    const p = repo.loadAll().then((d) => {
+      done = true;
+      return d;
+    });
+    await repo.saveScore('t1', 'm1', { ga: 3, gb: 0 }); // zápis po pořízení snímku
+    await Promise.resolve();
+    expect(done).toBe(false);
+    repo.release();
+    expect((await p).trainings[0].scores).toEqual({});
+  });
+});

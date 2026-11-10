@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -73,6 +73,39 @@ describe('stránka Hráči', () => {
       expect(repo.snapshot().players.map((p) => p.name)).toEqual(['Honza']);
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it('záloha obsahuje i průběh her, který appka jinak načítá jen u otevřeného tréninku', async () => {
+    const repo = memoryRepository({
+      players: [],
+      trainings: [{ id: 't1', date: '2026-11-10', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: {}, lockedRounds: [], mode: 'team', tables: 2, attendees: [], scores: {} }],
+    });
+    await repo.tapScore('t1', 'm1', [{ id: 'e1', at: 1000, field: 'ga', delta: 1, max: 6 }]);
+    const saved: string[] = [];
+    const realBlob = globalThis.Blob;
+    const urls = URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown };
+    const before = { create: urls.createObjectURL, revoke: urls.revokeObjectURL };
+    // Zachytit obsah staženého souboru.
+    globalThis.Blob = class extends realBlob {
+      constructor(parts?: BlobPart[], o?: BlobPropertyBag) {
+        super(parts, o);
+        saved.push(String(parts?.[0]));
+      }
+    };
+    urls.createObjectURL = () => 'blob:zaloha';
+    urls.revokeObjectURL = () => {};
+    try {
+      render(<App repo={repo} />);
+      await userEvent.click(await screen.findByRole('button', { name: 'Stáhnout zálohu' }));
+      await waitFor(() => expect(saved).toHaveLength(1));
+      const parsed = JSON.parse(saved[0]);
+      expect(parsed.trainings[0].scores).toEqual({ m1: { ga: 1, gb: 0 } });
+      expect(parsed.trainings[0].events).toEqual([{ id: 'e1', itemId: 'm1', at: 1000, kind: 'goal', side: 'A', delta: 1 }]);
+    } finally {
+      globalThis.Blob = realBlob;
+      urls.createObjectURL = before.create;
+      urls.revokeObjectURL = before.revoke;
     }
   });
 });

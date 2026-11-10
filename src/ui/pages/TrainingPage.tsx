@@ -45,6 +45,9 @@ export function TrainingPage({
   view?: 'schedule' | 'live' | 'my';
 }) {
   const training = store.data.trainings.find((t) => t.id === id);
+  // Průběh her (časová osa, automatický konec utkání) se načítá jen pro trénink na obrazovce.
+  const { watchEvents } = store;
+  useEffect(() => watchEvents(id), [watchEvents, id]);
   // Rozpis závisí i na skóre: týmy simulace se dělí podle výkonu ve scénářové lize.
   const schedule = useMemo(() => (training && canBuildSchedule(training) ? buildSchedule(training) : null), [training]);
   const names = useMemo(() => Object.fromEntries(store.data.players.map((p) => [p.id, p.name])), [store.data.players]);

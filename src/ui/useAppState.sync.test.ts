@@ -1,0 +1,105 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { useAppState } from './useAppState';
+import { memoryRepository } from '../storage/memoryRepository';
+import type { Match, Training } from '../domain/types';
+
+const t: Training = { id: 't1', date: '2026-11-10', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: {}, lockedRounds: [], mode: 'team', tables: 2, attendees: [], scores: {} };
+const m: Match = { id: 'league|1|1|a+bvc+d', block: 'league', round: 1, table: 1, kind: 'doubles', sideA: ['a', 'b'], sideB: ['c', 'd'] };
+const goal = (id: string) => ({ id, at: 1000, field: 'ga' as const, delta: 1, max: 6 });
+
+async function setup(opts: Parameters<typeof memoryRepository>[1] = {}, training: Training = t) {
+  const repo = memoryRepository({ players: [], trainings: [training] }, opts);
+  const hook = renderHook(() => useAppState(repo, { loadWaitMs: 30 }));
+  await waitFor(() => expect(hook.result.current.status).toBe('ready'));
+  return { repo, ...hook };
+}
+
+const visible = () => act(() => void document.dispatchEvent(new Event('visibilitychange')));
+const idle = () => act(() => new Promise((r) => setTimeout(r, 20)));
+
+describe('useAppState – načítání a dorovnání', () => {
+  it('při startu se data načtou jen jednou – po připojení odběru živých změn', async () => {
+    const { repo } = await setup();
+    await idle();
+    expect(repo.loads()).toBe(1);
+  });
+
+  it('když se odběr živých změn nepřipojí, data se načtou i tak', async () => {
+    const { repo, result } = await setup({ silentSubscribe: true });
+    expect(result.current.data.trainings).toHaveLength(1);
+    expect(repo.loads()).toBe(1);
+  });
+
+  it('souběžná dorovnání sdílejí jedno načtení', async () => {
+    const { repo } = await setup();
+    await idle();
+    visible();
+    visible();
+    visible();
+    await idle();
+    expect(repo.loads()).toBe(2);
+  });
+
+  it('změna, která dorazí během načítání, se po načtení neztratí', async () => {
+    const { repo, result } = await setup();
+    await idle();
+    repo.hold();
+    visible(); // dorovnání vezme snímek dat…
+    await repo.saveScore('t1', m.id, { ga: 3, gb: 1 }); // …pak zapíše jiný telefon
+    act(() => repo.emit().score('t1', m.id, { ga: 3, gb: 1 })); // a změna dorazí živě
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 3, gb: 1 });
+    await act(async () => repo.release()); // starší snímek dorazí až teď
+    await idle();
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 3, gb: 1 });
+  });
+
+  it('nepovedené dorovnání nechá data na obrazovce (chyba je jen u prvního načtení)', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] }, { failLoad: true });
+    const { result } = renderHook(() => useAppState(repo, { loadWaitMs: 30 }));
+    await waitFor(() => expect(result.current.status).toBe('error'));
+  });
+});
+
+describe('useAppState – průběh her jen u tréninku na obrazovce', () => {
+  it('průběh se nenačítá s ostatními daty; načte se, až když je trénink na obrazovce', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    await repo.tapScore('t1', m.id, [goal('e1'), goal('e2')]);
+    const { result } = renderHook(() => useAppState(repo, { loadWaitMs: 30 }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.data.trainings[0].events).toBeUndefined();
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0 });
+    let off = () => {};
+    act(() => void (off = result.current.watchEvents('t1')));
+    await waitFor(() => expect(result.current.data.trainings[0].events?.map((e) => e.id)).toEqual(['e1', 'e2']));
+    off();
+  });
+
+  it('dorovnání načte průběh sledovaného tréninku znovu a vlastní neuložené události nechá', async () => {
+    const { repo, result } = await setup();
+    act(() => void result.current.watchEvents('t1'));
+    await idle();
+    await repo.tapScore('t1', m.id, [goal('cizi')]); // jiný telefon, živá změna se ztratila
+    visible();
+    await waitFor(() => expect(result.current.data.trainings[0].events?.map((e) => e.id)).toEqual(['cizi']));
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 1, gb: 0 });
+  });
+
+  it('po skončení sledování se průběh při dorovnání už nenačítá', async () => {
+    const { repo, result } = await setup();
+    let off = () => {};
+    act(() => void (off = result.current.watchEvents('t1')));
+    await idle();
+    off();
+    await repo.tapScore('t1', m.id, [goal('cizi')]);
+    visible();
+    await idle();
+    expect(result.current.data.trainings[0].events).toBeUndefined();
+    expect(result.current.data.trainings[0].scores[m.id]).toEqual({ ga: 1, gb: 0 });
+  });
+
+  it('loadBackup vrací všechno včetně průběhu her', async () => {
+    const { repo, result } = await setup();
+    await repo.tapScore('t1', m.id, [goal('e1')]);
+    expect((await result.current.loadBackup()).trainings[0].events).toHaveLength(1);
+  });
+});
