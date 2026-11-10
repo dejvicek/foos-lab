@@ -9,7 +9,7 @@ begin
 end $$;
 
 -- Další dotazy v transakci běží jako tento hráč (auth.uid() = jeho účet).
-create or replace function t.as_player(p uuid) returns void language sql as $$
+create or replace function t.as_player(p uuid) returns void language sql security definer as $$
   select set_config('request.jwt.claim.sub', (select user_id::text from public.accounts where player_id = p), true)
 $$;
 
@@ -42,4 +42,15 @@ begin
     ('20000000-0000-0000-0000-000000000001', '2026-11-10', 'team', 2,
      array['10000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000004']::uuid[],
      '10000000-0000-0000-0000-000000000002');
+end $$;
+
+-- Obsahuje plán dotazu daný text? (Např. InitPlan = funkce v pravidle přístupu se vyhodnotí jednou, ne na každém řádku.)
+create or replace function t.plan_has(q text, needle text) returns boolean language plpgsql as $$
+declare
+  line text;
+begin
+  for line in execute 'explain ' || q loop
+    if position(needle in line) > 0 then return true; end if;
+  end loop;
+  return false;
 end $$;
