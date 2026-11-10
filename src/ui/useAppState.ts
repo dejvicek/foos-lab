@@ -75,8 +75,11 @@ export interface AppStore {
 export const RETRY_DELAYS_MS = [2000, 5000, 10000];
 /** Jak dlouho se při startu čeká na připojení odběru živých změn, než se data načtou i bez něj. */
 export const LOAD_WAIT_MS = 3000;
-/** Za jak dlouho po změně se stav uloží do zařízení (série ťuknutí = jedno uložení). */
-export const SNAPSHOT_DELAY_MS = 1500;
+/**
+ * Za jak dlouho po poslední změně se stav uloží do zařízení (série ťuknutí = jedno uložení; ukládá se celý
+ * stav, proto ne po každém ťuknutí). Při odchodu z appky se ukládá hned.
+ */
+export const SNAPSHOT_DELAY_MS = 5000;
 export const SCORE_DEBOUNCE_MS = 400;
 
 

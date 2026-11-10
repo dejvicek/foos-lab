@@ -24,6 +24,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Kontrola migrací a funkcí databáze (lokální Postgres v Dockeru)
+        run: sh supabase/tests/run.sh
       - name: Kontrola nastavení Supabase
         if: github.event_name != 'pull_request'
         run: |
