@@ -1,4 +1,4 @@
-import { eventFromRow, eventToRow, isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
+import { drillTapToJson, eventFromRow, scoreTapToJson, isEmptyScore, playerFromRow, playerToRow, playTimeFromRow, playTimeToRow, scoreToRow, soloRow, soloToRows, trainingFromRow, trainingToRow } from './mapping';
 import type { Player, Training } from '../domain/types';
 
 const player: Player = { id: 'p1', name: 'Honza', archived: false, order: 3 };
@@ -103,11 +103,18 @@ describe('pokusy cvičení', () => {
 describe('události her', () => {
   it('řádek ↔ GameEvent; trénink dostane své události', () => {
     const e = { id: 'e1', itemId: 'league|1|1|a+bvc+d', at: Date.parse('2026-11-02T18:01:00Z'), kind: 'goal' as const, side: 'A' as const, delta: 1 as const };
-    const row = eventToRow('t1', e);
-    expect(row).toEqual({ id: 'e1', training_id: 't1', item_id: e.itemId, at: '2026-11-02T18:01:00.000Z', kind: 'goal', side: 'A', player_id: null, delta: 1 });
+    const row = { id: 'e1', training_id: 't1', item_id: e.itemId, at: '2026-11-02T18:01:00.000Z', kind: 'goal' as const, side: 'A' as const, player_id: null, delta: 1 };
     expect(eventFromRow(row)).toEqual(e);
     const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [], [row, { ...row, id: 'e2', training_id: 'jiny' }]);
     expect(t.events).toEqual([e]);
+  });
+
+  it('ťuknutí pro databázi: čas jako ISO, pokus s druhem a utkáním', () => {
+    const at = Date.parse('2026-11-02T18:01:00Z');
+    expect(scoreTapToJson({ id: 'e1', at, field: 'lb', delta: 1, max: 30 })).toEqual({ id: 'e1', at: '2026-11-02T18:01:00.000Z', field: 'lb', delta: 1, max: 30 });
+    expect(drillTapToJson({ id: 'd1', at, itemId: 'drill|x', ok: false, delta: -1, dValue: 0, dAttempts: -1 })).toEqual({
+      id: 'd1', at: '2026-11-02T18:01:00.000Z', item: 'drill|x', kind: 'miss', delta: -1, dvalue: 0, dattempts: -1,
+    });
   });
 
   it('neznámá (odstraněná) disciplína v uloženém plánu se při načtení vynechá', () => {

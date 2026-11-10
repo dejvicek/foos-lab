@@ -10,6 +10,39 @@ export interface AppData {
   catalog?: CatalogData;
 }
 
+/**
+ * Jedno ťuknutí do skóre. `id` je zároveň ID události průběhu hry: databáze ťuknutí se stejným ID
+ * podruhé nezapočítá, takže zápis jde po chybě sítě bezpečně opakovat.
+ */
+export interface ScoreTap {
+  id: string;
+  /** Kdy hráč ťukl (ms, hodiny zařízení). */
+  at: number;
+  field: keyof Score;
+  delta: number;
+  /** Strop pole (konec legu) – hlídá ho i databáze. */
+  max: number;
+}
+
+/** Jeden pokus cvičení ✓ / ✗ (delta −1 = vrácení); `id` = ID události, stejně jako u ScoreTap. */
+export interface DrillTap {
+  id: string;
+  at: number;
+  /** Utkání (stůl) cvičení, ke kterému událost patří. */
+  itemId: string;
+  ok: boolean;
+  delta: 1 | -1;
+  /** O kolik se změní výsledek a počet pokusů. */
+  dValue: number;
+  dAttempts: number;
+}
+
+/** Výsledek cvičení hráče po zápisu; attempts null = zapsáno číslem (plný počet pokusů). */
+export interface DrillResult {
+  value: number;
+  attempts: number | null;
+}
+
 export interface RemoteHandlers {
   score(trainingId: string, matchId: MatchId, s: Score | null): void;
   solo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null, attempts?: number | null): void;
@@ -36,18 +69,24 @@ export interface Repository {
   replaceScores(trainingId: string, keep: MatchId[]): Promise<void>;
   /** Výsledek sólové části; null řádek smaže. */
   saveSolo(trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null): Promise<void>;
-  /** Ťuknutí: přičte delta k poli skóre (atomicky v databázi), výsledek v mezích 0…max. */
-  bumpScore(trainingId: string, matchId: MatchId, field: keyof Score, delta: number, max: number): Promise<void>;
-  /** Ťuknutí ve cvičení: přičte delta k výsledku hráče, v mezích 0…max. */
-  bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): Promise<void>;
-  /** Ťuknutí po pokusu cvičení: přičte k výsledku i k pokusům (v mezích 0…max). */
-  tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, dValue: number, dAttempts: number, max: number): Promise<void>;
+  /**
+   * Ťuknutí do skóre (i víc najednou) včetně událostí průběhu hry – jeden zápis, v databázi atomicky,
+   * výsledek v mezích 0…max. Ťuknutí se známým ID se nezapočítá podruhé. Vrací stav zápasu po zápisu.
+   */
+  tapScore(trainingId: string, matchId: MatchId, taps: ScoreTap[]): Promise<Score>;
+  /** Pokusy cvičení ✓ / ✗ včetně událostí; stejná pravidla opakování jako tapScore. Vrací výsledek po zápisu. */
+  tapDrill(trainingId: string, playerId: PlayerId, key: SoloKey, max: number, taps: DrillTap[]): Promise<DrillResult>;
   /** Živé změny od ostatních telefonů; vrací odhlášení. */
   subscribe(handlers: RemoteHandlers): () => void;
-  /** Zdržovači: zahájení a konec utkání; null nebo prázdné smaže. */
+  /**
+   * Celý řádek časů utkání (null nebo prázdné smaže). Přepisuje zahájení i konec – jen pro mazání
+   * a opravy; běžné Zahájit / Ukončit jde přes startItem / endItem.
+   */
   savePlayTime(trainingId: string, itemId: string, p: PlayTime | null): Promise<void>;
-  /** Průběh hry: událost se jen přidává (ID ze zařízení, opakovaný zápis je bez účinku). */
-  addEvent(trainingId: string, e: GameEvent): Promise<void>;
+  /** Zahájení utkání: čas se zapíše, jen když ještě žádný není; konec nemění. Vrací časy po zápisu. */
+  startItem(trainingId: string, itemId: string, at: number): Promise<PlayTime>;
+  /** Konec utkání: konec (a chybějící zahájení) se zapíše, jen když ještě není. Vrací časy po zápisu. */
+  endItem(trainingId: string, itemId: string, startedAt: number | undefined, endedAt: number): Promise<PlayTime>;
   /** Hráč zamkne odehraná kola (jen prodloužení) a případně týmy simulace – funkce na serveru. */
   lockRounds(trainingId: string, locked: LockedRound[], simTeams: SimTeams | null): Promise<void>;
   /** Smaže výsledky sólové části tréninku mimo `keep`. */

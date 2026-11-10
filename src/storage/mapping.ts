@@ -3,6 +3,8 @@ import { isEmptyScore } from '../domain/training';
 import { DISCIPLINES } from '../domain/disciplines';
 import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, Breaks, PlayTime, PlayTimes, GameEvent } from '../domain/types';
 
+import type { DrillTap, ScoreTap } from './repository';
+
 export { isEmptyScore };
 
 export interface PlayerRow {
@@ -184,15 +186,18 @@ export interface EventRow {
   delta: number;
 }
 
-export const eventToRow = (trainingId: string, e: GameEvent): EventRow => ({
-  id: e.id,
-  training_id: trainingId,
-  item_id: e.itemId,
-  at: new Date(e.at).toISOString(),
-  kind: e.kind,
-  side: e.side ?? null,
-  player_id: e.playerId ?? null,
-  delta: e.delta,
+/** Ťuknutí do skóre, jak ho čeká funkce tap_score (migrace 21). */
+export const scoreTapToJson = (t: ScoreTap) => ({ id: t.id, at: new Date(t.at).toISOString(), field: t.field, delta: t.delta, max: t.max });
+
+/** Pokus cvičení, jak ho čeká funkce tap_drill (migrace 21). */
+export const drillTapToJson = (t: DrillTap) => ({
+  id: t.id,
+  at: new Date(t.at).toISOString(),
+  item: t.itemId,
+  kind: t.ok ? 'hit' : 'miss',
+  delta: t.delta,
+  dvalue: t.dValue,
+  dattempts: t.dAttempts,
 });
 
 export function eventFromRow(r: EventRow): GameEvent {

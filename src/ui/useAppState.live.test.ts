@@ -31,15 +31,6 @@ describe('useAppState – ťukání', () => {
     for (let i = 0; i < 15; i++) act(() => result.current.bumpScore('t1', m, 'ga', 1));
     expect(result.current.data.trainings[0].scores[m.id]?.ga).toBe(6); // běžný leg končí 6
   });
-
-  it('bumpSolo přičítá v mezích 0…max', async () => {
-    const { repo, result } = await setup();
-    act(() => result.current.bumpSolo('t1', 'p1', 'chain', 1, 2));
-    act(() => result.current.bumpSolo('t1', 'p1', 'chain', 1, 2));
-    act(() => result.current.bumpSolo('t1', 'p1', 'chain', 1, 2));
-    expect(result.current.data.trainings[0].soloResults).toEqual({ p1: { chain: 2 } });
-    await waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ p1: { chain: 2 } }));
-  });
 });
 
 describe('useAppState – živé změny', () => {
@@ -129,11 +120,15 @@ describe('useAppState – pokusy cvičení', () => {
   it('tapSolo přičte pokus i výsledek; číslem zapsaný výsledek pokusy smaže', async () => {
     const { repo, result } = await setup();
     const passes = soloMetric('warmupPasses');
-    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, true, 1));
-    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, false, 1));
+    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, true, 1, 'drill|x'));
+    act(() => result.current.tapSolo('t1', 'p1', 'warmupPasses@1', passes, false, 1, 'drill|x'));
     expect(result.current.data.trainings[0].soloResults).toEqual({ p1: { 'warmupPasses@1': 1 } });
     expect(result.current.data.trainings[0].soloAttempts).toEqual({ p1: { 'warmupPasses@1': 2 } });
     await waitFor(() => expect(repo.snapshot().trainings[0].soloAttempts).toEqual({ p1: { 'warmupPasses@1': 2 } }));
+    expect(repo.snapshot().trainings[0].events?.map((e) => [e.itemId, e.kind, e.playerId, e.delta])).toEqual([
+      ['drill|x', 'hit', 'p1', 1],
+      ['drill|x', 'miss', 'p1', 1],
+    ]);
     act(() => result.current.saveSolo('t1', 'p1', 'warmupPasses@1', 15));
     expect(result.current.data.trainings[0].soloAttempts ?? {}).toEqual({});
     await waitFor(() => expect(repo.snapshot().trainings[0].soloAttempts ?? {}).toEqual({}));
@@ -141,14 +136,14 @@ describe('useAppState – pokusy cvičení', () => {
 });
 
 describe('useAppState – události her', () => {
-  it('addEvent se hned projeví a uloží; ozvěna stejné události se nezdvojí; cizí se doplní', async () => {
+  it('ťuknutí je i událost; ozvěna stejné události se nezdvojí; cizí se doplní', async () => {
     const { repo, result } = await setup();
-    const e = { id: 'e1', itemId: m.id, at: 1000, kind: 'goal' as const, side: 'A' as const, delta: 1 as const };
-    act(() => result.current.addEvent('t1', e));
-    expect(result.current.data.trainings[0].events).toEqual([e]);
-    await waitFor(() => expect(repo.snapshot().trainings[0].events).toEqual([e]));
-    act(() => repo.emit().event('t1', e));
-    act(() => repo.emit().event('t1', { ...e, id: 'e2', side: 'B' }));
-    expect(result.current.data.trainings[0].events?.map((x) => x.id)).toEqual(['e1', 'e2']);
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    const mine = result.current.data.trainings[0].events![0];
+    expect(mine).toMatchObject({ itemId: m.id, kind: 'goal', side: 'A', delta: 1 });
+    await waitFor(() => expect(repo.snapshot().trainings[0].events).toEqual([mine]));
+    act(() => repo.emit().event('t1', mine));
+    act(() => repo.emit().event('t1', { ...mine, id: 'e2', side: 'B' }));
+    expect(result.current.data.trainings[0].events?.map((x) => x.id)).toEqual([mine.id, 'e2']);
   });
 });

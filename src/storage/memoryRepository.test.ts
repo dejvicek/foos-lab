@@ -72,3 +72,58 @@ describe('memoryRepository', () => {
     expect(repo.snapshot().players).toHaveLength(1);
   });
 });
+
+describe('memoryRepository – zápisy, které jde opakovat', () => {
+  const goal = (id: string, field: 'ga' | 'gb' | 'la' | 'lb' = 'ga', delta = 1, max = 6) => ({ id, at: 1000, field, delta, max });
+
+  it('tapScore přičte, soupeři doplní 0, zapíše událost a vrátí výsledný stav', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    expect(await repo.tapScore('t1', 'm1', [goal('e1')])).toEqual({ ga: 1, gb: 0 });
+    expect(repo.snapshot().trainings[0].events).toEqual([{ id: 'e1', itemId: 'm1', at: 1000, kind: 'goal', side: 'A', delta: 1 }]);
+  });
+
+  it('tapScore se stejným ID se podruhé nezapočítá (opakovaný zápis po chybě sítě)', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    await repo.tapScore('t1', 'm1', [goal('e1')]);
+    expect(await repo.tapScore('t1', 'm1', [goal('e1')])).toEqual({ ga: 1, gb: 0 });
+    expect(repo.snapshot().trainings[0].events).toHaveLength(1);
+  });
+
+  it('tapScore: víc ťuknutí najednou (ztráta + gól soupeře), strop a nula', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    expect(await repo.tapScore('t1', 'm1', [goal('e1', 'lb', 1, 30), goal('e2', 'ga')])).toEqual({ ga: 1, gb: 0, la: 0, lb: 1 });
+    expect(await repo.tapScore('t1', 'm1', [goal('e3', 'gb', 1, 1), goal('e4', 'gb', 1, 1), goal('e5', 'la', -1, 30)])).toEqual({ ga: 1, gb: 1, la: 0, lb: 1 });
+    expect(repo.snapshot().trainings[0].events?.find((e) => e.id === 'e1')).toMatchObject({ kind: 'loss', side: 'B' });
+  });
+
+  it('tapDrill přičte pokus i výsledek, opakování se nezapočítá, přes plný počet nepustí', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    const hit = (id: string, delta: 1 | -1 = 1) => ({ id, at: 1000, itemId: 'drill|x', ok: true, delta, dValue: delta, dAttempts: delta });
+    const miss = (id: string) => ({ id, at: 1000, itemId: 'drill|x', ok: false, delta: 1 as const, dValue: 0, dAttempts: 1 });
+    expect(await repo.tapDrill('t1', 'p1', 'penaltySolo@1', 3, [hit('d1')])).toEqual({ value: 1, attempts: 1 });
+    expect(await repo.tapDrill('t1', 'p1', 'penaltySolo@1', 3, [hit('d1')])).toEqual({ value: 1, attempts: 1 });
+    expect(await repo.tapDrill('t1', 'p1', 'penaltySolo@1', 3, [miss('d2'), hit('d3'), hit('d4')])).toEqual({ value: 2, attempts: 3 });
+    expect(repo.snapshot().trainings[0].events?.map((e) => e.id)).toEqual(['d1', 'd2', 'd3']);
+    expect(repo.snapshot().trainings[0].events?.[1]).toEqual({ id: 'd2', itemId: 'drill|x', at: 1000, kind: 'miss', playerId: 'p1', delta: 1 });
+    expect(await repo.tapDrill('t1', 'p1', 'penaltySolo@1', 3, [hit('d5', -1)])).toEqual({ value: 1, attempts: 2 });
+  });
+
+  it('startItem / endItem zapíšou čas, jen když ještě není', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    expect(await repo.startItem('t1', 'm1', 1000)).toEqual({ startedAt: 1000 });
+    expect(await repo.startItem('t1', 'm1', 1500)).toEqual({ startedAt: 1000 });
+    expect(await repo.endItem('t1', 'm1', undefined, 2000)).toEqual({ startedAt: 1000, endedAt: 2000 });
+    // Opožděné zahájení dohrané utkání znovu neotevře; druhý konec čas nezmění.
+    expect(await repo.startItem('t1', 'm1', 2500)).toEqual({ startedAt: 1000, endedAt: 2000 });
+    expect(await repo.endItem('t1', 'm1', undefined, 3000)).toEqual({ startedAt: 1000, endedAt: 2000 });
+    // Konec nezahájeného utkání doplní zahájení; pauza spuštěná bez zahájení ho nemá.
+    expect(await repo.endItem('t1', 'm2', 4000, 5000)).toEqual({ startedAt: 4000, endedAt: 5000 });
+    expect(await repo.endItem('t1', 'pause|0', undefined, 6000)).toEqual({ endedAt: 6000 });
+  });
+
+  it('loseResponses: zápis proběhne, ale skončí chybou sítě', async () => {
+    const repo = memoryRepository({ players: [], trainings: [t] }, { loseResponses: 1 });
+    await expect(repo.tapScore('t1', 'm1', [goal('e1')])).rejects.toThrow();
+    expect(repo.snapshot().trainings[0].scores).toEqual({ m1: { ga: 1, gb: 0 } });
+  });
+});

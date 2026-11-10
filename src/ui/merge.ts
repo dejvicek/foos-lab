@@ -1,15 +1,9 @@
 import type { Training } from '../domain/types';
 import type { AppData } from '../storage/repository';
 
-/** Klíče čekajících zápisů (stejné jako klíče odložených zápisů v useAppState). */
-export const pendingKey = {
-  score: (tid: string, mid: string) => `${tid}::${mid}`,
-  solo: (tid: string, pid: string, key: string) => `${tid}::solo::${pid}::${key}`,
-  training: (tid: string) => `${tid}::training`,
-  time: (tid: string, itemId: string) => `${tid}::time::${itemId}`,
-  players: 'players',
-  catalog: 'catalog',
-};
+import { pendingKey } from '../storage/ops';
+
+export { pendingKey };
 
 function withEvents(t: Training, events: Training['events']): Training {
   const { events: _, ...rest } = t;

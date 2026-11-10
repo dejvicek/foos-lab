@@ -9,8 +9,9 @@ import {
   trainingFromRow,
   playTimeFromRow,
   eventFromRow,
-  eventToRow,
   type EventRow,
+  scoreTapToJson,
+  drillTapToJson,
   playTimeToRow,
   type PlayTimeRow,
   trainingToRow,
@@ -43,9 +44,15 @@ async function selectAll<T>(client: SupabaseClient, table: string, orderBy: stri
   }
 }
 
+/**
+ * Nejdelší čekání na odpověď databáze. Bez limitu by jeden zaseknutý dotaz na špatném spojení
+ * zablokoval celou frontu zápisů; po vypršení se zápis opakuje (zápisy jdou opakovat bezpečně).
+ */
+export const REQUEST_TIMEOUT_MS = 15_000;
+
 /** Jeden klient pro data i přihlášení; přihlášení se pamatuje v prohlížeči. */
 export const createSupabase = (url: string, anonKey: string): SupabaseClient =>
-  createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
+  createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true }, db: { timeout: REQUEST_TIMEOUT_MS } });
 
 let channelSeq = 0;
 
@@ -126,32 +133,35 @@ export function supabaseRepository(client: SupabaseClient): Repository {
             .eq('round', r.round),
         );
     },
-    async bumpScore(trainingId, matchId, field, delta, max) {
-      const { error, status } = await client.rpc('bump_score', { p_training: trainingId, p_match: matchId, p_field: field, p_delta: delta, p_max: max });
-      if (error) throw fromPostgrest(error, status);
+    async tapScore(trainingId, matchId, taps) {
+      const res = await client.rpc('tap_score', { p_training: trainingId, p_match: matchId, p_taps: taps.map(scoreTapToJson) });
+      return scoreFromRowPublic(check<ScoreRow>(res));
     },
-    async bumpSolo(trainingId, playerId, key, delta, max) {
+    async tapDrill(trainingId, playerId, key, max, taps) {
       const { metric, round } = parseSoloKey(key);
-      const { error, status } = await client.rpc('bump_solo', {
-        p_training: trainingId, p_player: playerId, p_metric: metric, p_round: round, p_delta: delta, p_max: max,
+      const res = await client.rpc('tap_drill', {
+        p_training: trainingId, p_player: playerId, p_metric: metric, p_round: round, p_max: max, p_taps: taps.map(drillTapToJson),
       });
-      if (error) throw fromPostgrest(error, status);
-    },
-    async tapSolo(trainingId, playerId, key, dValue, dAttempts, max) {
-      const { metric, round } = parseSoloKey(key);
-      const { error, status } = await client.rpc('tap_solo', {
-        p_training: trainingId, p_player: playerId, p_metric: metric, p_round: round, p_dvalue: dValue, p_dattempts: dAttempts, p_max: max,
-      });
-      if (error) throw fromPostgrest(error, status);
-    },
-    async addEvent(trainingId, e) {
-      // Opakovaný pokus po chybě sítě: stejné ID se podruhé nezapíše.
-      check(await client.from('game_events').upsert(eventToRow(trainingId, e), { onConflict: 'id', ignoreDuplicates: true }));
+      const row = check<SoloRow>(res);
+      return { value: row.value, attempts: row.attempts ?? null };
     },
     async savePlayTime(trainingId, itemId, p) {
       if (!p || (p.startedAt === undefined && p.endedAt === undefined))
         check(await client.from('play_times').delete().eq('training_id', trainingId).eq('item_id', itemId));
       else check(await client.from('play_times').upsert(playTimeToRow(trainingId, itemId, p), { onConflict: 'training_id,item_id' }));
+    },
+    async startItem(trainingId, itemId, at) {
+      const res = await client.rpc('start_item', { p_training: trainingId, p_item: itemId, p_at: new Date(at).toISOString() });
+      return playTimeFromRow(check<PlayTimeRow>(res));
+    },
+    async endItem(trainingId, itemId, startedAt, endedAt) {
+      const res = await client.rpc('end_item', {
+        p_training: trainingId,
+        p_item: itemId,
+        p_started: startedAt === undefined ? null : new Date(startedAt).toISOString(),
+        p_ended: new Date(endedAt).toISOString(),
+      });
+      return playTimeFromRow(check<PlayTimeRow>(res));
     },
     subscribe(h) {
       const ch = client

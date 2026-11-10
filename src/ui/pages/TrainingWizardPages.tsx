@@ -51,7 +51,7 @@ export function NewTrainingPage({ store, navigate, viewer }: { store: AppStore; 
       onCancel={() => navigate({ page: 'trainings' })}
       onFinish={(t) => {
         store.saveTraining(t);
-        store.setPlayTime(t.id, TRAINING_ITEM, { startedAt: Date.now() });
+        store.startItem(t.id, TRAINING_ITEM);
         navigate({ page: 'training', id: t.id });
       }}
     />

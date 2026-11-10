@@ -5,8 +5,6 @@ import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey, soloKey, soloMetric } from '../../domain/solo';
-import { tapDrill } from '../../domain/drillTap';
-import { bump } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
@@ -82,7 +80,7 @@ export function TrainingPage({
         : canManage(viewer, training) || (!!viewer.playerId && item.players.includes(viewer.playerId));
       if (!may) continue;
       autoSent.current.add(e.id);
-      store.setPlayTime(training.id, e.id, { startedAt: e.startedAt, endedAt: e.endedAt });
+      store.endItem(training.id, e.id, { startedAt: e.startedAt, endedAt: e.endedAt });
     }
   }, [training, schedule, queueInfo, tick]);
   if (!training) {
@@ -191,14 +189,14 @@ export function TrainingPage({
         allowStart: view === 'my',
         manage,
         autoEndIn: (id) => (schedule ? autoEndAfter(training, schedule, id, Math.max(tick, Date.now())) : null),
-        start: (id) => store.setPlayTime(training.id, id, { startedAt: Date.now() }),
+        start: (id) => store.startItem(training.id, id),
         // Konec potvrzuje člověk (dohraný výsledek nejdéle 15 s, pak skončí sám). Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
         end: (id) => {
           const now = Date.now();
           // Rozcvička: timer ještě běží → ukončit jen po potvrzení.
           if (warmupRunning(schedule!, id, training.playTimes?.[id]?.startedAt, now) && !confirm('Rozcvička ještě běží – opravdu ukončit?')) return;
-          const startedAt = training.playTimes?.[id]?.startedAt ?? queueInfo.states.get(id)?.activeAt ?? now;
-          store.setPlayTime(training.id, id, { startedAt: Math.min(startedAt, now), endedAt: now });
+          // Nezahájené utkání (potvrzuje organizátor) se počítá od chvíle, kdy bylo na řadě.
+          store.endItem(training.id, id, { startedAt: queueInfo.states.get(id)?.activeAt ?? now, endedAt: now });
         },
       }
     : undefined;
@@ -221,40 +219,20 @@ export function TrainingPage({
           if (c?.type === 'group' && c.metric && c.players.includes(playerId) && soloKey(c.metric, c.soloRound) === key) return drillItemId(r, j + 1, c.players);
     return null;
   };
-  /** Pokus cvičení ✓ / ✗: zamkne kolo (jako zápis výsledku) a přičte. */
+  /** Pokus cvičení ✓ / ✗: zamkne kolo (jako zápis výsledku) a přičte; pokus je i událost průběhu u svého stolu. */
   const onTapSolo: TapSolo = (playerId, key, def, ok, delta) => {
     const next = withLocked(training, parseSoloKey(key).round || null);
     if (next !== training) persistLock(next);
-    // Průběh cvičení: pokus jako událost (u stolu, kde hráč se skupinou cvičí).
-    const valid = tapDrill({ value: training.soloResults[playerId]?.[key], attempts: training.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
-    const itemId = drillItemOf(playerId, key);
-    if (valid && itemId)
-      store.addEvent(training.id, { id: store.newId(), itemId, at: Date.now(), kind: ok ? 'hit' : 'miss', playerId, delta });
-    store.tapSolo(training.id, playerId, key, def, ok, delta);
+    store.tapSolo(training.id, playerId, key, def, ok, delta, drillItemOf(playerId, key) ?? `solo|${playerId}|${key}`);
   };
 
   const tap = {
     me: viewer.playerId,
     onTapSolo,
+    // Ťuknutí = přičtení i událost průběhu hry (jen když se hodnota opravdu změní – strop / nula se nezapíše).
     onBumpScore: (m: Match, field: keyof Score, delta: number) => {
       lockForMatch(m.id);
-      // Průběh hry: ťuknutí jako událost (jen když se hodnota opravdu změní – strop / nula se nezapíše).
-      const cur = training.scores[m.id] ?? {};
-      if ((bump(m, cur, field, delta)[field] ?? 0) !== (cur[field] ?? 0))
-        store.addEvent(training.id, {
-          id: store.newId(),
-          itemId: m.id,
-          at: Date.now(),
-          kind: field === 'ga' || field === 'gb' ? 'goal' : 'loss',
-          side: field === 'ga' || field === 'la' ? 'A' : 'B',
-          delta: delta > 0 ? 1 : -1,
-        });
       store.bumpScore(training.id, m, field, delta);
-    },
-    onBumpSolo: (playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
-      const next = withLocked(training, parseSoloKey(key).round || null);
-      if (next !== training) persistLock(next);
-      store.bumpSolo(training.id, playerId, key, delta, max);
     },
   };
 
@@ -267,8 +245,8 @@ export function TrainingPage({
 
   const pauseNow = Math.max(tick, Date.now());
   const pauseList = queueInfo ? pauseStates(queueInfo.queue, training.playTimes ?? {}, pauseNow) : [];
-  const onStartPause = (id: string) => store.setPlayTime(training.id, id, { startedAt: Date.now() });
-  const onNextRound = (id: string) => store.setPlayTime(training.id, id, { ...training.playTimes?.[id], endedAt: Date.now() });
+  const onStartPause = (id: string) => store.startItem(training.id, id);
+  const onNextRound = (id: string) => store.endItem(training.id, id);
   /** Trénink tab: ovládání pauzy v jejím řádku rozpisu (ne v liště nahoře). */
   const pauseSlots = new Map<string, ReactNode>();
   if (schedule && queueInfo && rounds) {
@@ -288,7 +266,7 @@ export function TrainingPage({
       now={tick}
       started={[...queueInfo.states.values()].some((s) => s.startedAt !== undefined) || training.playTimes?.[TRAINING_ITEM] !== undefined}
       manage={manage}
-      onStartTraining={() => store.setPlayTime(training.id, TRAINING_ITEM, { startedAt: Date.now() })}
+      onStartTraining={() => store.startItem(training.id, TRAINING_ITEM)}
       onStartPause={onStartPause}
       onNextRound={onNextRound}
     />

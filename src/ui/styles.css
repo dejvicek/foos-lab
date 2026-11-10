@@ -1500,3 +1500,10 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .auth-guide { margin-top: 20px; font-size: 14px; }
 .auth-guide a { color: var(--felt); font-weight: 600; }
 .guide .g-phone { border: 1px solid var(--line-strong); }
+
+/* ── Telefon: pole formulářů 16 px ──────────────────────────
+   Safari na iPhonu při psaní do pole s písmem pod 16 px přiblíží celou stránku (a už ji nevrátí).
+   Platí pro všechna pole včetně kompaktních (výběr délky pauzy, nápovědy v katalogu). Musí zůstat na konci souboru. */
+@media (max-width: 767px) {
+  :root input, :root select, :root textarea { font-size: 16px; }
+}

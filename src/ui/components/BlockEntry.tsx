@@ -21,7 +21,6 @@ import { warmupState } from '../../domain/warmup';
 export interface TapEntry {
   me: PlayerId | null;
   onBumpScore(m: Match, field: keyof Score, delta: number): void;
-  onBumpSolo(playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
   onTapSolo?: TapSolo;
 }
 

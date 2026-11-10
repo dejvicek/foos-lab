@@ -1,5 +1,6 @@
 import { isEmptyScore } from '../domain/training';
 import { StorageError } from './errors';
+import type { GameEvent, PlayTime, Score } from '../domain/types';
 import type { AppData, RemoteHandlers, Repository } from './repository';
 
 const copy = <T>(v: T): T => structuredClone(v);
@@ -7,11 +8,13 @@ const copy = <T>(v: T): T => structuredClone(v);
 /** Repozitář v paměti – pro testy a vývoj bez sítě. */
 export function memoryRepository(
   initial?: AppData,
-  opts: { failLoad?: boolean; failSaves?: number; failPermanent?: number } = {},
+  /** `loseResponses`: zápis proběhne, ale skončí chybou sítě (ztracená odpověď serveru). */
+  opts: { failLoad?: boolean; failSaves?: number; failPermanent?: number; loseResponses?: number } = {},
 ): Repository & { snapshot(): AppData; emit(): RemoteHandlers; subscribers(): number } {
   let data: AppData = copy(initial ?? { players: [], trainings: [] });
   let failSaves = opts.failSaves ?? 0;
   let failPermanent = opts.failPermanent ?? 0;
+  let loseResponses = opts.loseResponses ?? 0;
 
   const write = async (fn: () => void) => {
     if (failPermanent > 0) {
@@ -23,6 +26,10 @@ export function memoryRepository(
       throw new Error('Simulovaná chyba zápisu');
     }
     fn();
+    if (loseResponses > 0) {
+      loseResponses--;
+      throw new Error('Simulovaná ztracená odpověď');
+    }
   };
 
   const training = (id: string) => data.trainings.find((t) => t.id === id);
@@ -107,43 +114,43 @@ export function memoryRepository(
         }
         t.soloResults = next;
       }),
-    bumpScore: (trainingId, matchId, field, delta, max) =>
+    tapScore: (trainingId, matchId, taps) =>
       write(() => {
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
-        const cur = t.scores[matchId] ?? {};
-        const pair = field === 'ga' || field === 'gb' ? (['ga', 'gb'] as const) : (['la', 'lb'] as const);
-        const next = { ...cur, [pair[0]]: cur[pair[0]] ?? 0, [pair[1]]: cur[pair[1]] ?? 0 };
-        t.scores[matchId] = { ...next, [field]: Math.min(max, Math.max(0, (cur[field] ?? 0) + delta)) };
-      }),
-    bumpSolo: (trainingId, playerId, key, delta, max) =>
-      write(() => {
-        const t = training(trainingId);
-        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
-        const mine = { ...t.soloResults[playerId] };
-        mine[key] = Math.min(max, Math.max(0, (mine[key] ?? 0) + delta));
-        t.soloResults[playerId] = mine;
-      }),
-    tapSolo: (trainingId, playerId, key, dValue, dAttempts, max) =>
+        for (const tap of taps) {
+          if (t.events?.some((x) => x.id === tap.id)) continue; // už započítáno (opakovaný zápis)
+          const goal = tap.field === 'ga' || tap.field === 'gb';
+          const e: GameEvent = { id: tap.id, itemId: matchId, at: tap.at, kind: goal ? 'goal' : 'loss', side: tap.field === 'ga' || tap.field === 'la' ? 'A' : 'B', delta: tap.delta < 0 ? -1 : 1 };
+          t.events = [...(t.events ?? []), e];
+          const cur = t.scores[matchId] ?? {};
+          const pair = goal ? (['ga', 'gb'] as const) : (['la', 'lb'] as const);
+          const next = { ...cur, [pair[0]]: cur[pair[0]] ?? 0, [pair[1]]: cur[pair[1]] ?? 0 };
+          t.scores[matchId] = { ...next, [tap.field]: Math.min(tap.max, Math.max(0, (cur[tap.field] ?? 0) + tap.delta)) };
+        }
+      }).then((): Score => copy(training(trainingId)?.scores[matchId] ?? {})),
+    tapDrill: (trainingId, playerId, key, max, taps) =>
       write(() => {
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
         const had = t.soloResults[playerId]?.[key];
-        const value = had ?? 0;
-        const att = t.soloAttempts?.[playerId]?.[key] ?? (had !== undefined ? max : 0);
-        // Stejné meze jako tap_solo v databázi: přes plný počet ne, vracet jen to, co je.
-        if (dAttempts > 0 && att >= max) return;
-        if (dValue < 0 && value <= 0) return;
-        if (dAttempts < 0 && dValue === 0 && att - value <= 0) return;
-        t.soloResults[playerId] = { ...t.soloResults[playerId], [key]: value + dValue };
-        t.soloAttempts = { ...t.soloAttempts, [playerId]: { ...t.soloAttempts?.[playerId], [key]: att + dAttempts } };
-      }),
-    addEvent: (trainingId, e) =>
-      write(() => {
+        let value = had ?? 0;
+        let att = t.soloAttempts?.[playerId]?.[key] ?? (had !== undefined ? max : 0);
+        for (const tap of taps) {
+          // Stejné meze jako tap_drill v databázi: přes plný počet ne, vracet jen to, co je.
+          if (tap.dAttempts > 0 && att >= max) continue;
+          if (tap.dValue < 0 && value <= 0) continue;
+          if (tap.dAttempts < 0 && tap.dValue === 0 && att - value <= 0) continue;
+          if (t.events?.some((x) => x.id === tap.id)) continue; // už započítáno (opakovaný zápis)
+          t.events = [...(t.events ?? []), { id: tap.id, itemId: tap.itemId, at: tap.at, kind: tap.ok ? 'hit' : 'miss', playerId, delta: tap.delta }];
+          value += tap.dValue;
+          att += tap.dAttempts;
+        }
+        t.soloResults[playerId] = { ...t.soloResults[playerId], [key]: value };
+        t.soloAttempts = { ...t.soloAttempts, [playerId]: { ...t.soloAttempts?.[playerId], [key]: att } };
+      }).then(() => {
         const t = training(trainingId);
-        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
-        if (t.events?.some((x) => x.id === e.id)) return;
-        t.events = [...(t.events ?? []), copy(e)];
+        return { value: t?.soloResults[playerId]?.[key] ?? 0, attempts: t?.soloAttempts?.[playerId]?.[key] ?? null };
       }),
     savePlayTime: (trainingId, itemId, p) =>
       write(() => {
@@ -155,6 +162,21 @@ export function memoryRepository(
         if (Object.keys(times).length) t.playTimes = times;
         else delete t.playTimes;
       }),
+    startItem: (trainingId, itemId, at) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const cur = t.playTimes?.[itemId] ?? {};
+        t.playTimes = { ...t.playTimes, [itemId]: { ...cur, startedAt: cur.startedAt ?? at } };
+      }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
+    endItem: (trainingId, itemId, startedAt, endedAt) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const cur = t.playTimes?.[itemId] ?? {};
+        const started = cur.startedAt ?? startedAt;
+        t.playTimes = { ...t.playTimes, [itemId]: { ...(started !== undefined ? { startedAt: started } : {}), endedAt: cur.endedAt ?? endedAt } };
+      }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
     subscribe: (h) => {
       listeners.add(h);
       return () => {

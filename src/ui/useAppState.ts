@@ -7,6 +7,7 @@ import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
 import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
+import { configOf, opKey, runOp, type Op } from '../storage/ops';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
 import { mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
@@ -31,15 +32,22 @@ export interface AppStore {
   /** Konfigurace + smazání skóre zápasů, které v `t.scores` nejsou (po pruneEntries). */
   updateTrainingConfig(t: Training): void;
   deleteTraining(id: string): void;
-  /** Ťuknutí na zápas: lokálně hned, do databáze jako přičtení (souběžné telefony se nepřepíšou). */
+  /**
+   * Ťuknutí na zápas: lokálně hned; do databáze jako přičtení spolu s událostí průběhu hry (jeden zápis,
+   * který jde po chybě sítě bezpečně opakovat – souběžné telefony se nepřepíšou, nic se nezapočítá dvakrát).
+   * Ťuknutí, které nic nezmění (strop legu, nula), se neposílá.
+   */
   bumpScore(trainingId: string, match: Match, field: keyof Score, delta: number): void;
-  /** Pokus cvičení (✓ / ✗, delta −1 = zpět): výsledek i počet pokusů, do databáze jako přičtení. */
-  tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1): void;
-  /** Ťuknutí ve cvičení: přičtení k výsledku hráče. */
-  bumpSolo(trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number): void;
-  /** Průběh hry: přidá událost (ťuknutí s časem). */
-  addEvent(trainingId: string, e: GameEvent): void;
-  /** Zdržovači: zahájení / konec utkání (null smaže). */
+  /** Pokus cvičení (✓ / ✗, delta −1 = zpět) u stolu `itemId`: výsledek, počet pokusů i událost jedním zápisem. */
+  tapSolo(trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1, itemId: string): void;
+  /** Zahájení utkání (teď). Čas se zapíše, jen když ještě není – dohrané utkání znovu neotevře. */
+  startItem(trainingId: string, itemId: string): void;
+  /**
+   * Konec utkání (výchozí teď). `startedAt` se použije, když utkání zahájené nebylo
+   * (organizátor potvrzuje bez zahájení). Už zapsaný konec ani zahájení se nepřepíšou.
+   */
+  endItem(trainingId: string, itemId: string, times?: { startedAt?: number; endedAt?: number }): void;
+  /** Celý řádek časů utkání – jen mazání (null) a opravy; Zahájit / Ukončit jde přes startItem / endItem. */
   setPlayTime(trainingId: string, itemId: string, p: PlayTime | null): void;
   /** Hráč: zamčení kol a týmů simulace přes funkci na serveru (nemá právo měnit trénink). */
   lockRounds(t: Training): void;
@@ -53,7 +61,6 @@ export interface AppStore {
 export const RETRY_DELAYS_MS = [2000, 5000, 10000];
 export const SCORE_DEBOUNCE_MS = 400;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Zapíše / smaže čas utkání v tréninku (prázdný seznam časů se neuchovává). */
 function withPlayTime(t: Training, itemId: string, p: PlayTime | null): Training {
@@ -70,20 +77,33 @@ function withEvent(t: Training, e: GameEvent): Training {
   return { ...t, events: [...(t.events ?? []), e] };
 }
 
+const inTraining = (d: AppData, id: string, fn: (t: Training) => Training): AppData => ({
+  ...d,
+  trainings: d.trainings.map((t) => (t.id === id ? fn(t) : t)),
+});
+
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 
 export function useAppState(repo: Repository): AppStore {
   const [status, setStatus] = useState<Status>('loading');
   const [data, setData] = useState<AppData>({ players: [], trainings: [] });
+  /** Aktuální stav i mezi vykresleními: dvě rychlá ťuknutí po sobě počítají s výsledkem toho prvního. */
+  const dataRef = useRef(data);
+  const update = useCallback((fn: (d: AppData) => AppData) => {
+    dataRef.current = fn(dataRef.current);
+    setData(dataRef.current);
+  }, []);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [loadNonce, setLoadNonce] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  /** Fronta zápisů; `key` říká, čeho se zápis týká (ozvěny ze serveru ho do uložení nepřepíšou). */
-  const queue = useRef<{ run: () => Promise<void>; key?: string }[]>([]);
+  /** Fronta zápisů (data, ne funkce); klíč zápisu říká, čeho se týká – ozvěny ze serveru ho do uložení nepřepíšou. */
+  const queue = useRef<Op[]>([]);
   const running = useRef(false);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  /** Ukončí čekání před dalším pokusem (spojení se vrátilo). */
+  const wake = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -91,7 +111,7 @@ export function useAppState(repo: Repository): AppStore {
     repo.loadAll().then(
       (d) => {
         if (!alive) return;
-        setData(d);
+        update(() => d);
         setStatus('ready');
       },
       () => alive && setStatus('error'),
@@ -99,7 +119,7 @@ export function useAppState(repo: Repository): AppStore {
     return () => {
       alive = false;
     };
-  }, [repo, loadNonce]);
+  }, [repo, loadNonce, update]);
 
   // Sériová fronta: zápisy v pořadí, chyba → opakování se stejným zápisem.
   const pump = useCallback(async () => {
@@ -110,7 +130,7 @@ export function useAppState(repo: Repository): AppStore {
     let rejected = false;
     while (queue.current.length) {
       try {
-        await queue.current[0].run();
+        await runOp(repo, queue.current[0]);
         queue.current.shift();
         attempt = 0;
         setSaveState('saving');
@@ -125,41 +145,51 @@ export function useAppState(repo: Repository): AppStore {
           continue;
         }
         setSaveState('retrying');
-        await sleep(RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)]);
+        // Další pokus po prodlevě, nebo hned, jakmile se vrátí spojení.
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(done, RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)]);
+          function done() {
+            clearTimeout(timer);
+            wake.current = null;
+            resolve();
+          }
+          wake.current = done;
+        });
         attempt++;
       }
     }
     if (rejected) {
       try {
-        setData(await repo.loadAll());
+        const fresh = await repo.loadAll();
+        update(() => fresh);
       } catch {
         /* necháme lokální stav; další načtení to srovná */
       }
     }
     running.current = false;
     setSaveState('idle');
-  }, [repo]);
+  }, [repo, update]);
 
   const enqueue = useCallback(
-    (op: () => Promise<void>, key?: string) => {
-      queue.current.push({ run: op, key });
+    (op: Op) => {
+      queue.current.push(op);
       void pump();
     },
     [pump],
   );
 
   /** Čeká na uložení vlastní změna s tímto klíčem (ve frontě nebo odložená)? */
-  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((e) => e.key === key), []);
+  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((op) => opKey(op) === key), []);
 
   /** Po výpadku spojení / návratu do appky: dorovnat se serverem (Realtime zmeškané změny neposílá). */
   const resync = useCallback(() => {
     repo.loadAll().then(
-      (r) => setData((d) => mergeRemote(d, r, busy)),
+      (r) => update((d) => mergeRemote(d, r, busy)),
       () => {
         /* další pokus při příštím připojení */
       },
     );
-  }, [repo, busy]);
+  }, [repo, busy, update]);
 
   // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky).
   useEffect(() => {
@@ -167,26 +197,21 @@ export function useAppState(repo: Repository): AppStore {
     return repo.subscribe({
       score: (tid, mid, s) => {
         if (busy(pendingKey.score(tid, mid))) return; // ozvěna staršího stavu, vlastní ťuknutí ještě čekají
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) => {
-            if (t.id !== tid) return t;
+        update((d) =>
+          inTraining(d, tid, (t) => {
             const scores = { ...t.scores };
             if (s) scores[mid] = s;
             else delete scores[mid];
             return { ...t, scores };
           }),
-        }));
+        );
       },
       solo: (tid, pid, key, value, attempts) => {
         if (busy(pendingKey.solo(tid, pid, key))) return;
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) => (t.id === tid ? setAttempts(setSolo(t, pid, key, value), pid, key, value === null ? null : (attempts ?? null)) : t)),
-        }));
+        update((d) => inTraining(d, tid, (t) => setAttempts(setSolo(t, pid, key, value), pid, key, value === null ? null : (attempts ?? null))));
       },
       training: (t, id) =>
-        setData((d) => {
+        update((d) => {
           const pending = busy(pendingKey.training(id));
           if (!t) return pending ? d : { ...d, trainings: d.trainings.filter((x) => x.id !== id) };
           const cur = d.trainings.find((x) => x.id === id);
@@ -195,12 +220,12 @@ export function useAppState(repo: Repository): AppStore {
         }),
       playTime: (tid, itemId, p) => {
         if (busy(pendingKey.time(tid, itemId))) return;
-        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? withPlayTime(t, itemId, p) : t)) }));
+        update((d) => inTraining(d, tid, (t) => withPlayTime(t, itemId, p)));
       },
-      event: (tid, e) => setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === tid ? withEvent(t, e) : t)) })),
+      event: (tid, e) => update((d) => inTraining(d, tid, (t) => withEvent(t, e))),
       resync,
     });
-  }, [repo, status, busy, resync]);
+  }, [repo, status, busy, resync, update]);
 
   // Telefon se zamčenou obrazovkou / appka na pozadí: po návratu dorovnat.
   useEffect(() => {
@@ -209,6 +234,13 @@ export function useAppState(repo: Repository): AppStore {
     document.addEventListener('visibilitychange', on);
     return () => document.removeEventListener('visibilitychange', on);
   }, [status, resync]);
+
+  // Spojení se vrátilo: čekající zápis zopakovat hned.
+  useEffect(() => {
+    const on = () => wake.current?.();
+    window.addEventListener('online', on);
+    return () => window.removeEventListener('online', on);
+  }, []);
 
   // Varování při zavření stránky s neuloženými změnami.
   useEffect(() => {
@@ -241,15 +273,17 @@ export function useAppState(repo: Repository): AppStore {
     return rest in t.scores;
   };
 
+  /** Odložený zápis (psaní čísla): do fronty jde až poslední hodnota po SCORE_DEBOUNCE_MS. */
   const debounce = useCallback(
-    (key: string, op: () => Promise<void>) => {
+    (op: Op) => {
+      const key = opKey(op);
       const prev = timers.current.get(key);
       if (prev) clearTimeout(prev);
       timers.current.set(
         key,
         setTimeout(() => {
           timers.current.delete(key);
-          enqueue(op, key);
+          enqueue(op);
         }, SCORE_DEBOUNCE_MS),
       );
     },
@@ -261,114 +295,112 @@ export function useAppState(repo: Repository): AppStore {
       reload: () => setLoadNonce((n) => n + 1),
       dismissSaveError: () => setSaveError(null),
       savePlayer: (p: Player) => {
-        setData((d) => ({ ...d, players: upsert(d.players, p) }));
-        enqueue(() => repo.savePlayer(p), pendingKey.players);
+        update((d) => ({ ...d, players: upsert(d.players, p) }));
+        enqueue({ kind: 'savePlayer', player: p });
       },
       saveCatalog: (c: CatalogData) => {
-        setData((d) => ({ ...d, catalog: c }));
-        enqueue(() => repo.saveCatalog(c), pendingKey.catalog);
+        update((d) => ({ ...d, catalog: c }));
+        enqueue({ kind: 'saveCatalog', catalog: c });
       },
       deletePlayer: (id: PlayerId) => {
-        setData((d) => ({ ...d, players: d.players.filter((p) => p.id !== id) }));
-        enqueue(() => repo.deletePlayer(id), pendingKey.players);
+        update((d) => ({ ...d, players: d.players.filter((p) => p.id !== id) }));
+        enqueue({ kind: 'deletePlayer', id });
       },
       saveTraining: (t: Training) => {
-        setData((d) => ({
+        update((d) => ({
           ...d,
           trainings: upsert(d.trainings, { ...t, scores: d.trainings.find((x) => x.id === t.id)?.scores ?? {} }),
         }));
-        enqueue(() => repo.saveTraining(t), pendingKey.training(t.id));
+        enqueue({ kind: 'saveTraining', training: configOf(t) });
       },
       updateTrainingConfig: (t: Training) => {
         cancelPending(t.id, stillValid, t);
-        setData((d) => ({ ...d, trainings: upsert(d.trainings, t) }));
-        const k = pendingKey.training(t.id);
-        enqueue(() => repo.saveTraining(t), k);
-        enqueue(() => repo.replaceScores(t.id, Object.keys(t.scores)), k);
-        enqueue(() =>
-          repo.replaceSolo(
-            t.id,
-            Object.entries(t.soloResults).flatMap(([playerId, ms]) =>
-              Object.keys(ms).map((key) => ({ playerId, key, metric: parseSoloKey(key).metric })),
-            ),
-          ),
-          k,
-        );
+        update((d) => ({ ...d, trainings: upsert(d.trainings, t) }));
+        enqueue({ kind: 'saveTraining', training: configOf(t) });
+        enqueue({ kind: 'replaceScores', trainingId: t.id, keep: Object.keys(t.scores) });
+        enqueue({
+          kind: 'replaceSolo',
+          trainingId: t.id,
+          keep: Object.entries(t.soloResults).flatMap(([playerId, ms]) => Object.keys(ms).map((key) => ({ playerId, key, metric: parseSoloKey(key).metric }))),
+        });
       },
       bumpScore: (trainingId: string, match: Match, field: keyof Score, delta: number) => {
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) =>
-            t.id === trainingId ? { ...t, scores: { ...t.scores, [match.id]: bump(match, t.scores[match.id] ?? {}, field, delta) } } : t,
-          ),
-        }));
-        enqueue(() => repo.bumpScore(trainingId, match.id, field, delta, bumpLimit(match, field)), pendingKey.score(trainingId, match.id));
+        const t = dataRef.current.trainings.find((x) => x.id === trainingId);
+        if (!t) return;
+        const cur = t.scores[match.id] ?? {};
+        const next = bump(match, cur, field, delta);
+        if ((next[field] ?? 0) === (cur[field] ?? 0)) return; // strop / nula: nic se nemění, nic se neposílá
+        const goal = field === 'ga' || field === 'gb';
+        const e: GameEvent = { id: newUuid(), itemId: match.id, at: Date.now(), kind: goal ? 'goal' : 'loss', side: field === 'ga' || field === 'la' ? 'A' : 'B', delta: delta > 0 ? 1 : -1 };
+        update((d) => inTraining(d, trainingId, (x) => withEvent({ ...x, scores: { ...x.scores, [match.id]: next } }, e)));
+        // Stejný strop hlídá i databáze (tap_score), takže dva telefony na posledním gólu neudělají 7:4.
+        enqueue({ kind: 'tapScore', trainingId, matchId: match.id, taps: [{ id: e.id, at: e.at, field, delta, max: bumpLimit(match, field) }] });
       },
-      tapSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1) => {
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) => {
-            if (t.id !== trainingId) return t;
-            const next = tapDrill({ value: t.soloResults[playerId]?.[key], attempts: t.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
-            return next ? setAttempts(setSolo(t, playerId, key, next.value), playerId, key, next.attempts) : t;
-          }),
-        }));
-        // Stejné meze hlídá i databáze (tap_solo), takže rychlé dvojité ťuknutí na hranici nic nepokazí.
+      tapSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1, itemId: string) => {
+        const t = dataRef.current.trainings.find((x) => x.id === trainingId);
+        if (!t) return;
+        const next = tapDrill({ value: t.soloResults[playerId]?.[key], attempts: t.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
+        if (!next) return; // všechny pokusy odehrané / není co vracet
+        const e: GameEvent = { id: newUuid(), itemId, at: Date.now(), kind: ok ? 'hit' : 'miss', playerId, delta };
+        update((d) => inTraining(d, trainingId, (x) => withEvent(setAttempts(setSolo(x, playerId, key, next.value), playerId, key, next.attempts), e)));
+        // Stejné meze hlídá i databáze (tap_drill), takže rychlé dvojité ťuknutí na hranici nic nepokazí.
         const dlt = tapDelta(def, ok, delta);
-        enqueue(() => repo.tapSolo(trainingId, playerId, key, dlt.value, dlt.attempts, def.max), pendingKey.solo(trainingId, playerId, key));
+        enqueue({ kind: 'tapDrill', trainingId, playerId, key, max: def.max, taps: [{ id: e.id, at: e.at, itemId, ok, delta, dValue: dlt.value, dAttempts: dlt.attempts }] });
       },
-      bumpSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, delta: number, max: number) => {
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) => {
-            if (t.id !== trainingId) return t;
-            const cur = t.soloResults[playerId]?.[key] ?? 0;
-            return setSolo(t, playerId, key, Math.min(max, Math.max(0, cur + delta)));
+      startItem: (trainingId: string, itemId: string) => {
+        const at = Date.now();
+        update((d) =>
+          inTraining(d, trainingId, (t) => {
+            const cur = t.playTimes?.[itemId];
+            return cur?.startedAt !== undefined ? t : withPlayTime(t, itemId, { ...cur, startedAt: at });
           }),
-        }));
-        enqueue(() => repo.bumpSolo(trainingId, playerId, key, delta, max), pendingKey.solo(trainingId, playerId, key));
+        );
+        enqueue({ kind: 'startItem', trainingId, itemId, at });
       },
-      addEvent: (trainingId: string, e: GameEvent) => {
-        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === trainingId ? withEvent(t, e) : t)) }));
-        enqueue(() => repo.addEvent(trainingId, e));
+      endItem: (trainingId: string, itemId: string, times: { startedAt?: number; endedAt?: number } = {}) => {
+        const endedAt = times.endedAt ?? Date.now();
+        const fallback = times.startedAt === undefined ? undefined : Math.min(times.startedAt, endedAt);
+        update((d) =>
+          inTraining(d, trainingId, (t) => {
+            const cur = t.playTimes?.[itemId] ?? {};
+            const startedAt = cur.startedAt ?? fallback;
+            return withPlayTime(t, itemId, { ...(startedAt !== undefined ? { startedAt } : {}), endedAt: cur.endedAt ?? endedAt });
+          }),
+        );
+        enqueue({ kind: 'endItem', trainingId, itemId, ...(fallback !== undefined ? { startedAt: fallback } : {}), endedAt });
       },
       setPlayTime: (trainingId: string, itemId: string, p: PlayTime | null) => {
-        setData((d) => ({ ...d, trainings: d.trainings.map((t) => (t.id === trainingId ? withPlayTime(t, itemId, p) : t)) }));
-        enqueue(() => repo.savePlayTime(trainingId, itemId, p), pendingKey.time(trainingId, itemId));
+        update((d) => inTraining(d, trainingId, (t) => withPlayTime(t, itemId, p)));
+        enqueue({ kind: 'savePlayTime', trainingId, itemId, time: p });
       },
       lockRounds: (t: Training) => {
-        setData((d) => ({ ...d, trainings: d.trainings.map((x) => (x.id === t.id ? { ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams } : x)) }));
-        enqueue(() => repo.lockRounds(t.id, t.lockedRounds, t.simTeams), pendingKey.training(t.id));
+        update((d) => inTraining(d, t.id, (x) => ({ ...x, lockedRounds: t.lockedRounds, simTeams: t.simTeams })));
+        enqueue({ kind: 'lockRounds', trainingId: t.id, locked: t.lockedRounds, simTeams: t.simTeams });
       },
       deleteTraining: (id: string) => {
         cancelPending(id, stillValid, null);
-        setData((d) => ({ ...d, trainings: d.trainings.filter((t) => t.id !== id) }));
-        enqueue(() => repo.deleteTraining(id), pendingKey.training(id));
+        update((d) => ({ ...d, trainings: d.trainings.filter((t) => t.id !== id) }));
+        enqueue({ kind: 'deleteTraining', id });
       },
       saveScore: (trainingId: string, matchId: MatchId, s: Score) => {
-        setData((d) => ({
-          ...d,
-          trainings: d.trainings.map((t) => {
-            if (t.id !== trainingId) return t;
+        update((d) =>
+          inTraining(d, trainingId, (t) => {
             const scores = { ...t.scores };
             if (isEmptyScore(s)) delete scores[matchId];
             else scores[matchId] = s;
             return { ...t, scores };
           }),
-        }));
-        debounce(pendingKey.score(trainingId, matchId), () => repo.saveScore(trainingId, matchId, s));
+        );
+        debounce({ kind: 'saveScore', trainingId, matchId, score: s });
       },
       saveSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, value: number | null) => {
-        setData((d) => ({
-          ...d,
-          // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
-          trainings: d.trainings.map((t) => (t.id === trainingId ? setAttempts(setSolo(t, playerId, key, value), playerId, key, null) : t)),
-        }));
-        debounce(pendingKey.solo(trainingId, playerId, key), () => repo.saveSolo(trainingId, playerId, key, value));
+        // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
+        update((d) => inTraining(d, trainingId, (t) => setAttempts(setSolo(t, playerId, key, value), playerId, key, null)));
+        debounce({ kind: 'saveSolo', trainingId, playerId, key, value });
       },
       newId: newUuid,
     }),
-    [repo, enqueue, cancelPending, debounce],
+    [enqueue, cancelPending, debounce, update],
   );
 
   return { status, data, saveState, saveError, ...actions };

@@ -30,7 +30,6 @@ function Harness({ me = 'id1', canMatch = () => true }: { me?: string; canMatch?
       tap={{
         me,
         onBumpScore: (m: Match, f: keyof Score, d: number) => setT((x) => ({ ...x, scores: { ...x.scores, [m.id]: bump(m, x.scores[m.id] ?? {}, f, d) } })),
-        onBumpSolo: () => {},
       }}
     />
   );
