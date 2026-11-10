@@ -43,7 +43,7 @@ describe('časový plán', () => {
     expect(used).toBeGreaterThan(165);
     expect(plan).toMatchObject({ warmupPasses: 1, fiveBarControl: 1, penaltyKeeper: 2, sim: 1 });
     expect(plan.setShooting).toBeUndefined();
-    expect(plan.chain).toBeUndefined();
+    expect(plan.chain).toBeUndefined(); // Řetězec je volitelný
     expect(plan.backRodsBuildUp).toBeUndefined();
     expect(plan.wall! % 2).toBe(0); // párová kola
     expect(plan.start03! % 2).toBe(0);

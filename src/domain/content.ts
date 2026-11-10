@@ -258,6 +258,23 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
+        "name": "Řetězec",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "dostat míč z dvojky přes pětku a trojku až do gólu proti bránícímu soupeři."
+          },
+          {
+            "label": "Provedení:",
+            "text": "útočník rozehraje z dvojky, nahraje na pětku, z pětky přihraje na trojku a z trojky střílí; soupeř brání. Když se míček vrátí na tyč, ze které hráč přihrával, pokus končí neúspěchem. Ve dvojici se hráči střídají, každý má v kole 20 pokusů."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "jen gól – góly z 20."
+          }
+        ]
+      },
+      {
         "name": "Rozehrávka ze zadních tyčí",
         "parts": [
           {

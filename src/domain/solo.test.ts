@@ -22,10 +22,11 @@ describe('SOLO_METRICS', () => {
     expect(SOLO_METRICS.map((m) => [m.id, m.max])).toEqual([
       ['warmupPasses', 20], ['passWallLane', 10], ['fiveBarControl', 10], ['fiveBarSolo', 10], ['setShooting', 20],
       ['penaltyKeeper', 10], ['penaltySolo', 10], ['backShotKeeper', 10], ['backShotSolo', 10],
-      ['clearing', 10], ['looseBall', 10], ['backRodsBuildUp', 10], ['chain', 10],
+      ['clearing', 10], ['looseBall', 10], ['backRodsBuildUp', 10], ['chain', 20],
     ]);
     expect(SOLO_METRICS.filter((m) => m.lowerIsBetter).map((m) => m.id)).toEqual(['fiveBarControl', 'fiveBarSolo']);
     expect(soloMetric('setShooting').what).toBe('góly z 20 střel');
+    expect(soloMetric('chain')).toMatchObject({ name: 'Řetězec', what: 'góly z 20', ok: 'gól', fail: 'bez gólu' });
   });
 });
 

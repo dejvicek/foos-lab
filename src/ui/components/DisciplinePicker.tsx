@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DISCIPLINES, roundMin } from '../../domain/disciplines';
+import { DISCIPLINES, roundMin, roundStep } from '../../domain/disciplines';
 import { matchesSkillFilter, SKILL_GROUPS, skillName, type Skill, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import { SkillLegend, SkillTags } from './SkillTags';
 import { DURATION_OPTIONS, fillPlan, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
@@ -136,7 +136,7 @@ export function DisciplinePicker({ training, open, onChange, bare }: { training:
               const n = off ? 0 : (training.plan[d.id] ?? 0);
               const min = locked[d.id] ?? 0;
               // Zeď, Start 0:3 a cvičení na dvě varianty: kola po dvou.
-              const step = d.paired || d.variants ? 2 : 1;
+              const step = roundStep(d);
               return (
                 <li key={d.id} role="group" aria-label={d.name}>
                   <label>

@@ -50,7 +50,8 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'clearing', kind: 'drill', name: 'Clearing', min: 4, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, optional: true, skills: ['clearing'] },
   { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 4, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, optional: true, skills: ['looseBall', 'control'] },
   { id: 'backRodsBuildUp', kind: 'drill', name: 'Rozehrávka ze zadních tyčí', min: 8, explain: 'Rozehrávka ze zadních tyčí', metric: 'backRodsBuildUp', retired: true },
-  { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec (trénink jedniček)', metric: 'chain', retired: true },
+  // Řetězec znovu (10. 11. 2026): z dvojky přes pětku a trojku do gólu; kolo 8 min, ve dvojici se střídají, každý 20 pokusů.
+  { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec', metric: 'chain', needsPartner: true, optional: true, skills: ['buildUp2', 'pass5', 'shot3'] },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'] },
   { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'] },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true, skills: ['tempo', 'reading', 'control'] },
@@ -63,6 +64,12 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
 ];
 
 /** Aktuální disciplíny: výchozí + úpravy z katalogu (nastavuje applyCatalog). `min` je délka kola pro nové tréninky. */
+/** Cvičení po dvou kolech ve stejných skupinách (na dvě varianty). */
+export const drillInPairs = (d: DisciplineDef): boolean => d.kind === 'drill' && !!d.variants;
+
+/** Krok počtu kol: párové zápasy a cvičení po dvou kolech po 2, jinak po 1. */
+export const roundStep = (d: DisciplineDef): 1 | 2 => (d.paired || drillInPairs(d) ? 2 : 1);
+
 export let DISCIPLINES: readonly DisciplineDef[] = DEFAULT_DISCIPLINES;
 
 export function setDisciplines(list: readonly DisciplineDef[]): void {

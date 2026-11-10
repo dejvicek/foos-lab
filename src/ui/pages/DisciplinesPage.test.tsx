@@ -49,8 +49,8 @@ describe('stránka Disciplíny', () => {
     window.location.hash = '#/discipliny';
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
-    expect(rows()).toHaveLength(19);
-    for (const retired of ['Penalta z místa (20 střel)', 'Rozehrávka ze zadních tyčí', 'Řetězec']) expect(screen.queryByRole('listitem', { name: retired })).toBeNull();
+    expect(rows()).toHaveLength(20);
+    for (const retired of ['Penalta z místa (20 střel)', 'Rozehrávka ze zadních tyčí']) expect(screen.queryByRole('listitem', { name: retired })).toBeNull();
   });
 
   it('filtr podle sekce a štítku (OR), Zrušit filtr', async () => {
@@ -62,12 +62,12 @@ describe('stránka Disciplíny', () => {
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
       'Penalta z místa proti brankáři', 'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Daň za ztrátu', 'Jedničky',
     ]);
-    expect(screen.getByText(/· 6 z 19/)).toBeInTheDocument();
+    expect(screen.getByText(/· 6 z 20/)).toBeInTheDocument();
     await user.click(within(row('Jedničky')).getByRole('button', { name: 'Zápasová praxe' }));
     expect(row('Normální leg')).toBeInTheDocument();
     expect(row('Simulace ligového kola')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
-    expect(rows()).toHaveLength(19);
+    expect(rows()).toHaveLength(20);
   });
 
   it('admin upraví disciplínu: název, délka, štítky, nápověda; Obnovit výchozí', async () => {

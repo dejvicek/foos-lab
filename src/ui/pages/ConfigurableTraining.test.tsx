@@ -37,7 +37,7 @@ describe('konfigurovatelný trénink v UI', () => {
     const { user, repo } = await newTraining(8, 'disc');
     expect(screen.getByRole('heading', { name: 'Disciplíny' })).toBeInTheDocument();
     expect(screen.getByText(/^Naplánováno \d:\d\d z 3:00$/)).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Řetězec' })).toBeNull(); // vyřazená disciplína
+    expect(screen.getByRole('checkbox', { name: 'Řetězec' })).not.toBeChecked(); // volitelná (10. 11. 2026)
     expect(screen.queryByRole('checkbox', { name: 'Rozehrávka ze zadních tyčí' })).toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Penalta z místa proti brankáři' })).toBeChecked();
     expect(screen.queryByRole('checkbox', { name: 'Penalta z místa (20 střel)' })).toBeNull();

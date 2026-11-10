@@ -1,4 +1,4 @@
-import { discipline, type DisciplineDef } from './disciplines';
+import { discipline, drillInPairs, type DisciplineDef } from './disciplines';
 import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters, type MatchPlan } from './pairing';
 import { planSequence, planTimeline, playable, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
@@ -185,12 +185,12 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
       const left = drillsLeft.get(def.id) ?? 1;
       drillsLeft.set(def.id, left - 1);
       // Druhá varianta hraje ve stejných skupinách jako první.
-      const mirror = def.variants && drillK % 2 === 1 && lastDrillRound?.id === def.id && lastDrillRound.roundNo === roundNo - 1 ? lastDrillRound : null;
+      const mirror = drillInPairs(def) && drillK % 2 === 1 && lastDrillRound?.id === def.id && lastDrillRound.roundNo === roundNo - 1 ? lastDrillRound : null;
       let r: { groups: PlayerId[][]; waiting: PlayerId[] };
       if (mirror) {
         r = { groups: mirror.groups, waiting: mirror.waiting };
         recordDrillRound(c, def, r.groups, r.waiting);
-      } else r = drillRound(players, t.tables, def, c, roundNo, def.variants ? Math.ceil(left / 2) : left);
+      } else r = drillRound(players, t.tables, def, c, roundNo, drillInPairs(def) ? Math.ceil(left / 2) : left);
       lastDrillRound = { id: def.id, roundNo, groups: r.groups, waiting: r.waiting };
       row = {
         roundNo,

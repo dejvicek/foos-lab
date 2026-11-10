@@ -1,5 +1,5 @@
 import type { ExplanationItem } from './content';
-import { DISCIPLINES, discipline, type DisciplineDef } from './disciplines';
+import { DISCIPLINES, discipline, roundStep, type DisciplineDef } from './disciplines';
 import { explanation } from './explain';
 import { SIM_MIN_PLAYERS } from './plan';
 import type { DisciplineId } from './types';
@@ -21,7 +21,7 @@ export const MATCH_GENERAL_HELP: ExplanationItem[] = [explanation('Každý gól 
 /** Délka v řádku: kolik kol jde za sebou (párová / na dvě varianty = 2) a délka kola (aktuální katalog). */
 export function disciplineDuration(id: DisciplineId): { rounds: 1 | 2; min: number } {
   const d = discipline(id);
-  return { rounds: d.paired || d.variants ? 2 : 1, min: d.min };
+  return { rounds: roundStep(d), min: d.min };
 }
 
 /** Kdo hraje (ikona v řádku): cvičení s bránícím soupeřem / sám, párový zápas s prohozením stran. */

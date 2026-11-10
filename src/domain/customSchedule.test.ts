@@ -1,5 +1,5 @@
 import { buildSchedule } from './schedule';
-import { autoPlan, DEFAULT_SELECTION } from './plan';
+import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded } from './plan';
 import type { ScheduleRow, TableCount, Training } from './types';
 import { newTraining } from './training';
 import { discipline as disc } from './disciplines';
@@ -115,18 +115,43 @@ describe('úpravy plánu 2. 11. 2026', () => {
     }
   });
 
-  it('Řetězec a Rozehrávka ze zadních tyčí se už nenabízí; stará Penalta z místa (20 střel) jen v historii', () => {
-    expect(DEFAULT_SELECTION).not.toContain('chain');
+  it('Rozehrávka ze zadních tyčí se už nenabízí; stará Penalta z místa (20 střel) jen v historii', () => {
     expect(DEFAULT_SELECTION).not.toContain('backRodsBuildUp');
-    const prev = custom(8, 4, { plan: { chain: 1, backRodsBuildUp: 1, normal: 2 } });
+    const prev = custom(8, 4, { plan: { backRodsBuildUp: 1, normal: 2 } });
     const t = newTraining('n', '2026-11-03', prev, null);
-    expect(t.plan.chain ?? 0).toBe(0);
     expect(t.plan.backRodsBuildUp ?? 0).toBe(0);
     expect(disc('setShooting').name).toBe('Penalta z místa (20 střel)');
     expect(disc('penaltyKeeper').name).toBe('Penalta z místa proti brankáři');
     expect(t.simSplit).toBe('performance');
     // starý trénink s vyřazenou disciplínou se dál zobrazí
     expect(playRows(custom(8, 4, { plan: { backRodsBuildUp: 1 } }))[0].rule).toMatch(/^Rozehrávka ze zadních tyčí/);
+  });
+});
+
+describe('Řetězec (10. 11. 2026)', () => {
+  it('nabízí se (volitelně), s bránícím soupeřem, kola po 8 min, metrika góly z 20', () => {
+    expect(disc('chain')).toMatchObject({ kind: 'drill', min: 8, needsPartner: true, optional: true, metric: 'chain' });
+    expect(disc('chain').variants).toBeUndefined();
+    expect(disc('chain').retired).toBeUndefined();
+    expect(DEFAULT_SELECTION).not.toContain('chain');
+  });
+
+  it('jedno kolo (ne po dvou): kolik kol, tolik nových dvojic; na konci cvičení', () => {
+    const r = playRows(custom(8, 2, { plan: { normal: 1, chain: 2, warmupPasses: 2 } }));
+    expect(r.map((x) => x.discipline)).toEqual(['warmupPasses', 'warmupPasses', 'chain', 'chain', 'normal']);
+    const groups = (x: ScheduleRow) => x.cells.flatMap((c) => (c?.type === 'group' ? [c.players] : []));
+    const [a, b] = r.filter((x) => x.discipline === 'chain');
+    // 2 stoly × 2 hráči, 8 hráčů → za 2 kola se vystřídají všichni
+    expect(new Set([...groups(a), ...groups(b)].flat()).size).toBe(8);
+    expect(a.rule).toBe('Řetězec, 8 min');
+  });
+
+  it('výchozí počet kol jako u cvičení (tolik, aby se všichni vystřídali), krok 1', () => {
+    for (let n = 4; n <= 13; n++)
+      for (const tables of [2, 3, 4] as TableCount[]) {
+        const plan = autoPlan([...DEFAULT_SELECTION, 'chain'], 180, n, tables);
+        expect(plan.chain, `n=${n} t=${tables}`).toBe(drillRoundsNeeded(n, tables));
+      }
   });
 });
 

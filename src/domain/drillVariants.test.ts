@@ -32,7 +32,7 @@ describe('nová cvičení (2. 11. 2026)', () => {
     expect(DEFAULT_SELECTION).not.toContain('setShooting');
     for (const id of ['penaltySolo', 'backShotSolo', 'backShotKeeper', 'passWallLane'] as const) expect(DEFAULT_SELECTION).not.toContain(id);
     expect(DISCIPLINES.filter((d) => d.kind === 'drill' && !d.retired).map((d) => d.id)).toEqual([
-      'warmup', 'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'clearing', 'looseBall',
+      'warmup', 'warmupPasses', 'passWallLane', 'fiveBarControl', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo', 'clearing', 'looseBall', 'chain',
     ]);
   });
 

@@ -32,7 +32,7 @@ describe('vysvětlivky u bloků', () => {
     const r = custom.sections.flatMap((x) => x.rows).filter((x) => x.kind !== 'break');
     expect(names(explanationsFor(r[0]).main)).toEqual(['Přihrávky na pětce']);
     expect(explanationsFor(r[0]).perTable.every((x) => x === null)).toBe(true);
-    expect(names(explanationsFor(r[1]).main)).toEqual(['Řetězec (trénink jedniček)']);
+    expect(names(explanationsFor(r[1]).main)).toEqual(['Řetězec']);
     expect(names(explanationsFor(r[2]).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
     expect(names(explanationsFor(r[3]).main)).toEqual(['Normální leg']);
   });

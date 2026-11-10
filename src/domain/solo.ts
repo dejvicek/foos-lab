@@ -26,7 +26,7 @@ export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'clearing', name: 'Clearing', what: 'míče za pětku z 10', max: 10, lowerIsBetter: false, ok: 'za pětkou', fail: 'zachycený' },
   { id: 'looseBall', name: 'Zachycení volného míče', what: 'míče pod kontrolou z 10', max: 10, lowerIsBetter: false, ok: 'pod kontrolou', fail: 'nezachycený' },
   { id: 'backRodsBuildUp', name: 'Rozehrávka ze zadních tyčí', what: 'dokončené rozehrávky z 10', max: 10, lowerIsBetter: false, ok: 'dokončená', fail: 'nedokončená' },
-  { id: 'chain', name: 'Řetězec', what: 'dokončené řetězce z 10', max: 10, lowerIsBetter: false, ok: 'dokončený', fail: 'nedokončený' },
+  { id: 'chain', name: 'Řetězec', what: 'góly z 20', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
 ];
 
 /** Metrika stanoviště na stole j (pořadí STATIONS v content.ts) – jen starší klasické tréninky. */

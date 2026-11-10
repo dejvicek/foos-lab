@@ -1,4 +1,4 @@
-import { DEFAULT_DISCIPLINES, DISCIPLINES, discipline, roundMin, type DisciplineId, type DisciplineMins } from './disciplines';
+import { DEFAULT_DISCIPLINES, DISCIPLINES, discipline, drillInPairs, roundMin, roundStep, type DisciplineId, type DisciplineMins } from './disciplines';
 import type { BreakDef, Breaks, TemplateBreak } from './types';
 
 export type Plan = Partial<Record<DisciplineId, number>>;
@@ -160,7 +160,7 @@ export function autoPlan(
     if (!selected.includes(d.id)) continue;
     // Asymetrická disciplína (Zeď, Start 0:3) vždy po dvou kolech, aby si každý vyzkoušel obě role.
     // Cvičení na dvě varianty: každé vystřídání má dvě kola (varianta 1, varianta 2).
-    const drillRounds = drillRoundsNeeded(players, tables) * (d.variants ? 2 : 1);
+    const drillRounds = drillRoundsNeeded(players, tables) * (drillInPairs(d) ? 2 : 1);
     plan[d.id] = d.kind === 'drill' ? (played.has(d.id) ? (minimum[d.id] ?? 1) : drillRounds) : d.paired ? 2 : 1;
   }
   for (const [id, n] of Object.entries(minimum) as [DisciplineId, number][]) plan[id] = Math.max(plan[id] ?? 0, n);
@@ -199,7 +199,7 @@ export function manualPlan(
   const plan: Plan = {};
   for (const d of DISCIPLINES) {
     if (!selected.includes(d.id)) continue;
-    if (d.kind === 'drill') plan[d.id] = played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables) * (d.variants ? 2 : 1);
+    if (d.kind === 'drill') plan[d.id] = played.has(d.id) ? (minimum[d.id] ?? 1) : drillRoundsNeeded(players, tables) * (drillInPairs(d) ? 2 : 1);
     else if (d.kind === 'match') plan[d.id] = (counts[d.id] ?? 0) > 0 ? counts[d.id]! : defaultMatchRounds(d.id);
     else plan[d.id] = 1;
   }
@@ -221,7 +221,7 @@ export function fillPlan(plan: Plan, durationMin: number, players: number, break
   let misses = 0;
   while (pool.length && misses < pool.length) {
     const d = pool[i % pool.length];
-    const step = d.paired || d.variants ? 2 : 1;
+    const step = roundStep(d);
     const next = { ...out, [d.id]: (out[d.id] ?? 0) + step };
     if (plannedMinutes(next, players || undefined, breaks, mins) <= durationMin) {
       Object.assign(out, next);

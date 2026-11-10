@@ -7,7 +7,7 @@ describe('stránka Disciplíny – obsah', () => {
     expect(ids).toEqual(DISCIPLINES.filter((d) => !d.retired).map((d) => d.id));
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
-    expect(ids).not.toContain('chain');
+    expect(ids).toContain('chain');
   });
 
   it('každá nabízená disciplína má vysvětlivku (Cíl / Provedení / …)', () => {
@@ -29,6 +29,9 @@ describe('stránka Disciplíny – obsah', () => {
     expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 10: ke zdi / po lajně', 'jde i sám']);
     expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 10 pokusech, variantu si určí hráč', 's bránícím soupeřem']);
     expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role']);
+    expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
+    expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem']);
+    expect(disciplineHelp('chain').map((i) => i.name)).toEqual(['Řetězec']);
     expect(disciplineFacts('singles')).toEqual(['jen singly']);
     expect(disciplineFacts('sim')).toEqual(['od 4 hráčů']);
   });

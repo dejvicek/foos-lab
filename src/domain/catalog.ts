@@ -4,7 +4,7 @@
  * Délka kola platí pro nové tréninky (a při úpravě nezahájeného) – trénink si ji uloží (roundMin).
  */
 import { EXPLANATIONS, type ExplanationPart } from './content';
-import { catalogMins, DEFAULT_DISCIPLINES, setDisciplines, type DisciplineDef, type DisciplineMins } from './disciplines';
+import { catalogMins, DEFAULT_DISCIPLINES, drillInPairs, setDisciplines, type DisciplineDef, type DisciplineMins } from './disciplines';
 import { setHelpOverrides } from './explain';
 import { DEFAULT_SKILLS, setSkills, type Skill, type SkillDef } from './skills';
 import { BREAK_OPTIONS, DEFAULT_DURATION, defaultMatchRounds, drillRoundsNeeded, DURATION_OPTIONS, manualPlan, planSequence, planTimeline, playablePlan, type Plan, type TimelineItem } from './plan';
@@ -109,7 +109,7 @@ export function templateTimeline(t: TrainingTemplate, players: number, tables: n
 /** Kolik kol disciplína v šabloně má: cvičení podle hráčů a stolů (× 2 varianty), zápas podle šablony, simulace 1. */
 export function templateRounds(id: DisciplineId, players: number, tables: number, rounds?: Plan): number {
   const d = DEFAULT_DISCIPLINES.find((x) => x.id === id)!;
-  if (d.kind === 'drill') return drillRoundsNeeded(players, tables) * (d.variants ? 2 : 1);
+  if (d.kind === 'drill') return drillRoundsNeeded(players, tables) * (drillInPairs(d) ? 2 : 1);
   if (d.kind === 'match') return (rounds?.[id] ?? 0) > 0 ? rounds![id]! : defaultMatchRounds(id);
   return 1;
 }
