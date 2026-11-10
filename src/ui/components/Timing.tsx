@@ -83,7 +83,7 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
       {finished && !countdown && ended === undefined && (
         <p className="timing-hint" role="status">
           {autoEndIn !== null && autoEndIn !== undefined
-            ? `Hotovo – zkontroluj výsledek. Utkání skončí samo za ${Math.ceil(autoEndIn / 1000)} s, potvrdit jde hned; oprava výsledku odpočet zastaví.`
+            ? `Hotovo – zkontroluj výsledek. Utkání skončí samo za ${Math.ceil(autoEndIn / 1000)} s; oprava výsledku odpočet zastaví.`
             : 'Hotovo – zkontroluj výsledek a potvrď konec.'}
         </p>
       )}

@@ -112,7 +112,7 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     return { repo, mine, user: userEvent.setup() };
   };
 
-  it('skóre jde ťukat až po Zahájit; dohraný leg čeká na potvrzení (odpočet 15 s), potvrdit jde hned', async () => {
+  it('skóre jde ťukat až po Zahájit; dohraný leg čeká na potvrzení (odpočet 15 s)', async () => {
     const { repo, mine, user } = await openMine();
     expect(screen.getByRole('button', { name: 'Moje hry – jsi na řadě' })).toHaveAttribute('aria-current', 'page');
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
@@ -121,7 +121,7 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
     expect(within(mine).queryByLabelText('Zahájeno')).toBeNull(); // časy se ručně neupravují
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    expect(mine).toHaveTextContent('Utkání skončí samo za 15 s, potvrdit jde hned');
+    expect(mine).toHaveTextContent('Utkání skončí samo za 15 s; oprava výsledku odpočet zastaví.');
     expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBeUndefined();
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     await vi.waitFor(() => {
