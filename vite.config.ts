@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { COMPAT } from './src/version';
+import { COMPAT } from './src/version.ts';
 
 // Označení sestavení: commit z GitHub Actions, lokálně čas sestavení.
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
