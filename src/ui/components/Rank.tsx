@@ -52,3 +52,27 @@ export function Snail({ big = false }: { big?: boolean }) {
     </svg>
   );
 }
+
+const ze = (n: number) => (n >= 2 && n <= 4 ? 'ze' : 'z');
+
+/** Neřazený hráč: tečky postupu k pořadí (●●○ = 2 ze 3 tréninků). */
+export function Progress({ have, need }: { have: number; need: number }) {
+  const text = `${have} ${ze(need)} ${need} tréninků`;
+  return (
+    <span className="progress" title={text}>
+      {Array.from({ length: need }, (_, i) => (
+        <i key={i} className={i < have ? 'on' : undefined} />
+      ))}
+      <span className="visually-hidden">{text}</span>
+    </span>
+  );
+}
+
+/** „chybí 1 trénink“ */
+export const missingText = (have: number, need: number) => {
+  const n = need - have;
+  return `chybí ${n} ${n === 1 ? 'trénink' : n <= 4 ? 'tréninky' : 'tréninků'}`;
+};
+
+/** Text čáry mezi řazenými a neřazenými. */
+export const cutoffText = (need: number) => `pořadí od ${need} tréninků`;

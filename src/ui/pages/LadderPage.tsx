@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, type LadderRow, type LadderView } from '../../domain/ladder';
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
@@ -14,7 +15,7 @@ import { canBuildSchedule } from '../../domain/schedule';
 import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
-import { Medal, podiumRow } from '../components/Rank';
+import { cutoffText, Medal, missingText, podiumRow, Progress } from '../components/Rank';
 
 interface Props {
   store: AppStore;
@@ -38,52 +39,61 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
 }
 
 function LadderTable({
-  rows,
+  ranked,
+  lowData,
   view,
   label,
-  ranked,
   name,
   open,
 }: {
-  rows: LadderRow[];
+  ranked: LadderRow[];
+  lowData: LadderRow[];
   view: LadderView;
   label: string;
-  ranked: boolean;
   name(id: PlayerId): string;
   open(id: PlayerId): void;
 }) {
   const avg = view === 'avg';
   const mobile = useMobile();
+  const rows = [...ranked, ...lowData];
+  const cut = ranked.length;
   if (mobile)
     return (
-      <ol aria-label={label} className={ranked ? 'ladder-list' : 'ladder-list low-data'}>
+      <ol aria-label={label} className="ladder-list">
         {rows.map((r, i) => {
           const d = avg ? r.diffPerLeg : r.diff;
+          const isRanked = i < cut;
           return (
-            <li key={r.playerId} className={podiumRow(i + 1, ranked)}>
-              <span className="ll-rank">
-                <Medal place={i + 1} ranked={ranked} />
-              </span>
-              <span className="ll-who">
-                <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                  {name(r.playerId)}
-                </button>
-                <small>
-                  {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
-                </small>
-              </span>
-              <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
-                {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
-                <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
-              </span>
-            </li>
+            <Fragment key={r.playerId}>
+              {i === cut && (
+                <li role="presentation" className="cutoff">
+                  {cutoffText(MIN_TRAININGS)}
+                </li>
+              )}
+              <li className={isRanked ? podiumRow(i + 1) : 'low-data'}>
+                <span className="ll-rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
+                <span className="ll-who">
+                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    {name(r.playerId)}
+                  </button>
+                  <small>
+                    {!isRanked && <>{missingText(r.trainings, MIN_TRAININGS)} · </>}
+                    {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
+                  </small>
+                </span>
+                <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
+                  {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
+                  <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
+                </span>
+              </li>
+            </Fragment>
           );
         })}
       </ol>
     );
   return (
     <div className="wrap">
-      <table aria-label={label} className={ranked ? undefined : 'low-data'}>
+      <table aria-label={label}>
         <thead>
           <tr>
             <th className="n rank">#</th>
@@ -101,25 +111,28 @@ function LadderTable({
         <tbody>
           {rows.map((r, i) => {
             const d = avg ? r.diffPerLeg : r.diff;
+            const isRanked = i < cut;
             return (
-              <tr key={r.playerId} className={podiumRow(i + 1, ranked)}>
-                <td className="n rank">
-                  <Medal place={i + 1} ranked={ranked} />
-                </td>
-                <td>
-                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                    {name(r.playerId)}
-                  </button>
-                </td>
-                <td className="n">{r.trainings}</td>
-                <td className="n">{r.legs}</td>
-                <td className={d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n'}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
-                <td className="n">{avg ? pct(r.winRate) : r.wins}</td>
-                <td className="n">{avg ? dec1(r.gfPerLeg) : r.gf}</td>
-                <td className="n">{avg ? dec1(r.gcPerLeg) : r.gc}</td>
-                <td className="n">{dash(r.lossPerLeg, (v) => dec1(v))}</td>
-                <td className="n">{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
-              </tr>
+              <Fragment key={r.playerId}>
+                {i === cut && <Cutoff cols={10} />}
+                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  <td>
+                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                      {name(r.playerId)}
+                    </button>
+                    {!isRanked && <small className="missing">{missingText(r.trainings, MIN_TRAININGS)}</small>}
+                  </td>
+                  <td className="n">{r.trainings}</td>
+                  <td className="n">{r.legs}</td>
+                  <td className={d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n'}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
+                  <td className="n">{avg ? pct(r.winRate) : r.wins}</td>
+                  <td className="n">{avg ? dec1(r.gfPerLeg) : r.gf}</td>
+                  <td className="n">{avg ? dec1(r.gcPerLeg) : r.gc}</td>
+                  <td className="n">{dash(r.lossPerLeg, (v) => dec1(v))}</td>
+                  <td className="n">{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
+                </tr>
+              </Fragment>
             );
           })}
         </tbody>
@@ -128,26 +141,37 @@ function LadderTable({
   );
 }
 
+/** Čára mezi řazenými a neřazenými hráči (méně než MIN_TRAININGS tréninků). */
+function Cutoff({ cols }: { cols: number }) {
+  return (
+    <tr className="cutoff">
+      <td colSpan={cols}>{cutoffText(MIN_TRAININGS)}</td>
+    </tr>
+  );
+}
+
 function SoloTable({
-  rows,
+  ranked,
+  lowData,
   view,
   label,
   max,
-  ranked,
   name,
   open,
 }: {
-  rows: SoloLadderRow[];
+  ranked: SoloLadderRow[];
+  lowData: SoloLadderRow[];
   view: LadderView;
   label: string;
   max: number;
-  ranked: boolean;
   name(id: PlayerId): string;
   open(id: PlayerId): void;
 }) {
+  const rows = [...ranked, ...lowData];
+  const cut = ranked.length;
   return (
     <div className="wrap">
-      <table aria-label={label} className={ranked ? 'solo-table' : 'solo-table low-data'}>
+      <table aria-label={label} className="solo-table">
         <thead>
           <tr>
             <th className="n rank">#</th>
@@ -157,20 +181,25 @@ function SoloTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.playerId} className={podiumRow(i + 1, ranked)}>
-              <td className="n rank">
-                <Medal place={i + 1} ranked={ranked} />
-              </td>
-              <td>
-                <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                  {name(r.playerId)}
-                </button>
-              </td>
-              <td className="n">{r.trainings}</td>
-              <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
-            </tr>
-          ))}
+          {rows.map((r, i) => {
+            const isRanked = i < cut;
+            return (
+              <Fragment key={r.playerId}>
+                {i === cut && <Cutoff cols={4} />}
+                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  <td>
+                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                      {name(r.playerId)}
+                    </button>
+                    {!isRanked && <small className="missing">{missingText(r.trainings, MIN_TRAININGS)}</small>}
+                  </td>
+                  <td className="n">{r.trainings}</td>
+                  <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+                </tr>
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -209,10 +238,7 @@ function SoloLadder({ store, prefs, today, name, open }: { store: AppStore; pref
             <p className="note">
               {def.what}, {def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}
             </p>
-            {t.ranked.length > 0 && <SoloTable rows={t.ranked} view={prefs.ladderView} label={def.name} max={def.max} ranked name={name} open={open} />}
-            {t.lowData.length > 0 && (
-              <SoloTable rows={t.lowData} view={prefs.ladderView} label={`${def.name} – málo dat`} max={def.max} ranked={false} name={name} open={open} />
-            )}
+            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} />
           </section>
         );
       })}
@@ -285,21 +311,12 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
       ) : (
         <>
-          {ranked.length > 0 ? (
-            <LadderTable rows={ranked} view={view} label="Žebříček" ranked name={name} open={open} />
-          ) : (
-            <p className="note">Nikdo zatím nemá v tomhle období aspoň {MIN_TRAININGS} tréninky.</p>
-          )}
-          {lowData.length > 0 && (
-            <>
-              <h3>Málo dat (méně než {MIN_TRAININGS} tréninky)</h3>
-              <LadderTable rows={lowData} view={view} label="Málo dat" ranked={false} name={name} open={open} />
-            </>
-          )}
+          <LadderTable ranked={ranked} lowData={lowData} view={view} label="Žebříček" name={name} open={open} />
           <p className="note">
             {view === 'avg'
-              ? 'Průměr: pořadí dělá rozdíl skóre na leg, pak procento výher, góly na leg a úspěšnost v simulaci. Hráči s méně než ' + MIN_TRAININGS + ' tréninky v období se neřadí.'
+              ? 'Průměr: pořadí dělá rozdíl skóre na leg, pak procento výher, góly na leg a úspěšnost v simulaci.'
               : 'Celkem: pořadí dělá součet rozdílu skóre, pak výhry, góly a výhry v simulaci.'}{' '}
+            Umístění má jen hráč s aspoň {MIN_TRAININGS} tréninky v období, ostatní jsou pod čárou.{' '}
             Počítají se jen zapsané legy ze scénářové ligy a jedniček; simulace kola zvlášť.
           </p>
         </>

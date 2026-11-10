@@ -37,7 +37,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('stránka Žebříček', () => {
-  it('Forma + Průměr: X s +0,4 a 50 %, Y v „Málo dat“; Celkem: Y nad X', async () => {
+  it('Forma + Průměr: X s +0,4 a 50 %, Y pod čárou (chybí 2 tréninky) v Průměru i Celkem', async () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
     const table = await screen.findByRole('table', { name: 'Žebříček' });
@@ -45,17 +45,19 @@ describe('stránka Žebříček', () => {
     const xRow = within(table).getAllByRole('row')[rowOf(table, 'Xaver')];
     expect(xRow).toHaveTextContent('+0,4');
     expect(xRow).toHaveTextContent('50 %');
-    expect(rowOf(table, 'Yvona')).toBe(-1);
-    const low = screen.getByRole('table', { name: 'Málo dat' });
-    expect(rowOf(low, 'Yvona')).toBeGreaterThan(0);
-    // první tři mají medaili, neřazení („Málo dat“) ne
-    expect(within(within(table).getAllByRole('row')[1]).getByTitle('1. místo')).toBeInTheDocument();
-    expect(within(low).queryByTitle(/místo/)).not.toBeInTheDocument();
+    // jedna tabulka: X nad čarou s medailí, Y pod čárou s tečkami postupu a „chybí 2 tréninky“
+    const cut = rowOf(table, 'pořadí od 3 tréninků');
+    expect(rowOf(table, 'Xaver')).toBeLessThan(cut);
+    expect(rowOf(table, 'Yvona')).toBeGreaterThan(cut);
+    const yRow = within(table).getAllByRole('row')[rowOf(table, 'Yvona')];
+    expect(yRow).toHaveTextContent('chybí 2 tréninky');
+    expect(within(yRow).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
+    expect(within(yRow).queryByTitle(/místo/)).not.toBeInTheDocument();
+    expect(within(xRow).getByTitle('1. místo')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
     const total = screen.getByRole('table', { name: 'Žebříček' });
-    expect(rowOf(total, 'Yvona')).toBeLessThan(rowOf(total, 'Xaver'));
-    expect(screen.queryByRole('table', { name: 'Málo dat' })).not.toBeInTheDocument();
+    expect(rowOf(total, 'Yvona')).toBeGreaterThan(rowOf(total, 'pořadí od 3 tréninků'));
   });
 
   it('volby se pamatují po novém otevření', async () => {
@@ -78,8 +80,10 @@ describe('stránka Žebříček', () => {
     await screen.findByRole('table', { name: 'Žebříček' });
     await user.click(screen.getByRole('button', { name: 'Od–do' }));
     fireEvent.change(screen.getByLabelText('Od'), { target: { value: '2026-10-21' } });
-    // t1 (20. 10.) vypadne → X má jen 2 tréninky → v Průměru „málo dat“
-    expect(rowOf(screen.getByRole('table', { name: 'Málo dat' }), 'Xaver')).toBeGreaterThan(0);
+    // t1 (20. 10.) vypadne → X má jen 2 tréninky → pod čárou, chybí 1 trénink
+    const table = screen.getByRole('table', { name: 'Žebříček' });
+    expect(rowOf(table, 'Xaver')).toBeGreaterThan(rowOf(table, 'pořadí od 3 tréninků'));
+    expect(within(table).getAllByRole('row')[rowOf(table, 'Xaver')]).toHaveTextContent('chybí 1 trénink');
   });
 
   it('detail hráče: tréninky nejnovější první, odkaz na trénink', async () => {
@@ -118,14 +122,15 @@ describe('žebříček stanovišť', () => {
     const { unmount } = render(<App repo={r} />);
     await screen.findByRole('button', { name: 'Stanoviště' });
     await user.click(screen.getByRole('button', { name: 'Stanoviště' }));
-    // 2 tréninky: v Průměru ještě „málo dat“ (pořadí od 3 tréninků), hodnota a pořadí se ukazují
-    expect(screen.queryByRole('table', { name: 'Udržení míče na pětce' })).not.toBeInTheDocument();
-    const table = screen.getByRole('table', { name: 'Udržení míče na pětce – málo dat' });
+    // 2 tréninky: oba pod čárou (pořadí od 3 tréninků), hodnota a pořadí se ukazují
+    const table = screen.getByRole('table', { name: 'Udržení míče na pětce' });
     const rows = within(table).getAllByRole('row').slice(1);
-    expect(rows[0]).toHaveTextContent('Hráč H1');
-    expect(rows[0]).toHaveTextContent('3,0 / 10');
+    expect(rows[0]).toHaveTextContent('pořadí od 3 tréninků');
+    expect(rows[1]).toHaveTextContent('Hráč H1');
+    expect(rows[1]).toHaveTextContent('3,0 / 10');
+    expect(rows[1]).toHaveTextContent('chybí 1 trénink');
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
-    expect(within(screen.getByRole('table', { name: 'Udržení míče na pětce' })).getAllByRole('row')[1]).toHaveTextContent('6 / 20');
+    expect(within(screen.getByRole('table', { name: 'Udržení míče na pětce' })).getAllByRole('row')[2]).toHaveTextContent('6 / 20');
     unmount();
     render(<App repo={r} />);
     expect(await screen.findByRole('table', { name: 'Udržení míče na pětce' })).toBeInTheDocument();

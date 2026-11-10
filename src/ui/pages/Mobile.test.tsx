@@ -34,11 +34,13 @@ describe('telefon – žebříček', () => {
     const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
     window.location.hash = '#/zebricek';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
-    const list = (await screen.findAllByRole('list', { name: /^(Žebříček|Málo dat)$/ }))[0];
-    expect(screen.queryByRole('table', { name: /^(Žebříček|Málo dat)$/ })).toBeNull();
+    const list = await screen.findByRole('list', { name: 'Žebříček' });
+    expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
+    expect(list).toHaveTextContent('pořadí od 3 tréninků'); // 1 trénink → všichni pod čárou
     const items = within(list).getAllByRole('listitem');
     expect(items.length).toBeGreaterThan(0);
     expect(items[0]).toHaveTextContent(/1 leg/);
+    expect(items[0]).toHaveTextContent('chybí 2 tréninky');
   });
 });
 
