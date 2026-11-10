@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
@@ -57,6 +57,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             <p className="g-hint">Vyzkoušej si to: ťukej do polí. Konec legu appka pozná sama, ty ho jen potvrdíš.</p>
           </div>
         </section>
+
+        <Toc />
 
         <div className="g-steps">
           <h2 className="g-group">Než začneš</h2>
@@ -284,6 +286,18 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             <dd>↶ Zpět vrátí tvoje poslední ťuknutí. Když už je leg dohraný, dej Opravit a zápis se znovu odemkne.</dd>
             <dt>Zapisujeme dva najednou, nepřepíšeme se?</dt>
             <dd>Ne. Každé ťuknutí se přičte, telefony se mezi sebou hned srovnají. Zapisovat smí kdokoli z hráčů u stolu i rozhodčí.</dd>
+            <dt>Nahoře svítí „Bez spojení“.</dt>
+            <dd>
+              Vidíš poslední uložený stav. Ťukej dál: telefon si zápisy pamatuje a odešle je, až se spojení vrátí, i když appku mezitím zavřeš. Zápisy
+              starší než den se už neodešlou a appka na to upozorní.
+            </dd>
+            <dt>Píše to „Neuloženo – zkouším znovu“.</dt>
+            <dd>Zápis se zatím nepodařilo odeslat a appka to zkouší sama. Nic neopakuj, hraj dál.</dd>
+            <dt>Objevilo se „Je k dispozici nová verze appky“.</dt>
+            <dd>
+              Ťukni <b>Obnovit</b>. Když appka napíše, že bez obnovení nejde pokračovat, obnov ji hned. Neodeslané změny zůstanou v telefonu a odešlou se
+              po obnovení.
+            </dd>
           </dl>
         </section>
 
@@ -293,6 +307,94 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
         </footer>
       </div>
     </main>
+  );
+}
+
+/** Rozcestník pod úvodem: skupiny a kroky jako v návodu. */
+const TOC: [string, [number, string][]][] = [
+  ['Než začneš', [[1, 'Přihlášení'], [2, 'Moje hry']]],
+  ['U stolu', [[3, 'Hra'], [4, 'Rozcvička'], [5, 'Cvičení'], [6, 'Zápasy']]],
+  ['Přehled a výsledky', [[7, 'Živě'], [8, 'Trénink'], [9, 'Průběh'], [10, 'Žebříček'], [11, 'Zdržovači']]],
+];
+
+/** Posun na krok bez změny adresy (adresy appky jsou v #, kotva by otevřela „Stránka nenalezena“). */
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  const target = el?.closest('section') ?? el;
+  const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target?.scrollIntoView?.({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+}
+
+const TOC_IDS = [...TOC.flatMap(([, steps]) => steps.map(([n]) => `g-s${n}`)), 'g-faq'];
+
+/** Který krok právě čteš: poslední, jehož začátek je nad čárou pod rozcestníkem; na konci stránky poslední. */
+function currentStep(nav: HTMLElement | null): string | null {
+  const line = Math.max((nav?.getBoundingClientRect().bottom ?? 0) + 24, window.innerHeight * 0.3);
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2 && window.scrollY > 0) return TOC_IDS[TOC_IDS.length - 1];
+  let cur: string | null = null;
+  for (const id of TOC_IDS) {
+    const sec = document.getElementById(id)?.closest('section');
+    if (sec && sec.getBoundingClientRect().top <= line) cur = id;
+  }
+  return cur;
+}
+
+/** Rozcestník: na notebooku přichycený nahoře jako jeden řádek, aktuální krok zvýrazněný. */
+function Toc() {
+  const nav = useRef<HTMLElement>(null);
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      setActive(currentStep(nav.current));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+  // Úzký notebook: když se řádek nevejde, posunout ho k aktuálnímu kroku.
+  useEffect(() => {
+    const el = nav.current;
+    const btn = el?.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!el || !btn || el.scrollWidth <= el.clientWidth) return;
+    const left = btn.getBoundingClientRect().left - el.getBoundingClientRect().left;
+    if (left < 0 || left + btn.offsetWidth > el.clientWidth) el.scrollLeft += left - 16;
+  }, [active]);
+  const item = (id: string, content: React.ReactNode) => (
+    <button key={id} type="button" aria-current={active === id ? 'step' : undefined} onClick={() => scrollToId(id)}>
+      {content}
+    </button>
+  );
+  const groups: [string, [string, React.ReactNode][]][] = [
+    ...TOC.map(([group, steps]): [string, [string, React.ReactNode][]] => [
+      group,
+      steps.map(([n, label]): [string, React.ReactNode] => [
+        `g-s${n}`,
+        <>
+          <b>{n}</b> {label}
+        </>,
+      ]),
+    ]),
+    ['Potíže', [['g-faq', 'Když něco nejde']]],
+  ];
+  return (
+    <nav ref={nav} className="g-toc" aria-label="Obsah návodu">
+      {groups.map(([group, items]) => (
+        <div key={group} className={items.some(([id]) => id === active) ? 'g-toc-group g-toc-on' : 'g-toc-group'}>
+          <span className="g-toc-label">{group}</span>
+          <div className="g-toc-items">{items.map(([id, content]) => item(id, content))}</div>
+        </div>
+      ))}
+    </nav>
   );
 }
 

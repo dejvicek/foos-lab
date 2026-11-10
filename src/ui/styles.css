@@ -1506,6 +1506,33 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-hint { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; }
 
 /* ── kroky ── */
+/* Rozcestník pod úvodem: skupina = popisek + řádek tlačítek */
+.guide .g-toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px 28px; padding: 18px 20px; margin-bottom: 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.guide .g-toc-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.guide .g-toc-label { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.guide .g-toc-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.guide .g-toc-items button { min-height: 32px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink); font-size: 13px; font-weight: 600; }
+.guide .g-toc-items button b { color: var(--felt); margin-right: 2px; }
+.guide .g-toc-items button:hover { border-color: var(--felt); }
+.guide .g-toc-items button:focus-visible { outline: 2px solid var(--felt); outline-offset: 2px; }
+.guide .g-toc-items button[aria-current='step'] { background: var(--action); border-color: var(--action-edge); color: var(--action-ink); }
+.guide .g-toc-items button[aria-current='step'] b { color: inherit; }
+.guide .g-toc-on .g-toc-label { color: var(--felt); }
+.guide .g-step, .guide .g-faq { scroll-margin-top: 16px; }
+/* Notebook: rozcestník jako jeden řádek přichycený nahoře; když se nevejde, posouvá se do strany uvnitř */
+@media (min-width: 861px) {
+  .guide .g-toc {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    display: flex; flex-wrap: nowrap; gap: 0; padding: 8px 6px; overflow-x: auto; scrollbar-width: thin;
+    box-shadow: 0 10px 24px -18px rgba(0, 0, 0, .35);
+  }
+  .guide .g-toc-group { flex: none; gap: 4px; padding: 0 10px; border-left: 1px solid var(--line); }
+  .guide .g-toc-group:first-child { border-left: 0; }
+  .guide .g-toc-label { font-size: 10px; }
+  .guide .g-toc-items { flex-wrap: nowrap; gap: 4px; }
+  .guide .g-toc-items button { min-height: 30px; padding: 3px 10px; font-size: 12.5px; white-space: nowrap; }
+  .guide .g-step, .guide .g-faq { scroll-margin-top: 92px; }
+}
 .guide .g-steps { display: flex; flex-direction: column; gap: 88px; padding-block: 24px; }
 /* Skupiny kroků (Než začneš / U stolu / Přehled a výsledky) */
 .guide .g-group { font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 14px; margin-bottom: -48px; }

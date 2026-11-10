@@ -50,6 +50,12 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     await user.click(within(progress).getByRole('button', { name: 'Křivka' }));
     expect(within(progress).getByRole('img', { name: 'Křivka vedení, konečný stav 6:4' })).toBeInTheDocument();
     await user.click(within(progress).getByRole('button', { name: 'Sloupec' }));
+    // rozcestník: všechny kroky návodu, posun bez změny adresy
+    const toc = within(guide).getByRole('navigation', { name: 'Obsah návodu' });
+    const steps = within(guide).getAllByRole('heading', { level: 3 });
+    expect(within(toc).getAllByRole('button').filter((b) => /^\d/.test(b.textContent ?? ''))).toHaveLength(steps.length);
+    await user.click(within(toc).getByRole('button', { name: '6 Zápasy' }));
+    expect(window.location.hash).toBe('#/guide');
     // žebříček: medaile v Zápasech, Zdržovači se šnekem a „Brzda“
     const ladder = within(guide).getByLabelText('Ukázka: žebříček');
     expect(within(ladder).getByTitle('1. místo')).toBeInTheDocument();
