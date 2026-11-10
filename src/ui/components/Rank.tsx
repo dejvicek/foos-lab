@@ -67,12 +67,3 @@ export function Progress({ have, need }: { have: number; need: number }) {
     </span>
   );
 }
-
-/** „chybí 1 trénink“ */
-export const missingText = (have: number, need: number) => {
-  const n = need - have;
-  return `chybí ${n} ${n === 1 ? 'trénink' : n <= 4 ? 'tréninky' : 'tréninků'}`;
-};
-
-/** Text čáry mezi řazenými a neřazenými. */
-export const cutoffText = (need: number) => `pořadí od ${need} tréninků`;

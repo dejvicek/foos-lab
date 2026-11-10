@@ -36,11 +36,11 @@ describe('telefon – žebříček', () => {
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
     const list = await screen.findByRole('list', { name: 'Žebříček' });
     expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
-    expect(list).toHaveTextContent('pořadí od 3 tréninků'); // 1 trénink → všichni pod čárou
+    expect(screen.getByText(/Pro umístění je potřeba zúčastnit se aspoň 3 tréninků/)).toBeInTheDocument();
     const items = within(list).getAllByRole('listitem');
     expect(items.length).toBeGreaterThan(0);
     expect(items[0]).toHaveTextContent(/1 leg/);
-    expect(items[0]).toHaveTextContent('chybí 2 tréninky');
+    expect(within(items[0]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
   });
 });
 

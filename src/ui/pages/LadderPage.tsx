@@ -15,7 +15,7 @@ import { canBuildSchedule } from '../../domain/schedule';
 import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
-import { cutoffText, Medal, missingText, podiumRow, Progress } from '../components/Rank';
+import { Medal, podiumRow, Progress } from '../components/Rank';
 
 interface Props {
   store: AppStore;
@@ -66,9 +66,7 @@ function LadderTable({
           return (
             <Fragment key={r.playerId}>
               {i === cut && (
-                <li role="presentation" className="cutoff">
-                  {cutoffText(MIN_TRAININGS)}
-                </li>
+                <li role="presentation" aria-hidden="true" className="cutoff" />
               )}
               <li className={isRanked ? podiumRow(i + 1) : 'low-data'}>
                 <span className="ll-rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
@@ -77,7 +75,6 @@ function LadderTable({
                     {name(r.playerId)}
                   </button>
                   <small>
-                    {!isRanked && <>{missingText(r.trainings, MIN_TRAININGS)} · </>}
                     {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
                   </small>
                 </span>
@@ -121,7 +118,6 @@ function LadderTable({
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                       {name(r.playerId)}
                     </button>
-                    {!isRanked && <small className="missing">{missingText(r.trainings, MIN_TRAININGS)}</small>}
                   </td>
                   <td className="n">{r.trainings}</td>
                   <td className="n">{r.legs}</td>
@@ -141,11 +137,11 @@ function LadderTable({
   );
 }
 
-/** Čára mezi řazenými a neřazenými hráči (méně než MIN_TRAININGS tréninků). */
+/** Čára mezi řazenými a neřazenými hráči (méně než MIN_TRAININGS tréninků); vysvětlení je jednou pod obdobím. */
 function Cutoff({ cols }: { cols: number }) {
   return (
-    <tr className="cutoff">
-      <td colSpan={cols}>{cutoffText(MIN_TRAININGS)}</td>
+    <tr className="cutoff" aria-hidden="true">
+      <td colSpan={cols} />
     </tr>
   );
 }
@@ -192,7 +188,6 @@ function SoloTable({
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                       {name(r.playerId)}
                     </button>
-                    {!isRanked && <small className="missing">{missingText(r.trainings, MIN_TRAININGS)}</small>}
                   </td>
                   <td className="n">{r.trainings}</td>
                   <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
@@ -300,6 +295,14 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         </div>
       )}
       <p className="dateline">{rangeText(range, today)}</p>
+      {prefs.ladderPart !== 'delays' && (
+        <p className="ladder-rule">
+          <span aria-hidden="true">
+            <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
+          </span>
+          Pro umístění je potřeba zúčastnit se aspoň {MIN_TRAININGS} tréninků v období. Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
+        </p>
+      )}
 
       {prefs.ladderPart === 'delays' ? (
         <DelayLadder store={store} prefs={prefs} today={today} open={open} />
@@ -316,7 +319,6 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             {view === 'avg'
               ? 'Průměr: pořadí dělá rozdíl skóre na leg, pak procento výher, góly na leg a úspěšnost v simulaci.'
               : 'Celkem: pořadí dělá součet rozdílu skóre, pak výhry, góly a výhry v simulaci.'}{' '}
-            Umístění má jen hráč s aspoň {MIN_TRAININGS} tréninky v období, ostatní jsou pod čárou.{' '}
             Počítají se jen zapsané legy ze scénářové ligy a jedniček; simulace kola zvlášť.
           </p>
         </>

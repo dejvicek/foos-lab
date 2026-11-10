@@ -655,22 +655,16 @@ td.rank { width: 1%; white-space: nowrap; }
 .ladder-list li.top-1:first-child { border-radius: 9px 9px 0 0; }
 .wrap tr.top-1 .player-link { font-weight: 800; }
 
-/* Hranice pořadí (3 tréninky): čára v tabulce, pod ní šedě s tečkami postupu a „chybí N“. */
-.wrap tr.cutoff td {
-  padding: 8px 10px 4px; border-top: 2px dashed var(--control); border-bottom: 0;
-  color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-}
-.ladder-list li.cutoff {
-  display: block; padding: 8px 12px 4px; border-top: 2px dashed var(--control); border-bottom: 0;
-  color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-}
-.ladder-list li.cutoff:first-child { border-top: 0; }
-.wrap tr.cutoff:first-child td { border-top: 0; }
+/* Hranice pořadí (3 tréninky): čárkovaná čára v tabulce, pod ní šedě s tečkami postupu; vysvětlení jednou pod obdobím. */
+.wrap tr.cutoff td { padding: 0; height: 0; border-top: 2px dashed var(--control); border-bottom: 0; }
+.ladder-list li.cutoff { display: block; padding: 0; border-top: 2px dashed var(--control); border-bottom: 0; }
+.ladder-list li.cutoff:first-child, .wrap tr.cutoff:first-child td { border-top: 0; }
 .wrap tr.low-data .player-link, .ladder-list li.low-data .player-link, .ladder-list li.low-data .ll-main { color: var(--muted); }
 .progress { display: inline-flex; gap: 3px; vertical-align: middle; }
 .progress i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--control); }
 .progress i.on { background: var(--muted); border-color: var(--muted); }
-.missing { margin-left: 8px; color: var(--muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
+.ladder-rule { display: flex; align-items: center; gap: 8px; margin: -4px 0 8px; color: var(--muted); font-size: 13px; }
+.ladder-rule > span { flex: none; }
 
 /* Zdržovači: nelichotivě – červený kroužek, světle červený řádek, šnek; první navíc linka a „Brzda“. */
 .shame-rank { color: var(--warn-ink); background: var(--warn); }
