@@ -474,6 +474,12 @@ tr.clickable:hover td { background: var(--felt-soft); }
 .auth-form button[type='submit'] { margin-top: 12px; }
 .main-nav .nav-user { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .main-nav .nav-name { color: var(--muted); font-weight: 600; margin-right: 4px; }
+/* Přepínač světlého / tmavého režimu (ikona měsíce / slunce) */
+button.theme-switch { display: inline-grid; place-items: center; width: 36px; min-width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
+button.theme-switch:hover { border-color: var(--felt); color: var(--felt); }
+button.theme-switch svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.auth-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.auth-head .brand { font-weight: 800; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; text-decoration: none; letter-spacing: -0.01em; }
 button.link { background: none; border: 0; color: var(--muted); padding: 4px 6px; min-height: 0; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; height: auto; }
 button.link:hover { color: var(--ink); }
 .notice { background: var(--felt-soft); border: 1px solid var(--felt); border-radius: 6px; padding: 8px 12px; max-width: 720px; }

@@ -1,3 +1,4 @@
+import { AuthHeader } from '../components/MainNav';
 import { useState, type KeyboardEvent } from 'react';
 import { AuthError, MIN_PASSWORD, type AuthService, type Me } from '../../storage/auth';
 
@@ -17,6 +18,7 @@ export function LoginPage({ auth, onDone }: { auth: AuthService; onDone(me: Me, 
   const [busy, setBusy] = useState(false);
   return (
     <main className="page auth-page">
+      <AuthHeader />
       <h1>Přihlášení</h1>
       <p className="lead">Poprvé je heslo tvoje přezdívka, přesně jak je na soupisce. Pak si nastavíš vlastní.</p>
       <form
@@ -69,6 +71,7 @@ export function ChangePasswordPage({
   const [busy, setBusy] = useState(false);
   return (
     <main className="page auth-page">
+      <AuthHeader />
       <h1>Nastav si heslo</h1>
       {forced && <p className="lead">Dokud máš heslo stejné jako přezdívku, může se za tebe přihlásit kdokoli. Zvol si vlastní.</p>}
       <form

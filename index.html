@@ -17,6 +17,13 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet" /></noscript>
   </head>
   <body>
+    <!-- Zvolený barevný režim hned při načtení (bez probliknutí); klíč viz THEME_KEY v src/storage/prefs.ts. -->
+    <script>
+      try {
+        var t = localStorage.getItem('foosball-practice.theme.v1');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

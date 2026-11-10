@@ -1,3 +1,4 @@
+import { ThemeSwitch } from './ThemeSwitch';
 import type { ReactNode } from 'react';
 import { toHash, type Route } from '../useHashRoute';
 
@@ -122,6 +123,7 @@ export function MainNav({
       {onSignOut && (
         <span className="nav-user">
           {myName && <span className="nav-name">{myName}</span>}
+          <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
             Návod
           </button>
@@ -134,6 +136,19 @@ export function MainNav({
         </span>
       )}
     </nav>
+  );
+}
+
+/** Hlavička přihlášení a změny hesla: logo a přepínač režimu. */
+export function AuthHeader() {
+  return (
+    <header className="auth-head">
+      <span className="brand">
+        <BrandMark />
+        Foos Lab
+      </span>
+      <ThemeSwitch />
+    </header>
   );
 }
 

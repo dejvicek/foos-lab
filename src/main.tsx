@@ -9,6 +9,10 @@ import { localOutbox, type Outbox } from './storage/outbox';
 import { fetchLatestVersion } from './storage/appVersion';
 import { idbSnapshot, type SnapshotStore } from './storage/snapshot';
 import './ui/styles.css';
+import { applyTheme } from './ui/theme';
+import { loadTheme } from './storage/prefs';
+
+applyTheme(loadTheme());
 
 function createBackend(): { repo: Repository; auth: AuthService; outboxFor?: (playerId: string) => Outbox; snapshotFor?: (playerId: string) => SnapshotStore } | null {
   const env = import.meta.env;

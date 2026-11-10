@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
+import { ThemeSwitch } from '../components/ThemeSwitch';
 import { MatchTimeline, TimelineBox } from '../components/GameTimeline';
 import type { GameEvent, Match } from '../../domain/types';
 import { toHash } from '../useHashRoute';
@@ -22,6 +23,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </a>
           <span className="g-top-right">
             <span className="g-tag">Návod pro hráče · telefon u stolu</span>
+            <ThemeSwitch />
             <button type="button" className="g-back" onClick={onBack}>
               {signedIn ? 'Zpět do appky' : 'Přihlásit se'}
             </button>

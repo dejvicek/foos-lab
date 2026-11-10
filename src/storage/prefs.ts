@@ -70,3 +70,24 @@ export function subscribeTimelineView(listener: () => void): () => void {
     timelineListeners.delete(listener);
   };
 }
+
+/** Barevný režim zvolený v zařízení; null = podle systému. Klíč čte i skript v index.html (bez probliknutí). */
+export type Theme = 'light' | 'dark';
+export const THEME_KEY = 'foosball-practice.theme.v1';
+
+export function loadTheme(): Theme | null {
+  try {
+    const t = localStorage.getItem(THEME_KEY);
+    return t === 'light' || t === 'dark' ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTheme(t: Theme): void {
+  try {
+    localStorage.setItem(THEME_KEY, t);
+  } catch {
+    /* bez uložení platí volba do zavření appky */
+  }
+}
