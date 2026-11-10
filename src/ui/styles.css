@@ -473,11 +473,16 @@ button.my-go-next { width: 100%; min-height: 52px; margin-top: 10px; border-radi
 .my-next { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 767px) {
+  :root { --top-h: 45px; }
   .main-nav .nav-user {
-    position: fixed; top: 0; right: 0; left: 0; justify-content: flex-end;
-    background: var(--surface); border-bottom: 1px solid var(--line); padding: 4px 12px; z-index: 11;
+    position: fixed; top: 0; right: 0; left: 0; justify-content: flex-end; height: var(--top-h);
+    background: var(--surface); border-bottom: 1px solid var(--line); padding: 0 6px; z-index: 11;
   }
-  .page { padding-top: 48px; }
+  /* Odkazy v horní liště jsou vedle sebe (Heslo × Odhlásit) – na prst potřebují 44 px. */
+  .main-nav .nav-user button.link { min-height: 44px; padding: 0 10px; }
+  /* Obsah začíná pod horní lištou. Bez toho by lišty „Neuloženo“ a „Nová verze“ zůstaly schované za ní. */
+  body:has(.main-nav .nav-user) { padding-top: var(--top-h); }
+  body:has(.main-nav .nav-user) .save-banner { top: var(--top-h); }
   .auth-page { padding-top: 32px; }
 }
 
@@ -1509,4 +1514,13 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
    Platí pro všechna pole včetně kompaktních (výběr délky pauzy, nápovědy v katalogu). Musí zůstat na konci souboru. */
 @media (max-width: 767px) {
   :root input, :root select, :root textarea { font-size: 16px; }
+}
+
+/* ── Telefon: tlačítka na prst ──────────────────────────────
+   Běžná tlačítka 44 px (kompaktní prvky s vlastní výškou – čipy, krokovače, ikony v řádku – si ji nechávají).
+   touch-action: rychlé ťukání (Zahájit, + / −) stránku nepřiblíží dvojitým ťuknutím. */
+button, a, summary, label, input, select { touch-action: manipulation; }
+@media (max-width: 767px) {
+  button { min-height: 44px; }
+  button.back { min-height: 44px; }
 }

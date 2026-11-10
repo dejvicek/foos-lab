@@ -21,6 +21,13 @@ export default defineConfig({
   base: './',
   plugins: [react(), versionFile()],
   define: { __APP_BUILD__: JSON.stringify(BUILD) },
+  build: {
+    rollupOptions: {
+      // Service worker je druhý vstup: jeden soubor sw.js vedle index.html (bez otisku v názvu – adresa se nesmí měnit).
+      input: { main: 'index.html', sw: 'src/sw/sw.ts' },
+      output: { entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'assets/[name]-[hash].js') },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

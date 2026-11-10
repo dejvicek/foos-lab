@@ -10,6 +10,7 @@ import type { Outbox } from '../storage/outbox';
 import type { SnapshotStore } from '../storage/snapshot';
 import type { AppVersion } from '../storage/appVersion';
 import { useAppVersion } from './useAppVersion';
+import { reloadApp } from './reload';
 import { MainNav } from './components/MainNav';
 import { LadderPage } from './pages/LadderPage';
 import { DisciplinesPage } from './pages/DisciplinesPage';
@@ -167,7 +168,7 @@ function SignedIn({
     </div>
   );
 
-  const reload = () => window.location.reload();
+  const reload = () => void reloadApp();
   let body: React.ReactNode;
   if (version === 'required')
     // Starší verze by počítala jiný rozpis nebo nerozuměla databázi – dál se s ní nepracuje.

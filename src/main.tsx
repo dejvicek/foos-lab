@@ -19,6 +19,11 @@ function createBackend(): { repo: Repository; auth: AuthService; outboxFor?: (pl
   return { repo: supabaseRepository(client), auth: supabaseAuth(client), outboxFor: localOutbox, snapshotFor: idbSnapshot };
 }
 
+// Service worker: appka se po první návštěvě spustí hned i na pomalém spojení nebo bez něj (jen v ostrém sestavení).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js').catch(() => undefined));
+}
+
 const backend = createBackend();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
