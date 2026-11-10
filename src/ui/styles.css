@@ -1524,6 +1524,21 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-rank .g-n small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); }
 .guide .g-rank .g-v { font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: 17px; }
 .guide .g-rank.g-me { background: var(--felt-soft); border-radius: 8px; }
+.guide .g-rank > .g-rk { display: grid; place-items: center; }
+.guide .g-rank .medal, .guide .g-rank .shame-rank { width: 22px; height: 22px; font-size: 11px; }
+.guide .g-rank.g-low .g-n, .guide .g-rank.g-low .g-v { color: var(--muted); }
+.guide .g-cut { border-top: 2px dashed var(--control); margin: 2px 0; }
+.guide .g-rank.g-shame { background: var(--warn-soft); border-radius: 8px; margin-bottom: 2px; }
+.guide .g-rank .g-v.g-bad { color: var(--warn); }
+.guide .g-rank .delay-who { gap: 2px 6px; }
+.guide .g-rank .shame-tag { font-size: 9px; padding: 0 5px; }
+.guide .g-seg-btn { margin-bottom: 6px; }
+.guide .g-seg-btn button { flex: 1; text-align: center; padding: 5px 0; color: var(--muted); background: var(--surface); border: 0; font-size: 11px; font-weight: 700; }
+.guide .g-seg-btn button.g-on { background: var(--action); color: var(--action-ink); }
+.guide .g-step .g-copy > .g-sub { margin-top: 26px; font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: 22px; letter-spacing: -.01em; }
+.guide .g-list li > i .progress { gap: 2px; }
+.guide .g-list li > i .progress i { width: 5px; height: 5px; border-width: 1.2px; }
+.guide .g-list li > i .snail { width: 20px; height: 13px; }
 .guide .g-seg { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; font-size: 11px; font-weight: 700; }
 .guide .g-seg span { flex: 1; text-align: center; padding: 5px 0; color: var(--muted); background: var(--surface); }
 .guide .g-seg span.g-on { background: var(--action); color: var(--action-ink); }

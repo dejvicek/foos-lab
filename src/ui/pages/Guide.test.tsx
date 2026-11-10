@@ -40,6 +40,15 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     const drill = within(guide).getByLabelText('Ukázka: zápis cvičení');
     for (let i = 0; i < 8; i++) await user.click(within(drill).getByRole('button', { name: 'Gól' }));
     expect(within(drill).getByRole('status')).toHaveTextContent('Hotovo 17 z 20');
+    // žebříček: medaile v Zápasech, Zdržovači se šnekem a „Brzda“
+    const ladder = within(guide).getByLabelText('Ukázka: žebříček');
+    expect(within(ladder).getByTitle('1. místo')).toBeInTheDocument();
+    expect(within(ladder).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
+    await user.click(within(ladder).getByRole('button', { name: 'Zdržovači' }));
+    expect(within(ladder).getByRole('button', { name: 'Zdržovači' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(ladder).getByText('Brzda')).toBeInTheDocument();
+    expect(within(ladder).getByTitle('3. nejdelší čekání')).toBeInTheDocument();
+    expect(within(ladder).queryByTitle('4. nejdelší čekání')).toBeNull();
     await user.click(within(guide).getByRole('button', { name: 'Zpět do appky' }));
     expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
   });

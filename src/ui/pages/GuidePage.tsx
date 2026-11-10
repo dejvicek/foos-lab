@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import { MIN_TRAININGS as MIN } from '../../domain/ladder';
+import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
 
 /**
@@ -159,16 +161,34 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={8} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Pořadí se počítá z rozdílu skóre, pak výher, gólů a výher v simulaci. Výchozí je <b>forma</b>: tréninky za posledních 28 dní.
+              Žebříček má tři části: <b>Zápasy</b>, <b>Stanoviště</b> a <b>Zdržovači</b>. Výchozí období je <b>forma</b>: tréninky za posledních 28 dní.
             </p>
             <ul className="g-list">
+              <Li i="1">
+                <b>Zápasy</b> řadí rozdíl skóre, pak výhry, góly a výhry v simulaci. První tři mají zlatou, stříbrnou a bronzovou medaili.
+              </Li>
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta. Pod tři tréninky ukáže „málo dat“.
+                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá legy, rozdíl a výhry.
               </Li>
-              <Li i="Σ">
-                <b>Celkem</b> sčítá legy, rozdíl a výhry.
+              <Li i={<Progress have={2} need={MIN} />}>
+                Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
-              <Li i="⌖">Stanoviště mají svůj žebříček, pro každé cvičení zvlášť.</Li>
+              <Li i="⌖">
+                <b>Stanoviště</b> mají žebříček pro každé cvičení zvlášť.
+              </Li>
+            </ul>
+            <h3 className="g-sub">Zdržovači</h3>
+            <p>
+              Měří, jak dlouho se čeká na zahájení utkání: od chvíle, kdy jsou volní hráči i stůl, do ťuknutí na <b>Zahájit</b>. Čekání se připíše všem
+              hráčům utkání a řadí se od nejdelšího.
+            </p>
+            <ul className="g-list">
+              <Li i={<Snail />} red>
+                První tři dostanou červený kroužek a šneka, ten úplně první ještě štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
+              </Li>
+              <Li i="⏱">
+                Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Zahájit</b> v Moje hry.
+              </Li>
             </ul>
           </Step>
         </div>
@@ -213,7 +233,7 @@ function Step({ n, label, title, phone, children }: { n: number; label: string; 
   );
 }
 
-function Li({ i, red, children }: { i: string; red?: boolean; children: React.ReactNode }) {
+function Li({ i, red, children }: { i: React.ReactNode; red?: boolean; children: React.ReactNode }) {
   return (
     <li>
       <i className={red ? 'g-r' : undefined}>{i}</i>
@@ -595,36 +615,97 @@ function TrainingPhone() {
   );
 }
 
+type LadderPart = 'matches' | 'solo' | 'delays';
+const LADDER_PARTS: [LadderPart, string][] = [
+  ['matches', 'Zápasy'],
+  ['solo', 'Stanoviště'],
+  ['delays', 'Zdržovači'],
+];
+
+/** Ukázka žebříčku: tři části jako v appce – medaile, čára „od 3 tréninků“ s tečkami, Zdržovači se šnekem. */
 function LadderPhone() {
-  const rows: [number, string, string, string, boolean?][] = [
-    [1, 'Lavi', '21 legů · 71 %', '+1,9'],
-    [2, 'Milan', '18 legů · 61 %', '+1,1'],
-    [3, 'Dejv', '12 legů · 50 %', '+0,4', true],
-    [4, 'Osky', '16 legů · 44 %', '−0,3'],
-    [5, 'Denys', '9 legů · 33 %', '−0,8'],
+  const [part, setPart] = useState<LadderPart>('matches');
+  // [jméno, pod jménem, hodnota, tréninky (pod 3 = pod čárou), já]
+  const matches: [string, string, string, number, boolean?][] = [
+    ['Lavi', '21 legů · 71 %', '+1,9', 6],
+    ['Milan', '18 legů · 61 %', '+1,1', 5],
+    ['Dejv', '12 legů · 50 %', '+0,4', 4, true],
+    ['Osky', '16 legů · 44 %', '−0,3', 5],
+    ['Luky', '3 legy · 67 %', '+1,3', 1],
+    ['Denys', '7 legů · 57 %', '+0,9', 2],
   ];
-  return (
-    <Phone time="21:10" title="Žebříček" sub="forma · 14. 10. – 10. 11." tab="ladder">
-      <div className="g-seg">
-        <span className="g-on">Forma</span>
-        <span>Celkově</span>
-        <span>Od–do</span>
-      </div>
-      <div className="g-seg">
-        <span className="g-on">Průměr</span>
-        <span>Celkem</span>
-      </div>
-      <div>
-        {rows.map(([r, n, sub, v, me]) => (
-          <div key={r} className={me ? 'g-rank g-me' : 'g-rank'}>
-            <b>{r}</b>
+  const solo: [string, string, string, number, boolean?][] = [
+    ['Milan', '5 tréninků', '1,4 / 10', 5],
+    ['Lavi', '6 tréninků', '2,0 / 10', 6],
+    ['Dejv', '4 tréninky', '2,7 / 10', 4, true],
+    ['Osky', '3 tréninky', '3,3 / 10', 3],
+    ['Ondra', '2 tréninky', '1,0 / 10', 2],
+  ];
+  // [jméno, utkání, čekání ⌀]
+  const delays: [string, string, string][] = [
+    ['Ondra', '9 utkání', '4:12'],
+    ['Luky', '7 utkání', '3:05'],
+    ['Osky', '11 utkání', '2:40'],
+    ['Dejv', '8 utkání', '0:55'],
+    ['Lavi', '12 utkání', '0:00'],
+  ];
+  const ranked = (rows: [string, string, string, number, boolean?][]) => {
+    const cut = rows.findIndex((r) => r[3] < MIN);
+    return rows.map(([n, sub, v, tr, me], i) => {
+      const low = cut >= 0 && i >= cut;
+      return (
+        <Fragment key={n}>
+          {i === cut && <div className="g-cut" />}
+          <div className={['g-rank', me ? 'g-me' : '', low ? 'g-low' : ''].filter(Boolean).join(' ')}>
+            <span className="g-rk">{low ? <Progress have={tr} need={MIN} /> : <Medal place={i + 1} />}</span>
             <span className="g-n">
               {n}
               <small>{sub}</small>
             </span>
             <span className="g-v">{v}</span>
           </div>
+        </Fragment>
+      );
+    });
+  };
+  return (
+    <Phone
+      time="21:10"
+      title="Žebříček"
+      sub={part === 'solo' ? 'Udržení míče na pětce · méně je lépe' : part === 'delays' ? 'forma · čekání na zahájení' : 'forma · průměr · 14. 10. – 10. 11.'}
+      tab="ladder"
+      label="Ukázka: žebříček"
+    >
+      <div className="g-seg g-seg-btn" role="group" aria-label="Část žebříčku">
+        {LADDER_PARTS.map(([k, text]) => (
+          <button key={k} type="button" aria-pressed={k === part} className={k === part ? 'g-on' : undefined} onClick={() => setPart(k)}>
+            {text}
+          </button>
         ))}
+      </div>
+      <div>
+        {part === 'matches' && ranked(matches)}
+        {part === 'solo' && ranked(solo)}
+        {part === 'delays' &&
+          delays.map(([n, sub, v], i) => {
+            const shamed = isShamed(i + 1, v !== '0:00');
+            return (
+              <div key={n} className={shamed ? 'g-rank g-shame' : 'g-rank'}>
+                <span className="g-rk">
+                  <ShameRank place={i + 1} shamed={shamed} />
+                </span>
+                <span className="g-n">
+                  <span className="delay-who">
+                    {n}
+                    {shamed && <Snail big={i === 0} />}
+                    {shamed && i === 0 && <span className="shame-tag">Brzda</span>}
+                  </span>
+                  <small>{sub}</small>
+                </span>
+                <span className={i === 0 ? 'g-v g-bad' : 'g-v'}>{v}</span>
+              </div>
+            );
+          })}
       </div>
     </Phone>
   );
