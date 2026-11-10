@@ -14,7 +14,7 @@ const players = [{ id: 'p1', name: 'Petr', archived: false, order: 0 }];
 const auth = (current: () => Promise<Me | null>): AuthService => ({ ...memoryAuth({ signedIn: me }), cached: () => me, current });
 
 beforeEach(() => {
-  window.location.hash = '#/trenink';
+  window.location.hash = '#/trainings';
   localStorage.clear();
 });
 

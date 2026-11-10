@@ -13,7 +13,7 @@ const players = (n: number): Player[] =>
 async function newTraining(n = 8, stop?: 'disc') {
   const user = userEvent.setup();
   const repo = memoryRepository({ players: players(n), trainings: [], catalog: DEFAULT_CATALOG });
-  window.location.hash = '#/trenink';
+  window.location.hash = '#/trainings';
   render(<App repo={repo} />);
   await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
   for (let i = 1; i <= n; i++) await user.click(screen.getByRole('checkbox', { name: `H${i}` }));
@@ -97,7 +97,7 @@ describe('konfigurovatelný trénink v UI', () => {
   it('trénink pro 2 hráče: rozpis bez simulace, simulace vypnutá; při 4 hráčích se vrátí', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(4), trainings: [], catalog: DEFAULT_CATALOG });
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={repo} />);
     await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
     await user.click(screen.getByRole('checkbox', { name: 'H1' }));

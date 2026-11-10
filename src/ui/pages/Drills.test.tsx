@@ -12,7 +12,7 @@ const t: Training = {
 
 describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
   it('pokusy se počítají, výsledek je počet povedených; ↶ vrátí poslední', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const repo = memoryRepository({ players, trainings: [t] });
     render(<App repo={repo} />);
     const user = userEvent.setup();
@@ -39,7 +39,7 @@ describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
 
 describe('Rozcvička v rozpisu (notebook)', () => {
   it('karta stolu bez zápisu, kompaktní timer, mimo stůl „Čeká“; rozbalený je zápas s chybějícím zápisem', async () => {
-    window.location.hash = '#/trenink/tw';
+    window.location.hash = '#/trainings/tw';
     const p9: Player[] = Array.from({ length: 9 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
     const tw: Training = { ...t, id: 'tw', tables: 4, attendees: p9.map((p) => p.id), plan: { warmup: 2, normal: 1 } };
     render(<App repo={memoryRepository({ players: p9, trainings: [tw] })} />);

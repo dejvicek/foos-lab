@@ -32,7 +32,7 @@ beforeEach(() => {
   localStorage.clear();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-31T12:00:00'));
-  window.location.hash = '#/zebricek';
+  window.location.hash = '#/ladder';
 });
 afterEach(() => vi.useRealTimers());
 
@@ -57,6 +57,13 @@ describe('stránka Žebříček', () => {
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
     const total = screen.getByRole('table', { name: 'Žebříček' });
     expect(within(within(total).getAllByRole('row')[rowOf(total, 'Yvona')]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
+  });
+
+  it('stará česká adresa #/zebricek otevře žebříček a přepíše se na #/ladder', async () => {
+    window.location.hash = '#/zebricek';
+    render(<App repo={repo()} />);
+    expect(await screen.findByRole('table', { name: 'Žebříček' })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/ladder');
   });
 
   it('volby se pamatují po novém otevření', async () => {
@@ -95,11 +102,11 @@ describe('stránka Žebříček', () => {
     expect(rows[0]).toHaveTextContent('27. 10. 2026');
     expect(rows[2]).toHaveTextContent('+6');
     await user.click(rows[0]);
-    expect(window.location.hash).toBe('#/trenink/t2b');
+    expect(window.location.hash).toBe('#/trainings/t2b');
   });
 
   it('prázdné období', async () => {
-    window.location.hash = '#/zebricek';
+    window.location.hash = '#/ladder';
     render(<App repo={memoryRepository()} />);
     expect(await screen.findByText('V tomhle období zatím nejsou žádné zapsané legy.')).toBeInTheDocument();
   });

@@ -29,7 +29,7 @@ afterEach(() => vi.useRealTimers());
 
 describe('Živě', () => {
   it('Živě je v navigaci až po zahájení tréninku; organizátor nezahajuje, zadá nahlášený výsledek a potvrdí konec → čas od vypsání, na stůl jde další', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const repo = memoryRepository({ players, trainings: [{ ...t, createdBy: 'id1' }] });
     render(<App repo={repo} auth={organizer()} />);
     const user = userEvent.setup();
@@ -69,7 +69,7 @@ describe('Zdržovači', () => {
   };
 
   it('v tréninku: čekání a hra na hráče', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const table = await screen.findByRole('table', { name: 'Zdržovači' });
     const row = within(table).getAllByRole('row')[1];
@@ -84,7 +84,7 @@ describe('Zdržovači', () => {
   });
 
   it('v žebříčku jako třetí část', async () => {
-    window.location.hash = '#/zebricek';
+    window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Zdržovači' }));
@@ -155,7 +155,7 @@ describe('pauza řízená organizátorem', () => {
       breaks: [{ after: 1, min: 10 }],
       playTimes: { training: { startedAt: at(18, 0) }, [ids[0]]: { startedAt: at(18, 0), endedAt: at(18, 2) } },
     };
-    window.location.hash = '#/zive';
+    window.location.hash = '#/live';
     const repo = memoryRepository({ players, trainings: [{ ...paused, createdBy: 'id1' }] });
     render(<App repo={repo} auth={organizer()} />);
     const user = userEvent.setup();
@@ -179,7 +179,7 @@ describe('pauza v Trénink tabu', () => {
   };
 
   it('Zahájit pauzu / Spustit další kolo jsou v řádku pauzy, ne v liště nahoře', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const repo = memoryRepository({ players, trainings: [{ ...paused, createdBy: 'id1' }] });
     render(<App repo={repo} auth={organizer()} />);
     const user = userEvent.setup();
@@ -208,7 +208,7 @@ describe('pauza v Trénink tabu', () => {
   });
 
   it('hráč (ne organizátor) vidí u pauzy, že další kolo spustí organizátor', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     render(<App repo={memoryRepository({ players, trainings: [{ ...paused, createdBy: 'id1' }] })} auth={auth} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
@@ -254,7 +254,7 @@ describe('hráč zahajuje jen v Moje hry', () => {
   it('v rozpisu ani v Živě Zahájit není; z Živě odkaz „Zahájit v Moje hry“, tam teprve Zahájit', async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     const run: Training = { ...t, createdBy: 'id1', playTimes: { training: { startedAt: at(18, 0) } } };
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [run] })} auth={auth} />);
     const user = userEvent.setup();
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
@@ -274,7 +274,7 @@ describe('Moje hry otevře rozehranou hru', () => {
   it('1. kolo dohrané → otevře se 2. kolo, které je na řadě', async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     const run: Training = { ...t, playTimes: { training: { startedAt: at(18, 0) }, [ids[0]]: { startedAt: at(18, 0), endedAt: at(18, 2) } } };
-    window.location.hash = '#/moje-hry';
+    window.location.hash = '#/my-games';
     render(<App repo={memoryRepository({ players, trainings: [run] })} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     expect(within(mine).getByRole('heading', { level: 2 })).toHaveTextContent('2. kolo');
@@ -294,7 +294,7 @@ describe('průběh hry', () => {
   it('ťukání se ukládá jako události; Průběh ukáže dvě dráhy, Zpět událost zruší', async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     const repo = memoryRepository({ players, trainings: [{ ...t, playTimes: { training: { startedAt: at(18, 0) } } }] });
-    window.location.hash = '#/moje-hry';
+    window.location.hash = '#/my-games';
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();

@@ -17,7 +17,7 @@ const activeNames = () =>
     .map((li) => li.getAttribute('data-name'));
 
 beforeEach(() => {
-  window.location.hash = '#/hraci';
+  window.location.hash = '#/players';
 });
 
 describe('stránka Hráči', () => {

@@ -20,7 +20,7 @@ afterEach(() => {
 
 describe('telefon', () => {
   it('celý rozpis jsou karty kol místo široké tabulky', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [training] })} />);
     const cards = await screen.findByLabelText('Rozpis tréninku');
     expect(screen.queryByRole('table', { name: 'Rozpis tréninku' })).toBeNull();
@@ -32,7 +32,7 @@ describe('telefon', () => {
 describe('telefon – žebříček', () => {
   it('žebříček je seznam: pořadí, jméno, legy a výhry, hlavní číslo vpravo', async () => {
     const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
-    window.location.hash = '#/zebricek';
+    window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
     const list = await screen.findByRole('list', { name: 'Žebříček' });
     expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
@@ -47,7 +47,7 @@ describe('telefon – žebříček', () => {
 describe('telefon – nastavení tréninku', () => {
   it('nastavení je průvodce v krocích „Krok N z 2“; úprava otevře plán', async () => {
     const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Upravit nastavení' }));

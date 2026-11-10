@@ -21,7 +21,7 @@ describe('tabulka tréninku', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 10, 5, 12, 0)); // jiný den než trénink
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
   });
 
   it('skutečné časy, rozbalení kola a zápis skóre', async () => {
@@ -260,7 +260,7 @@ describe('tabulka tréninku – stav kol podle skutečnosti', () => {
   it('podle hodin se nic nezvýrazňuje – trénink nezačal', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 31, 19, 21));
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     expect(rowOf('3. kolo')).not.toHaveClass('rail');
@@ -270,7 +270,7 @@ describe('tabulka tréninku – stav kol podle skutečnosti', () => {
   it('odehraná kola, hrané kolo (rozbalené, s dohranými stoly) a kola, která přijdou', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(at(30));
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const base = training(8, 'team', 4);
     const playTimes: Training['playTimes'] = { [TRAINING_ITEM]: { startedAt: at(0) } };
     for (const label of ['Rozehrání s počítáním', 'Stanoviště, rotace 1', 'Stanoviště, rotace 2', 'Stanoviště, rotace 3', 'Stanoviště, rotace 4', '1. kolo'])
@@ -294,7 +294,7 @@ describe('tabulka tréninku – stav kol podle skutečnosti', () => {
 it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
   const user = userEvent.setup();
   const t = { ...training(8, 'team', 4), format: 'custom' as const, plan: { penaltyKeeper: 2 } };
-  window.location.hash = '#/trenink/t1';
+  window.location.hash = '#/trainings/t1';
   render(<App repo={memoryRepository({ players: players(8), trainings: [t] })} />);
   await screen.findByRole('table', { name: 'Rozpis tréninku' });
   const r1 = screen.getByRole('button', { name: /^1\. kolo$/ });

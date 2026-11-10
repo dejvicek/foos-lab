@@ -14,7 +14,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('stránka Trénink', () => {
   it('Přítomní při zakládání: hráči podle abecedy, ne podle pořadí v soupisce', async () => {
     const roster: Player[] = ['Filip', 'Čeněk', 'Ada', 'Bára'].map((name, order) => ({ id: `q${order}`, name, order, archived: false }));
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     render(<App repo={memoryRepository({ players: roster, trainings: [] })} />);
     await screen.findByRole('heading', { name: 'Přítomní' });
     expect(screen.getAllByRole('checkbox').map((c) => c.getAttribute('aria-label'))).toEqual(['Ada', 'Bára', 'Čeněk', 'Filip']);
@@ -25,7 +25,7 @@ describe('stránka Trénink', () => {
     vi.setSystemTime(new Date(2026, 10, 2, 18, 7));
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(6), trainings: [] });
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     render(<App repo={repo} />);
     await user.click(await screen.findByRole('checkbox', { name: 'Ada' }));
     await next(user);
@@ -38,7 +38,7 @@ describe('stránka Trénink', () => {
   it('nový trénink v krocích: přítomní (přidat hráče), kdy, kde a disciplíny, Zahájit trénink; další převezme stoly, délku dá šablona', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(6), trainings: [] });
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={repo} />);
 
     expect(await screen.findByText('Zatím žádný trénink. Začni tlačítkem Nový trénink.')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('stránka Trénink', () => {
       scores: { 'league|1|1|p1+p2vp3+p4': { ga: 6, gb: 2 } },
     };
     const repo = memoryRepository({ players: players(8), trainings: [t] });
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={repo} />);
 
     await openSettings(user, 'Přítomní');
@@ -121,14 +121,14 @@ describe('stránka Trénink', () => {
     const ps = players(4);
     ps[0].archived = true;
     const t: Training = { id: 't1', date: '2026-10-31', startTime: '18:00', soloResults: {}, simSplit: 'order', simTeams: null, format: 'classic', durationMin: 180, plan: {}, lockedRounds: [], mode: 'team', tables: 4, attendees: ['p1', 'p2', 'p3', 'p4'], scores: {} };
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players: ps, trainings: [t] })} />);
     await openSettings(userEvent.setup(), 'Přítomní');
     expect(screen.getByRole('checkbox', { name: /Ada/ })).toBeChecked();
   });
 
   it('neexistující trénink', async () => {
-    window.location.hash = '#/trenink/nic';
+    window.location.hash = '#/trainings/nic';
     render(<App repo={memoryRepository()} />);
     expect(await screen.findByText('Trénink nenalezen.')).toBeInTheDocument();
   });
@@ -150,7 +150,7 @@ describe('Přítomní a docházka (10. 11. 2026)', () => {
 
   it('skupiny Minule byli / Ostatní, docházka u jména, Jako minule, Nikdo, hledání', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     render(<App repo={memoryRepository({ players: roster, trainings })} />);
     const lastGroup = await screen.findByRole('region', { name: 'Minule byli' });
     expect(within(lastGroup).getByRole('heading')).toHaveTextContent('Minule byli · 4. 11.4');
@@ -173,7 +173,7 @@ describe('Přítomní a docházka (10. 11. 2026)', () => {
   });
 
   it('stránka Hráči ukazuje docházku: naposledy, za 28 dní, celkem', async () => {
-    window.location.hash = '#/hraci';
+    window.location.hash = '#/players';
     render(<App repo={memoryRepository({ players: roster, trainings })} />);
     const list = await screen.findByRole('list', { name: 'Aktivní hráči' });
     const row = (name: string) => within(list).getByText(name).closest('li')!;

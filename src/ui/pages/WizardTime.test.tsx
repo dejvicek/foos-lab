@@ -20,7 +20,7 @@ const players: Player[] = ['Ada', 'Bára', 'Cyril', 'Dan'].map((name, order) => 
 
 async function wizard(names: string[], minutes: number) {
   const user = userEvent.setup();
-  window.location.hash = '#/trenink/novy';
+  window.location.hash = '#/trainings/new';
   render(<App repo={memoryRepository({ players, trainings: [], catalog: DEFAULT_CATALOG })} />);
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of names) await user.click(screen.getByRole('checkbox', { name: n }));
@@ -49,7 +49,7 @@ describe('čas plánu v průvodci', () => {
 
 it('štítky dovedností: u disciplín v kroku Kdy, kde a disciplíny', async () => {
   const user = userEvent.setup();
-  window.location.hash = '#/trenink/novy';
+  window.location.hash = '#/trainings/new';
   render(<App repo={memoryRepository({ players, trainings: [], catalog: DEFAULT_CATALOG })} />);
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
@@ -68,7 +68,7 @@ it('štítky dovedností: u disciplín v kroku Kdy, kde a disciplíny', async ()
 
 it('filtrování disciplín podle štítků: sekce v legendě i konkrétní štítek; zrušit filtr', async () => {
   const user = userEvent.setup();
-  window.location.hash = '#/trenink/novy';
+  window.location.hash = '#/trainings/new';
   render(<App repo={memoryRepository({ players, trainings: [], catalog: DEFAULT_CATALOG })} />);
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
@@ -98,7 +98,7 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
 /** Nový trénink: Přítomní (4 hráči) → krok Kdy, kde a disciplíny. */
 async function toPlan(catalog?: CatalogData) {
   const user = userEvent.setup();
-  window.location.hash = '#/trenink/novy';
+  window.location.hash = '#/trainings/new';
   render(<App repo={memoryRepository({ players, trainings: [], catalog })} />);
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
@@ -155,7 +155,7 @@ describe('uložit nastavení disciplín jako šablonu (admin, 10. 11. 2026)', ()
 
   it('admin uloží nastavení jako novou šablonu; přidá se na konec a je hned zvolená; stejný název nejde', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     const repo = memoryRepository({ players, trainings: [], catalog: DEFAULT_CATALOG });
     render(<App repo={repo} />);
     await screen.findByRole('heading', { name: 'Přítomní' });
@@ -185,7 +185,7 @@ describe('uložit nastavení disciplín jako šablonu (admin, 10. 11. 2026)', ()
 
   it('organizátor bez práv admina tlačítko nemá', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'p1', isAdmin: false, mustChangePassword: false } });
     const roster = players.map((p) => (p.id === 'p1' ? { ...p, organizer: true } : p));
     render(<App repo={memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG })} auth={auth} />);

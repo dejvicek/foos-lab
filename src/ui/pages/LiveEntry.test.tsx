@@ -16,7 +16,7 @@ const t: Training = {
 const auth = () => memoryAuth({ players: roster.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id9', isAdmin: false, mustChangePassword: false } });
 
 it('Živě: organizátor zadá nahlášený výsledek cvičení (počty hráčů) a potvrdí konec', async () => {
-  window.location.hash = '#/zive';
+  window.location.hash = '#/live';
   const repo = memoryRepository({ players: roster, trainings: [t] });
   render(<App repo={repo} auth={auth()} />);
   const user = userEvent.setup();

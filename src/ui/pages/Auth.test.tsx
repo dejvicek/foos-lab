@@ -31,7 +31,7 @@ async function login(nick: string, password: string) {
 }
 
 beforeEach(() => {
-  window.location.hash = '#/trenink';
+  window.location.hash = '#/trainings';
 });
 
 describe('přihlášení', () => {
@@ -58,7 +58,7 @@ describe('přihlášení', () => {
 
   it('hráč v cizím tréninku: žádné nastavení; nezahájený trénink nemá Živě / Moje hry; nezapíše nic', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={memoryRepository({ players: roster, trainings: [training] })} auth={auth} />);
     await screen.findByRole('list', { name: 'Uložené tréninky' });
     await userEvent.setup().click(screen.getByRole('list', { name: 'Uložené tréninky' }).querySelector('button')!);
@@ -141,7 +141,7 @@ describe('přihlášení', () => {
     await auth.signOut();
     await auth.signIn('Dejv', 'Dejv');
     await auth.changePassword('admin1');
-    window.location.hash = '#/hraci';
+    window.location.hash = '#/players';
     render(<App repo={memoryRepository({ players: roster, trainings: [training] })} auth={auth} />);
     const user = userEvent.setup();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -153,18 +153,18 @@ describe('přihlášení', () => {
 
   it('hráč bez role organizátora trénink nezaloží (10. 11. 2026)', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={memoryRepository({ players: roster, trainings: [] })} auth={auth} />);
     expect(await screen.findByText('Zatím žádný trénink. Zakládá je admin nebo organizátor.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Nový trénink/ })).toBeNull();
-    window.location.hash = '#/trenink/novy'; // ani přímou adresou
+    window.location.hash = '#/trainings/new'; // ani přímou adresou
     expect(await screen.findByText(/Zakládat tréninky smí jen admin a organizátoři/)).toBeInTheDocument();
   });
 
   it('admin udělá z hráče organizátora na stránce Hráči; organizátor založí trénink a spravuje ho; cizí trénink ne', async () => {
     const asAdmin = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id1', isAdmin: true, mustChangePassword: false } });
     const repo = memoryRepository({ players: roster, trainings: [{ ...training, createdBy: 'id1' }] });
-    window.location.hash = '#/hraci';
+    window.location.hash = '#/players';
     const { unmount } = render(<App repo={repo} auth={asAdmin} />);
     const toggle = await screen.findByRole('button', { name: 'Organizátor: Milan' });
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -174,7 +174,7 @@ describe('přihlášení', () => {
     unmount();
 
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
     await createTraining(user, ['Milan', 'Lavi']);
@@ -183,10 +183,10 @@ describe('přihlášení', () => {
     expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings.find((t) => t.id !== 't1')?.createdBy).toBe('id2'));
 
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Smazat trénink' })).toBeNull());
     expect(screen.queryByRole('button', { name: 'Upravit nastavení' })).toBeNull();
-    window.location.hash = '#/trenink/t1/nastaveni'; // ani přímou adresou
+    window.location.hash = '#/trainings/t1/settings'; // ani přímou adresou
     expect(await screen.findByText(/Nastavení tréninku může měnit jen/)).toBeInTheDocument();
   });
 });

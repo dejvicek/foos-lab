@@ -4,7 +4,7 @@ import { memoryRepository } from '../storage/memoryRepository';
 import { myVersion } from '../storage/appVersion';
 
 beforeEach(() => {
-  window.location.hash = '#/trenink';
+  window.location.hash = '#/trainings';
 });
 
 describe('App – kontrola verze', () => {

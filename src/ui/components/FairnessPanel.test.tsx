@@ -17,7 +17,7 @@ const auth = (isAdmin: boolean, playerId = 'id1') =>
   memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name, isAdmin: p.id === playerId && isAdmin })), signedIn: { playerId, isAdmin, mustChangePassword: false } });
 
 beforeEach(() => {
-  window.location.hash = '#/trenink/t1';
+  window.location.hash = '#/trainings/t1';
 });
 
 describe('kontrola rozpisu v nastavení tréninku', () => {

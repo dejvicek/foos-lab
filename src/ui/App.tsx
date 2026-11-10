@@ -68,7 +68,7 @@ export function App({
       <GuidePage
         signedIn={me !== 'loading' && !!me}
         onBack={() => {
-          window.location.hash = '#/trenink';
+          window.location.hash = '#/trainings';
         }}
       />
     );

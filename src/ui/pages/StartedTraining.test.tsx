@@ -18,7 +18,7 @@ const t: Training = {
 describe('běžící trénink jde upravit – rozpis se přegeneruje (10. 11. 2026)', () => {
   const running = (extra: Partial<Training> = {}): Training => ({ ...t, playTimes: { training: { startedAt: 1 } }, ...extra });
   const open = async (tr: Training) => {
-    window.location.hash = '#/trenink/t1/nastaveni';
+    window.location.hash = '#/trainings/t1/settings';
     const repo = memoryRepository({ players: players5, trainings: [tr] });
     render(<App repo={repo} />);
     await screen.findByRole('heading', { name: 'Kdy, kde a disciplíny' });
@@ -27,7 +27,7 @@ describe('běžící trénink jde upravit – rozpis se přegeneruje (10. 11. 20
   afterEach(() => vi.restoreAllMocks());
 
   it('po zahájení je „Upravit nastavení“ a v průvodci upozornění na přegenerování', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [running()] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await userEvent.setup().click(screen.getByRole('button', { name: 'Upravit nastavení' }));
@@ -79,7 +79,7 @@ describe('běžící trénink jde upravit – rozpis se přegeneruje (10. 11. 20
   });
 
   it('nezahájený trénink upravit jde, bez upozornění', async () => {
-    window.location.hash = '#/trenink/t1/nastaveni';
+    window.location.hash = '#/trainings/t1/settings';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
     await screen.findByRole('heading', { name: 'Kdy, kde a disciplíny' });
     expect(screen.queryByRole('note')).toBeNull();
@@ -87,7 +87,7 @@ describe('běžící trénink jde upravit – rozpis se přegeneruje (10. 11. 20
 });
 
 it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště); Živě ho má', async () => {
-  window.location.hash = '#/moje-hry';
+  window.location.hash = '#/my-games';
   const players4 = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
   const { memoryAuth } = await import('../../storage/auth');
   const auth = memoryAuth({ players: players4.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
@@ -99,6 +99,6 @@ it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště)
   );
   await screen.findByRole('heading', { name: 'Moje hry' });
   expect(screen.queryByRole('button', { name: 'celý rozpis ›' })).toBeNull();
-  window.location.hash = '#/zive';
+  window.location.hash = '#/live';
   expect(await screen.findByRole('button', { name: 'celý rozpis ›' })).toBeInTheDocument();
 });

@@ -14,7 +14,7 @@ const custom = (n: number, tables: 2 | 3 | 4, over: Partial<Training> = {}): Tra
   plan: autoPlan(DEFAULT_SELECTION, 120, n, tables), lockedRounds: [], ...over,
 });
 const setup = async (t: Training, n = 8) => {
-  window.location.hash = '#/trenink/t1';
+  window.location.hash = '#/trainings/t1';
   const repo = memoryRepository({ players: players(n), trainings: [t] });
   render(<App repo={repo} />);
   await screen.findByRole('table', { name: 'Rozpis tréninku' });
@@ -83,7 +83,7 @@ describe('pauzy na telefonu', () => {
   });
 
   it('šipkami se pauza posune o kolo', async () => {
-    window.location.hash = '#/trenink/t1';
+    window.location.hash = '#/trainings/t1';
     const repo = memoryRepository({ players: players(8), trainings: [custom(8, 4, { breaks: [{ after: 5, min: 10 }] })] });
     render(<App repo={repo} />);
     const cards = await screen.findByLabelText('Rozpis tréninku');

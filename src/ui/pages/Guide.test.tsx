@@ -7,7 +7,7 @@ import { memoryAuth } from '../../storage/auth';
 describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
   it('bez přihlášení: odkaz z přihlášení, ukázka zápisu legu, zpět na přihlášení', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={memoryRepository()} auth={memoryAuth({ signedIn: null })} />);
     await screen.findByRole('heading', { name: 'Přihlášení' });
     await user.click(screen.getByRole('link', { name: 'Jak appka funguje ›' }));
@@ -32,7 +32,7 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
 
   it('přihlášený: Návod v horní liště, Zpět do appky', async () => {
     const user = userEvent.setup();
-    window.location.hash = '#/trenink';
+    window.location.hash = '#/trainings';
     render(<App repo={memoryRepository()} />);
     await user.click(await screen.findByRole('button', { name: 'Návod' }));
     const guide = await screen.findByRole('main', { name: 'Návod pro hráče' });

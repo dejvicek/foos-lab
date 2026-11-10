@@ -28,7 +28,7 @@ const ended = (repo: ReturnType<typeof memoryRepository>, id: string) => repo.sn
 afterEach(() => vi.restoreAllMocks());
 
 it('Moje hry: Ukončit běžící Rozcvičky se zeptá; Zrušit nic nezapíše, OK ukončí', async () => {
-  window.location.hash = '#/moje-hry';
+  window.location.hash = '#/my-games';
   const id = warmupItemOf('id1');
   const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 120_000 }, [id]: { startedAt: Date.now() - 60_000 } } }] });
   render(<App repo={repo} auth={authAs('id1')} />);
@@ -45,7 +45,7 @@ it('Moje hry: Ukončit běžící Rozcvičky se zeptá; Zrušit nic nezapíše, 
 });
 
 it('Moje hry: po doběhnutí timeru se Ukončit už neptá', async () => {
-  window.location.hash = '#/moje-hry';
+  window.location.hash = '#/my-games';
   const id = warmupItemOf('id1');
   const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 700_000 }, [id]: { startedAt: Date.now() - 600_000 } } }] });
   render(<App repo={repo} auth={authAs('id1')} />);
@@ -58,7 +58,7 @@ it('Moje hry: po doběhnutí timeru se Ukončit už neptá', async () => {
 });
 
 it('Živě: u Rozcvičky organizátor nezadává výsledek, jen potvrdí konec; běžící ukazuje fázi', async () => {
-  window.location.hash = '#/zive';
+  window.location.hash = '#/live';
   const id = warmupItemOf('id1');
   const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 120_000 }, [id]: { startedAt: Date.now() - 70_000 } } }] });
   render(<App repo={repo} auth={authAs('id9')} />);
@@ -77,7 +77,7 @@ it('Živě: u Rozcvičky organizátor nezadává výsledek, jen potvrdí konec; 
 });
 
 it('Moje hry: u Rozcvičky jen odpočet (bez stopek „Doba hry“) a po konci bez „zkontroluj výsledek“', async () => {
-  window.location.hash = '#/moje-hry';
+  window.location.hash = '#/my-games';
   const id = warmupItemOf('id1');
   const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 700_000 }, [id]: { startedAt: Date.now() - 600_000 } } }] });
   render(<App repo={repo} auth={authAs('id1')} />);

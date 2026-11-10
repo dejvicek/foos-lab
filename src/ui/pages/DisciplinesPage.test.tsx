@@ -13,7 +13,7 @@ const rows = () => screen.getAllByRole('listitem').filter((li) => li.classList.c
 const row = (name: string) => screen.getByRole('listitem', { name });
 
 beforeEach(() => {
-  window.location.hash = '#/trenink';
+  window.location.hash = '#/trainings';
 });
 afterEach(() => applyCatalog({}));
 
@@ -24,7 +24,7 @@ describe('stránka Disciplíny', () => {
     const user = userEvent.setup();
     const nav = await screen.findByRole('navigation', { name: 'Hlavní navigace' });
     await user.click(within(nav).getByRole('button', { name: 'Disciplíny' }));
-    expect(window.location.hash).toBe('#/discipliny');
+    expect(window.location.hash).toBe('#/disciplines');
     expect(screen.getByRole('heading', { level: 1, name: 'Disciplíny' })).toBeInTheDocument();
 
     const r = row('Penalta z místa proti brankáři');
@@ -44,10 +44,10 @@ describe('stránka Disciplíny', () => {
     expect(screen.queryByRole('button', { name: 'Upravit štítky' })).toBeNull();
     // šablony jsou jen pro admina: hráč je v navigaci nemá a na adrese dostane jen informaci
     expect(within(nav).queryByRole('button', { name: 'Šablony' })).toBeNull();
-    window.location.hash = '#/sablony';
+    window.location.hash = '#/templates';
     expect(await screen.findByText('Šablony tréninku spravuje admin.')).toBeInTheDocument();
     expect(screen.queryByRole('form', { name: 'Šablony tréninku' })).toBeNull();
-    window.location.hash = '#/discipliny';
+    window.location.hash = '#/disciplines';
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
     expect(rows()).toHaveLength(20);
@@ -55,7 +55,7 @@ describe('stránka Disciplíny', () => {
   });
 
   it('filtr podle sekce a štítku (OR), Zrušit filtr', async () => {
-    window.location.hash = '#/discipliny';
+    window.location.hash = '#/disciplines';
     render(<App repo={memoryRepository({ players: roster, trainings: [] })} />);
     const user = userEvent.setup();
     const chips = await screen.findByRole('list', { name: 'Sekce dovedností' });
@@ -72,7 +72,7 @@ describe('stránka Disciplíny', () => {
   });
 
   it('admin upraví disciplínu: název, délka, štítky, nápověda; Obnovit výchozí', async () => {
-    window.location.hash = '#/discipliny';
+    window.location.hash = '#/disciplines';
     const repo = memoryRepository({ players: roster, trainings: [] });
     render(<App repo={repo} />);
     const user = userEvent.setup();
@@ -111,7 +111,7 @@ describe('stránka Disciplíny', () => {
   });
 
   it('admin spravuje štítky: přejmenuje, přidá, smaže; disciplíny se přepíšou', async () => {
-    window.location.hash = '#/discipliny';
+    window.location.hash = '#/disciplines';
     const repo = memoryRepository({ players: roster, trainings: [] });
     render(<App repo={repo} />);
     const user = userEvent.setup();
@@ -140,7 +140,7 @@ describe('stránka Disciplíny', () => {
   });
 
   it('Šablony bez uložených: začne jedna prázdná „Výchozí“, bez disciplín se neuloží (10. 11. 2026)', async () => {
-    window.location.hash = '#/sablony';
+    window.location.hash = '#/templates';
     render(<App repo={memoryRepository({ players: roster, trainings: [] })} />);
     const form = await screen.findByRole('form', { name: 'Šablony tréninku' });
     expect(within(form).getByRole('tab', { name: /Výchozí/ })).toHaveAttribute('aria-selected', 'true');
@@ -150,7 +150,7 @@ describe('stránka Disciplíny', () => {
   });
 
   it('admin spravuje šablony na stránce Šablony: délka, výběr, počet kol, délky kol, pořadí, pauzy; nic se nedoplňuje', async () => {
-    window.location.hash = '#/discipliny';
+    window.location.hash = '#/disciplines';
     const repo = memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG });
     render(<App repo={repo} />);
     const user = userEvent.setup();
@@ -158,7 +158,7 @@ describe('stránka Disciplíny', () => {
     expect(screen.queryByRole('button', { name: 'Šablony tréninku' })).toBeNull(); // šablony už nejsou na Disciplínách
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
     await user.click(within(nav).getByRole('button', { name: 'Šablony' }));
-    expect(window.location.hash).toBe('#/sablony');
+    expect(window.location.hash).toBe('#/templates');
     expect(screen.getByRole('heading', { level: 1, name: 'Šablony' })).toBeInTheDocument();
     const form = screen.getByRole('form', { name: 'Šablony tréninku' });
     expect(within(form).getByRole('list', { name: 'Nápověda' })).toHaveTextContent('najeď myší na hranu mezi dvěma disciplínami');
@@ -218,14 +218,14 @@ describe('stránka Disciplíny', () => {
     });
 
     // nový trénink: první šablona (1:00), přesně její kola
-    window.location.hash = '#/trenink/novy';
+    window.location.hash = '#/trainings/new';
     await screen.findByRole('heading', { name: 'Přítomní' });
     await user.click(screen.getAllByRole('checkbox')[0]);
     await user.click(screen.getByRole('button', { name: /^Další:/ }));
     expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('60');
   });
   it('Šablony: Zahodit změny vrátí neuložené úpravy; Uloženo zmizí po další změně', async () => {
-    window.location.hash = '#/sablony';
+    window.location.hash = '#/templates';
     const repo = memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG });
     render(<App repo={repo} />);
     const user = userEvent.setup();
@@ -242,7 +242,7 @@ describe('stránka Disciplíny', () => {
     expect(repo.snapshot().catalog?.templates?.[0].name).toBe('Výchozí');
   });
   it('Šablony: odhad hráčů posuvníkem a stolů tečkami jako v průvodci; mění čas cvičení', async () => {
-    window.location.hash = '#/sablony';
+    window.location.hash = '#/templates';
     render(<App repo={memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG })} />);
     const user = userEvent.setup();
     const form = await screen.findByRole('form', { name: 'Šablony tréninku' });

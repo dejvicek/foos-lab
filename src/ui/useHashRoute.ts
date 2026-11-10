@@ -15,55 +15,91 @@ export type Route =
   /** Návod pro hráče (landing page, 10. 11. 2026) – i bez přihlášení. */
   | { page: 'guide' };
 
+/**
+ * Adresy jsou anglicky (10. 11. 2026, rozhodnutí uživatele). Staré české (#/trenink, #/zebricek …) mají lidé
+ * v záložkách a odkazech – dál fungují a appka je přepíše na anglické (canonicalHash).
+ */
+const PAGE: Record<string, string> = {
+  trenink: 'trainings',
+  zive: 'live',
+  'moje-hry': 'my-games',
+  'moje-hra': 'my-games',
+  zebricek: 'ladder',
+  discipliny: 'disciplines',
+  sablony: 'templates',
+  hraci: 'players',
+  navod: 'guide',
+};
+
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
-  if (parts[0] === 'trenink' && parts[1] === 'novy') return { page: 'training-new' };
-  if (parts[0] === 'trenink' && parts[1] && parts[2] === 'nastaveni') return { page: 'training-edit', id: parts[1] };
-  if (parts[0] === 'trenink' && parts[1]) return { page: 'training', id: parts[1] };
-  if (parts[0] === 'zive') return { page: 'live' };
-  if (parts[0] === 'moje-hry' || parts[0] === 'moje-hra') return { page: 'my' };
-  if (parts[0] === 'zebricek' && parts[1] === 'hrac' && parts[2]) return { page: 'player', id: parts[2] };
-  if (parts[0] === 'zebricek') return { page: 'ladder' };
-  if (parts[0] === 'discipliny') return { page: 'disciplines' };
-  if (parts[0] === 'sablony') return { page: 'templates' };
-  if (parts[0] === 'hraci') return { page: 'players' };
-  if (parts[0] === 'navod') return { page: 'guide' };
+  const page = PAGE[parts[0]] ?? parts[0];
+  if (page === 'trainings' && (parts[1] === 'new' || parts[1] === 'novy')) return { page: 'training-new' };
+  if (page === 'trainings' && parts[1] && (parts[2] === 'settings' || parts[2] === 'nastaveni')) return { page: 'training-edit', id: parts[1] };
+  if (page === 'trainings' && parts[1]) return { page: 'training', id: parts[1] };
+  if (page === 'live') return { page: 'live' };
+  if (page === 'my-games') return { page: 'my' };
+  if (page === 'ladder' && (parts[1] === 'player' || parts[1] === 'hrac') && parts[2]) return { page: 'player', id: parts[2] };
+  if (page === 'ladder') return { page: 'ladder' };
+  if (page === 'disciplines') return { page: 'disciplines' };
+  if (page === 'templates') return { page: 'templates' };
+  if (page === 'players') return { page: 'players' };
+  if (page === 'guide') return { page: 'guide' };
   return { page: 'trainings' };
 }
 
 export function toHash(r: Route): string {
   switch (r.page) {
     case 'trainings':
-      return '#/trenink';
+      return '#/trainings';
     case 'training':
-      return `#/trenink/${encodeURIComponent(r.id)}`;
+      return `#/trainings/${encodeURIComponent(r.id)}`;
     case 'training-new':
-      return '#/trenink/novy';
+      return '#/trainings/new';
     case 'training-edit':
-      return `#/trenink/${encodeURIComponent(r.id)}/nastaveni`;
+      return `#/trainings/${encodeURIComponent(r.id)}/settings`;
     case 'live':
-      return '#/zive';
+      return '#/live';
     case 'my':
-      return '#/moje-hry';
+      return '#/my-games';
     case 'ladder':
-      return '#/zebricek';
+      return '#/ladder';
     case 'player':
-      return `#/zebricek/hrac/${encodeURIComponent(r.id)}`;
+      return `#/ladder/player/${encodeURIComponent(r.id)}`;
     case 'disciplines':
-      return '#/discipliny';
+      return '#/disciplines';
     case 'templates':
-      return '#/sablony';
+      return '#/templates';
     case 'players':
-      return '#/hraci';
+      return '#/players';
     case 'guide':
-      return '#/navod';
+      return '#/guide';
   }
 }
 
+/** Anglická podoba adresy, když se liší (stará česká, neznámá stránka); prázdná adresa zůstává. */
+export function canonicalHash(hash: string): string | null {
+  if (!hash.replace(/^#\/?/, '')) return null;
+  const c = toHash(parseHash(hash));
+  return c === hash ? null : c;
+}
+
+/** Přepíše adresu na anglickou bez nového záznamu v historii (Zpět nevede na starou adresu). */
+function canonicalize() {
+  const c = canonicalHash(window.location.hash);
+  if (c) window.history.replaceState(window.history.state, '', c);
+}
+
 export function useHashRoute(): [Route, (r: Route) => void] {
-  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
+  const [route, setRoute] = useState<Route>(() => {
+    canonicalize();
+    return parseHash(window.location.hash);
+  });
   useEffect(() => {
-    const on = () => setRoute(parseHash(window.location.hash));
+    const on = () => {
+      canonicalize();
+      setRoute(parseHash(window.location.hash));
+    };
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);

@@ -5,7 +5,7 @@ import { BrandMark, NAV_ICONS } from '../components/MainNav';
 
 /**
  * Návod pro hráče (landing page, 10. 11. 2026): jak s appkou pracovat na telefonu u stolu – od přihlášení
- * po žebříček, s ukázkou zápisu skóre a cvičení na zkoušku. Vidí ho i nepřihlášený (`#/navod`).
+ * po žebříček, s ukázkou zápisu skóre a cvičení na zkoušku. Vidí ho i nepřihlášený (`#/guide`).
  * Jména jsou z klubu, čísla ukázková. Ukázky jsou jen v prohlížeči, nic se neukládá.
  */
 export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): void }) {
