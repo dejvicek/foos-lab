@@ -298,7 +298,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
           )}
           <p className="note">
             {view === 'avg'
-              ? 'Průměr: pořadí dělá rozdíl skóre na leg, pak procento výher, góly na leg a úspěšnost v simulaci. Hráči s méně než 2 tréninky v období se neřadí.'
+              ? 'Průměr: pořadí dělá rozdíl skóre na leg, pak procento výher, góly na leg a úspěšnost v simulaci. Hráči s méně než ' + MIN_TRAININGS + ' tréninky v období se neřadí.'
               : 'Celkem: pořadí dělá součet rozdílu skóre, pak výhry, góly a výhry v simulaci.'}{' '}
             Počítají se jen zapsané legy ze scénářové ligy a jedniček; simulace kola zvlášť.
           </p>

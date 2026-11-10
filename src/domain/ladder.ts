@@ -9,7 +9,7 @@ export type LadderRange = { kind: 'form' } | { kind: 'all' } | { kind: 'custom';
 export type LadderView = 'avg' | 'total';
 
 export const FORM_DAYS = 28;
-export const MIN_TRAININGS = 2;
+export const MIN_TRAININGS = 3;
 
 export interface LadderRow extends StatLine {
   playerId: PlayerId;

@@ -163,7 +163,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta. Pod dva tréninky ukáže „málo dat“.
+                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta. Pod tři tréninky ukáže „málo dat“.
               </Li>
               <Li i="Σ">
                 <b>Celkem</b> sčítá legy, rozdíl a výhry.

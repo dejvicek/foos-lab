@@ -16,12 +16,15 @@ const t1 = scoreFor(training('t1', '2026-10-20', 'team', ['X', 'P2', 'P3', 'P4']
   [6, 1], [6, 3], [6, 4], [6, 5], [3, 6], [5, 6], [5, 6],
 ]);
 const t2 = scoreFor(training('t2', '2026-10-25', 'single', ['X', 'Q2', 'Q3', 'Q4'], 2), 'X', [
-  [6, 4], [6, 5], [5, 6], [5, 6], [4, 6],
+  [6, 4], [6, 5], [5, 6],
+]);
+const t2b = scoreFor(training('t2b', '2026-10-27', 'single', ['X', 'Q2', 'Q3', 'Q4'], 2), 'X', [
+  [5, 6], [4, 6],
 ]);
 const t3 = scoreFor(training('t3', '2026-10-28', 'team', ['Y', 'R2', 'R3', 'R4']), 'Y', [
   [6, 0], [6, 1], [6, 4], [4, 6], [5, 6], [5, 6], [6, 5],
 ]);
-const repo = () => memoryRepository({ players, trainings: [t1, t2, t3] });
+const repo = () => memoryRepository({ players, trainings: [t1, t2, t2b, t3] });
 const rowOf = (table: HTMLElement, name: string) =>
   within(table).getAllByRole('row').findIndex((r) => r.textContent?.includes(name));
 
@@ -75,7 +78,7 @@ describe('stránka Žebříček', () => {
     await screen.findByRole('table', { name: 'Žebříček' });
     await user.click(screen.getByRole('button', { name: 'Od–do' }));
     fireEvent.change(screen.getByLabelText('Od'), { target: { value: '2026-10-21' } });
-    // t1 (20. 10.) vypadne → X má jen 1 trénink → v Průměru „málo dat“
+    // t1 (20. 10.) vypadne → X má jen 2 tréninky → v Průměru „málo dat“
     expect(rowOf(screen.getByRole('table', { name: 'Málo dat' }), 'Xaver')).toBeGreaterThan(0);
   });
 
@@ -86,11 +89,11 @@ describe('stránka Žebříček', () => {
     await user.click(screen.getByRole('button', { name: 'Xaver' }));
     expect(await screen.findByRole('heading', { name: 'Xaver' })).toBeInTheDocument();
     const rows = within(screen.getByRole('table', { name: 'Tréninky hráče' })).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toHaveTextContent('25. 10. 2026');
-    expect(rows[1]).toHaveTextContent('+6');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent('27. 10. 2026');
+    expect(rows[2]).toHaveTextContent('+6');
     await user.click(rows[0]);
-    expect(window.location.hash).toBe('#/trenink/t2');
+    expect(window.location.hash).toBe('#/trenink/t2b');
   });
 
   it('prázdné období', async () => {
@@ -115,7 +118,9 @@ describe('žebříček stanovišť', () => {
     const { unmount } = render(<App repo={r} />);
     await screen.findByRole('button', { name: 'Stanoviště' });
     await user.click(screen.getByRole('button', { name: 'Stanoviště' }));
-    const table = screen.getByRole('table', { name: 'Udržení míče na pětce' });
+    // 2 tréninky: v Průměru ještě „málo dat“ (pořadí od 3 tréninků), hodnota a pořadí se ukazují
+    expect(screen.queryByRole('table', { name: 'Udržení míče na pětce' })).not.toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'Udržení míče na pětce – málo dat' });
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent('Hráč H1');
     expect(rows[0]).toHaveTextContent('3,0 / 10');
