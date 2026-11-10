@@ -39,6 +39,24 @@ export function clock(min: number): string {
   return `${h}:${m < 10 ? '0' : ''}${m}`;
 }
 
+/** Rozcvička: fáze timeru (pořadí a délky od trenéra, 10. 11. 2026). */
+export interface WarmupPhase {
+  name: string;
+  rod: 'twoBar' | 'fiveBar';
+  sec: number;
+}
+export const WARMUP_PHASES: WarmupPhase[] = [
+  { name: 'Kroužení kolem míčku – pravá ruka, po směru', rod: 'twoBar', sec: 60 },
+  { name: 'Kroužení kolem míčku – pravá ruka, proti směru', rod: 'twoBar', sec: 60 },
+  { name: 'Kroužení kolem míčku – levá ruka, po směru', rod: 'twoBar', sec: 60 },
+  { name: 'Kroužení kolem míčku – levá ruka, proti směru', rod: 'twoBar', sec: 60 },
+  { name: 'Absorbování – nahrávka, zastavit, zpět', rod: 'fiveBar', sec: 60 },
+  { name: 'Tic-tac nahrávky', rod: 'fiveBar', sec: 60 },
+  { name: 'Postupka – nahrávky mezi všemi panáčky po dvou', rod: 'fiveBar', sec: 120 },
+];
+/** Příprava před každou fází Rozcvičky (s). */
+export const WARMUP_PREP_SEC = 5;
+
 export interface ExplanationPart {
   label?: string;
   text: string;
@@ -56,6 +74,19 @@ export const EXPLANATIONS: ExplanationGroup[] = [
   {
     "title": "Stanoviště (sólový trénink, 8 minut na každém)",
     "items": [
+      {
+        "name": "Rozcvička",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "zahřát ruce a rozehrát se."
+          },
+          {
+            "label": "Provedení:",
+            "text": "u stolu dva hráči, každý na své straně s vlastním míčkem, podle společného timeru v Moje hry; před každou fází 5 s na přípravu. Na dvojce kroužení kolem míčku (panáček madlem krouží kolem míčku, co nejmenší kroužení) – pravá ruka po směru a proti směru, levá ruka po směru a proti směru, po 1 min. Na pětce absorbování (nahrávka mezi dvěma panáčky, míček zastavit a teprve pak zpět, žádné tic-tac) 1 min, tic-tac nahrávky 1 min a postupka (nahrávky postupně mezi všemi panáčky po dvou) 2 min. Lichý hráč cvičí sám u volného stolu. Nic se nezapisuje."
+          }
+        ]
+      },
       {
         "name": "Přihrávky na pětce",
         "parts": [

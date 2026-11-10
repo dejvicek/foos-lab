@@ -4,7 +4,7 @@ import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded, fillPlan, planSequence,
 describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
-      'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
+      'warmup', 'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
       'clearing', 'looseBall', 'backRodsBuildUp', 'chain',
       'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
     ]);

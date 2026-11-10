@@ -207,7 +207,7 @@ describe('pořadí disciplín v šabloně (9. 11. 2026)', () => {
 
   it('disciplína mimo pořadí (přidaná v průvodci) se zařadí podle katalogu za nejbližší předchozí', () => {
     const order = orderedDisciplines(['normal', 'warmupPasses']);
-    expect(order.slice(0, 3)).toEqual(['normal', 'warmupPasses', 'passWallLane']);
+    expect(order.slice(0, 4)).toEqual(['warmup', 'normal', 'warmupPasses', 'passWallLane']); // Rozcvička nemá v katalogu předchůdce → první
     expect(order.indexOf('lossTax')).toBeGreaterThan(order.indexOf('normal'));
     expect(new Set(order).size).toBe(order.length);
   });

@@ -47,6 +47,7 @@ export interface SimTeams {
 export type TrainingFormat = 'classic' | 'custom';
 export type DisciplineId =
   | SoloMetric
+  | 'warmup'
   | 'normal'
   | 'lossTax'
   | 'wall'

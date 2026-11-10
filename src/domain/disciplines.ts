@@ -32,10 +32,13 @@ export interface DisciplineDef {
   successor?: DisciplineId;
   /** Co disciplína trénuje (štítky dovedností, hlavní první). */
   skills?: Skill[];
+  /** Každý hráč cvičí sám na své straně: u stolu nejvýš 2, lichý sám u volného stolu, bez sparing partnera. */
+  individual?: boolean;
 }
 
 /** PRD 4.6 – pořadí je i pořadím v rozpisu. Výchozí hodnoty; admin je upravuje v katalogu (catalog.ts). */
 export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
+  { id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, explain: 'Rozcvička', individual: true, optional: true, skills: ['control', 'pass5'] },
   { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses', needsPartner: true, skills: ['pass5', 'control', 'reading'] },
   { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 4, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], optional: true, skills: ['pass5'] },
   { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 8, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['control', 'pass5'] },
