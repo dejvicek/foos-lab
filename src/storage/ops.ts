@@ -1,6 +1,7 @@
 import type { CatalogData } from '../domain/catalog';
 import type { SoloSlot } from '../domain/solo';
 import type { LockedRound, MatchId, Player, PlayerId, PlayTime, Score, SimTeams, SoloKey, Training } from '../domain/types';
+import { StorageError } from './errors';
 import type { DrillTap, Repository, ScoreTap } from './repository';
 
 /** Čeho se zápis týká – ozvěna ze serveru k témuž klíči nepřepíše změnu, která ještě čeká na uložení. */
@@ -70,6 +71,35 @@ export function opKey(op: Op): string {
 }
 
 /**
+ * První zápis fronty, případně spojený s ťuknutími, která jdou hned za ním do téhož zápasu / cvičení:
+ * série čekající na spojení odejde jedním zápisem (Daň za ztrátu = ztráta + gól soupeře, rychlé ťukání).
+ * Jiný zápis se nepřeskakuje – pořadí fronty zůstává. `count` = kolik zápisů fronty spojený zápis pokrývá.
+ */
+export function mergeHead(ops: Op[]): { op: Op; count: number } {
+  const head = ops[0];
+  let count = 1;
+  if (head.kind === 'tapScore') {
+    const taps = [...head.taps];
+    for (; count < ops.length; count++) {
+      const next = ops[count];
+      if (next.kind !== 'tapScore' || next.trainingId !== head.trainingId || next.matchId !== head.matchId) break;
+      taps.push(...next.taps);
+    }
+    return count > 1 ? { op: { ...head, taps }, count } : { op: head, count };
+  }
+  if (head.kind === 'tapDrill') {
+    const taps = [...head.taps];
+    for (; count < ops.length; count++) {
+      const next = ops[count];
+      if (next.kind !== 'tapDrill' || next.trainingId !== head.trainingId || next.playerId !== head.playerId || next.key !== head.key || next.max !== head.max) break;
+      taps.push(...next.taps);
+    }
+    return count > 1 ? { op: { ...head, taps }, count } : { op: head, count };
+  }
+  return { op: head, count };
+}
+
+/**
  * Stav po zápisu, jak ho vrátil server – včetně změn z jiných telefonů. Appka ho převezme, jakmile
  * k témuž klíči nečeká další vlastní zápis (živá změna mohla mezitím dorazit dřív a být zahozena).
  */
@@ -111,5 +141,8 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
       return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.endItem(op.trainingId, op.itemId, op.startedAt, op.endedAt) };
     case 'savePlayTime':
       return void (await repo.savePlayTime(op.trainingId, op.itemId, op.time));
+    default:
+      // Zápis z fronty uložené jinou verzí appky.
+      throw new StorageError(`Neznámý zápis ${(op as { kind: string }).kind}`, true, 'zápis z jiné verze appky');
   }
 }

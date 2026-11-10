@@ -7,7 +7,8 @@ import { bump, bumpLimit } from '../domain/legState';
 import { parseSoloKey } from '../domain/solo';
 import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, SoloKey, Training } from '../domain/types';
 import { isPermanent, userMessageOf } from '../storage/errors';
-import { configOf, opKey, runOp, type Op, type OpResult } from '../storage/ops';
+import { configOf, mergeHead, opKey, runOp, type Op, type OpResult } from '../storage/ops';
+import { freshOnly, noOutbox, type Outbox, type Queued } from '../storage/outbox';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
 import { mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
@@ -108,8 +109,10 @@ function withResult(d: AppData, r: OpResult): AppData {
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 
-export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}): AppStore {
+export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbox?: Outbox } = {}): AppStore {
   const loadWaitMs = opts.loadWaitMs ?? LOAD_WAIT_MS;
+  /** Fronta zápisů uložená v zařízení – neodeslané zápisy přežijí zavření appky. */
+  const outbox = opts.outbox ?? noOutbox;
   const [status, setStatus] = useState<Status>('loading');
   const [data, setData] = useState<AppData>({ players: [], trainings: [] });
   /** Aktuální stav i mezi vykresleními: dvě rychlá ťuknutí po sobě počítají s výsledkem toho prvního. */
@@ -123,14 +126,19 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
   const [saveError, setSaveError] = useState<string | null>(null);
 
   /** Fronta zápisů (data, ne funkce); klíč zápisu říká, čeho se týká – ozvěny ze serveru ho do uložení nepřepíšou. */
-  const queue = useRef<Op[]>([]);
+  const queue = useRef<Queued[]>([]);
   const running = useRef(false);
+  /** Appka (tato instance) skončila – fronta se dál neposílá, zůstává uložená v zařízení. */
+  const stopped = useRef(false);
+  /** Fronta obsahovala zápisy z minulého spuštění: po odeslání se stav srovná se serverem. */
+  const restored = useRef(false);
+  const persist = useCallback(() => outbox.save(queue.current), [outbox]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   /** Ukončí čekání před dalším pokusem (spojení se vrátilo). */
   const wake = useRef<(() => void) | null>(null);
 
   /** Čeká na uložení vlastní změna s tímto klíčem (ve frontě nebo odložená)? */
-  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((op) => opKey(op) === key), []);
+  const busy = useCallback((key: string) => timers.current.has(key) || queue.current.some((q) => opKey(q.op) === key), []);
 
   /** Tréninky na obrazovce (a kolikrát) – jen těm se načítá průběh her. */
   const watched = useRef(new Map<string, number>());
@@ -206,11 +214,13 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
     setSaveState('saving');
     let attempt = 0;
     let rejected = false;
-    while (queue.current.length) {
-      const op = queue.current[0];
+    while (queue.current.length && !stopped.current) {
+      // Ťuknutí, která se ve frontě nahromadila pro tentýž zápas / cvičení, odejdou jedním zápisem.
+      const { op, count } = mergeHead(queue.current.map((q) => q.op));
       try {
         const result = await runOp(repo, op);
-        queue.current.shift();
+        queue.current.splice(0, count);
+        persist();
         // Stav ze serveru platí, jakmile k témuž nečeká další vlastní zápis.
         if (result && !busy(opKey(op))) update((d) => withResult(d, result));
         attempt = 0;
@@ -218,7 +228,8 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
       } catch (e) {
         if (isPermanent(e)) {
           // Opakování nepomůže: zápis zahodit, pokračovat a nakonec srovnat stav se serverem.
-          queue.current.shift();
+          queue.current.splice(0, count);
+          persist();
           attempt = 0;
           rejected = true;
           if (op.kind === 'tapScore' || op.kind === 'tapDrill') {
@@ -251,18 +262,43 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number } = {}
         attempt++;
       }
     }
-    if (rejected) await sync(true);
+    if ((rejected || restored.current) && !stopped.current) {
+      restored.current = false;
+      await sync(true);
+    }
     running.current = false;
     setSaveState('idle');
-  }, [repo, update, sync, busy]);
+  }, [repo, update, sync, busy, persist]);
 
   const enqueue = useCallback(
     (op: Op) => {
-      queue.current.push(op);
+      queue.current.push({ op, at: Date.now() });
+      persist();
       void pump();
     },
-    [pump],
+    [pump, persist],
   );
+
+  // Zápisy, které minule nestihly odejít (appka zavřená bez spojení), se odešlou teď.
+  useEffect(() => {
+    stopped.current = false;
+    if (!queue.current.length) {
+      const { fresh, stale } = freshOnly(outbox.load(), Date.now());
+      if (stale) {
+        setSaveError(`Neodeslané změny z minula (${stale}) jsou starší než den a už se neodešlou.`);
+        outbox.save(fresh);
+      }
+      if (fresh.length) {
+        queue.current = fresh;
+        restored.current = true;
+      }
+    }
+    if (queue.current.length) void pump();
+    return () => {
+      stopped.current = true;
+      wake.current?.();
+    };
+  }, [outbox, pump]);
 
   // Živé změny od ostatních telefonů (ťuknutí jiných hráčů, zamčená kola, nové tréninky) a načtení dat.
   // Odběr se přihlásí hned a data se načtou až po jeho připojení: změny mezi načtením a připojením by se

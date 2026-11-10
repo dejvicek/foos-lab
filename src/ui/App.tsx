@@ -6,6 +6,7 @@ import { viewerOf, type Viewer } from '../domain/my';
 import { memoryAuth, type AuthService, type Me } from '../storage/auth';
 import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
+import type { Outbox } from '../storage/outbox';
 import { MainNav } from './components/MainNav';
 import { LadderPage } from './pages/LadderPage';
 import { DisciplinesPage } from './pages/DisciplinesPage';
@@ -23,7 +24,16 @@ import { useHashRoute } from './useHashRoute';
 const defaultAuth = memoryAuth();
 
 /** PRD 4.7: bez přihlášení jen přihlašovací obrazovka, po prvním přihlášení vynucená změna hesla. */
-export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: AuthService }) {
+export function App({
+  repo,
+  auth = defaultAuth,
+  outboxFor,
+}: {
+  repo: Repository;
+  auth?: AuthService;
+  /** Fronta neodeslaných zápisů v zařízení pro přihlášeného hráče; bez ní fronta zavření appky nepřežije. */
+  outboxFor?: (playerId: string) => Outbox;
+}) {
   const [me, setMe] = useState<Me | null | 'loading'>('loading');
   const [nick, setNick] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
@@ -69,6 +79,7 @@ export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: Aut
     <SignedIn
       repo={repo}
       auth={auth}
+      outboxFor={outboxFor}
       viewer={{ playerId: me.playerId, isAdmin: me.isAdmin }}
       onChangePassword={() => setChanging(true)}
       onSignOut={async () => {
@@ -83,17 +94,20 @@ export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: Aut
 function SignedIn({
   repo,
   auth,
+  outboxFor,
   viewer: me,
   onChangePassword,
   onSignOut,
 }: {
   repo: Repository;
   auth: AuthService;
+  outboxFor?: (playerId: string) => Outbox;
   viewer: Viewer;
   onChangePassword(): void;
   onSignOut(): void;
 }) {
-  const store = useAppState(repo);
+  const outbox = useMemo(() => (me.playerId ? outboxFor?.(me.playerId) : undefined), [outboxFor, me.playerId]);
+  const store = useAppState(repo, { outbox });
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
   const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.

@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useAppState } from './useAppState';
 import { memoryRepository } from '../storage/memoryRepository';
+import { memoryOutbox, OUTBOX_MAX_AGE_MS } from '../storage/outbox';
 import { soloMetric } from '../domain/solo';
 import type { Match, Training } from '../domain/types';
 
@@ -122,5 +123,47 @@ describe('useAppState – po uložení platí stav ze serveru', () => {
     await repo.endItem('t1', m.id, 1000, 2000);
     online();
     await waitFor(() => expect(result.current.data.trainings[0].playTimes).toEqual({ [m.id]: { startedAt: 1000, endedAt: 2000 } }));
+  });
+});
+
+describe('useAppState – fronta zápisů přežije zavření appky', () => {
+  it('neodeslaná ťuknutí se po novém spuštění odešlou a fronta v zařízení se vyprázdní', async () => {
+    const outbox = memoryOutbox();
+    const repo = memoryRepository({ players: [], trainings: [t] }, { failSaves: 1 });
+    const first = renderHook(() => useAppState(repo, { outbox }));
+    await waitFor(() => expect(first.result.current.status).toBe('ready'));
+    act(() => first.result.current.bumpScore('t1', m, 'ga', 1));
+    await waitFor(() => expect(first.result.current.saveState).toBe('retrying'));
+    expect(outbox.load()).toHaveLength(1);
+    first.unmount(); // telefon appku zavřel dřív, než se zápis povedl
+
+    const second = renderHook(() => useAppState(repo, { outbox }));
+    await waitFor(() => expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 1, gb: 0 }));
+    await waitFor(() => expect(second.result.current.data.trainings[0]?.scores[m.id]).toEqual({ ga: 1, gb: 0 }));
+    expect(outbox.load()).toEqual([]);
+    expect(repo.snapshot().trainings[0].events).toHaveLength(1);
+  });
+
+  it('zápisy starší než den se po spuštění neodešlou a appka to oznámí', async () => {
+    const old = Date.now() - OUTBOX_MAX_AGE_MS - 1000;
+    const outbox = memoryOutbox([{ at: old, op: { kind: 'tapScore', trainingId: 't1', matchId: m.id, taps: [{ id: 'e1', at: old, field: 'ga', delta: 1, max: 6 }] } }]);
+    const repo = memoryRepository({ players: [], trainings: [t] });
+    const { result } = renderHook(() => useAppState(repo, { outbox }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.saveError).toMatch(/starší než den/);
+    expect(repo.snapshot().trainings[0].scores).toEqual({});
+    expect(outbox.load()).toEqual([]);
+  });
+
+  it('série ťuknutí čekající ve frontě odejde jedním zápisem', async () => {
+    const { repo, result } = await setup({ failSaves: 1 });
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    act(() => result.current.bumpScore('t1', m, 'lb', 1));
+    await waitFor(() => expect(result.current.saveState).toBe('retrying'));
+    online();
+    await waitFor(() => expect(result.current.saveState).toBe('idle'));
+    expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0, la: 0, lb: 1 });
+    expect(repo.writes()).toBe(2); // nepovedený první pokus + jedna dávka
   });
 });

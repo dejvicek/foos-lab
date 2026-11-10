@@ -19,6 +19,8 @@ export function memoryRepository(
   subscribers(): number;
   /** Kolikrát se načítala všechna data (loadAll). */
   loads(): number;
+  /** Kolik zápisů úložiště dostalo (včetně nepovedených). */
+  writes(): number;
   /** Testy: další načtení vezmou stav hned, ale vrátí ho až po release() (pomalé spojení). */
   hold(): void;
   release(): void;
@@ -28,10 +30,12 @@ export function memoryRepository(
   let failPermanent = opts.failPermanent ?? 0;
   let loseResponses = opts.loseResponses ?? 0;
   let loads = 0;
+  let writes = 0;
   let gate: Promise<void> | null = null;
   let open: (() => void) | null = null;
 
   const write = async (fn: () => void) => {
+    writes++;
     if (failPermanent > 0) {
       failPermanent--;
       throw new StorageError('Simulovaná trvalá chyba', true, 'server změnu odmítl');
@@ -64,6 +68,7 @@ export function memoryRepository(
     emit: () => fanOut,
     subscribers: () => listeners.size,
     loads: () => loads,
+    writes: () => writes,
     hold: () => {
       gate = new Promise((r) => (open = r));
     },
