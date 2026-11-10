@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { alphabetical, type RosterError } from '../../domain/roster';
 import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
-import { toggleAttendee } from '../../domain/training';
+import { selectedDisciplines, toggleAttendee, withTemplate } from '../../domain/training';
+import { currentTemplates, matchingTemplate } from '../../domain/catalog';
 import { randomTeams } from '../../domain/simulation';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
-import { DurationSelect } from './DisciplinePicker';
+import { DurationSelect, hm } from './DisciplinePicker';
 import { ROSTER_ERRORS } from '../pages/PlayersPage';
 
 interface PartProps {
@@ -13,8 +14,8 @@ interface PartProps {
   onChange(next: Training): void;
 }
 
-/** Krok „Kdy a kde“: datum, začátek (orientační), délka / typ, počet stolů. */
-export function WhenFields({ training, onChange }: PartProps) {
+/** Krok „Kdy a kde“: datum, začátek (orientační), šablona (při založení), délka / typ, počet stolů. */
+export function WhenFields({ training, onChange, template }: PartProps & { template?: boolean }) {
   return (
     <div className="setup">
       <div className="field">
@@ -30,6 +31,7 @@ export function WhenFields({ training, onChange }: PartProps) {
           onChange={(e) => /^\d{2}:\d{2}$/.test(e.target.value) && onChange({ ...training, startTime: e.target.value })}
         />
       </div>
+      {training.format === 'custom' && template && <TemplateField training={training} onChange={onChange} always />}
       {training.format === 'custom' ? (
         <DurationSelect training={training} onChange={onChange} />
       ) : (
@@ -42,6 +44,36 @@ export function WhenFields({ training, onChange }: PartProps) {
         </div>
       )}
       <TablesField name={`tables-${training.id}`} value={training.tables} onChange={(n) => onChange({ ...training, tables: n })} />
+    </div>
+  );
+}
+
+/**
+ * Šablona tréninku: nastaví délku, výběr, pořadí, kola a pauzy. Při založení v kroku Kdy a kde
+ * vždy (předvybraná výchozí = první, je vidět i jediná), v kroku Disciplíny jen když je jich víc.
+ */
+export function TemplateField({ training, onChange, always }: PartProps & { always?: boolean }) {
+  const templates = currentTemplates();
+  if (templates.length < (always ? 1 : 2)) return null;
+  const current = matchingTemplate(templates, training.durationMin, selectedDisciplines(training.plan));
+  return (
+    <div className="field tpl-picker">
+      <label htmlFor="t-template">Šablona</label>
+      <select
+        id="t-template"
+        value={current?.id ?? ''}
+        onChange={(e) => {
+          const t = templates.find((x) => x.id === e.target.value);
+          if (t) onChange(withTemplate(training, t));
+        }}
+      >
+        {!current && <option value="">Vlastní výběr</option>}
+        {templates.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name} ({hm(t.durationMin)})
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

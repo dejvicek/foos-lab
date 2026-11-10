@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { RosterError } from '../../domain/roster';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
-import { selectedDisciplines, toggleAttendee, withTemplate } from '../../domain/training';
-import { currentTemplates, matchingTemplate } from '../../domain/catalog';
+import { toggleAttendee } from '../../domain/training';
 import type { Player, PlayerId, Training } from '../../domain/types';
 import { plannedMinutes } from '../../domain/plan';
 import { formatDate } from '../dates';
@@ -11,7 +10,7 @@ import { prepareEdit } from '../trainingEdit';
 import { DisciplinePicker, hm } from './DisciplinePicker';
 import { FairnessPanel } from './FairnessPanel';
 import { PlanPreview, type Highlight } from './PlanPreview';
-import { AttendanceFields, WhenFields } from './TrainingSetup';
+import { AttendanceFields, TemplateField, WhenFields } from './TrainingSetup';
 
 type StepId = 'when' | 'who' | 'disc' | 'sum';
 const TITLES: Record<StepId, string> = { when: 'Kdy a kde', who: 'Přítomní', disc: 'Disciplíny', sum: 'Shrnutí' };
@@ -67,7 +66,7 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
   const body = (() => {
     switch (stepId) {
       case 'when':
-        return <WhenFields training={draft} onChange={change} />;
+        return <WhenFields training={draft} onChange={change} template={mode === 'new'} />;
       case 'who':
         return <AttendanceFields training={draft} players={players} onChange={change} onAddPlayer={addPlayer} />;
       case 'disc':
@@ -79,7 +78,7 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
               names={Object.fromEntries(byId)}
               onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
             />
-            <TemplatePicker training={draft} onChange={change} />
+            <TemplateField training={draft} onChange={change} />
             <div className="wizard-disc">
               <DisciplinePicker training={draft} open bare onChange={change} />
               <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} hl={hl} />
@@ -161,32 +160,5 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
         </span>
       </div>
     </section>
-  );
-}
-
-/** Šablona tréninku v kroku Disciplíny (jen když je jich víc): nastaví délku a výběr disciplín. */
-function TemplatePicker({ training, onChange }: { training: Training; onChange(t: Training): void }) {
-  const templates = currentTemplates();
-  if (templates.length < 2) return null;
-  const current = matchingTemplate(templates, training.durationMin, selectedDisciplines(training.plan));
-  return (
-    <div className="field tpl-picker">
-      <label htmlFor="t-template">Šablona</label>
-      <select
-        id="t-template"
-        value={current?.id ?? ''}
-        onChange={(e) => {
-          const t = templates.find((x) => x.id === e.target.value);
-          if (t) onChange(withTemplate(training, t));
-        }}
-      >
-        {!current && <option value="">Vlastní výběr</option>}
-        {templates.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name} ({hm(t.durationMin)})
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }

@@ -2,8 +2,8 @@ import { DISCIPLINES, discipline } from './disciplines';
 import { autoPlan, DEFAULT_SELECTION, manualPlan, plannedMinutes, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { SOLO_METRICS, soloMetric } from './solo';
-import { newTraining, replan } from './training';
-import type { ScheduleRow, Training } from './types';
+import { newTraining, replan, selectedDisciplines } from './training';
+import type { DisciplineId, ScheduleRow, Training } from './types';
 import { H } from '../test/fixtures';
 
 const custom = (n: number, tables: 1 | 2 | 3 | 4, plan: Training['plan'], over: Partial<Training> = {}): Training => ({
@@ -90,6 +90,15 @@ describe('trénink pro 1 hráče', () => {
     for (const id of ['penaltySolo', 'backShotSolo', 'passWallLane'] as const) expect(eight.plan[id] ?? 0).toBe(0);
     // bez doplňování (9. 11. 2026): zápasy si nechají počet kol, cvičení podle přítomných
     expect(eight.plan).toEqual(manualPlan(DEFAULT_SELECTION, 8, 4, zero.plan));
+  });
+
+  it('zpátky na víc hráčů s šablonou: výběr se vrátí přesně na šablonu (i nevolitelná / volitelná sólová)', () => {
+    const selection: DisciplineId[] = ['passWallLane', 'normal', 'wall'];
+    const zero = { ...custom(0, 4, manualPlan(selection, 0, 4)), disciplineOrder: selection };
+    const one = replan(zero, { ...zero, attendees: H(1) });
+    expect(one.plan.fiveBarControl ?? 0).toBeGreaterThan(0);
+    const eight = replan(one, { ...one, attendees: H(8) });
+    expect(selectedDisciplines(eight.plan).sort()).toEqual([...selection].sort());
   });
 });
 

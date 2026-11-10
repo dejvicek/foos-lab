@@ -115,3 +115,40 @@ it('šablona v kroku Disciplíny: nový trénink začne první, výběr jiné zm
   expect(screen.getByText(/^Naplánováno .* z 1:00/)).toBeInTheDocument();
   applyCatalog({});
 });
+
+it('šablona při založení (krok Kdy a kde): předvybraná výchozí, jiná změní délku i disciplíny', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trenink/novy';
+  const catalog = {
+    templates: [
+      { id: 'k', name: 'Krátký', durationMin: 60, selection: ['warmupPasses', 'normal'] as DisciplineId[] },
+      { id: 'd', name: 'Dlouhý', durationMin: 180, selection: ['normal', 'wall', 'sim'] as DisciplineId[] },
+    ],
+  };
+  render(<App repo={memoryRepository({ players, trainings: [], catalog })} />);
+  await screen.findByRole('heading', { name: 'Kdy a kde' });
+  const pick = screen.getByRole('combobox', { name: 'Šablona' });
+  expect(pick).toHaveValue('k');
+  await user.selectOptions(pick, 'd');
+  expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('180');
+  await next(user);
+  for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
+  await next(user);
+  expect(screen.getByRole('combobox', { name: 'Šablona' })).toHaveValue('d');
+  expect(screen.getByRole('checkbox', { name: 'Simulace ligového kola' })).toBeChecked();
+  expect(screen.getByRole('checkbox', { name: 'Přihrávky na pětce' })).not.toBeChecked();
+  applyCatalog({});
+});
+
+it('jediná šablona: v kroku Kdy a kde je vidět (zvolená), v kroku Disciplíny ne', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trenink/novy';
+  render(<App repo={memoryRepository({ players, trainings: [] })} />);
+  await screen.findByRole('heading', { name: 'Kdy a kde' });
+  const pick = screen.getByRole('combobox', { name: 'Šablona' });
+  expect(within(pick).getAllByRole('option').map((o) => o.textContent)).toEqual(['Výchozí (3:00)']);
+  await next(user);
+  for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
+  await next(user);
+  expect(screen.queryByRole('combobox', { name: 'Šablona' })).toBeNull();
+});

@@ -214,7 +214,10 @@ export function replan(before: Training, after: Training): Training {
   const played = lockedCounts(after);
   let selection = selectedDisciplines(after.plan);
   if (toSolo) selection = [...new Set([...selection, ...SOLO_SELECTION])];
-  if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && discipline(id).optional && !played[id]));
+  // Se šablonou (disciplineOrder) se vrátí přesně její výběr, bez ní se odeberou volitelná.
+  const order = after.disciplineOrder;
+  const added = (id: DisciplineId) => (order ? !order.includes(id) : discipline(id).optional);
+  if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && added(id) && !played[id]));
   return {
     ...after,
     // Bez doplňování (9. 11. 2026): cvičení podle přítomných, zápasy s počtem kol, jak jsou.
