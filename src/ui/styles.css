@@ -1,31 +1,44 @@
 /*
-  Klubové barvy (10. 11. 2026): černá / grafit a zlatá – zlatá znamená úspěch a tvoji stranu stolu.
-  Světlý režim: teplá světlá šedá, uhlová černá, starozlatá na text. Tmavý: noc, grafit, zlato.
+  Klubové barvy (10. 11. 2026): černá / grafit a zlatá.
+  Zlatá = hlavní tlačítko a zvolená položka přepínače (Žebříček), stav hry (na řadě, dohráno, plus) a tvoje strana stolu.
+  Aktivní položka hlavního menu má zlatou linku. Značky ve formuláři (zaškrtnutí, posuvník, počet stolů) jsou černé (--ink).
+  Červená (--warn) = ztráta, chyba, mazání – a utkání, které čeká na zahájení (záměrně: něco není v pořádku).
+  Světlý režim: chladná světlá šedá (stejná grafitová řada jako tmavý), uhlová černá, starozlatá na text.
+  Tmavý: noc, grafit, zlato.
 */
 :root {
-  --bg: #f3f2ee;
+  --bg: #eef0f3;
   --surface: #ffffff;
   --ink: #1c1b19;
-  --muted: #6b6860;
-  --line: #e2dfd7;
-  --line-strong: #cdc9be;
-  /* zlatá jako text, linky a značky (na světlém tmavší „starozlatá“, kontrast 5:1) */
-  --felt: #8a671a;
+  --muted: #5d6068;
+  /* slabý text, který se pořád musí dát přečíst (4,5 : 1): prázdné skóre, „volný“, scénářový start, zástupný text */
+  --faint: #696d75;
+  /* linky jsou jen dělicí čáry – na text ani okraj pole nestačí */
+  --line: #dfe2e7;
+  --line-strong: #c6cad1;
+  /* okraj polí formuláře (3 : 1 proti kartě i podkladu) */
+  --control: #858992;
+  /* zlatá jako text, linky a značky (na světlém tmavší „starozlatá“: 6 : 1 na kartě, 5 : 1 na vlastním podbarvení) */
+  --felt: #7f5e14;
   --felt-ink: #ffffff;
   --felt-soft: #f4ecd6;
   /* zlatá výplň: tvoje strana stolu, úspěch, dohraný leg */
   --gold: #d4a73a;
   --gold-ink: #1c1b19;
-  /* hlavní tlačítka */
-  --action: #1c1b19;
-  --action-ink: #ffffff;
+  /* hlavní tlačítka a zvolená položka přepínače: zlatá výplň, tmavý text (rozhodnutí uživatele 10. 11. 2026).
+     Okraj je o stupeň tmavší zlatá – na světlém podkladu drží tvar tlačítka (3 : 1), samotná výplň by nestačila. */
+  --action: var(--gold);
+  --action-ink: var(--gold-ink);
+  --action-edge: #b0841f;
   --warn: #b53a2f;
+  /* text na červené výplni (ve tmavém režimu tmavý – bílá na světlejší červené nestačí) */
+  --warn-ink: #ffffff;
   --warn-soft: #f6e3e0;
   /* soupeř / pravá strana stolu: grafit (od zlaté se liší i světlostí) */
   --side-b: #3a3936;
   --side-b-ink: #ffffff;
   --side-b-text: #3a3936;
-  --side-b-soft: #e6e4df;
+  --side-b-soft: #e3e5e9;
   --nav-h: 56px;
   /* Šířka celé appky na notebooku; víc je jen okraj (širokoúhlé monitory appka nepotřebuje). */
   --app-max: 1200px;
@@ -38,18 +51,22 @@
     --surface: #1b1c20;
     --ink: #f2f0ea;
     --muted: #a3a097;
+    --faint: #85878e;
     --line: #2c2e33;
     --line-strong: #44464c;
+    --control: #6b6e76;
     --felt: #e2b23e;
     --felt-ink: #141414;
     --felt-soft: #2a2312;
     --gold: #e2b23e;
     --gold-ink: #141414;
-    --action: #f2f0ea;
-    --action-ink: #0d0e10;
+    --action: var(--gold);
+    --action-ink: var(--gold-ink);
+    --action-edge: var(--gold);
     --warn: #e36c60;
+    --warn-ink: #141414;
     --warn-soft: #2c1816;
-    --side-b: #45484f;
+    --side-b: #666a74;
     --side-b-ink: #ffffff;
     --side-b-text: #c9ccd2;
     --side-b-soft: #23252a;
@@ -61,18 +78,22 @@
   --surface: #1b1c20;
   --ink: #f2f0ea;
   --muted: #a3a097;
+  --faint: #85878e;
   --line: #2c2e33;
   --line-strong: #44464c;
+  --control: #6b6e76;
   --felt: #e2b23e;
   --felt-ink: #141414;
   --felt-soft: #2a2312;
   --gold: #e2b23e;
   --gold-ink: #141414;
-  --action: #f2f0ea;
-  --action-ink: #0d0e10;
+  --action: var(--gold);
+  --action-ink: var(--gold-ink);
+  --action-edge: var(--gold);
   --warn: #e36c60;
+  --warn-ink: #141414;
   --warn-soft: #2c1816;
-  --side-b: #45484f;
+  --side-b: #666a74;
   --side-b-ink: #ffffff;
   --side-b-text: #c9ccd2;
   --side-b-soft: #23252a;
@@ -114,7 +135,7 @@ h4 { font-size: 15px; margin: 16px 0 6px; }
 button, input, select, textarea { font: inherit; color: var(--ink); }
 button {
   background: var(--action); color: var(--action-ink);
-  border: 1px solid var(--action); border-radius: 4px;
+  border: 1px solid var(--action-edge); border-radius: 4px;
   padding: 7px 14px; font-weight: 600; cursor: pointer; min-height: 36px;
 }
 button:disabled { opacity: 0.35; cursor: default; }
@@ -124,7 +145,7 @@ button.icon { background: var(--surface); color: var(--ink); border-color: var(-
 button.back { background: none; border: 0; padding: 0; min-height: 28px; color: var(--muted); font-weight: 500; }
 button.back::before { content: '‹ '; }
 input[type='text'], input:not([type]), input[type='date'], input[type='time'], input[type='number'], select {
-  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px;
+  background: var(--surface); border: 1px solid var(--control); border-radius: 6px;
   padding: 6px 9px; min-height: 36px;
 }
 /* Výběr: vlastní šipka se stejným odsazením vpravo jako text vlevo (nativní šipka má okraj jinak). */
@@ -137,15 +158,15 @@ select {
   cursor: pointer;
 }
 select:disabled { cursor: default; opacity: .5; }
-:root { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b6b66' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+:root { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235d6068' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a0a7a2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  :root:not([data-theme='light']) { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a3a097' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 }
-:root[data-theme='dark'] { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a0a7a2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+:root[data-theme='dark'] { --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a3a097' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input::placeholder { color: var(--line-strong); }
+input::placeholder { color: var(--faint); }
 label { font-weight: 600; font-size: 13px; }
 
 /* ── Kostra a navigace ──────────────────────────────────── */
@@ -168,17 +189,18 @@ label { font-weight: 600; font-size: 13px; }
   background: none; color: var(--muted); border: 0; border-radius: 0;
   border-bottom: 3px solid transparent; height: 100%; padding: 0 14px; font-weight: 600;
 }
-.main-nav button.active { color: var(--ink); border-bottom-color: var(--felt); }
+/* Aktivní položka drží zlatou (rozhodnutí uživatele 10. 11. 2026): linka v tmavší zlaté, která je na bílé liště vidět (3 : 1). */
+.main-nav button.active { color: var(--ink); border-bottom-color: var(--action-edge); }
 .save-banner {
   position: sticky; top: var(--nav-h); z-index: 9;
-  background: var(--warn); color: #fff; padding: 8px 24px; font-weight: 600;
+  background: var(--warn); color: var(--warn-ink); padding: 8px 24px; font-weight: 600;
 }
-.save-banner .banner-ok { background: transparent; color: #fff; border-color: #fff; min-height: 26px; padding: 0 10px; margin-left: 8px; }
+.save-banner .banner-ok { background: transparent; color: var(--warn-ink); border-color: var(--warn-ink); min-height: 26px; padding: 0 10px; margin-left: 8px; }
 /* Bez spojení: tichá informace, že data nemusí být aktuální (zápisy čekají ve frontě). */
 .offline-banner { background: var(--line); color: var(--ink); padding: 6px 24px; font-size: 13px; font-weight: 600; }
 /* Nová verze appky: klidná lišta (není to chyba), tlačítko Obnovit. */
 .update-banner { background: var(--felt-soft); color: var(--ink); border-bottom: 1px solid var(--felt); padding: 8px 24px; font-weight: 600; }
-.update-banner .banner-ok { background: var(--action); color: var(--action-ink); border-color: var(--action); min-height: 30px; padding: 0 12px; margin-left: 8px; }
+.update-banner .banner-ok { background: var(--action); color: var(--action-ink); border-color: var(--action-edge); min-height: 30px; padding: 0 12px; margin-left: 8px; }
 .load-error { padding: 24px 0; }
 
 /* ── Hráči ──────────────────────────────────────────────── */
@@ -242,7 +264,7 @@ details[open] > .attendance-head::before { content: '▾'; }
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px;
 }
 .check-list label { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; font-weight: 500; cursor: pointer; }
-.check-list input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.check-list input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
 .check-list .archived-tag { color: var(--muted); font-weight: 400; font-size: 13px; }
 details.attendance .add-form { margin: 8px 0 0; }
 .teams-editor {
@@ -265,7 +287,7 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .disc-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2px 20px; }
 .disc-list > li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 2px 10px; padding: 3px 0; border-bottom: 1px solid var(--line); min-height: 40px; }
 .disc-list label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
-.disc-list input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.disc-list input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
 .disc-list .muted { font-size: 12px; }
 .stepper { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
 .stepper button.icon { min-width: 30px; min-height: 30px; }
@@ -328,7 +350,7 @@ details.disciplines[open] > summary::before { content: '▾'; }
   border-radius: 50%; background: var(--surface); border: 2px solid var(--rail-off);
   display: flex; align-items: center; justify-content: center; color: var(--felt-ink); font-size: 9px; font-weight: 900; line-height: 1;
 }
-.st-done > .rail-node, .st-done .rail-node { background: var(--rail-on); border-color: var(--rail-on); }
+.st-done > .rail-node, .st-done .rail-node { background: var(--gold); border-color: var(--rail-on); color: var(--gold-ink); }
 .st-done .rail-node::after { content: '✓'; }
 .st-playing .rail-node { border-color: var(--rail-on); box-shadow: 0 0 0 4px var(--felt-soft); }
 .st-playing .rail-node::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--rail-on); }
@@ -350,8 +372,8 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .cell-names { display: block; }
 .vs { color: var(--muted); font-size: 12px; }
 .cell-score { display: inline-block; margin-top: 2px; font-weight: 800; font-size: 15px; }
-.cell-score.empty { color: var(--line-strong); font-weight: 500; }
-.plan td.free { color: var(--line-strong); font-style: italic; }
+.cell-score.empty { color: var(--faint); font-weight: 500; }
+.plan td.free { color: var(--faint); font-style: italic; }
 
 /* Rozbalený blok */
 .plan tr.expand > td { background: var(--felt-soft); padding: 12px 14px 14px; border-bottom: 1px solid var(--line-strong); cursor: default; }
@@ -409,7 +431,7 @@ tr.clickable:hover td { background: var(--felt-soft); }
 }
 .segmented button { background: none; color: var(--ink); border: 0; border-radius: 0; border-right: 1px solid var(--line); font-weight: 500; }
 .segmented button:last-child { border-right: 0; }
-.segmented button[aria-pressed='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; }
+.segmented button[aria-pressed='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--action-edge); }
 .range-dates { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; align-items: center; }
 .solo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 8px 24px; }
 .solo-block { margin-top: 12px; }
@@ -427,7 +449,7 @@ tr.clickable:hover td { background: var(--felt-soft); }
   }
   .main-nav .brand { display: none; }
   .main-nav button { border-bottom: 0; border-top: 3px solid transparent; }
-  .main-nav button.active { border-top-color: var(--felt); }
+  .main-nav button.active { border-top-color: var(--action-edge); }
   .save-banner { top: 0; }
   .plan { min-width: 760px; }
   .solo-grid { grid-template-columns: 1fr; }
@@ -460,7 +482,7 @@ input:disabled { background: var(--bg); color: var(--muted); border-color: var(-
 .tabs { display: inline-flex; margin: 0 0 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
 .tabs button { background: none; color: var(--ink); border: 0; border-radius: 0; border-right: 1px solid var(--line); font-weight: 500; }
 .tabs button:last-child { border-right: 0; }
-.tabs button[aria-selected='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; }
+.tabs button[aria-selected='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--action-edge); }
 
 /* Můj stůl */
 .my-table { background: var(--felt-soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-width: 640px; }
@@ -637,12 +659,13 @@ button.pick-chip:disabled { opacity: 1; color: var(--line-strong); }
 .side-a button.pick-chip[aria-pressed='true'] { background: var(--gold); color: var(--gold-ink); font-weight: 700; }
 .side-b button.pick-chip[aria-pressed='true'] { background: var(--side-b); color: var(--side-b-ink); font-weight: 700; }
 .picker button.pick-chip[aria-pressed='true']:disabled { opacity: 0.7; }
-button.pick-chip.loss { width: 22px; height: 22px; font-size: 13px; color: var(--warn); }
+/* Stupnice ztrát je šedá; červený je jen zvolený počet (a popisek „ztráty“). */
+button.pick-chip.loss { width: 22px; height: 22px; font-size: 13px; color: var(--muted); }
 .pick-losses { gap: 0; }
-button.pick-chip.loss[aria-pressed='true'] { background: var(--warn) !important; color: #fff !important; }
+button.pick-chip.loss[aria-pressed='true'] { background: var(--warn) !important; color: var(--warn-ink) !important; }
 .pick-k { color: var(--warn); font-size: 12px; font-weight: 700; text-align: center; }
 .pick-score { text-align: center; font-size: 26px; font-weight: 800; white-space: nowrap; line-height: 1.1; }
-.pick-score.empty { color: var(--line-strong); }
+.pick-score.empty { color: var(--faint); }
 .pick-score small { display: block; font-size: 11px; font-weight: 600; color: var(--felt); }
 button.pick-clear { align-self: center; font-size: 12px; }
 
@@ -684,6 +707,7 @@ button.pick-clear { align-self: center; font-size: 12px; }
 .active-queue li.mine { background: var(--felt-soft); }
 .active-queue li.pause { color: var(--muted); font-style: italic; }
 .timing { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+/* Čeká na zahájení je červené záměrně (rozhodnutí uživatele 10. 11. 2026): utkání má běžet, něco není v pořádku. */
 .timing.ready { border: 2px solid var(--warn); }
 .timing-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .timing-main button { min-height: 44px; padding: 0 22px; border-radius: 22px; }
@@ -872,8 +896,8 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; min-height: 40px;
   border: 1px solid var(--line-strong); border-radius: 20px; background: var(--surface); cursor: pointer; font-weight: 600;
 }
-.split-option:has(input:checked) { border-color: var(--felt); background: var(--felt-soft); }
-.split-option input { margin: 0; accent-color: var(--felt); }
+.split-option:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.split-option input { margin: 0; accent-color: var(--ink); }
 .order-fields > button.ghost { margin-bottom: 8px; }
 
 /* Průvodce: délka posuvníkem, stoly linkou s tečkami */
@@ -881,7 +905,7 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
 .setup .range-field { flex: 2 1 260px; }
 .range-row { display: flex; align-items: center; gap: 12px; }
 .range-field { --thumb: 16px; --range-out: 58px; }
-.range-row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--felt); height: 28px; margin: 0; }
+.range-row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--ink); height: 28px; margin: 0; }
 .range-row output { width: var(--range-out); flex: none; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
 /* popisky přesně pod jezdcem: stejná šířka jako posuvník (bez hodnoty vpravo) */
 .range-ticks { position: relative; height: 16px; margin-right: calc(var(--range-out) + 12px); font-size: 11px; color: var(--muted); }
@@ -896,14 +920,14 @@ button.mirror-loss small.mirror-tax { display: block; font-size: 11px; font-weig
 .dot-step input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .dot-step .dot {
   width: 26px; height: 26px; box-sizing: border-box; border-radius: 50%;
-  background: var(--surface); border: 2px solid var(--line-strong); transition: background 0.15s, border-color 0.15s;
+  background: var(--surface); border: 2px solid var(--control); transition: background 0.15s, border-color 0.15s;
 }
-.dot-step:has(input:checked) .dot { background: var(--felt); border-color: var(--felt); box-shadow: 0 0 0 4px var(--felt-soft); }
-.dot-step:has(input:checked) .dot-num { color: var(--felt); font-weight: 800; }
+.dot-step:has(input:checked) .dot { background: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 4px var(--line); }
+.dot-step:has(input:checked) .dot-num { color: var(--ink); font-weight: 800; }
 .dot-step:has(input:focus-visible) .dot { outline: 2px solid var(--felt); outline-offset: 3px; }
 .dot-num { font-size: 13px; color: var(--muted); }
-.dot-line::after { content: ''; position: absolute; left: 14px; top: 17px; height: 2px; width: calc((100% - 28px) * var(--fill, 0)); background: var(--felt); }
-.dot-step.on .dot { background: var(--felt); border-color: var(--felt); }
+.dot-line::after { content: ''; position: absolute; left: 14px; top: 17px; height: 2px; width: calc((100% - 28px) * var(--fill, 0)); background: var(--ink); }
+.dot-step.on .dot { background: var(--ink); border-color: var(--ink); }
 .dot-step.on .dot-num { color: var(--ink); }
 /* Linka za tečkami, ne přes ně */
 .dot-line::before, .dot-line::after { z-index: 0; }
@@ -932,14 +956,14 @@ details.fairness > summary { cursor: pointer; font-weight: 700; padding: 4px 0; 
 .fairness { margin-top: 0; }
 /* Zvýraznění hráče v náhledu plánu a v kontrole rozpisu */
 .pp-p { cursor: pointer; border-radius: 3px; transition: background 0.1s; }
-.pp-p:hover, .pp-p.hl { background: #F2C94C; color: #1d1d1b; box-shadow: 0 0 0 2px #F2C94C; }
+.pp-p:hover, .pp-p.hl { background: var(--gold); color: var(--gold-ink); box-shadow: 0 0 0 2px var(--gold); }
 .fairness-table th[scope] { cursor: pointer; }
-.fairness-table th.hl { background: #F2C94C; color: #1d1d1b; }
-.fairness-table tr.hl td:not(.self) { box-shadow: inset 0 2px 0 #F2C94C, inset 0 -2px 0 #F2C94C; }
+.fairness-table th.hl { background: var(--gold); color: var(--gold-ink); }
+.fairness-table tr.hl td:not(.self) { box-shadow: inset 0 2px 0 var(--gold), inset 0 -2px 0 var(--gold); }
 .pp-hint { margin: 0 0 6px; font-size: 12px; position: sticky; top: -10px; background: var(--bg); z-index: 2; padding: 4px 0; }
-.pp-pin { display: inline-flex; align-items: center; gap: 6px; background: #F2C94C; color: #1d1d1b; border-radius: 14px; padding: 2px 4px 2px 10px; }
+.pp-pin { display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: var(--gold-ink); border-radius: 14px; padding: 2px 4px 2px 10px; }
 .pp-pin button.icon { min-width: 26px; min-height: 26px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.08); border: 0; color: inherit; }
-.pp-p.pinned { box-shadow: 0 0 0 2px #F2C94C, 0 0 0 3px var(--ink); }
+.pp-p.pinned { box-shadow: 0 0 0 2px var(--gold), 0 0 0 3px var(--ink); }
 button.pp-toggle { background: none; border: 0; padding: 0; min-height: 0; color: inherit; font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
 button.pp-toggle::after { content: ' ▸'; color: var(--muted); font-weight: 400; }
 button.pp-toggle[aria-expanded='true']::after { content: ' ▾'; }
@@ -967,30 +991,16 @@ details.help .skill-tags { margin: 6px 0 8px; }
 /* štítky v seznamu disciplín: pod názvem přes celý řádek */
 .disc-list > li > .skill-tags { grid-column: 1 / -1; grid-row: 2; margin: 0 0 2px 26px; }
 .skill-tags li { display: inline-block; min-height: 0; border-bottom: 1px solid var(--line); }
-/* barvy sekcí štítků (světlý i tmavý režim) */
+/* barvy sekcí štítků: hodnoty --g-* jsou jen na jednom místě (níž, u stránky Disciplíny), pro světlý i tmavý režim */
 .skill-tags li { --c: var(--muted); color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 10%, transparent); }
-.skill-tags li.g-attack { --c: #C2410C; }
-.skill-tags li.g-defense { --c: #2D5FA8; }
-.skill-tags li.g-technique { --c: #1F7A4C; }
-.skill-tags li.g-tactics { --c: #7C4DB8; }
-.skill-tags li.g-mind { --c: #A16207; }
-.skill-tags li.g-match { --c: #5B6470; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .skill-tags li.g-attack { --c: #FB923C; }
-  :root:not([data-theme='light']) .skill-tags li.g-defense { --c: #7AA7F0; }
-  :root:not([data-theme='light']) .skill-tags li.g-technique { --c: #4FC98A; }
-  :root:not([data-theme='light']) .skill-tags li.g-tactics { --c: #B794F4; }
-  :root:not([data-theme='light']) .skill-tags li.g-mind { --c: #F2C94C; }
-  :root:not([data-theme='light']) .skill-tags li.g-match { --c: #A3ACB8; }
-}
+.skill-tags li.g-attack { --c: var(--g-attack); }
+.skill-tags li.g-defense { --c: var(--g-defense); }
+.skill-tags li.g-technique { --c: var(--g-technique); }
+.skill-tags li.g-tactics { --c: var(--g-tactics); }
+.skill-tags li.g-mind { --c: var(--g-mind); }
+.skill-tags li.g-match { --c: var(--g-match); }
 .skill-legend { margin: 0 0 8px; }
 .skill-legend li { cursor: help; }
-:root[data-theme='dark'] .skill-tags li.g-attack { --c: #FB923C; }
-:root[data-theme='dark'] .skill-tags li.g-defense { --c: #7AA7F0; }
-:root[data-theme='dark'] .skill-tags li.g-technique { --c: #4FC98A; }
-:root[data-theme='dark'] .skill-tags li.g-tactics { --c: #B794F4; }
-:root[data-theme='dark'] .skill-tags li.g-mind { --c: #F2C94C; }
-:root[data-theme='dark'] .skill-tags li.g-match { --c: #A3ACB8; }
 /* filtr disciplín podle štítků: štítky a sekce jako přepínače */
 .skill-tags li:has(> button) { padding: 0; }
 .skill-tags li > button { background: none; border: 0; color: inherit; font: inherit; padding: 0 7px; min-height: 0; line-height: 18px; cursor: pointer; border-radius: 10px; }
@@ -1001,11 +1011,12 @@ details.help .skill-tags { margin: 6px 0 8px; }
 button.tags-toggle { font-size: 12px; margin: 0 0 6px; }
 
 /* ── Stránka Disciplíny (kompaktní seznam, katalog) ─────── */
-:root { --g-attack: #C2410C; --g-defense: #2D5FA8; --g-technique: #1F7A4C; --g-tactics: #7C4DB8; --g-mind: #A16207; --g-match: #5B6470; --row-hover: #fafaf7; }
+/* Barvy sekcí štítků se vyhýbají zlaté a červené, které už něco znamenají: „Hlava“ je malinová (jantarová splývala se zlatou). */
+:root { --g-attack: #C2410C; --g-defense: #2D5FA8; --g-technique: #1F7A4C; --g-tactics: #7C4DB8; --g-mind: #9d2a6a; --g-match: #5B6470; --row-hover: #f7f8fa; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) { --g-attack: #FB923C; --g-defense: #7AA7F0; --g-technique: #4FC98A; --g-tactics: #B794F4; --g-mind: #F2C94C; --g-match: #A3ACB8; --row-hover: #222724; }
+  :root:not([data-theme='light']) { --g-attack: #FB923C; --g-defense: #7AA7F0; --g-technique: #4FC98A; --g-tactics: #B794F4; --g-mind: #f08fc4; --g-match: #A3ACB8; --row-hover: #22242a; }
 }
-:root[data-theme='dark'] { --g-attack: #FB923C; --g-defense: #7AA7F0; --g-technique: #4FC98A; --g-tactics: #B794F4; --g-mind: #F2C94C; --g-match: #A3ACB8; --row-hover: #222724; }
+:root[data-theme='dark'] { --g-attack: #FB923C; --g-defense: #7AA7F0; --g-technique: #4FC98A; --g-tactics: #B794F4; --g-mind: #f08fc4; --g-match: #A3ACB8; --row-hover: #22242a; }
 .disciplines-page { max-width: 960px; }
 .disciplines-page .g-attack { --c: var(--g-attack); }
 .disciplines-page .g-defense { --c: var(--g-defense); }
@@ -1079,13 +1090,13 @@ button.dp-edit { margin-top: 12px; min-height: 30px; font-size: 13px; }
 .dp-editor input.dp-min { width: 72px; }
 .dp-editor .note { margin: 4px 0 0; font-size: 12px; }
 .dp-check { display: flex; align-items: center; gap: 8px; padding-top: 6px; font-weight: 500; color: var(--ink); }
-.dp-check input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.dp-check input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
 .dp-pick { display: grid; gap: 6px; padding-top: 4px; }
 .dp-pick-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
 .dp-pick-title { width: 70px; font-size: 12px; color: var(--muted); }
 .dp-help-field { display: grid; gap: 2px; margin-bottom: 10px; }
 .dp-help-field label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.dp-help-field textarea { width: 100%; max-width: 75ch; border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; background: var(--surface); font-size: 14px; line-height: 1.45; resize: vertical; }
+.dp-help-field textarea { width: 100%; max-width: 75ch; border: 1px solid var(--control); border-radius: 6px; padding: 6px 8px; background: var(--surface); font-size: 14px; line-height: 1.45; resize: vertical; }
 
 .dp-skills-editor { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px 4px; margin-top: 12px; }
 .dp-skills-editor h2 { margin: 0; font-size: 16px; }
@@ -1115,9 +1126,6 @@ button.dp-edit { margin-top: 12px; min-height: 30px; font-size: 13px; }
 }
 
 /* ── Šablony tréninku (katalog, admin): jedna tabulka ───── */
-:root { --k-drill: #2f7d57; --k-match: #2d5fa8; --k-sim: #7c4db8; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --k-drill: #4fae80; --k-match: #6f9be0; --k-sim: #a585e0; } }
-:root[data-theme='dark'] { --k-drill: #4fae80; --k-match: #6f9be0; --k-sim: #a585e0; }
 .dp-admin { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .dp-admin button { min-height: 30px; font-size: 13px; }
 .tpl-editor { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin: 12px 0 8px; }
@@ -1154,9 +1162,10 @@ button.tpl-tab.add { color: var(--felt); }
 .tpl-sec { margin-top: 14px; }
 .tpl-sec h3 { margin: 0; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .tpl-sec h3 i { width: 9px; height: 9px; border-radius: 2px; }
-.tpl-sec h3 i.k-drill, .tt-strip.k-drill { background: var(--k-drill); }
-.tpl-sec h3 i.k-match, .tt-strip.k-match { background: var(--k-match); }
-.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--k-sim); }
+/* Druh disciplíny (cvičení / zápasy / simulace) říká nadpis sekce; pruh je neutrální, aby se nepletl s barvami štítků. */
+.tpl-sec h3 i.k-drill, .tt-strip.k-drill,
+.tpl-sec h3 i.k-match, .tt-strip.k-match,
+.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--muted); }
 .tpl-count { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; }
 /* řádek: čas | pruh | ⠿ | disciplína | ↑↓ | kola | délka kola | celkem */
 .tt-rows { list-style: none; margin: 0; padding: 0; }
@@ -1172,7 +1181,7 @@ button.tpl-tab.add { color: var(--felt); }
 .tt-row.drop { box-shadow: inset 0 2px 0 var(--felt); }
 .tpl-drag { cursor: grab; color: var(--muted); user-select: none; }
 .tpl-check { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 32px; }
-.tpl-check input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; flex: none; }
+.tpl-check input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; flex: none; }
 .tt-row.off .tpl-check { font-weight: 500; color: var(--muted); }
 .tpl-move { display: inline-flex; gap: 4px; }
 .tpl-move button.icon, .tt-count button.icon, .tt-row .tpl-total button.icon { min-width: 30px; min-height: 30px; }
@@ -1310,9 +1319,8 @@ button.pill.primary { border-color: var(--felt); color: var(--felt); }
 .att-group h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); margin: 0; }
 .att-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); column-gap: 18px; }
 .att-rows label { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 42px; border-bottom: 1px solid var(--line); cursor: pointer; }
-.att-rows input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.att-rows input { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
 .att-name { font-weight: 600; overflow-wrap: anywhere; }
-.att-rows label:has(input:checked) .att-name { color: var(--felt); }
 .att-rows .archived-tag { color: var(--muted); font-weight: 400; font-size: 13px; }
 .att-add { margin: 0; max-width: 420px; }
 .att-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; border-top: 1px solid var(--line); padding: 10px 0 0; }
@@ -1385,7 +1393,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-goal:disabled, .guide .g-loss:disabled { opacity: .45; cursor: default; }
 .guide .g-mrow { display: flex; gap: 6px; }
 .guide .g-mrow button { flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; font-size: 13px; }
-.guide .g-mrow button.g-go { background: var(--action); color: var(--action-ink); border-color: var(--action); }
+.guide .g-mrow button.g-go { background: var(--action); color: var(--action-ink); border-color: var(--action-edge); }
 .guide .g-done { border-radius: 12px; background: var(--felt-soft); color: var(--felt); font-weight: 700; font-size: 13px; padding: 8px 10px; text-align: center; }
 .guide .g-scen { display: flex; gap: 4px; flex-wrap: wrap; }
 .guide .g-scen button { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; font-size: 11px; font-weight: 600; padding: 4px 8px; }
@@ -1504,7 +1512,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
   .guide .g-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .guide .g-top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
-.guide button.g-back { min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--action); background: var(--action); color: var(--action-ink); font-weight: 700; font-size: 14px; }
+.guide button.g-back { min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--action-edge); background: var(--action); color: var(--action-ink); font-weight: 700; font-size: 14px; }
 .guide span.g-bigbtn, .guide span.g-ghostbtn { display: flex; align-items: center; justify-content: center; }
 @media (max-width: 600px) { .guide .g-top .g-tag { display: none; } }
 .auth-guide { margin-top: 20px; font-size: 14px; }
