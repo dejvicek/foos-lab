@@ -9,6 +9,7 @@ import type { GameEvent, Match, MatchId, Player, PlayerId, PlayTime, Score, Solo
 import { isPermanent, userMessageOf } from '../storage/errors';
 import { configOf, mergeHead, opKey, runOp, type Op, type OpResult } from '../storage/ops';
 import { freshOnly, noOutbox, type Outbox, type Queued } from '../storage/outbox';
+import { withoutEvents, type SnapshotStore } from '../storage/snapshot';
 import type { AppData, Repository } from '../storage/repository';
 import { newUuid } from './ids';
 import { applyChanges, mergeRemote, mergeTrainingEcho, pendingKey } from './merge';
@@ -69,6 +70,8 @@ export interface AppStore {
 export const RETRY_DELAYS_MS = [2000, 5000, 10000];
 /** Jak dlouho se při startu čeká na připojení odběru živých změn, než se data načtou i bez něj. */
 export const LOAD_WAIT_MS = 3000;
+/** Za jak dlouho po změně se stav uloží do zařízení (série ťuknutí = jedno uložení). */
+export const SNAPSHOT_DELAY_MS = 1500;
 export const SCORE_DEBOUNCE_MS = 400;
 
 
@@ -109,8 +112,14 @@ function withResult(d: AppData, r: OpResult): AppData {
 const upsert = <T extends { id: string }>(list: T[], item: T): T[] =>
   list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 
-export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbox?: Outbox } = {}): AppStore {
+export function useAppState(
+  repo: Repository,
+  opts: { loadWaitMs?: number; outbox?: Outbox; snapshot?: SnapshotStore; snapshotDelayMs?: number } = {},
+): AppStore {
   const loadWaitMs = opts.loadWaitMs ?? LOAD_WAIT_MS;
+  /** Poslední stav uložený v zařízení: po spuštění je vidět hned, ze serveru se dotáhnou změny. (Stálý objekt – jeho výměna spustí načtení znovu.) */
+  const snapshot = opts.snapshot;
+  const snapshotDelayMs = opts.snapshotDelayMs ?? SNAPSHOT_DELAY_MS;
   /** Fronta zápisů uložená v zařízení – neodeslané zápisy přežijí zavření appky. */
   const outbox = opts.outbox ?? noOutbox;
   const [status, setStatus] = useState<Status>('loading');
@@ -169,6 +178,8 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
   const cursor = useRef<string | null>(null);
   /** Příští dorovnání načte všechno (lokální stav se rozešel se serverem – odmítnutý zápis). */
   const fullNext = useRef(false);
+  /** Data už přišla ze serveru (ne jen z uloženého stavu v zařízení). */
+  const fromServer = useRef(false);
   /** Živé změny, které dorazily během načítání: po načtení se uplatní znovu (jsou novější než načtený snímek). */
   const late = useRef<(() => void)[] | null>(null);
 
@@ -203,6 +214,7 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
             }
             for (const apply of replay) apply();
             loaded.current = true;
+            fromServer.current = true;
             setStatus('ready');
             for (const id of watched.current.keys()) fetchEvents(id);
           } catch {
@@ -323,7 +335,17 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
   useEffect(() => {
     setStatus('loading');
     loaded.current = false;
+    fromServer.current = false;
     cursor.current = null;
+    let alive = true;
+    // Uložený stav ze zařízení hned na obrazovku; server ho pak dorovná (jen o změny od uloženého kurzoru).
+    void snapshot?.load().then((snap) => {
+      if (!alive || !snap || fromServer.current) return; // server byl rychlejší – starší stav už není potřeba
+      update(() => snap.data);
+      cursor.current = snap.cursor;
+      loaded.current = true;
+      setStatus('ready');
+    });
     const timer = setTimeout(() => void sync(true), loadWaitMs);
     // Změna, která dorazí během načítání, se uplatní hned a po načtení ještě jednou.
     const live =
@@ -368,10 +390,24 @@ export function useAppState(repo: Repository, opts: { loadWaitMs?: number; outbo
       },
     });
     return () => {
+      alive = false;
       clearTimeout(timer);
       off();
     };
-  }, [repo, loadNonce, loadWaitMs, sync, busy, update]);
+  }, [repo, loadNonce, loadWaitMs, sync, busy, update, snapshot]);
+
+  // Stav se průběžně ukládá do zařízení (až když je co ukládat) a hned při odchodu z appky.
+  useEffect(() => {
+    if (!snapshot || !loaded.current) return;
+    const save = () => void snapshot.save({ data: withoutEvents(dataRef.current), cursor: cursor.current, savedAt: Date.now() });
+    const timer = setTimeout(save, snapshotDelayMs);
+    const onHide = () => document.visibilityState === 'hidden' && save();
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, [snapshot, snapshotDelayMs, data, status]);
 
   // Telefon se zamčenou obrazovkou / appka na pozadí: po návratu dorovnat.
   useEffect(() => {

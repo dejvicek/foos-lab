@@ -13,7 +13,15 @@ export interface Me {
 }
 
 export interface AuthService {
-  /** Obnoví přihlášení (např. po znovuotevření appky). */
+  /**
+   * Přihlášení zapamatované v zařízení – hned, bez sítě. Appka podle něj naběhne dřív, než server
+   * přihlášení ověří (`current`), a zůstane přihlášená, i když ověření kvůli spojení selže.
+   */
+  cached?(): Me | null;
+  /**
+   * Ověří přihlášení na serveru (např. po znovuotevření appky). null = přihlášení neplatí;
+   * chyba = nepodařilo se zjistit (bez spojení) – zapamatované přihlášení platí dál.
+   */
   current(): Promise<Me | null>;
   /** Přihlášení přezdívkou; při prvním přihlášení je heslo přezdívka. */
   signIn(nick: string, password: string): Promise<Me>;
@@ -25,17 +33,47 @@ export interface AuthService {
 
 export class AuthError extends Error {}
 
+const ME_KEY = 'foosball-practice.me.v1';
+
+/** Přihlášený hráč zapamatovaný v zařízení (jen pro rychlý start – práva hlídá databáze). */
+export function cachedMe(): Me | null {
+  try {
+    const m = JSON.parse(localStorage.getItem(ME_KEY) ?? 'null') as Partial<Me> | null;
+    return m && typeof m.playerId === 'string' ? { playerId: m.playerId, isAdmin: !!m.isAdmin, mustChangePassword: !!m.mustChangePassword } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Zapamatuje přihlášeného hráče; null zapomene. */
+export function rememberMe(m: Me | null): void {
+  try {
+    if (m) localStorage.setItem(ME_KEY, JSON.stringify(m));
+    else localStorage.removeItem(ME_KEY);
+  } catch {
+    /* bez uložení to běží dál */
+  }
+}
+
 export function supabaseAuth(client: SupabaseClient): AuthService {
   const me = async (): Promise<Me | null> => {
     const { data, error, status } = await client.rpc('my_account');
     if (error) throw fromPostgrest(error, status);
     const row = (data as { player_id: string; is_admin: boolean; must_change_password: boolean }[] | null)?.[0];
-    return row ? { playerId: row.player_id, isAdmin: row.is_admin, mustChangePassword: row.must_change_password } : null;
+    const m = row ? { playerId: row.player_id, isAdmin: row.is_admin, mustChangePassword: row.must_change_password } : null;
+    rememberMe(m);
+    return m;
   };
   return {
+    cached: cachedMe,
     async current() {
-      const { data } = await client.auth.getSession();
-      if (!data.session) return null;
+      const { data, error } = await client.auth.getSession();
+      // Přihlášení vypršelo a bez spojení ho nejde obnovit: to není odhlášení.
+      if (!data.session && (error as { name?: string } | null)?.name === 'AuthRetryableFetchError') throw error;
+      if (!data.session) {
+        rememberMe(null);
+        return null;
+      }
       return me();
     },
     async signIn(nick, password) {
@@ -49,6 +87,7 @@ export function supabaseAuth(client: SupabaseClient): AuthService {
       return m;
     },
     async signOut() {
+      rememberMe(null);
       await client.auth.signOut();
     },
     async changePassword(pw) {
@@ -56,6 +95,8 @@ export function supabaseAuth(client: SupabaseClient): AuthService {
       if (error) throw new AuthError('Heslo se nepodařilo změnit.');
       const r = await client.rpc('password_changed');
       if (r.error) throw fromPostgrest(r.error, r.status);
+      const m = cachedMe();
+      if (m) rememberMe({ ...m, mustChangePassword: false });
     },
     async resetPassword(playerId) {
       const { data, error, status } = await client.rpc('admin_reset_password', { p_player: playerId });

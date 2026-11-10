@@ -7,6 +7,7 @@ import { memoryAuth, type AuthService, type Me } from '../storage/auth';
 import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
 import type { Outbox } from '../storage/outbox';
+import type { SnapshotStore } from '../storage/snapshot';
 import type { AppVersion } from '../storage/appVersion';
 import { useAppVersion } from './useAppVersion';
 import { MainNav } from './components/MainNav';
@@ -31,6 +32,7 @@ export function App({
   auth = defaultAuth,
   outboxFor,
   latestVersion,
+  snapshotFor,
 }: {
   repo: Repository;
   auth?: AuthService;
@@ -38,8 +40,11 @@ export function App({
   outboxFor?: (playerId: string) => Outbox;
   /** Zjistí právě nasazenou verzi appky; bez ní se verze nekontroluje (testy, vývoj). */
   latestVersion?: () => Promise<AppVersion | null>;
+  /** Poslední stav appky uložený v zařízení pro přihlášeného hráče (rychlý start, pomalé spojení). */
+  snapshotFor?: (playerId: string) => SnapshotStore;
 }) {
-  const [me, setMe] = useState<Me | null | 'loading'>('loading');
+  // Zapamatované přihlášení platí hned; server ho ověří na pozadí.
+  const [me, setMe] = useState<Me | null | 'loading'>(() => auth.cached?.() ?? 'loading');
   const [nick, setNick] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   // Návod pro hráče je vidět i bez přihlášení (10. 11. 2026).
@@ -49,7 +54,8 @@ export function App({
     let alive = true;
     auth.current().then(
       (m) => alive && setMe(m),
-      () => alive && setMe(null),
+      // Nepodařilo se ověřit (bez spojení): zapamatované přihlášení platí dál, jinak přihlašovací obrazovka.
+      () => alive && setMe((cur) => (cur === 'loading' ? null : cur)),
     );
     return () => {
       alive = false;
@@ -86,9 +92,12 @@ export function App({
       auth={auth}
       outboxFor={outboxFor}
       latestVersion={latestVersion}
+      snapshotFor={snapshotFor}
       viewer={{ playerId: me.playerId, isAdmin: me.isAdmin }}
       onChangePassword={() => setChanging(true)}
       onSignOut={async () => {
+        // Data klubu po odhlášení v zařízení nezůstávají.
+        await snapshotFor?.(me.playerId).clear();
         await auth.signOut();
         setNick(null);
         setMe(null);
@@ -102,6 +111,7 @@ function SignedIn({
   auth,
   outboxFor,
   latestVersion,
+  snapshotFor,
   viewer: me,
   onChangePassword,
   onSignOut,
@@ -110,12 +120,14 @@ function SignedIn({
   auth: AuthService;
   outboxFor?: (playerId: string) => Outbox;
   latestVersion?: () => Promise<AppVersion | null>;
+  snapshotFor?: (playerId: string) => SnapshotStore;
   viewer: Viewer;
   onChangePassword(): void;
   onSignOut(): void;
 }) {
   const outbox = useMemo(() => (me.playerId ? outboxFor?.(me.playerId) : undefined), [outboxFor, me.playerId]);
-  const store = useAppState(repo, { outbox });
+  const snapshot = useMemo(() => (me.playerId ? snapshotFor?.(me.playerId) : undefined), [snapshotFor, me.playerId]);
+  const store = useAppState(repo, { outbox, snapshot });
   const version = useAppVersion(latestVersion);
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
   const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);

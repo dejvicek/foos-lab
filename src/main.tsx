@@ -7,22 +7,23 @@ import { memoryAuth, supabaseAuth, type AuthService } from './storage/auth';
 import type { Repository } from './storage/repository';
 import { localOutbox, type Outbox } from './storage/outbox';
 import { fetchLatestVersion } from './storage/appVersion';
+import { idbSnapshot, type SnapshotStore } from './storage/snapshot';
 import './ui/styles.css';
 
-function createBackend(): { repo: Repository; auth: AuthService; outboxFor?: (playerId: string) => Outbox } | null {
+function createBackend(): { repo: Repository; auth: AuthService; outboxFor?: (playerId: string) => Outbox; snapshotFor?: (playerId: string) => SnapshotStore } | null {
   const env = import.meta.env;
-  // Data v paměti se po obnovení stránky ztratí – neodeslané zápisy se k nim neukládají.
+  // Data v paměti se po obnovení stránky ztratí – neodeslané zápisy ani poslední stav se k nim neukládají.
   if (env.VITE_USE_MEMORY === '1') return { repo: memoryRepository(), auth: memoryAuth() };
   if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) return null;
   const client = createSupabase(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
-  return { repo: supabaseRepository(client), auth: supabaseAuth(client), outboxFor: localOutbox };
+  return { repo: supabaseRepository(client), auth: supabaseAuth(client), outboxFor: localOutbox, snapshotFor: idbSnapshot };
 }
 
 const backend = createBackend();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {backend ? (
-      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} latestVersion={import.meta.env.PROD ? fetchLatestVersion : undefined} />
+      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} snapshotFor={backend.snapshotFor} latestVersion={import.meta.env.PROD ? fetchLatestVersion : undefined} />
     ) : (
       <main className="page">
         <p>Chybí nastavení Supabase. Doplň .env.local podle .env.example.</p>
