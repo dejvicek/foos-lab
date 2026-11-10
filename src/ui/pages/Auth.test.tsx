@@ -56,6 +56,27 @@ describe('přihlášení', () => {
     expect(auth.passwords.get('id2')).toBe('tajne123');
   });
 
+  it('Enter v přezdívce skočí na heslo, Enter v hesle přihlásí (klávesnice mobilu: Další / Přejít)', async () => {
+    const auth = memoryAuth({ players: authPlayers, signedIn: null });
+    render(<App repo={memoryRepository({ players: roster, trainings: [training] })} auth={auth} />);
+    const user = userEvent.setup();
+    const nick = await screen.findByLabelText('Přezdívka');
+    const pw = screen.getByLabelText('Heslo');
+    expect(nick).toHaveAttribute('enterkeyhint', 'next');
+    expect(pw).toHaveAttribute('enterkeyhint', 'go');
+    await user.type(nick, 'Milan{Enter}');
+    expect(pw).toHaveFocus();
+    await user.type(pw, 'Milan{Enter}');
+    expect(await screen.findByRole('heading', { name: 'Nastav si heslo' })).toBeInTheDocument();
+
+    const first = screen.getByLabelText('Nové heslo');
+    const again = screen.getByLabelText('Nové heslo znovu');
+    expect(first).toHaveAttribute('enterkeyhint', 'next');
+    await user.type(first, 'tajne123{Enter}');
+    expect(again).toHaveFocus();
+    expect(screen.queryByText('Hesla se neshodují.')).toBeNull();
+  });
+
   it('hráč v cizím tréninku: žádné nastavení; nezahájený trénink nemá Živě / Moje hry; nezapíše nic', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     window.location.hash = '#/trainings';

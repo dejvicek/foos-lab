@@ -1,5 +1,14 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { AuthError, MIN_PASSWORD, type AuthService, type Me } from '../../storage/auth';
+
+/** Enter v prvním poli skočí na další pole místo odeslání (klávesnice mobilu ukáže „Další“). */
+function enterToNext(nextId: string) {
+  return (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    document.getElementById(nextId)?.focus();
+  };
+}
 
 export function LoginPage({ auth, onDone }: { auth: AuthService; onDone(me: Me, nick: string): void }) {
   const [nick, setNick] = useState('');
@@ -26,9 +35,9 @@ export function LoginPage({ auth, onDone }: { auth: AuthService; onDone(me: Me, 
         }}
       >
         <label htmlFor="login-nick">Přezdívka</label>
-        <input id="login-nick" value={nick} onChange={(e) => setNick(e.target.value)} autoComplete="username" autoFocus />
+        <input id="login-nick" value={nick} onChange={(e) => setNick(e.target.value)} autoComplete="username" autoFocus enterKeyHint="next" onKeyDown={enterToNext('login-pw')} />
         <label htmlFor="login-pw">Heslo</label>
-        <input id="login-pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" />
+        <input id="login-pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" enterKeyHint="go" />
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={busy || !nick.trim() || !pw}>
           Přihlásit
@@ -82,9 +91,9 @@ export function ChangePasswordPage({
         }}
       >
         <label htmlFor="pw-new">Nové heslo</label>
-        <input id="pw-new" type="password" value={a} onChange={(e) => setA(e.target.value)} autoComplete="new-password" autoFocus />
+        <input id="pw-new" type="password" value={a} onChange={(e) => setA(e.target.value)} autoComplete="new-password" autoFocus enterKeyHint="next" onKeyDown={enterToNext('pw-again')} />
         <label htmlFor="pw-again">Nové heslo znovu</label>
-        <input id="pw-again" type="password" value={b} onChange={(e) => setB(e.target.value)} autoComplete="new-password" />
+        <input id="pw-again" type="password" value={b} onChange={(e) => setB(e.target.value)} autoComplete="new-password" enterKeyHint="done" />
         {error && <p className="error">{error}</p>}
         <div className="actions-row">
           <button type="submit" disabled={busy}>
