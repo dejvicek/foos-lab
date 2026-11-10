@@ -70,6 +70,17 @@ describe('stránka Žebříček', () => {
     expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
   });
 
+  it('logo s nápisem Foos Lab vede na úvodní stránku', async () => {
+    const user = userEvent.setup();
+    render(<App repo={repo()} />);
+    await screen.findByRole('table', { name: 'Žebříček' });
+    const logo = within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('link', { name: 'Foos Lab – úvodní stránka' });
+    expect(logo).toHaveAttribute('href', '#/trainings');
+    await user.click(logo);
+    expect(window.location.hash).toBe('#/trainings');
+    expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
+  });
+
   it('volby se pamatují po novém otevření', async () => {
     const user = userEvent.setup();
     const r = repo();

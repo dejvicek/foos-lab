@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
+import { toHash } from '../useHashRoute';
 
 /**
  * Návod pro hráče (landing page, 10. 11. 2026): jak s appkou pracovat na telefonu u stolu – od přihlášení
@@ -13,10 +14,10 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
     <main className="guide" aria-label="Návod pro hráče">
       <div className="g-wrap">
         <header className="g-top">
-          <span className="g-brand">
+          <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
             <BrandMark />
             Foos Lab
-          </span>
+          </a>
           <span className="g-top-right">
             <span className="g-tag">Návod pro hráče · telefon u stolu</span>
             <button type="button" className="g-back" onClick={onBack}>

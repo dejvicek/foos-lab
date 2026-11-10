@@ -179,7 +179,8 @@ label { font-weight: 600; font-size: 13px; }
   padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
   background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.main-nav .brand { font-weight: 800; margin-right: 20px; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+.main-nav .brand { font-weight: 800; margin-right: 20px; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; text-decoration: none; }
+.main-nav .brand:hover, .guide .g-brand:hover { color: var(--felt); }
 /* Logo (10. 11. 2026): baňka se zlatou náplní a míčkem */
 .brand-mark { width: 26px; height: 26px; flex: none; }
 .brand-mark .bm-flask { fill: none; stroke: var(--felt); stroke-width: 4; stroke-linejoin: round; }
@@ -1404,7 +1405,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-top .brand-mark { width: 28px; height: 28px; }
 /* ── hlavička ── */
 .guide .g-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px; }
-.guide .g-brand { font-family: var(--font); font-stretch: 112%; font-weight: 800; color: var(--ink); font-size: 18px; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: 8px; }
+.guide .g-brand { font-family: var(--font); font-stretch: 112%; font-weight: 800; color: var(--ink); font-size: 18px; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .guide .g-top .g-tag { font-size: 13px; color: var(--muted); }
 
 /* ── hero ── */

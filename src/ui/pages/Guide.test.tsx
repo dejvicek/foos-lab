@@ -49,6 +49,7 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     expect(within(ladder).getByText('Brzda')).toBeInTheDocument();
     expect(within(ladder).getByTitle('3. nejdelší čekání')).toBeInTheDocument();
     expect(within(ladder).queryByTitle('4. nejdelší čekání')).toBeNull();
+    expect(within(guide).getByRole('link', { name: 'Foos Lab – úvodní stránka' })).toHaveAttribute('href', '#/trainings');
     await user.click(within(guide).getByRole('button', { name: 'Zpět do appky' }));
     expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
   });

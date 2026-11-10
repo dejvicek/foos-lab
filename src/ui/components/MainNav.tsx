@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Route } from '../useHashRoute';
+import { toHash, type Route } from '../useHashRoute';
 
 /** Ikony záložek (i v Návodu – stejné jako v appce). */
 export const NAV_ICONS: Record<string, ReactNode> = {
@@ -98,10 +98,10 @@ export function MainNav({
   ];
   return (
     <nav className="main-nav" aria-label="Hlavní navigace" style={{ ['--nav-items' as string]: items.length }}>
-      <span className="brand">
+      <a className="brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
         <BrandMark />
         Foos Lab
-      </span>
+      </a>
       {items.map((it) => {
         const active = it.match.includes(route.page);
         return (
