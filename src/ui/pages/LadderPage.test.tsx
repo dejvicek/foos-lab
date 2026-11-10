@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../../storage/appVersion';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
@@ -76,6 +77,7 @@ describe('stránka Žebříček', () => {
     await screen.findByRole('table', { name: 'Žebříček' });
     const logo = within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('link', { name: 'Foos Lab – úvodní stránka' });
     expect(logo).toHaveAttribute('href', '#/trainings');
+    expect(logo).toHaveTextContent(`Foos Lab${APP_VERSION}`); // verze vedle názvu
     await user.click(logo);
     expect(window.location.hash).toBe('#/trainings');
     expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();

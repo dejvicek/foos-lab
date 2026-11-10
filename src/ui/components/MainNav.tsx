@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../../storage/appVersion';
 import { ThemeSwitch } from './ThemeSwitch';
 import type { ReactNode } from 'react';
 import { toHash, type Route } from '../useHashRoute';
@@ -102,6 +103,7 @@ export function MainNav({
       <a className="brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
         <BrandMark />
         Foos Lab
+        <VersionTag />
       </a>
       {items.map((it) => {
         const active = it.match.includes(route.page);
@@ -122,6 +124,11 @@ export function MainNav({
       })}
       {onSignOut && (
         <span className="nav-user">
+          {/* Na telefonu je logo dole skryté – verze je tady (jen tam) */}
+          <span className="nav-brand-mobile" aria-hidden="true">
+            <BrandMark />
+            <VersionTag />
+          </span>
           {myName && <span className="nav-name">{myName}</span>}
           <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
@@ -139,6 +146,15 @@ export function MainNav({
   );
 }
 
+/** Číslo verze vedle názvu Foos Lab (hlavička). */
+export function VersionTag() {
+  return (
+    <span className="brand-version" title="Verze appky">
+      {APP_VERSION}
+    </span>
+  );
+}
+
 /** Hlavička přihlášení a změny hesla: logo a přepínač režimu. */
 export function AuthHeader() {
   return (
@@ -146,6 +162,7 @@ export function AuthHeader() {
       <span className="brand">
         <BrandMark />
         Foos Lab
+        <VersionTag />
       </span>
       <ThemeSwitch />
     </header>

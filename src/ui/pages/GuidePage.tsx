@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
-import { BrandMark, NAV_ICONS } from '../components/MainNav';
+import { BrandMark, NAV_ICONS, VersionTag } from '../components/MainNav';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { MatchTimeline, TimelineBox } from '../components/GameTimeline';
 import type { GameEvent, Match } from '../../domain/types';
@@ -20,6 +20,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
             <BrandMark />
             Foos Lab
+            <VersionTag />
           </a>
           <span className="g-top-right">
             <span className="g-tag">Návod pro hráče · telefon u stolu</span>

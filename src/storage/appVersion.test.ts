@@ -1,4 +1,5 @@
-import { compareVersion, fetchLatestVersion } from './appVersion';
+import { APP_VERSION, compareVersion, fetchLatestVersion } from './appVersion';
+import pkg from '../../package.json';
 
 const mine = { build: 'abc1234', compat: 3 };
 const reply = (body: unknown, ok = true) => (async () => ({ ok, json: async () => body })) as unknown as typeof fetch;
@@ -38,5 +39,12 @@ describe('verze appky', () => {
         throw new Error('bez spojení');
       }) as unknown as typeof fetch),
     ).toBeNull();
+  });
+
+  it('číslo verze appky je z package.json; version.json ho nese, starší bez něj platí dál', async () => {
+    expect(APP_VERSION).toBe(pkg.version);
+    expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(await fetchLatestVersion(reply({ version: '1.0.1', build: 'def5678', compat: 4 }))).toEqual({ version: '1.0.1', build: 'def5678', compat: 4 });
+    expect(await fetchLatestVersion(reply({ build: 'def5678', compat: 4 }))).toEqual({ build: 'def5678', compat: 4 });
   });
 });

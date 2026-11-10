@@ -183,6 +183,9 @@ label { font-weight: 600; font-size: 13px; }
 .main-nav .brand:hover, .guide .g-brand:hover { color: var(--felt); }
 /* Logo (10. 11. 2026): baňka se zlatou náplní a míčkem */
 .brand-mark { width: 26px; height: 26px; flex: none; }
+/* Číslo verze vedle Foos Lab */
+.brand-version { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0; font-variant-numeric: tabular-nums; padding: 1px 6px; border: 1px solid var(--line); border-radius: 999px; line-height: 1.4; }
+.nav-brand-mobile { display: none; }
 .brand-mark .bm-flask { fill: none; stroke: var(--felt); stroke-width: 4; stroke-linejoin: round; }
 .brand-mark .bm-liquid { fill: var(--gold); }
 .brand-mark .bm-ball { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
@@ -449,6 +452,8 @@ tr.clickable:hover td { background: var(--felt-soft); }
     border-bottom: 0; border-top: 1px solid var(--line);
   }
   .main-nav .brand { display: none; }
+  .main-nav .nav-brand-mobile { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; padding-left: 8px; }
+  .main-nav .nav-brand-mobile .brand-mark { width: 22px; height: 22px; }
   .main-nav button { border-bottom: 0; border-top: 3px solid transparent; }
   .main-nav button.active { border-top-color: var(--action-edge); }
   .save-banner { top: 0; }
@@ -1673,6 +1678,13 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
   .guide .g-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .guide .g-top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.guide .g-brand { white-space: nowrap; }
+@media (max-width: 480px) {
+  /* telefon: logo s verzí, přepínač a Zpět do appky v jednom řádku */
+  .guide .g-top-right { flex-wrap: nowrap; gap: 8px; }
+  .guide button.g-back { padding: 0 12px; font-size: 13px; white-space: nowrap; }
+  .guide .g-brand { font-size: 16px; gap: 6px; }
+}
 /* Ukázka Průběhu: přepínač jako v appce (reset tlačítek návodu ho jinak srazí) */
 .guide .tl-switch button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
 /* Ukázka Průběhu: telefon s pevnou výškou; delší sloupec se posouvá uvnitř, hlavička zůstává nahoře.
