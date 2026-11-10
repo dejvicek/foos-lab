@@ -1634,6 +1634,14 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
 /* Ukázka Průběhu: přepínač jako v appce (reset tlačítek návodu ho jinak srazí) */
 .guide .tl-switch button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
+/* Ukázka Průběhu: telefon s pevnou výškou; delší sloupec se posouvá uvnitř, hlavička zůstává nahoře.
+   Výška sloupce = místo v kartě pod přepínačem při výšce obrazovky 560 px. */
+.guide .g-fixed .g-screen { height: 560px; }
+.guide .g-fixed .g-sbody { min-height: 0; }
+.guide .g-progress { flex: 1; min-height: 0; overflow: hidden; }
+.guide .g-progress .tl-box { margin-top: 0; border-top: 0; padding-top: 0; }
+.guide .g-progress .tl-col { max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
+.guide .g-progress .tl-col-head > span { position: sticky; top: 0; z-index: 1; background: var(--surface); }
 .guide button.g-back { min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--action-edge); background: var(--action); color: var(--action-ink); font-weight: 700; font-size: 14px; }
 .guide span.g-bigbtn, .guide span.g-ghostbtn { display: flex; align-items: center; justify-content: center; }
 @media (max-width: 600px) { .guide .g-top .g-tag { display: none; } }

@@ -287,9 +287,9 @@ function TabBar({ on, dot }: { on: Tab; dot?: boolean }) {
   );
 }
 
-function Phone({ time, title, sub, tab, dot, label, children }: { time: string; title: string; sub?: string; tab?: Tab; dot?: boolean; label?: string; children: React.ReactNode }) {
+function Phone({ time, title, sub, tab, dot, label, fixed, children }: { time: string; title: string; sub?: string; tab?: Tab; dot?: boolean; label?: string; fixed?: boolean; children: React.ReactNode }) {
   return (
-    <div className="g-phone" aria-label={label} aria-hidden={label ? undefined : true}>
+    <div className={fixed ? 'g-phone g-fixed' : 'g-phone'} aria-label={label} aria-hidden={label ? undefined : true}>
       <div className="g-screen">
         <div className="g-sbar">
           <span>{time}</span>
@@ -458,13 +458,14 @@ const DEMO_EVENTS: GameEvent[] = (
 
 function ProgressPhone() {
   return (
-    <Phone time="19:06" title="Stůl 2 · Normální leg" sub="Dejv + Milan vs Osky + Denys · 6:4" tab="my" label="Ukázka: průběh legu">
-      <div className="g-card">
+    <Phone time="19:06" title="Stůl 2 · Normální leg" sub="Dejv + Milan vs Osky + Denys · 6:4" tab="my" label="Ukázka: průběh legu" fixed>
+      {/* Telefon má pevnou výšku, delší sloupec se posouvá uvnitř karty. */}
+      <div className="g-card g-progress">
         <TimelineBox count={DEMO_EVENTS.length} open>
           <MatchTimeline match={DEMO_MATCH} events={DEMO_EVENTS} from={0} to={470_000} names={DEMO_NAMES} />
         </TimelineBox>
       </div>
-      <p className="g-hint">Přepni na Křivku a zpět.</p>
+      <p className="g-hint">Sloupcem posouvej prstem, pak přepni na Křivku.</p>
     </Phone>
   );
 }
