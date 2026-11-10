@@ -14,7 +14,9 @@ const training: Training = {
 
 describe('mapping', () => {
   it('hráč tam a zpět', () => {
-    expect(playerToRow(player)).toEqual({ id: 'p1', name: 'Honza', archived: false, sort_order: 3 });
+    expect(playerToRow(player)).toEqual({ id: 'p1', name: 'Honza', archived: false, sort_order: 3, is_organizer: false });
+    // organizátor (migrace 20)
+    expect(playerFromRow(playerToRow({ ...player, organizer: true }))).toEqual({ ...player, organizer: true });
     expect(playerFromRow(playerToRow(player))).toEqual(player);
   });
 

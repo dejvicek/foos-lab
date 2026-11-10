@@ -11,24 +11,32 @@ import type { Highlight } from './PlanPreview';
  * kolikrát proti sobě, zápasy a kola mimo stůl, a nápověda, kolik kol přidat, aby hrál každý
  * s každým. Simulace se nepočítá (pevné týmy).
  */
-export function FairnessPanel({
-  training,
-  names,
-  onAddRounds,
-  hl,
-}: {
+interface Props {
   training: Training;
   names: Record<PlayerId, string>;
   onAddRounds?(id: DisciplineId, rounds: number): void;
   /** Najetí na jméno zvýrazní hráče v náhledu plánu. */
   hl?: Highlight;
-}) {
+}
+
+/** Sbalitelný panel (počítá se, až když je otevřený). */
+export function FairnessPanel(props: Props) {
   const [open, setOpen] = useState(false);
+  return (
+    <details className="fairness" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>Kontrola rozpisu: kdo s kým kolikrát</summary>
+      {open && <FairnessReport {...props} />}
+    </details>
+  );
+}
+
+/** Obsah kontroly rozpisu: nápověda a tabulky (záložka Kdo s kým v průvodci, 10. 11. 2026). */
+export function FairnessReport({ training, names, onAddRounds, hl }: Props) {
   const players = training.attendees;
   const ok = canBuildSchedule(training);
-  const f = useMemo(() => (open && ok ? fairness(buildSchedule(training), players) : null), [open, ok, training, players]);
-  // Nápověda sestavuje rozpis s koly navíc – jen když je panel otevřený.
-  const advice = useMemo(() => (open && ok ? fairnessAdvice(training) : null), [open, ok, training]);
+  const f = useMemo(() => (ok ? fairness(buildSchedule(training), players) : null), [ok, training, players]);
+  // Nápověda sestavuje rozpis s koly navíc.
+  const advice = useMemo(() => (ok ? fairnessAdvice(training) : null), [ok, training]);
   const nm = (p: PlayerId) => names[p] ?? '?';
   const hover = (p: PlayerId) =>
     hl ? { onMouseEnter: () => hl.enter(p), onMouseLeave: () => hl.leave(), onClick: () => hl.toggle(p), className: hl.lit === p ? 'hl' : undefined } : {};
@@ -92,8 +100,7 @@ export function FairnessPanel({
   };
 
   return (
-    <details className="fairness" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary>Kontrola rozpisu: kdo s kým kolikrát</summary>
+    <div className="fairness-report">
       {!ok ? (
         <p className="note">Na rozpis je potřeba víc přítomných.</p>
       ) : (
@@ -142,6 +149,6 @@ export function FairnessPanel({
           </>
         )
       )}
-    </details>
+    </div>
   );
 }

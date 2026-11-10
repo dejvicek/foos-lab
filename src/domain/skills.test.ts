@@ -1,5 +1,5 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, SKILLS, skillGroup, skillName, skillsIn } from './skills';
+import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, SKILLS, skillGroup, skillName, skillsIn } from './skills';
 
 const names = (ids?: string[]) => (ids ?? []).map(skillName);
 
@@ -45,4 +45,14 @@ it('filtr podle štítků: prázdný pustí vše; jinak stačí shoda se štítk
   expect(matchesSkillFilter(['shot3', 'defense'], { skills: [], groups: ['defense'] })).toBe(true);
   expect(matchesSkillFilter(['matchPlay'], { skills: ['clearing'], groups: ['attack'] })).toBe(false);
   expect(matchesSkillFilter(undefined, { skills: ['clearing'], groups: [] })).toBe(false);
+});
+
+describe('řazení štítků podle legendy (10. 11. 2026)', () => {
+  it('podle pořadí sekcí v legendě, uvnitř sekce pořadí z disciplíny; vstup nemění', () => {
+    const wall = ['tempo', 'reading', 'control'];
+    expect(bySkillGroup(wall)).toEqual(['control', 'tempo', 'reading']); // Technika, Taktika, Taktika
+    expect(wall).toEqual(['tempo', 'reading', 'control']);
+    expect(bySkillGroup(['doubles', 'clutch', 'defense', 'shot3', 'shot2'])).toEqual(['shot3', 'shot2', 'defense', 'clutch', 'doubles']);
+    expect(bySkillGroup(undefined)).toEqual([]);
+  });
 });

@@ -1,9 +1,9 @@
 import { buildSchedule } from './schedule';
-import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded } from './plan';
+import { autoPlan, drillRoundsNeeded } from './plan';
 import type { ScheduleRow, TableCount, Training } from './types';
 import { newTraining } from './training';
 import { discipline as disc } from './disciplines';
-import { H } from '../test/fixtures';
+import { DEFAULT_SELECTION, H } from '../test/fixtures';
 
 const custom = (n: number, tables: TableCount, over: Partial<Training> = {}): Training => ({
   id: 'c',
@@ -116,7 +116,6 @@ describe('úpravy plánu 2. 11. 2026', () => {
   });
 
   it('Rozehrávka ze zadních tyčí se už nenabízí; stará Penalta z místa (20 střel) jen v historii', () => {
-    expect(DEFAULT_SELECTION).not.toContain('backRodsBuildUp');
     const prev = custom(8, 4, { plan: { backRodsBuildUp: 1, normal: 2 } });
     const t = newTraining('n', '2026-11-03', prev, null);
     expect(t.plan.backRodsBuildUp ?? 0).toBe(0);
@@ -129,11 +128,10 @@ describe('úpravy plánu 2. 11. 2026', () => {
 });
 
 describe('Řetězec (10. 11. 2026)', () => {
-  it('nabízí se (volitelně), s bránícím soupeřem, kola po 8 min, metrika góly z 20', () => {
-    expect(disc('chain')).toMatchObject({ kind: 'drill', min: 8, needsPartner: true, optional: true, metric: 'chain' });
+  it('nabízí se, s bránícím soupeřem, kola po 8 min, metrika góly z 20', () => {
+    expect(disc('chain')).toMatchObject({ kind: 'drill', min: 8, needsPartner: true, metric: 'chain' });
     expect(disc('chain').variants).toBeUndefined();
     expect(disc('chain').retired).toBeUndefined();
-    expect(DEFAULT_SELECTION).not.toContain('chain');
   });
 
   it('jedno kolo (ne po dvou): kolik kol, tolik nových dvojic; na konci cvičení', () => {

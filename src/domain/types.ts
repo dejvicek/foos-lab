@@ -8,6 +8,8 @@ export interface Player {
   name: string;
   archived: boolean;
   order: number;
+  /** Organizátor (10. 11. 2026): smí zakládat tréninky a spravovat ty své; nastavuje admin. */
+  organizer?: boolean;
 }
 
 /** Skóre zápasu: ga/gb góly (u simulace sety 0..2), la/lb ztráty. */

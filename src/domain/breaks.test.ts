@@ -1,9 +1,9 @@
-import { addBreak, breakMovable, breaksOf, BREAK_OPTIONS, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from './breaks';
+import { addBreak, addBreakAt, anchorBreaks, breakMovable, breaksOf, BREAK_OPTIONS, disciplineBoundaries, disciplineStepTarget, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from './breaks';
 import { buildSchedule } from './schedule';
-import { autoPlan, DEFAULT_SELECTION, planTimeline } from './plan';
+import { autoPlan, planTimeline } from './plan';
 import { shuffleAttendees } from './training';
 import type { BreakDef, LockedRound, Training } from './types';
-import { H } from '../test/fixtures';
+import { DEFAULT_SELECTION, H } from '../test/fixtures';
 
 const custom = (over: Partial<Training> = {}): Training => ({
   id: 'c', date: '2026-11-02', startTime: '18:00', mode: 'team', tables: 4, attendees: H(8), scores: {}, soloResults: {},
@@ -108,5 +108,50 @@ describe('náhodné pořadí přítomných', () => {
     expect([...next.attendees].sort()).toEqual([...t.attendees].sort());
     expect(next.attendees).not.toEqual(t.attendees);
     expect(shuffleAttendees(t, () => 0.999999).attendees).toEqual(t.attendees);
+  });
+});
+
+describe('pauzy v tabulce disciplín (průvodce, 10. 11. 2026)', () => {
+  const small = (over: Partial<Training> = {}) => custom({ plan: { warmupPasses: 2, normal: 3, start44: 2 }, disciplineOrder: ['warmupPasses', 'normal', 'start44'], ...over });
+
+  it('hranice disciplín: místa mezi posledním kolem jedné a prvním další', () => {
+    expect(disciplineBoundaries(small())).toEqual([2, 5]);
+  });
+
+  it('pauza za disciplínu: po jejím posledním kole; po poslední disciplíně ne', () => {
+    expect(breaksOf(addBreakAt(small({ breaks: [] }), 'normal'))).toEqual([{ after: 5, min: 10 }]);
+    expect(breaksOf(addBreakAt(small({ breaks: [] }), 'start44'))).toEqual([]);
+    // na místě už pauza je → beze změny
+    const t = small({ breaks: [{ after: 2, min: 5 }] });
+    expect(addBreakAt(t, 'warmupPasses')).toBe(t);
+  });
+
+  it('šipky v tabulce: pauza skočí na předchozí / další hranici disciplín', () => {
+    const t = small({ breaks: [{ after: 2, min: 10 }] });
+    expect(disciplineStepTarget(t, 0, -1)).toBeNull();
+    expect(disciplineStepTarget(t, 0, 1)).toBe(5);
+    // pauza uprostřed disciplíny (po 3. kole) skočí na nejbližší hranici
+    const mid = small({ breaks: [{ after: 3, min: 10 }] });
+    expect(disciplineStepTarget(mid, 0, -1)).toBe(2);
+    expect(disciplineStepTarget(mid, 0, 1)).toBe(5);
+    // obsazená hranice se přeskočí
+    const two = small({ breaks: [{ after: 2, min: 10 }, { after: 5, min: 5 }] });
+    expect(disciplineStepTarget(two, 0, 1)).toBeNull();
+  });
+
+  it('ukotvení: pauzy na hranicích se převedou na „po disciplíně“ a zůstanou za ní i po změně kol', () => {
+    const t = small({ breaks: [{ after: 2, min: 15 }] });
+    const anchored = anchorBreaks(t);
+    expect(anchored).toEqual({ afterDisciplines: [{ after: 'warmupPasses', min: 15 }] });
+    // + 2 kola cvičení: pauza je pořád po posledním kole cvičení (po 4.)
+    expect(breaksOf({ ...t, plan: { ...t.plan, warmupPasses: 4 }, breaks: anchored })).toEqual([{ after: 4, min: 15 }]);
+  });
+
+  it('ukotvení: pauza uprostřed disciplíny, automatické pauzy a ze šablony zůstanou, jak jsou', () => {
+    const mid = small({ breaks: [{ after: 3, min: 10 }] });
+    expect(anchorBreaks(mid)).toBe(mid.breaks);
+    expect(anchorBreaks(small({ breaks: null }))).toBeNull();
+    const tpl = { afterDisciplines: [{ after: 'normal' as const, min: 5 }] };
+    expect(anchorBreaks(small({ breaks: tpl }))).toBe(tpl);
   });
 });

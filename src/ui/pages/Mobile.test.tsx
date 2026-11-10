@@ -43,15 +43,15 @@ describe('telefon – žebříček', () => {
 });
 
 describe('telefon – nastavení tréninku', () => {
-  it('nastavení je průvodce v krocích „Krok N z 4“ se shrnutím na konci', async () => {
+  it('nastavení je průvodce v krocích „Krok N z 2“; úprava otevře plán', async () => {
     const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };
     window.location.hash = '#/trenink/t1';
     render(<App repo={memoryRepository({ players, trainings: [custom] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Upravit nastavení' }));
-    expect(screen.getByText('Krok 4 z 4 · Shrnutí')).toBeInTheDocument();
-    expect(screen.getByText(/18:00, 3:00, 4 stoly/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Upravit: Přítomní' }));
-    expect(screen.getByText('Krok 2 z 4 · Přítomní')).toBeInTheDocument();
+    expect(screen.getByText('Krok 2 z 2 · Kdy, kde a disciplíny')).toBeInTheDocument();
+    expect(screen.getByLabelText('Začátek')).toHaveValue('18:00');
+    await user.click(screen.getByRole('button', { name: '‹ Zpět' }));
+    expect(screen.getByText('Krok 1 z 2 · Přítomní')).toBeInTheDocument();
   });
 });

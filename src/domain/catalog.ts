@@ -13,7 +13,6 @@ import type { Breaks, DisciplineId, TemplateBreak } from './types';
 export interface DisciplineEdit {
   name?: string;
   min?: number;
-  optional?: boolean;
   skills?: Skill[];
   /** Odstavce nápovědy (stejné štítky Cíl / Provedení / … jako výchozí). U sdílené nápovědy jen u vlastníka. */
   help?: ExplanationPart[];
@@ -67,19 +66,17 @@ export function resolveCatalog(data: CatalogData): { disciplines: DisciplineDef[
       ...d,
       ...(name ? { name } : {}),
       ...(validMin(e.min) ? { min: e.min } : {}),
-      ...(typeof e.optional === 'boolean' ? { optional: e.optional } : {}),
       ...(d.skills || e.skills ? { skills: (e.skills ?? d.skills ?? []).filter((s) => known.has(s)) } : {}),
     };
   });
   return { disciplines, skills, help };
 }
 
-/** Šablony z katalogu; bez uložených jedna „Výchozí“ z nevolitelných disciplín. */
-export function trainingTemplates(data: CatalogData): TrainingTemplate[] {
-  if (data.templates?.length) return data.templates;
-  const selection = resolveCatalog(data).disciplines.filter((d) => !d.retired && !d.optional).map((d) => d.id);
-  return [{ id: 'default', name: 'Výchozí', durationMin: DEFAULT_DURATION, selection }];
-}
+/** Uložené šablony z katalogu; bez nich žádná (nový trénink pak nemá nic vybráno, 10. 11. 2026). */
+export const trainingTemplates = (data: CatalogData): TrainingTemplate[] => data.templates ?? [];
+
+/** Prázdná šablona – začátek editoru šablon, když ještě žádná uložená není. */
+export const blankTemplate = (id: string): TrainingTemplate => ({ id, name: 'Výchozí', durationMin: DEFAULT_DURATION, selection: [] });
 
 let TEMPLATES: TrainingTemplate[] = trainingTemplates({});
 /** Aktuální šablony (nastavuje applyCatalog); první je výchozí pro nový trénink. */
@@ -132,6 +129,14 @@ export function saveTemplates(data: CatalogData, templates: TrainingTemplate[], 
   return out;
 }
 
+/** Přidá šablonu na konec (výchozí zůstává první); délky kol katalogu se nemění. Vrací nový katalog, nebo chybu. */
+export function addTemplate(data: CatalogData, template: TrainingTemplate): CatalogData | { error: string } {
+  const templates = [...trainingTemplates(data), template];
+  const mins = catalogMins();
+  const error = validateTemplates(templates, mins);
+  return error ? { error } : saveTemplates(data, templates, mins);
+}
+
 export function validateTemplates(templates: TrainingTemplate[], mins: DisciplineMins): string | null {
   if (!templates.length) return 'Musí zůstat aspoň jedna šablona.';
   const seen = new Set<string>();
@@ -159,7 +164,6 @@ export function validateTemplates(templates: TrainingTemplate[], mins: Disciplin
 export interface DisciplineForm {
   name: string;
   min: number;
-  optional: boolean;
   skills: Skill[];
   help: ExplanationPart[];
 }
@@ -171,7 +175,6 @@ export function catalogForm(id: DisciplineId, data: CatalogData = {}): Disciplin
   return {
     name: d.name,
     min: d.min,
-    optional: !!d.optional,
     skills: [...(d.skills ?? [])],
     help: (c.help[d.explain] ?? defaultHelp(d.explain)).map((p) => ({ ...p })),
   };
@@ -199,7 +202,6 @@ export function saveDiscipline(data: CatalogData, id: DisciplineId, f: Disciplin
   const e: DisciplineEdit = {};
   if (f.name.trim() !== d.name) e.name = f.name.trim();
   if (f.min !== d.min) e.min = f.min;
-  if (f.optional !== !!d.optional) e.optional = f.optional;
   if (!same(f.skills, d.skills ?? [])) e.skills = [...f.skills];
   const owner = helpOwner(id);
   const { help: _ownHelp, ...ownRest } = owner === id ? {} : (data.disciplines?.[owner] ?? {});

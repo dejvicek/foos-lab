@@ -1,7 +1,7 @@
 import { discipline } from './disciplines';
-import { autoPlan, DEFAULT_SELECTION, planSequence } from './plan';
+import { autoPlan, planSequence } from './plan';
 import { drillRound, matchRound, newCounters, pairKey } from './pairing';
-import { H, range } from '../test/fixtures';
+import { DEFAULT_SELECTION, H, range } from '../test/fixtures';
 
 /** Projde celý výchozí trénink 3:00 a vrátí čítače + kola. */
 function simulate(n: number, t: number) {

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ActionIconButton } from '../components/ActionIcon';
-import { addPlayer, alphabetical, canDeletePlayer, renamePlayer, setArchived, type RosterError } from '../../domain/roster';
+import { AttendanceMeta } from '../components/AttendanceMeta';
+import { attendance, type PlayerAttendance } from '../../domain/attendance';
+import { addPlayer, alphabetical, canDeletePlayer, renamePlayer, setArchived, setOrganizer, type RosterError } from '../../domain/roster';
 import type { Player } from '../../domain/types';
 import { exportJson } from '../../storage/backup';
 import { todayIso } from '../dates';
@@ -18,7 +20,7 @@ export function persistPlayers(store: AppStore, next: Player[]) {
   const prev = new Map(store.data.players.map((p) => [p.id, p]));
   for (const p of next) {
     const old = prev.get(p.id);
-    if (!old || old.name !== p.name || old.order !== p.order || old.archived !== p.archived) store.savePlayer(p);
+    if (!old || old.name !== p.name || old.order !== p.order || old.archived !== p.archived || !!old.organizer !== !!p.organizer) store.savePlayer(p);
   }
 }
 
@@ -34,10 +36,12 @@ function download(filename: string, text: string) {
 function PlayerRow({
   store,
   player,
+  att,
   onReset,
 }: {
   store: AppStore;
   player: Player;
+  att?: PlayerAttendance;
   onReset(p: Player): void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -73,6 +77,17 @@ function PlayerRow({
       ) : (
         <>
           <span className="player-name">{player.name}</span>
+          <AttendanceMeta a={att} total />
+          <button
+            type="button"
+            className={player.organizer ? 'role-toggle on' : 'role-toggle'}
+            aria-pressed={!!player.organizer}
+            aria-label={`Organizátor: ${player.name}`}
+            title={player.organizer ? 'Organizátor – zakládá tréninky a spravuje ty své. Klikni pro odebrání.' : 'Udělat organizátorem – bude zakládat tréninky a spravovat ty své.'}
+            onClick={() => persistPlayers(store, setOrganizer(players, player.id, !player.organizer))}
+          >
+            {player.organizer ? '✓ Organizátor' : 'Organizátor'}
+          </button>
           <span className="row-actions">
             <ActionIconButton icon="rename" label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)} />
             <ActionIconButton icon="key" label={`Resetovat heslo ${player.name}`} onClick={() => onReset(player)} />
@@ -94,6 +109,8 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
   const sorted = alphabetical(players);
   const active = sorted.filter((p) => !p.archived);
   const archived = sorted.filter((p) => p.archived);
+  // Docházka (10. 11. 2026): naposledy, za 28 dní, celkem.
+  const att = attendance(store.data.trainings, todayIso());
 
   const add = () => {
     const r = addPlayer(players, store.newId(), name);
@@ -121,7 +138,11 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
         <ul className="player-list" aria-label="Aktivní hráči">
           {active.map((p) => (
             <li key={p.id} data-name={p.name} className="player-row">
-              <span className="player-name">{p.name}</span>
+              <span className="player-name">
+                {p.name}
+                {p.organizer && <span className="role-tag">organizátor</span>}
+              </span>
+              <AttendanceMeta a={att.get(p.id)} total />
             </li>
           ))}
         </ul>
@@ -131,7 +152,7 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
   return (
     <section>
       <h1>Hráči</h1>
-      <p className="lead">Soupiska klubu.</p>
+      <p className="lead">Soupiska klubu. Organizátor zakládá tréninky a spravuje ty své; zapni ho tlačítkem Organizátor u hráče.</p>
       {notice && (
         <p className="notice" role="status">
           {notice}
@@ -158,7 +179,7 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
       ) : (
         <ul className="player-list" aria-label="Aktivní hráči">
           {active.map((p) => (
-            <PlayerRow key={p.id} store={store} player={p} onReset={reset} />
+            <PlayerRow key={p.id} store={store} player={p} att={att.get(p.id)} onReset={reset} />
           ))}
         </ul>
       )}
@@ -170,6 +191,7 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
             {archived.map((p) => (
               <li key={p.id} data-name={p.name} className="player-row">
                 <span className="player-name muted">{p.name}</span>
+                <AttendanceMeta a={att.get(p.id)} total />
                 <span className="row-actions">
                   <ActionIconButton icon="restore" label={`Obnovit ${p.name}`} onClick={() => persistPlayers(store, setArchived(players, p.id, false))} />
                   {canDeletePlayer(store.data.trainings, p.id) && (

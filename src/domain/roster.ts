@@ -55,6 +55,11 @@ export function setArchived(players: Player[], id: PlayerId, archived: boolean):
   return players.map((p) => (p.id === id ? { ...p, archived } : p));
 }
 
+/** Admin: role organizátora (zakládá tréninky a spravuje ty své). */
+export function setOrganizer(players: Player[], id: PlayerId, organizer: boolean): Player[] {
+  return players.map((p) => (p.id === id ? { ...p, organizer } : p));
+}
+
 export function canDeletePlayer(trainings: Training[], id: PlayerId): boolean {
   return !trainings.some((t) => t.attendees.includes(id));
 }

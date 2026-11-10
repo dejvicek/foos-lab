@@ -1,6 +1,6 @@
 import { buildSchedule } from './schedule';
 import { autoPlan } from './plan';
-import { canManage, canWriteMatch, canWriteSolo, myAssignments } from './my';
+import { canCreateTraining, canManage, canWriteMatch, canWriteSolo, myAssignments, viewerOf } from './my';
 import type { Match, Training } from './types';
 import { H, training } from '../test/fixtures';
 
@@ -55,17 +55,33 @@ describe('práva zápisu', () => {
   });
 });
 
-describe('zakladatel tréninku', () => {
+describe('organizátor a zakladatel tréninku (10. 11. 2026)', () => {
   const t = { ...custom(9), createdBy: 'H9' };
   const s = buildSchedule(t);
   const m = s.matches.find((x) => x.block === 'league' && !x.sideA.includes('H9') && !x.sideB.includes('H9') && x.referee !== 'H9')! as Match;
-  it('zapisuje do všech zápasů a za kohokoli ve cvičení', () => {
-    expect(canWriteMatch({ playerId: 'H9', isAdmin: false }, m, t)).toBe(true);
-    expect(canWriteSolo({ playerId: 'H9', isAdmin: false }, ['H1', 'H2'], 'H1', t)).toBe(true);
+  const organizer = { playerId: 'H9', isAdmin: false, isOrganizer: true };
+  it('organizátor, který trénink založil, zapisuje do všech zápasů a za kohokoli ve cvičení', () => {
+    expect(canWriteMatch(organizer, m, t)).toBe(true);
+    expect(canWriteSolo(organizer, ['H1', 'H2'], 'H1', t)).toBe(true);
   });
-  it('spravuje jen svůj trénink', () => {
-    expect(canManage({ playerId: 'H9', isAdmin: false }, t)).toBe(true);
-    expect(canManage({ playerId: 'H1', isAdmin: false }, t)).toBe(false);
+  it('spravuje jen svůj trénink; zakladatel bez role organizátora nespravuje nic', () => {
+    expect(canManage(organizer, t)).toBe(true);
+    expect(canManage({ playerId: 'H1', isAdmin: false, isOrganizer: true }, t)).toBe(false);
+    expect(canManage({ playerId: 'H9', isAdmin: false }, t)).toBe(false);
+    expect(canWriteMatch({ playerId: 'H9', isAdmin: false }, m, t)).toBe(false);
     expect(canManage({ playerId: 'H1', isAdmin: true }, t)).toBe(true);
+  });
+  it('zakládat tréninky smí jen admin a organizátor', () => {
+    expect(canCreateTraining({ playerId: 'H1', isAdmin: true })).toBe(true);
+    expect(canCreateTraining({ playerId: 'H1', isAdmin: false, isOrganizer: true })).toBe(true);
+    expect(canCreateTraining({ playerId: 'H1', isAdmin: false })).toBe(false);
+    expect(canCreateTraining({ playerId: null, isAdmin: false, isOrganizer: true })).toBe(false);
+  });
+  it('viewerOf: organizátor podle soupisky (změna adminem platí hned)', () => {
+    const players = [{ id: 'H1', name: 'A', order: 0, archived: false, organizer: true }, { id: 'H2', name: 'B', order: 1, archived: false }];
+    expect(viewerOf('H1', false, players)).toEqual({ playerId: 'H1', isAdmin: false, isOrganizer: true });
+    expect(viewerOf('H2', false, players)).toEqual({ playerId: 'H2', isAdmin: false, isOrganizer: false });
+    // archivovaný organizátor už nic nezakládá
+    expect(viewerOf('H1', false, [{ ...players[0], archived: true }]).isOrganizer).toBe(false);
   });
 });

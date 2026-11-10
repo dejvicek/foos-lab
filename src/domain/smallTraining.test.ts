@@ -1,7 +1,7 @@
 import { buildSchedule, canBuildSchedule, minPlayers } from './schedule';
-import { autoPlan, DEFAULT_SELECTION, plannedMinutes } from './plan';
+import { autoPlan, plannedMinutes } from './plan';
 import type { Training } from './types';
-import { H, training } from '../test/fixtures';
+import { DEFAULT_SELECTION, H, training } from '../test/fixtures';
 
 const custom = (n: number, plan = autoPlan(DEFAULT_SELECTION, 120, n, 4)): Training => ({
   ...training('s', '2026-11-02', 'team', H(n), 4),

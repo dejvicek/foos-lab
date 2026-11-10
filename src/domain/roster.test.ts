@@ -1,5 +1,6 @@
 import {
   activePlayers,
+  setOrganizer,
   addPlayer,
   alphabetical,
   canDeletePlayer,
@@ -70,5 +71,15 @@ describe('abecední řazení (Hráči, Přítomní)', () => {
     const ps = names.map((name, i) => ({ id: `x${i}`, name, order: i, archived: false }));
     expect(alphabetical(ps).map((x) => x.name)).toEqual(['Ada', 'Cyril', 'Čeněk', 'Hugo', 'chrudoš', 'Radek', 'Řehoř', 'Šimon', 'Zdeněk']);
     expect(ps.map((x) => x.name)).toEqual(names);
+  });
+});
+
+describe('organizátor (10. 11. 2026)', () => {
+  it('admin nastaví / odebere roli organizátora; ostatní hráči beze změny', () => {
+    const ps = [{ id: 'a', name: 'A', order: 0, archived: false }, { id: 'b', name: 'B', order: 1, archived: false }];
+    const on = setOrganizer(ps, 'a', true);
+    expect(on.map((p) => !!p.organizer)).toEqual([true, false]);
+    expect(on[1]).toBe(ps[1]);
+    expect(setOrganizer(on, 'a', false)[0].organizer).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
 import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines } from '../../domain/disciplineInfo';
 import { discipline, DISCIPLINES, type DisciplineDef } from '../../domain/disciplines';
-import { DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
+import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
 import { MinStepper } from '../components/MinStepper';
@@ -207,7 +207,7 @@ function DisciplineRow({
           {who && <Icon name={who.icon} />}
         </span>
         <ul className="dp-tags" aria-label="Trénuje">
-          {(d.skills ?? []).map((s) => (
+          {bySkillGroup(d.skills).map((s) => (
             <li key={s}>
               <button
                 type="button"

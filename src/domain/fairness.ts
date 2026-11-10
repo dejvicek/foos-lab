@@ -59,7 +59,7 @@ export interface FairnessAdvice {
   addForAgainst: number | null;
 }
 
-const neverCount = (f: Fairness, players: PlayerId[], kind: 'together' | 'against') => {
+export const neverCount = (f: Fairness, players: PlayerId[], kind: 'together' | 'against') => {
   let n = 0;
   for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) if (f[kind](players[i], players[j]) === 0) n++;
   return n;

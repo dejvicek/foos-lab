@@ -2,7 +2,7 @@ import { activeFor } from './active';
 import { useNow } from './now';
 import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Viewer } from '../domain/my';
+import { viewerOf, type Viewer } from '../domain/my';
 import { memoryAuth, type AuthService, type Me } from '../storage/auth';
 import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
@@ -71,7 +71,7 @@ export function App({ repo, auth = defaultAuth }: { repo: Repository; auth?: Aut
 function SignedIn({
   repo,
   auth,
-  viewer,
+  viewer: me,
   onChangePassword,
   onSignOut,
 }: {
@@ -82,6 +82,8 @@ function SignedIn({
   onSignOut(): void;
 }) {
   const store = useAppState(repo);
+  // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
+  const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
   const appliedCatalog = useRef<unknown>(null);
   if (appliedCatalog.current !== (store.data.catalog ?? null)) {

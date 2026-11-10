@@ -1,9 +1,20 @@
-import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from './types';
+import type { Cell, Match, Player, PlayerId, Schedule, ScheduleRow, Training } from './types';
 
 export interface Viewer {
   playerId: PlayerId | null;
   isAdmin: boolean;
+  /** Organizátor (10. 11. 2026): zakládá tréninky a spravuje ty své. */
+  isOrganizer?: boolean;
 }
+
+/** Kdo se dívá: organizátor podle soupisky (změna adminem platí hned, archivovaný organizátorem není). */
+export function viewerOf(playerId: PlayerId | null, isAdmin: boolean, players: Player[]): Viewer {
+  const p = players.find((x) => x.id === playerId);
+  return { playerId, isAdmin, isOrganizer: !!p?.organizer && !p.archived };
+}
+
+/** Zakládat tréninky smí jen admin a organizátor (10. 11. 2026, zrcadlí politiku „insert“ v databázi). */
+export const canCreateTraining = (v: Viewer): boolean => v.isAdmin || (!!v.isOrganizer && v.playerId !== null);
 
 export interface Assignment {
   row: ScheduleRow;
@@ -35,8 +46,8 @@ export function myAssignments(s: Schedule, playerId: PlayerId): Assignment[] {
 
 const attends = (v: Viewer, t: Training) => v.playerId !== null && t.attendees.includes(v.playerId);
 
-/** Admin nebo zakladatel tréninku: nastavení, mazání a zápis všech výsledků. */
-export const canManage = (v: Viewer, t: Training): boolean => v.isAdmin || (!!t.createdBy && t.createdBy === v.playerId);
+/** Admin, nebo organizátor, který trénink založil: nastavení, mazání a zápis všech výsledků (zrcadlí is_creator). */
+export const canManage = (v: Viewer, t: Training): boolean => v.isAdmin || (!!v.isOrganizer && !!t.createdBy && t.createdBy === v.playerId);
 
 /** Smí zapsat skóre zápasu? (zrcadlí can_write_score v databázi) */
 export function canWriteMatch(v: Viewer, m: Match, t: Training): boolean {

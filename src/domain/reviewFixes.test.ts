@@ -1,11 +1,11 @@
 import { buildSchedule } from './schedule';
 import { computeStandings } from './standings';
 import { computeSoloLadder } from './soloLadder';
-import { autoPlan, DEFAULT_SELECTION } from './plan';
+import { autoPlan } from './plan';
 import { lockThrough } from './customSchedule';
 import { newTraining } from './training';
 import type { Training } from './types';
-import { H, training } from '../test/fixtures';
+import { DEFAULT_SELECTION, H, training } from '../test/fixtures';
 
 const custom = (n: number, over: Partial<Training> = {}): Training => ({
   ...training('c', '2026-11-01', 'team', H(n), 4),

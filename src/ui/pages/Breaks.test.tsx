@@ -2,9 +2,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
-import { autoPlan, DEFAULT_SELECTION } from '../../domain/plan';
+import { autoPlan } from '../../domain/plan';
 import type { BreakDef, Player, Training } from '../../domain/types';
-import { openSettings, openTeams, saveSettings } from '../../test/wizard';
+import { discView, openSettings, openTeams, saveSettings } from '../../test/wizard';
+import { DEFAULT_SELECTION } from '../../test/fixtures';
 
 const players = (n: number): Player[] => Array.from({ length: n }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
 const custom = (n: number, tables: 2 | 3 | 4, over: Partial<Training> = {}): Training => ({
@@ -112,7 +113,8 @@ describe('náhodné pořadí', () => {
 describe('pauzy v průvodci (krok Disciplíny)', () => {
   it('přidat, délka, šipky, přetažení a odebrání pauzy v náhledu plánu; uloží se se změnami', async () => {
     const { repo, user } = await setup(custom(8, 4, { breaks: [] }));
-    await openSettings(user, 'Disciplíny');
+    await openSettings(user, 'Kdy, kde a disciplíny');
+    await discView(user, 'Kolo po kole');
     const plan = () => screen.getByRole('list', { name: 'Náhled plánu' });
     const pauses = () => within(plan()).queryAllByRole('listitem').filter((li) => li.textContent?.includes('Pauza'));
     expect(pauses()).toHaveLength(0);
@@ -131,8 +133,56 @@ describe('pauzy v průvodci (krok Disciplíny)', () => {
     expect(thirdNow.previousElementSibling).toHaveTextContent('Pauza');
     await saveSettings(user);
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].breaks).toEqual([{ after: 2, min: 15 }]));
-    await openSettings(user, 'Disciplíny');
+    await openSettings(user, 'Kdy, kde a disciplíny');
+    await discView(user, 'Kolo po kole');
     await user.click(within(pauses()[0]).getByRole('button', { name: 'Odebrat pauzu' }));
     expect(pauses()).toHaveLength(0);
+  });
+});
+
+describe('pauzy a pořadí v tabulce disciplín (průvodce, 10. 11. 2026)', () => {
+  const small = (over: Partial<Training> = {}) =>
+    custom(8, 4, { plan: { warmupPasses: 2, normal: 3, start44: 2 }, disciplineOrder: ['warmupPasses', 'normal', 'start44'], breaks: [], ...over });
+  const tableRows = () => screen.getAllByRole('listitem').filter((li) => li.classList.contains('tt-row'));
+
+  it('pauza za disciplínu, šipky ji posunou o disciplínu; po změně kol zůstane za svou disciplínou', async () => {
+    const { repo, user } = await setup(small());
+    await openSettings(user, 'Kdy, kde a disciplíny');
+    await user.click(screen.getByRole('button', { name: 'Přidat pauzu po: Přihrávky na pětce' }));
+    const pause = () => screen.getByRole('listitem', { name: /^Pauza po:/ });
+    expect(pause()).toHaveAccessibleName('Pauza po: Přihrávky na pětce');
+    expect(within(pause()).getByRole('button', { name: 'Pauzu o disciplínu dřív' })).toBeDisabled();
+    await user.click(within(pause()).getByRole('button', { name: 'Pauzu o disciplínu později' }));
+    expect(pause()).toHaveAccessibleName('Pauza po: Normální leg');
+    // v tabulce je pauza hned pod svou disciplínou
+    const rows = tableRows();
+    expect(rows[rows.indexOf(pause()) - 1]).toHaveTextContent('Normální leg');
+    await user.selectOptions(within(pause()).getByRole('combobox', { name: 'Délka pauzy' }), '15');
+    // + kolo Normální leg: pauza se posune s koncem disciplíny
+    await user.click(screen.getByRole('button', { name: 'Přidat kolo: Normální leg' }));
+    expect(pause()).toHaveAccessibleName('Pauza po: Normální leg');
+    await saveSettings(user);
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].plan.normal).toBe(4));
+    const t = repo.snapshot().trainings[0];
+    expect(t.breaks).toEqual({ afterDisciplines: [{ after: 'normal', min: 15 }] });
+  });
+
+  it('pořadí disciplín šipkou; pauza jde s disciplínou', async () => {
+    // pauza po Normálním legu (po 5. kole), za zápasy je ještě simulace
+    const t = small({ plan: { warmupPasses: 2, normal: 3, start44: 2, sim: 1 }, disciplineOrder: ['warmupPasses', 'normal', 'start44', 'sim'], breaks: [{ after: 5, min: 10 }] });
+    const { repo, user } = await setup(t);
+    await openSettings(user, 'Kdy, kde a disciplíny');
+    await user.click(screen.getByRole('button', { name: 'Dřív: Start 4:4' }));
+    const order = within(screen.getByRole('list', { name: 'Pořadí: Zápasy a scénáře' }))
+      .getAllByRole('checkbox')
+      .map((c) => c.closest('label')!.textContent);
+    expect(order).toEqual(['Start 4:4', 'Normální leg']);
+    const pause = screen.getByRole('listitem', { name: /^Pauza po:/ });
+    expect(pause).toHaveAccessibleName('Pauza po: Normální leg');
+    const rows = tableRows();
+    expect(rows[rows.indexOf(pause) - 1]).toHaveTextContent('Normální leg');
+    await saveSettings(user);
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].disciplineOrder).toEqual(['warmupPasses', 'start44', 'normal', 'sim']));
+    expect(repo.snapshot().trainings[0].breaks).toEqual({ afterDisciplines: [{ after: 'normal', min: 10 }] });
   });
 });

@@ -1,5 +1,6 @@
 import { DISCIPLINES, discipline } from './disciplines';
-import { autoPlan, DEFAULT_SELECTION, drillRoundsNeeded, fillPlan, planSequence, planTimeline, plannedMinutes } from './plan';
+import { autoPlan, drillRoundsNeeded, fillPlan, planSequence, planTimeline, plannedMinutes } from './plan';
+import { DEFAULT_SELECTION } from '../test/fixtures';
 
 describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {

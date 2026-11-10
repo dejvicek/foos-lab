@@ -52,6 +52,11 @@ export function setSkills(list: readonly SkillDef[]): void {
 export const skillDef = (id: Skill): SkillDef | undefined => SKILLS.find((s) => s.id === id);
 export const skillName = (id: Skill): string => skillDef(id)?.name ?? id;
 export const skillGroup = (id: Skill) => SKILL_GROUPS.find((g) => g.id === (skillDef(id)?.group ?? 'match'))!;
+/** Štítky disciplíny v pořadí sekcí legendy (Útok … Zápas); uvnitř sekce pořadí z disciplíny. */
+export function bySkillGroup(skills: readonly Skill[] | undefined): Skill[] {
+  const rank = (s: Skill) => SKILL_GROUPS.indexOf(skillGroup(s));
+  return [...(skills ?? [])].sort((a, b) => rank(a) - rank(b));
+}
 /** Štítky sekce v pořadí sady. */
 export const skillsIn = (group: SkillGroupId): SkillDef[] => SKILLS.filter((s) => s.group === group);
 

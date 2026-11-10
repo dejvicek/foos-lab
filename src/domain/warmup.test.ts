@@ -1,6 +1,5 @@
 import { DEFAULT_DISCIPLINES, discipline } from './disciplines';
 import { disciplineHelp } from './disciplineInfo';
-import { DEFAULT_SELECTION } from './plan';
 import { SOLO_METRICS } from './solo';
 import { WARMUP_PHASES } from './content';
 import { isWarmupItem, WARMUP_TOTAL_SEC, warmupRunning, warmupState } from './warmup';
@@ -12,10 +11,9 @@ import type { ScheduleRow, Training } from './types';
 import { H } from '../test/fixtures';
 
 describe('Rozcvička – disciplína a timer', () => {
-  it('Rozcvička: cvičení bez metriky, individuální, volitelná, první v katalogu', () => {
-    expect(DEFAULT_DISCIPLINES[0]).toMatchObject({ id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, individual: true, optional: true, skills: ['control', 'pass5'] });
+  it('Rozcvička: cvičení bez metriky, individuální, první v katalogu', () => {
+    expect(DEFAULT_DISCIPLINES[0]).toMatchObject({ id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, individual: true, skills: ['control', 'pass5'] });
     expect(discipline('warmup').metric).toBeUndefined();
-    expect(DEFAULT_SELECTION).not.toContain('warmup');
     expect(SOLO_METRICS.map((m) => m.id as string)).not.toContain('warmup');
     expect(disciplineHelp('warmup')[0].name).toBe('Rozcvička');
     expect(disciplineHelp('warmup')[0].parts.map((p) => p.label)).toEqual(['Cíl:', 'Provedení:']);

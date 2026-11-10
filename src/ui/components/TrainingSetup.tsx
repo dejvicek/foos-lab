@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { alphabetical, type RosterError } from '../../domain/roster';
 import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
-import { selectedDisciplines, toggleAttendee, withTemplate } from '../../domain/training';
-import { currentTemplates, matchingTemplate } from '../../domain/catalog';
+import { toggleAttendee, withAttendees } from '../../domain/training';
+import { attendance, lastTraining } from '../../domain/attendance';
+import { formatDayMonth } from '../dates';
+import { AttendanceMeta } from './AttendanceMeta';
 import { randomTeams } from '../../domain/simulation';
 import type { Mode, Player, SimSplit, SimTeams, TableCount, Training } from '../../domain/types';
 import { MODE_OPTION, plural } from '../format';
-import { DurationSelect, hm } from './DisciplinePicker';
+import { DurationSelect } from './DisciplinePicker';
 import { ROSTER_ERRORS } from '../pages/PlayersPage';
 
 interface PartProps {
@@ -14,8 +16,8 @@ interface PartProps {
   onChange(next: Training): void;
 }
 
-/** Krok „Kdy a kde“: datum, začátek (orientační), šablona (při založení), délka / typ, počet stolů. */
-export function WhenFields({ training, onChange, template }: PartProps & { template?: boolean }) {
+/** Kdy a kde: datum, začátek (orientační), délka / typ, počet stolů. Šablona je v záložkách nad disciplínami. */
+export function WhenFields({ training, onChange }: PartProps) {
   return (
     <div className="setup">
       <div className="field">
@@ -31,7 +33,6 @@ export function WhenFields({ training, onChange, template }: PartProps & { templ
           onChange={(e) => /^\d{2}:\d{2}$/.test(e.target.value) && onChange({ ...training, startTime: e.target.value })}
         />
       </div>
-      {training.format === 'custom' && template && <TemplateField training={training} onChange={onChange} always />}
       {training.format === 'custom' ? (
         <DurationSelect training={training} onChange={onChange} />
       ) : (
@@ -44,36 +45,6 @@ export function WhenFields({ training, onChange, template }: PartProps & { templ
         </div>
       )}
       <TablesField name={`tables-${training.id}`} value={training.tables} onChange={(n) => onChange({ ...training, tables: n })} />
-    </div>
-  );
-}
-
-/**
- * Šablona tréninku: nastaví délku, výběr, pořadí, kola a pauzy. Při založení v kroku Kdy a kde
- * vždy (předvybraná výchozí = první, je vidět i jediná), v kroku Disciplíny jen když je jich víc.
- */
-export function TemplateField({ training, onChange, always }: PartProps & { always?: boolean }) {
-  const templates = currentTemplates();
-  if (templates.length < (always ? 1 : 2)) return null;
-  const current = matchingTemplate(templates, training.durationMin, selectedDisciplines(training.plan));
-  return (
-    <div className="field tpl-picker">
-      <label htmlFor="t-template">Šablona</label>
-      <select
-        id="t-template"
-        value={current?.id ?? ''}
-        onChange={(e) => {
-          const t = templates.find((x) => x.id === e.target.value);
-          if (t) onChange(withTemplate(training, t));
-        }}
-      >
-        {!current && <option value="">Vlastní výběr</option>}
-        {templates.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name} ({hm(t.durationMin)})
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
@@ -101,65 +72,125 @@ export function TablesField({ name, value, onChange, label = 'Počet stolů' }: 
   );
 }
 
-/** Krok „Přítomní“: zaškrtnout hráče, přidat nového do soupisky. */
+/**
+ * Krok „Přítomní“ (10. 11. 2026, varianta C): hledání, „Jako minule“ / „Nikdo“, skupiny Minule byli a Ostatní,
+ * u jména docházka; přidat nového hráče do soupisky; dole počet a jména vybraných.
+ */
 export function AttendanceFields({
   training,
   players,
+  trainings,
+  today,
   onChange,
   onAddPlayer,
-}: PartProps & { players: Player[]; onAddPlayer(name: string): { id: string } | { error: RosterError } }) {
+}: PartProps & { players: Player[]; trainings: Training[]; today: string; onAddPlayer(name: string): { id: string } | { error: RosterError } }) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const n = training.attendees.length;
   const min = minPlayers(training);
-  // Aktivní hráči + archivovaní, kteří už v tréninku jsou.
-  // Podle abecedy (pořadí přítomných v rozpisu se řídí soupiskou, ne tímhle výpisem).
-  const shown = alphabetical(players).filter((p) => !p.archived || training.attendees.includes(p.id));
+  const att = useMemo(() => attendance(trainings, today, training.id), [trainings, today, training.id]);
+  const last = useMemo(() => lastTraining(trainings, today, training.id), [trainings, today, training.id]);
+  const lastIds = new Set(last?.attendees ?? []);
+  // Aktivní hráči + archivovaní, kteří už v tréninku jsou. Podle abecedy (pořadí v rozpisu řídí soupiska).
+  const q = query.trim().toLocaleLowerCase('cs');
+  const shown = alphabetical(players).filter((p) => (!p.archived || training.attendees.includes(p.id)) && (!q || p.name.toLocaleLowerCase('cs').includes(q)));
+  const lastActive = players.filter((p) => lastIds.has(p.id) && !p.archived).length;
+  const byId = new Map(players.map((p) => [p.id, p.name]));
   const add = () => {
     const r = onAddPlayer(name);
     if ('error' in r) return setError(ROSTER_ERRORS[r.error]);
     setName('');
     setError(null);
   };
+  const rows = (list: Player[]) => (
+    <ul className="att-rows">
+      {list.map((p) => (
+        <li key={p.id}>
+          <label>
+            <input
+              type="checkbox"
+              aria-label={p.name}
+              checked={training.attendees.includes(p.id)}
+              onChange={() => onChange(toggleAttendee(training, p.id, players))}
+            />
+            <span className="att-name">
+              {p.name}
+              {p.archived && <span className="archived-tag"> (archiv)</span>}
+            </span>
+            <AttendanceMeta a={att.get(p.id)} />
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+  const groupLast = shown.filter((p) => lastIds.has(p.id));
+  const groupRest = shown.filter((p) => !lastIds.has(p.id));
   return (
     <div className="attendance-fields">
-      <p className="count-line">
-        <span className="count-badge">Přítomno: {n}</span>
-        {n < min && (
-          <span className="note">
-            {' '}
-            Ještě chybí {min - n} {plural(min - n, 'hráč', 'hráči', 'hráčů')} do minima {min}.
-          </span>
-        )}
-      </p>
-      {n > MAX_PLAYERS && <p className="error">Moc hráčů: rozpis umí nejvýš {MAX_PLAYERS}.</p>}
-      <ul className="check-list">
-        {shown.map((p) => (
-          <li key={p.id}>
-            <label>
-              <input type="checkbox" checked={training.attendees.includes(p.id)} onChange={() => onChange(toggleAttendee(training, p.id, players))} />
-              <span>
-                {p.name}
-                {p.archived && <span className="archived-tag"> (archiv)</span>}
-              </span>
-            </label>
-          </li>
-        ))}
-      </ul>
+      <div className="att-tools">
+        <input type="search" aria-label="Hledat hráče" placeholder="Hledat hráče" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <span className="att-quick">
+          {last && lastActive > 0 && (
+            <button type="button" className="pill primary" onClick={() => onChange(withAttendees(training, last.attendees, players))}>
+              Jako minule ({lastActive})
+            </button>
+          )}
+          <button type="button" className="pill" disabled={!n} onClick={() => onChange(withAttendees(training, [], players))}>
+            Nikdo
+          </button>
+        </span>
+      </div>
+      {!shown.length && <p className="note">Nikdo neodpovídá hledání „{query.trim()}“.</p>}
+      {last && groupLast.length > 0 && (
+        <section className="att-group" aria-label="Minule byli">
+          <h3>
+            Minule byli · {formatDayMonth(last.date)}
+            <span>{groupLast.length}</span>
+          </h3>
+          {rows(groupLast)}
+        </section>
+      )}
+      {groupRest.length > 0 && (
+        <section className="att-group" aria-label={last ? 'Ostatní' : 'Hráči'}>
+          {last && (
+            <h3>
+              Ostatní<span>{groupRest.length}</span>
+            </h3>
+          )}
+          {rows(groupRest)}
+        </section>
+      )}
       <form
-        className="add-form"
+        className="add-form att-add"
         onSubmit={(e) => {
           e.preventDefault();
           add();
         }}
       >
-        <label htmlFor="t-new-player">Jméno nového hráče</label>
+        <label htmlFor="t-new-player" className="visually-hidden">
+          Jméno nového hráče
+        </label>
         <div className="add-row">
-          <input id="t-new-player" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-          <button type="submit">Přidat a zaškrtnout</button>
+          <input id="t-new-player" value={name} placeholder="Jméno nového hráče" onChange={(e) => setName(e.target.value)} autoComplete="off" />
+          <button type="submit" className="ghost">
+            Přidat a zaškrtnout
+          </button>
         </div>
         {error && <p className="error">{error}</p>}
       </form>
+      <div className="att-bar" role="status" aria-label="Přítomní">
+        <span className="att-count">
+          <b>{n}</b> {plural(n, 'přítomný', 'přítomní', 'přítomných')}
+        </span>
+        <span className="att-names">{n ? training.attendees.map((p) => byId.get(p) ?? '?').join(', ') : 'nikdo vybraný'}</span>
+        {n < min && (
+          <span className="att-warn">
+            Ještě chybí {min - n} {plural(min - n, 'hráč', 'hráči', 'hráčů')} do minima {min}.
+          </span>
+        )}
+        {n > MAX_PLAYERS && <span className="att-warn">Moc hráčů: rozpis umí nejvýš {MAX_PLAYERS}.</span>}
+      </div>
     </div>
   );
 }

@@ -30,3 +30,9 @@ export function nextHalfHour(now: Date): string {
   const up = Math.min(23 * 60 + 30, Math.ceil(min / 30) * 30);
   return `${String(Math.floor(up / 60)).padStart(2, '0')}:${String(up % 60).padStart(2, '0')}`;
 }
+
+/** „4. 11.“ (docházka) */
+export function formatDayMonth(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d}. ${m}.`;
+}

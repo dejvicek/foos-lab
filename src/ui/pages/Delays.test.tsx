@@ -7,7 +7,8 @@ import { queueOf } from '../../domain/queue';
 import type { Player, Training } from '../../domain/types';
 import { memoryAuth } from '../../storage/auth';
 
-const players: Player[] = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
+// H1 je organizátor (zakládá a řídí tréninky v testech).
+const players: Player[] = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false, ...(i === 0 ? { organizer: true } : {}) }));
 // 4 hráči, 2 stoly: kolo = 1 zápas dvojic na stole 1
 const t: Training = {
   id: 't1', date: '2026-11-02', startTime: '18:00', mode: 'team', tables: 2, attendees: players.map((p) => p.id),
@@ -213,7 +214,7 @@ describe('organizátor, který nehraje', () => {
     const auth = memoryAuth({ players: [{ id: 'org', name: 'Org' }], signedIn: { playerId: 'org', isAdmin: false, mustChangePassword: false } });
     const run: Training = { ...t, createdBy: 'org', playTimes: { training: { startedAt: at(18, 0) } } };
     window.location.hash = '';
-    render(<App repo={memoryRepository({ players: [...players, { id: 'org', name: 'Org', order: 9, archived: false }], trainings: [run] })} auth={auth} />);
+    render(<App repo={memoryRepository({ players: [...players, { id: 'org', name: 'Org', order: 9, archived: false, organizer: true }], trainings: [run] })} auth={auth} />);
     const board = await screen.findByRole('region', { name: 'Aktivní utkání' });
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
     expect(within(nav).getByRole('button', { name: 'Živě' })).toHaveAttribute('aria-current', 'page');

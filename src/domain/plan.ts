@@ -1,4 +1,4 @@
-import { DEFAULT_DISCIPLINES, DISCIPLINES, discipline, drillInPairs, roundMin, roundStep, type DisciplineId, type DisciplineMins } from './disciplines';
+import { DISCIPLINES, discipline, drillInPairs, roundMin, roundStep, type DisciplineId, type DisciplineMins } from './disciplines';
 import type { BreakDef, Breaks, TemplateBreak } from './types';
 
 export type Plan = Partial<Record<DisciplineId, number>>;
@@ -12,10 +12,6 @@ export const DEFAULT_DURATION = 180;
 /** Simulace ligového kola potřebuje aspoň 4 hráče (dvojice). */
 export const SIM_MIN_PLAYERS = 4;
 
-/** Výchozí výběr úplně prvního konfigurovatelného tréninku (PRD 4.6) – podle výchozích hodnot z kódu. */
-export const DEFAULT_SELECTION: DisciplineId[] = DEFAULT_DISCIPLINES.filter((d) => !d.retired && !d.optional).map((d) => d.id);
-/** Výchozí výběr podle katalogu (admin může disciplínu udělat volitelnou / základní). */
-export const defaultSelection = (): DisciplineId[] => DISCIPLINES.filter((d) => !d.retired && !d.optional).map((d) => d.id);
 /** Výchozí výběr tréninku pro 1 hráče: cvičení, která jde hrát sám. */
 export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo'];
 

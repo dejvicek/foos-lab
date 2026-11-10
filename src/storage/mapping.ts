@@ -10,6 +10,8 @@ export interface PlayerRow {
   name: string;
   archived: boolean;
   sort_order: number;
+  /** Migrace 20 (10. 11. 2026). */
+  is_organizer?: boolean;
 }
 
 export interface TrainingRow {
@@ -60,6 +62,7 @@ export const playerToRow = (p: Player): PlayerRow => ({
   name: p.name,
   archived: p.archived,
   sort_order: p.order,
+  is_organizer: !!p.organizer,
 });
 
 export const playerFromRow = (r: PlayerRow): Player => ({
@@ -67,6 +70,7 @@ export const playerFromRow = (r: PlayerRow): Player => ({
   name: r.name,
   archived: r.archived,
   order: r.sort_order,
+  ...(r.is_organizer ? { organizer: true } : {}),
 });
 
 export const trainingToRow = (t: Training): TrainingRow => ({

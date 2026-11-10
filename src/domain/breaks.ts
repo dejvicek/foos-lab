@@ -1,11 +1,11 @@
 import { roundSequence } from './customSchedule';
 import { BREAK_OPTIONS, normalizeBreaks, resolveBreaks } from './plan';
 import { pauseId } from './queue';
-import type { BreakDef, Training } from './types';
+import type { BreakDef, Breaks, DisciplineId, Training } from './types';
 
 export { BREAK_OPTIONS };
 
-type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode' | 'playTimes'> & Partial<Pick<Training, 'disciplineMin'>>;
+type T = Pick<Training, 'attendees' | 'plan' | 'lockedRounds' | 'breaks' | 'tables' | 'mode' | 'playTimes'> & Partial<Pick<Training, 'disciplineMin' | 'disciplineOrder'>>;
 
 /** Pauzy tréninku srovnané podle pozice: vlastní, jinak dopočítané po sekcích. Úprava je převezme jako vlastní. */
 export function breaksOf(t: T): BreakDef[] {
@@ -77,4 +77,44 @@ export function stepTarget(t: T, i: number, dir: -1 | 1): number | null {
   const at = breaksOf(t)[i]?.after ?? 0;
   const free = freeSlots(t, i).filter((a) => (dir < 0 ? a < at : a > at));
   return free.length ? (dir < 0 ? free[free.length - 1] : free[0]) : null;
+}
+
+/* ── Tabulka disciplín v průvodci (10. 11. 2026): pauzy mezi disciplínami ── */
+
+/** Místa mezi disciplínami: po kole `a`, když kolo a + 1 je jiná disciplína. */
+export function disciplineBoundaries(t: T): number[] {
+  const seq = roundSequence(t);
+  const out: number[] = [];
+  for (let a = 1; a < seq.length; a++) if (seq[a] !== seq[a - 1]) out.push(a);
+  return out;
+}
+
+/** Přidá pauzu po posledním kole disciplíny (10 min); když tam nejde (poslední, obsazené, odehrané), vrátí trénink beze změny. */
+export function addBreakAt<X extends T>(t: X, id: DisciplineId, min = 10): X {
+  const after = roundSequence(t).lastIndexOf(id) + 1;
+  if (!freeSlots(t).includes(after)) return t;
+  return withBreaks(t, [...breaksOf(t), { after, min }]);
+}
+
+/** Šipka v tabulce: nejbližší volná hranice disciplín dřív / později (null = nikam). */
+export function disciplineStepTarget(t: T, i: number, dir: -1 | 1): number | null {
+  if (!breakMovable(t, i)) return null;
+  const at = breaksOf(t)[i]?.after ?? 0;
+  const free = new Set(freeSlots(t, i));
+  const cand = disciplineBoundaries(t).filter((a) => free.has(a) && (dir < 0 ? a < at : a > at));
+  return cand.length ? (dir < 0 ? cand[cand.length - 1] : cand[0]) : null;
+}
+
+/**
+ * Pauzy ukotvené k disciplínám – volá se před změnou kol nebo pořadí, ať pauza zůstane za svou disciplínou.
+ * Vlastní pauzy (po N. kole), které všechny leží na hranici disciplín, se převedou na „po disciplíně“;
+ * jinak (pauza uprostřed disciplíny, odehraná kola, automatické nebo ze šablony) zůstanou, jak jsou.
+ */
+export function anchorBreaks(t: T): Breaks | undefined {
+  if (!Array.isArray(t.breaks) || t.lockedRounds.length) return t.breaks;
+  const seq = roundSequence(t);
+  const bounds = new Set(disciplineBoundaries(t));
+  const list = breaksOf(t);
+  if (!list.every((b) => bounds.has(b.after))) return t.breaks;
+  return { afterDisciplines: list.map((b) => ({ after: seq[b.after - 1], min: b.min })) };
 }

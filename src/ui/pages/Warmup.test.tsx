@@ -8,7 +8,7 @@ import { drillItemId } from '../../domain/queue';
 import type { Player, Training } from '../../domain/types';
 
 const players: Player[] = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
-const roster: Player[] = [...players, { id: 'id9', name: 'Org', order: 9, archived: false }];
+const roster: Player[] = [...players, { id: 'id9', name: 'Org', order: 9, archived: false, organizer: true }];
 const base: Training = {
   id: 't1', date: new Date().toISOString().slice(0, 10), startTime: '18:00', mode: 'team', tables: 2, attendees: players.map((p) => p.id),
   scores: {}, soloResults: {}, simSplit: 'performance', simTeams: null, format: 'custom', durationMin: 60,

@@ -151,15 +151,35 @@ describe('přihlášení', () => {
     vi.restoreAllMocks();
   });
 
-  it('hráč založí trénink a jako zakladatel ho spravuje; cizí trénink ne', async () => {
+  it('hráč bez role organizátora trénink nezaloží (10. 11. 2026)', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    window.location.hash = '#/trenink';
+    render(<App repo={memoryRepository({ players: roster, trainings: [] })} auth={auth} />);
+    expect(await screen.findByText('Zatím žádný trénink. Zakládá je admin nebo organizátor.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Nový trénink/ })).toBeNull();
+    window.location.hash = '#/trenink/novy'; // ani přímou adresou
+    expect(await screen.findByText(/Zakládat tréninky smí jen admin a organizátoři/)).toBeInTheDocument();
+  });
+
+  it('admin udělá z hráče organizátora na stránce Hráči; organizátor založí trénink a spravuje ho; cizí trénink ne', async () => {
+    const asAdmin = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id1', isAdmin: true, mustChangePassword: false } });
     const repo = memoryRepository({ players: roster, trainings: [{ ...training, createdBy: 'id1' }] });
+    window.location.hash = '#/hraci';
+    const { unmount } = render(<App repo={repo} auth={asAdmin} />);
+    const toggle = await screen.findByRole('button', { name: 'Organizátor: Milan' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.setup().click(toggle);
+    expect(screen.getByRole('button', { name: 'Organizátor: Milan' })).toHaveAttribute('aria-pressed', 'true');
+    await vi.waitFor(() => expect(repo.snapshot().players.find((p) => p.id === 'id2')?.organizer).toBe(true));
+    unmount();
+
+    const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     window.location.hash = '#/trenink';
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
     await createTraining(user, ['Milan', 'Lavi']);
-    // zakladatel spravuje (trénink je rovnou zahájený, takže nastavení už nejde měnit, mazat ano)
-    expect(await screen.findByText('Trénink běží – nastavení už nejde měnit.')).toBeInTheDocument();
+    // zakladatel spravuje: nastavení (i běžícího tréninku) a mazání
+    expect(await screen.findByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings.find((t) => t.id !== 't1')?.createdBy).toBe('id2'));
 

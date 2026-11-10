@@ -1,3 +1,11 @@
+import type { CatalogData } from '../domain/catalog';
+import type { DisciplineId } from '../domain/types';
+
+/** Běžný výběr disciplín pro testy (dřívější výchozí výběr: všechny kromě volitelných). */
+export const DEFAULT_SELECTION: DisciplineId[] = ['warmupPasses', 'fiveBarControl', 'penaltyKeeper', 'normal', 'lossTax', 'wall', 'start03', 'start44', 'start55', 'singles', 'sim'];
+/** Katalog s jednou šablonou „Výchozí“ (3:00, DEFAULT_SELECTION) – bez šablony nový trénink nemá nic vybráno. */
+export const DEFAULT_CATALOG: CatalogData = { templates: [{ id: 'default', name: 'Výchozí', durationMin: 180, selection: DEFAULT_SELECTION }] };
+
 /** Hráči H1..Hn v nominačním pořadí. */
 export const H = (n: number): string[] => Array.from({ length: n }, (_, i) => 'H' + (i + 1));
 

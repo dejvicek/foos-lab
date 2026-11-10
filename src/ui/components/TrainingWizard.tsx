@@ -1,37 +1,44 @@
 import { useState } from 'react';
 import type { RosterError } from '../../domain/roster';
-import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
+import { canBuildSchedule } from '../../domain/schedule';
 import { toggleAttendee } from '../../domain/training';
 import type { Player, PlayerId, Training } from '../../domain/types';
-import { plannedMinutes } from '../../domain/plan';
-import { formatDate } from '../dates';
-import { MODE_LABEL, plural } from '../format';
 import { prepareEdit } from '../trainingEdit';
-import { DisciplinePicker, hm } from './DisciplinePicker';
-import { FairnessPanel } from './FairnessPanel';
-import { PlanPreview, type Highlight } from './PlanPreview';
-import { AttendanceFields, TemplateField, WhenFields } from './TrainingSetup';
+import { todayIso } from '../dates';
+import { DisciplineStep } from './DisciplineStep';
+import type { Highlight } from './PlanPreview';
+import { AttendanceFields, WhenFields } from './TrainingSetup';
 
-type StepId = 'when' | 'who' | 'disc' | 'sum';
-const TITLES: Record<StepId, string> = { when: 'Kdy a kde', who: 'Přítomní', disc: 'Disciplíny', sum: 'Shrnutí' };
+type StepId = 'when' | 'who' | 'plan';
+const TITLES: Record<StepId, string> = { when: 'Kdy a kde', who: 'Přítomní', plan: 'Kdy, kde a disciplíny' };
 
 interface Props {
   initial: Training;
   /** new = nový trénink (Zahájit trénink), edit = úprava (Uložit změny kdykoli). */
   mode: 'new' | 'edit';
+  /** Trénink běží: uložení přegeneruje celý rozpis (10. 11. 2026). */
+  running?: boolean;
   players: Player[];
+  /** Uložené tréninky – docházka a „Jako minule“ v kroku Přítomní. */
+  trainings: Training[];
   /** Přidá hráče do soupisky; vrací jeho ID a novou soupisku, nebo chybu. */
   onAddPlayer(name: string): { id: PlayerId; players: Player[] } | { error: RosterError };
   onFinish(t: Training): void;
   onCancel(): void;
+  /** Admin: uloží nastavení disciplín tréninku jako novou šablonu; vrací chybu, nebo null. */
+  onSaveTemplate?(name: string, t: Training): string | null;
 }
 
-/** PRD 7: založení / úprava tréninku v krocích Kdy a kde → Přítomní → Disciplíny → Shrnutí. */
-export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, onCancel }: Props) {
+/**
+ * PRD 7: založení / úprava tréninku v krocích Přítomní → Kdy, kde a disciplíny (10. 11. 2026: plán až po
+ * přítomných, ať sedí kola cvičení i kontrola rozpisu; Shrnutí už není). Starší pevný trénink: Kdy a kde → Přítomní.
+ */
+export function TrainingWizard({ initial, mode, running, players, trainings, onAddPlayer, onFinish, onCancel, onSaveTemplate }: Props) {
   const [draft, setDraft] = useState(initial);
   // Týmy pro simulaci a pořadí se nastavují v tréninku před zahájením simulace.
-  const steps: StepId[] = ['when', 'who', ...(draft.format === 'custom' ? (['disc'] as const) : []), 'sum'];
-  const [stepId, setStepId] = useState<StepId>(mode === 'new' ? 'when' : 'sum');
+  const steps: StepId[] = draft.format === 'custom' ? ['who', 'plan'] : ['when', 'who'];
+  // Úprava otevře hlavní nastavení: plán (konfigurovatelný trénink), u pevného Kdy a kde.
+  const [stepId, setStepId] = useState<StepId>(mode === 'new' ? steps[0] : draft.format === 'custom' ? 'plan' : 'when');
   const [reached, setReached] = useState(mode === 'edit' ? steps.length - 1 : 0);
   const step = Math.max(0, steps.indexOf(stepId));
   const ready = canBuildSchedule(draft);
@@ -66,53 +73,22 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
   const body = (() => {
     switch (stepId) {
       case 'when':
-        return <WhenFields training={draft} onChange={change} template={mode === 'new'} />;
+        return <WhenFields training={draft} onChange={change} />;
       case 'who':
-        return <AttendanceFields training={draft} players={players} onChange={change} onAddPlayer={addPlayer} />;
-      case 'disc':
+        return <AttendanceFields training={draft} players={players} trainings={trainings} today={todayIso()} onChange={change} onAddPlayer={addPlayer} />;
+      case 'plan':
         return (
           <>
-            <FairnessPanel
-              hl={hl}
+            <WhenFields training={draft} onChange={change} />
+            <DisciplineStep
               training={draft}
               names={Object.fromEntries(byId)}
-              onAddRounds={(id, k) => change({ ...draft, plan: { ...draft.plan, [id]: (draft.plan[id] ?? 0) + k } })}
+              hl={hl}
+              onChange={change}
+              onSaveTemplate={onSaveTemplate && ((name) => onSaveTemplate(name, draft))}
             />
-            <TemplateField training={draft} onChange={change} />
-            <div className="wizard-disc">
-              <DisciplinePicker training={draft} open bare onChange={change} />
-              <PlanPreview training={draft} onChange={change} names={Object.fromEntries(byId)} hl={hl} />
-            </div>
           </>
         );
-      case 'sum': {
-        const rounds = ready ? buildSchedule(draft).sections.flatMap((s) => s.rows).filter((r) => r.kind !== 'break').length : 0;
-        const line = (id: StepId, text: string) => (
-          <div className="sum-row" key={id}>
-            <span className="sum-k">{TITLES[id]}</span>
-            <span>{text}</span>
-            <button type="button" className="link" aria-label={`Upravit: ${TITLES[id]}`} onClick={() => go(steps.indexOf(id))}>
-              upravit
-            </button>
-          </div>
-        );
-        return (
-          <div className="wizard-sum">
-            {line(
-              'when',
-              `${formatDate(draft.date)}, ${draft.startTime}, ${draft.format === 'custom' ? hm(draft.durationMin) : MODE_LABEL[draft.mode]}, ${draft.tables} ${plural(draft.tables, 'stůl', 'stoly', 'stolů')}`,
-            )}
-            {line('who', `${n} ${plural(n, 'hráč', 'hráči', 'hráčů')}: ${draft.attendees.map((p) => byId.get(p) ?? '?').join(', ')}`)}
-            {draft.format === 'custom' &&
-              line('disc', `${rounds} ${plural(rounds, 'kolo', 'kola', 'kol')}, naplánováno ${hm(plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin))} z ${hm(draft.durationMin)}`)}
-            {draft.format === 'custom' && plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin) > draft.durationMin && (
-              <p className="sum-warn" role="alert">
-                Plán ({hm(plannedMinutes(draft.plan, n, draft.breaks, draft.disciplineMin))}) je delší než trénink ({hm(draft.durationMin)}). Zahájit jde i tak – časy jsou orientační; kola jde ubrat v kroku Disciplíny.
-              </p>
-            )}
-          </div>
-        );
-      }
     }
   })();
 
@@ -134,6 +110,12 @@ export function TrainingWizard({ initial, mode, players, onAddPlayer, onFinish, 
       <p className="wizard-mobile-progress">
         Krok {step + 1} z {steps.length} · {TITLES[stepId]}
       </p>
+      {running && (
+        <p className="wizard-running" role="note">
+          Trénink běží – uložením změny se celý rozpis přegeneruje od začátku. Skóre, výsledky a změřené časy, které do nového rozpisu nesedí,
+          se smažou (appka se před uložením zeptá).
+        </p>
+      )}
       <div className="wizard-panel">
         <h2>{TITLES[stepId]}</h2>
         {body}

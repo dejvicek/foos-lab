@@ -721,7 +721,6 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .wizard-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 14px 0; }
 .wizard-nav-right { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .wizard-nav button { min-height: 44px; padding: 0 18px; }
-.wizard-disc { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 18px; align-items: start; }
 .disciplines.bare { margin: 0; }
 .count-line { margin: 0 0 8px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .plan-preview { position: sticky; top: 64px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; max-height: 70vh; overflow: auto; }
@@ -732,19 +731,13 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .pp-time { font-weight: 700; font-variant-numeric: tabular-nums; }
 .pp-label { font-weight: 600; }
 .pp-rule { color: var(--muted); }
-.wizard-sum { display: flex; flex-direction: column; }
-.sum-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
-.sum-k { color: var(--muted); font-weight: 600; }
 .attendance-fields .check-list { margin: 8px 0 12px; }
 .order-fields h3 { margin: 16px 0 4px; }
 @media (max-width: 767px) {
   .wizard-steps { display: none; }
   .wizard-mobile-progress { display: block; }
   .wizard-panel { padding: 12px; }
-  .wizard-disc { grid-template-columns: 1fr; }
   .plan-preview { position: static; max-height: none; }
-  .sum-row { grid-template-columns: 1fr auto; }
-  .sum-row .sum-k { grid-column: 1 / -1; }
   .wizard-nav { position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); background: var(--bg); padding: 8px 0; margin: 0; }
 }
 
@@ -916,7 +909,8 @@ button.pp-toggle[aria-expanded='true']::after { content: ' ▾'; }
 button.pp-toggle { white-space: nowrap; align-self: start; }
 .fill-offer { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; color: var(--muted); font-weight: 600; }
 .fill-offer button { min-height: 32px; padding: 2px 12px; }
-.sum-warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 14px; }
+.disc-over { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 14px; }
+.wizard-running { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-weight: 600; font-size: 14px; }
 
 /* Živě: zápis nahlášeného výsledku organizátorem */
 .active-actions { display: flex; flex-direction: column; gap: 8px; }
@@ -1017,7 +1011,7 @@ button.dp-toggle:focus-visible { outline: 2px solid var(--felt); outline-offset:
 .dp-chev { width: 14px; height: 14px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
 .dp-row.open .dp-chev { transform: rotate(90deg); stroke: var(--felt); }
 .dp-name { font-weight: 600; font-size: 15px; }
-.dp-row.optional .dp-name { font-weight: 500; color: var(--muted); }
+
 .dp-dur { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); text-align: right; white-space: nowrap; }
 .dp-dur b { color: var(--ink); font-weight: 600; }
 .dp-who { display: flex; justify-content: center; color: var(--muted); }
@@ -1212,3 +1206,92 @@ button.action-icon:hover { color: var(--ink); border-color: var(--line-strong); 
 button.action-icon.danger { color: var(--warn); border-color: var(--line); }
 button.action-icon.danger:hover { border-color: var(--warn); }
 button.action-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Krok Disciplíny v průvodci (10. 11. 2026): tabulka ze Šablon + kontrola rozpisu ve třech pohledech ── */
+.disc-step { display: flex; flex-direction: column; }
+.disc-tpl-tabs { padding: 0; }
+.disc-tpl-label { align-self: center; margin-right: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+span.tpl-tab { display: inline-flex; gap: 6px; align-items: baseline; padding: 6px 12px; min-height: 34px; font-weight: 600; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; margin-bottom: -1px; background: var(--surface); }
+.tpl-tab.custom { color: var(--felt); }
+.disc-sticky { padding: 10px 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.disc-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.disc-summary .tt-summary { margin: 0; flex-wrap: wrap; flex: 1 1 auto; }
+.disc-summary .tt-meter { min-width: 120px; }
+.disc-end { color: var(--muted); }
+button.disc-fill { min-height: 30px; padding: 0 10px; font-size: 13px; }
+.gauges { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; }
+.gauge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px 2px 8px; background: var(--surface); color: var(--ink); font-weight: 500; min-height: 26px; }
+button.gauge { cursor: pointer; }
+button.gauge:hover { border-color: var(--line-strong); }
+.gauge.warn { border-color: var(--warn); }
+.gauge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--felt); }
+.gauge.warn .gauge-dot { background: var(--warn); }
+.gauge-k { color: var(--muted); }
+.view-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-top: 8px; overflow-x: auto; }
+.view-tabs button { background: none; color: var(--muted); border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: 6px 12px; min-height: 38px; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
+.view-tabs button[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--ink); }
+.view-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 6px; background: var(--warn-soft); color: var(--warn); }
+.view-badge.ok { background: var(--felt-soft); color: var(--felt); }
+.view-body { padding-top: 4px; min-width: 0; }
+.view-body .plan-preview { position: static; max-height: none; background: none; border: 0; padding: 8px 0 0; }
+.view-body .plan-preview > h3 { display: none; }
+.view-body .plan-preview li { grid-template-columns: 50px minmax(120px, 220px) minmax(0, 1fr); }
+.view-body .fairness-report { padding-top: 8px; }
+.disc-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
+.disc-tags .skill-legend { margin: 0; }
+.tt-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 2px 0; }
+.tt-name .skill-tags { margin: 0 0 2px 28px; }
+.tt-name .tt-warn { margin-left: 28px; }
+.tt-len { font-size: 13px; color: var(--muted); text-align: right; white-space: nowrap; }
+@media (max-width: 767px) {
+  .tt-row .tt-name { grid-column: 3; grid-row: 1; }
+  .tt-row .tt-len { grid-column: 3; grid-row: 3; text-align: left; }
+  .tt-row.off .tt-len { grid-row: 2; }
+  .view-body .plan-preview li { grid-template-columns: 44px minmax(0, 1fr); }
+}
+/* Uložit nastavení disciplín jako šablonu (admin, 10. 11. 2026) */
+.disc-tpl-action { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 10px; font-size: 14px; padding: 4px 0; }
+.tpl-saved-note { color: var(--felt); font-weight: 600; font-size: 13px; }
+.tpl-save-form { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.tpl-save-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.tpl-save-row label { font-weight: 600; font-size: 13px; }
+.tpl-save-row input { width: 220px; max-width: 100%; }
+.tpl-save-form .error { margin: 6px 0 0; }
+.tpl-save-form .note { margin: 6px 0 0; }
+
+/* ── Krok Přítomní (10. 11. 2026, varianta C) a docházka ── */
+.att-meta { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.att-meta b { color: var(--ink); font-weight: 600; }
+.player-row .att-meta { margin-right: 8px; }
+.attendance-fields { display: flex; flex-direction: column; gap: 14px; }
+.att-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.att-tools input[type='search'] { flex: 1; min-width: 180px; max-width: 360px; min-height: 38px; }
+.att-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+button.pill { min-height: 32px; font-size: 13px; padding: 0 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 999px; font-weight: 600; }
+button.pill.primary { border-color: var(--felt); color: var(--felt); }
+.att-group h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); margin: 0; }
+.att-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); column-gap: 18px; }
+.att-rows label { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 42px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.att-rows input { width: 18px; height: 18px; accent-color: var(--felt); margin: 0; }
+.att-name { font-weight: 600; overflow-wrap: anywhere; }
+.att-rows label:has(input:checked) .att-name { color: var(--felt); }
+.att-rows .archived-tag { color: var(--muted); font-weight: 400; font-size: 13px; }
+.att-add { margin: 0; max-width: 420px; }
+.att-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; border-top: 1px solid var(--line); padding: 10px 0 0; }
+.att-count { white-space: nowrap; color: var(--muted); }
+.att-count b { font-size: 24px; line-height: 1; color: var(--ink); }
+.att-names { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+.att-warn { color: var(--warn); font-weight: 600; font-size: 13px; }
+@media (min-width: 768px) {
+  .att-bar { position: sticky; bottom: 0; background: var(--surface); z-index: 2; padding-bottom: 6px; }
+}
+@media (max-width: 767px) {
+  .att-quick { margin-left: 0; }
+  .att-rows label { grid-template-columns: 20px minmax(0, 1fr); grid-template-rows: auto auto; padding: 4px 0; }
+  .att-rows .att-meta { grid-column: 2; white-space: normal; }
+}
+/* Role organizátora (10. 11. 2026): přepínač u hráče (admin), štítek pro ostatní */
+button.role-toggle { min-height: 30px; padding: 0 10px; font-size: 13px; font-weight: 600; border-radius: 999px; background: var(--surface); color: var(--muted); border: 1px dashed var(--line-strong); }
+button.role-toggle:hover { color: var(--ink); border-color: var(--muted); }
+button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border: 1px solid var(--felt); }
+.role-tag { margin-left: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--felt); }

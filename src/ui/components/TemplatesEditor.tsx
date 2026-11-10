@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
+import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
+import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
 import { catalogMins, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
-import { BREAK_OPTIONS, defaultMatchRounds, DURATION_OPTIONS, playable } from '../../domain/plan';
+import { defaultMatchRounds, DURATION_OPTIONS, playable } from '../../domain/plan';
 import { sortTrainings } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
 import { hm, RangeField } from './DisciplinePicker';
@@ -9,22 +10,10 @@ import { TablesField } from './TrainingSetup';
 import { MAX_PLAYERS } from '../../domain/schedule';
 import { MinStepper } from './MinStepper';
 
-const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
-type Kind = keyof typeof KIND_TITLE;
-const KINDS: Kind[] = ['drill', 'match', 'sim'];
 const def = (id: DisciplineId) => DISCIPLINES.find((d) => d.id === id)!;
 const kindOf = (id: DisciplineId): Kind => def(id).kind;
 /** Výběr po sekcích (pořadí uvnitř sekce zůstane). */
 const byKind = (sel: DisciplineId[]) => KINDS.flatMap((k) => sel.filter((id) => kindOf(id) === k));
-/** Výška řádku podle času (px za minutu), nejméně na jeden řádek ovládání. */
-const PX_PER_MIN = 4.2;
-const rowHeight = (min: number, least = 44) => Math.max(least, Math.round(min * PX_PER_MIN));
-
-/** Úsek tabulky: od–do v tréninku. */
-interface Span {
-  start: number;
-  end: number;
-}
 
 /**
  * Admin: šablony tréninku jako jedna tabulka (9. 11. 2026). Po sekcích: vybrané disciplíny v pořadí
@@ -51,9 +40,13 @@ export function TemplatesEditor({
   saved?: boolean;
 }) {
   const last = sortTrainings(trainings)[0];
-  const [draft, setDraft] = useState<TrainingTemplate[]>(() =>
-    trainingTemplates(catalog).map((t) => ({ ...t, selection: byKind(t.selection), rounds: { ...t.rounds }, breaks: [...(t.breaks ?? [])] })),
-  );
+  // Bez uložených šablon se začíná jednou prázdnou.
+  const [draft, setDraft] = useState<TrainingTemplate[]>(() => {
+    const saved = trainingTemplates(catalog);
+    return saved.length
+      ? saved.map((t) => ({ ...t, selection: byKind(t.selection), rounds: { ...t.rounds }, breaks: [...(t.breaks ?? [])] }))
+      : [blankTemplate(newId())];
+  });
   const [mins, setMins] = useState<DisciplineMins>(() => catalogMins());
   const [tab, setTab] = useState(0);
   const [players, setPlayers] = useState(() => last?.attendees.length || 8);
@@ -118,17 +111,7 @@ export function TemplatesEditor({
   const totalWith = (id: DisciplineId) => templateTimeline({ ...tpl, selection: byKind([...tpl.selection, id]) }, players, tables, mins).total;
 
   /** Čára „konec“ uvnitř řádku, do kterého délka tréninku padne. */
-  let endShown = false;
-  const endLine = (span: Span): ReactNode => {
-    const d = tpl.durationMin;
-    if (endShown || d < span.start || d > span.end || span.end === span.start) return null;
-    endShown = true;
-    return (
-      <span className="tt-end" style={{ top: `${((d - span.start) / (span.end - span.start)) * 100}%` }}>
-        <span>konec {hm(d)}</span>
-      </span>
-    );
-  };
+  const endLine = endLiner(tpl.durationMin, hm);
   const lastKindWithRounds = KINDS.filter((k) => chosenIn(k).some((id) => spans.has(id))).at(-1);
 
   const roundsCell = (id: DisciplineId) => {
@@ -142,17 +125,16 @@ export function TemplatesEditor({
     if (d.kind === 'sim') return <span className="tt-rounds">1×</span>;
     const step = defaultMatchRounds(id);
     const n = tpl.rounds?.[id] ?? step;
-    const setN = (v: number) => setTpl({ rounds: { ...tpl.rounds, [id]: v } });
     return (
-      <span className="tt-rounds tt-count">
-        <button type="button" className="icon" aria-label={`Méně kol: ${d.name}`} disabled={n - step < step} onClick={() => setN(n - step)}>
-          −
-        </button>
-        <output aria-label={`Počet kol: ${d.name}`}>{n}×</output>
-        <button type="button" className="icon" aria-label={`Víc kol: ${d.name}`} disabled={n + step > 20} onClick={() => setN(n + step)}>
-          +
-        </button>
-      </span>
+      <CountStepper
+        n={n}
+        step={step}
+        min={step}
+        lessLabel={`Méně kol: ${d.name}`}
+        moreLabel={`Víc kol: ${d.name}`}
+        countLabel={`Počet kol: ${d.name}`}
+        onChange={(v) => setTpl({ rounds: { ...tpl.rounds, [id]: v } })}
+      />
     );
   };
 
@@ -247,13 +229,7 @@ export function TemplatesEditor({
           const rest = DISCIPLINES.filter((d) => !d.retired && d.kind === kind && !tpl.selection.includes(d.id));
           return (
             <section key={kind} className="tpl-sec" aria-label={KIND_TITLE[kind]}>
-              <h3>
-                <i className={`k-${kind}`} />
-                {KIND_TITLE[kind]}
-                <span className="tpl-count">
-                  {chosen.length} z {chosen.length + rest.length}
-                </span>
-              </h3>
+              <SectionHead kind={kind} chosen={chosen.length} total={chosen.length + rest.length} />
               {chosen.length > 0 && (
                 <ol className="tt-rows" aria-label={`Pořadí: ${KIND_TITLE[kind]}`}>
                   {chosen.map((id, i) => {
@@ -282,16 +258,7 @@ export function TemplatesEditor({
                         }}
                         onDragEnd={() => (setDrag(null), setDropAt(null))}
                       >
-                        <span className="tt-time">
-                          {span ? (
-                            <>
-                              <b>{hm(span.start)}</b>
-                              <span>{hm(span.end)}</span>
-                            </>
-                          ) : (
-                            '–'
-                          )}
-                        </span>
+                        <TimeCell span={span} fmt={hm} />
                         <span className={`tt-strip k-${kind}`} />
                         <span className="tpl-drag" aria-hidden="true" title="Přetáhni na jiné místo">
                           ⠿
@@ -300,78 +267,36 @@ export function TemplatesEditor({
                           <input type="checkbox" checked onChange={() => remove(id)} />
                           <span>{d.name}</span>
                         </label>
-                        <span className="tpl-move">
-                          <button type="button" className="icon" aria-label={`Dřív: ${d.name}`} disabled={i === 0} onClick={() => move(id, i - 1)}>
-                            ↑
-                          </button>
-                          <button type="button" className="icon" aria-label={`Později: ${d.name}`} disabled={i === chosen.length - 1} onClick={() => move(id, i + 1)}>
-                            ↓
-                          </button>
-                        </span>
+                        <MoveButtons
+                          up={{ label: `Dřív: ${d.name}`, disabled: i === 0, onClick: () => move(id, i - 1) }}
+                          down={{ label: `Později: ${d.name}`, disabled: i === chosen.length - 1, onClick: () => move(id, i + 1) }}
+                        />
                         {roundsCell(id)}
                         <MinStepper value={mins[id] ?? d.min} label={d.name} onChange={(v) => setMins((x) => ({ ...x, [id]: v }))} />
                         <span className="tpl-total">{playable(id, players) ? `${n * ((mins[id] ?? d.min) + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}</span>
-                        {!brk && span && id !== lastPlayed && (
-                          <span className="tt-gap">
-                            <button type="button" onClick={() => setBreaks([...breaks, { after: id, min: 10 }])} aria-label={`Přidat pauzu po: ${d.name}`}>
-                              + pauza
-                            </button>
-                          </span>
-                        )}
+                        {!brk && span && id !== lastPlayed && <GapButton name={d.name} onClick={() => setBreaks([...breaks, { after: id, min: 10 }])} />}
                         {span && endLine(span)}
                       </li>,
                     ];
                     if (brk && bspan)
                       rows.push(
-                        <li key={`${id}-pause`} className={`tt-row tt-pause${bspan.end > tpl.durationMin ? ' over' : ''}`} style={{ minHeight: rowHeight(brk.min, 40) }} aria-label={`Pauza po: ${d.name}`}>
-                          <span className="tt-time">
-                            <b>{hm(bspan.start)}</b>
-                            <span>{hm(bspan.end)}</span>
-                          </span>
-                          <span className="tt-strip" />
-                          <span />
-                          <span className="tt-pause-name">
-                            Pauza
-                            <select aria-label="Délka pauzy" value={brk.min} onChange={(e) => setBreaks(breaks.map((b) => (b.after === id ? { ...b, min: Number(e.target.value) } : b)))}>
-                              {BREAK_OPTIONS.map((m) => (
-                                <option key={m} value={m}>
-                                  {m} min
-                                </option>
-                              ))}
-                            </select>
-                          </span>
-                          <span className="tpl-move">
-                            <button type="button" className="icon" aria-label="Pauzu o disciplínu dřív" disabled={!breakTarget(id, -1)} onClick={() => moveBreak(id, -1)}>
-                              ↑
-                            </button>
-                            <button type="button" className="icon" aria-label="Pauzu o disciplínu později" disabled={!breakTarget(id, 1)} onClick={() => moveBreak(id, 1)}>
-                              ↓
-                            </button>
-                          </span>
-                          <span />
-                          <span />
-                          <span className="tpl-total">
-                            <button type="button" className="icon" aria-label="Odebrat pauzu" onClick={() => setBreaks(breaks.filter((b) => b.after !== id))}>
-                              ×
-                            </button>
-                          </span>
-                          {endLine(bspan)}
-                        </li>,
+                        <PauseRow
+                          key={`${id}-pause`}
+                          span={bspan}
+                          min={brk.min}
+                          durationMin={tpl.durationMin}
+                          label={`Pauza po: ${d.name}`}
+                          fmt={hm}
+                          end={endLine(bspan)}
+                          onMin={(min) => setBreaks(breaks.map((b) => (b.after === id ? { ...b, min } : b)))}
+                          onUp={breakTarget(id, -1) ? () => moveBreak(id, -1) : null}
+                          onDown={breakTarget(id, 1) ? () => moveBreak(id, 1) : null}
+                          onRemove={() => setBreaks(breaks.filter((b) => b.after !== id))}
+                        />,
                       );
                     return rows;
                   })}
-                  {kind === lastKindWithRounds && over < 0 && (
-                    <li className="tt-row tt-free" style={{ minHeight: rowHeight(-over, 36) }}>
-                      <span className="tt-time">
-                        <b>{hm(total)}</b>
-                        <span>{hm(tpl.durationMin)}</span>
-                      </span>
-                      <span className="tt-strip" />
-                      <span />
-                      <span className="tt-free-name">volno {-over} min</span>
-                      {endLine({ start: total, end: tpl.durationMin })}
-                    </li>
-                  )}
+                  {kind === lastKindWithRounds && over < 0 && <FreeRow span={{ start: total, end: tpl.durationMin }} fmt={hm} end={endLine({ start: total, end: tpl.durationMin })} />}
                 </ol>
               )}
               {rest.length > 0 && (

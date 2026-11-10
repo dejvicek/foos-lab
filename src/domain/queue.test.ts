@@ -1,4 +1,4 @@
-import { computeDelayLadder, delayStats, pauseId, pauseStates, queueOf, runQueue, TRAINING_ITEM, type QueueEntry } from './queue';
+import { computeDelayLadder, delayStats, pauseId, pauseStates, queueOf, runQueue, stalePlayTimes, TRAINING_ITEM, type QueueEntry } from './queue';
 import { buildSchedule } from './schedule';
 import type { PlayTimes, Training } from './types';
 import { H } from '../test/fixtures';
@@ -126,5 +126,22 @@ describe('ukončený trénink (3. 11. 2026)', () => {
     expect(s.get('a')!.startedAt).toBeUndefined();
     expect(pauseStates(q, times, at(300)).map((p) => p.state)).toEqual(['over']);
     expect(delayStats(q, s)).toEqual([]);
+  });
+});
+
+describe('přegenerování běžícího tréninku (10. 11. 2026)', () => {
+  const custom = (n: number): Training => ({
+    id: 't', date: '2026-11-10', startTime: '18:00', mode: 'team', tables: 1, attendees: H(n), scores: {}, soloResults: {},
+    simSplit: 'order', simTeams: null, format: 'custom', durationMin: 120, plan: { normal: 3 }, lockedRounds: [], breaks: [],
+  });
+  it('časy utkání, která v novém rozpisu nejsou, jsou navíc; zahájení tréninku a platná utkání zůstanou', () => {
+    const before = custom(4);
+    const q = queueOf(buildSchedule(before)).flatMap((e) => (e.kind === 'item' ? [e.id] : []));
+    const times: PlayTimes = { [TRAINING_ITEM]: { startedAt: 1 }, [q[0]]: { startedAt: 2, endedAt: 3 }, [pauseId(0)]: { startedAt: 4 } };
+    expect(stalePlayTimes(times, buildSchedule(before))).toEqual([pauseId(0)]); // v rozpisu bez pauz pauza není
+    const after = { ...before, attendees: H(5) };
+    expect(stalePlayTimes(times, buildSchedule(after)).sort()).toEqual([q[0], pauseId(0)].sort());
+    expect(stalePlayTimes(times, null).sort()).toEqual([q[0], pauseId(0)].sort());
+    expect(stalePlayTimes(undefined, null)).toEqual([]);
   });
 });

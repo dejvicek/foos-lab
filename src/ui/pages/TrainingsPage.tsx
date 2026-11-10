@@ -1,7 +1,7 @@
 import { sortTrainings } from '../../domain/training';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
-import type { Viewer } from '../../domain/my';
+import { canCreateTraining, type Viewer } from '../../domain/my';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 import { useNow } from '../now';
@@ -17,13 +17,17 @@ export function TrainingsPage({ store, navigate, viewer }: { store: AppStore; na
   return (
     <section>
       <h1>Trénink</h1>
-      <div className="actions-row">
-        <button type="button" className="fab" onClick={create}>
-          <span aria-hidden="true">+ </span>Nový trénink
-        </button>
-      </div>
+      {canCreateTraining(viewer) && (
+        <div className="actions-row">
+          <button type="button" className="fab" onClick={create}>
+            <span aria-hidden="true">+ </span>Nový trénink
+          </button>
+        </div>
+      )}
       {trainings.length === 0 ? (
-        <p className="note">Zatím žádný trénink. Začni tlačítkem Nový trénink.</p>
+        <p className="note">
+          {canCreateTraining(viewer) ? 'Zatím žádný trénink. Začni tlačítkem Nový trénink.' : 'Zatím žádný trénink. Zakládá je admin nebo organizátor.'}
+        </p>
       ) : (
         <ul className="training-list" aria-label="Uložené tréninky">
           {trainings.map((t) => {

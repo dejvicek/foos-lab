@@ -1,24 +1,33 @@
-import { catalogMins, discipline, DISCIPLINES } from './disciplines';
+import { catalogMins, DISCIPLINES } from './disciplines';
 import { currentTemplates, templateBreaks, type TrainingTemplate } from './catalog';
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
-import { manualPlan, SOLO_SELECTION } from './plan';
+import { DEFAULT_DURATION, manualPlan, orderedDisciplines, SOLO_SELECTION } from './plan';
+import { anchorBreaks, breaksOf } from './breaks';
+import { roundSequence } from './customSchedule';
 import { buildSchedule, canBuildSchedule } from './schedule';
-import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, Training } from './types';
+import type { DisciplineId, MatchId, Player, PlayerId, Score, SoloKey, SoloResults, TemplateBreak, Training } from './types';
 
-export function newTraining(id: string, today: string, last: Training | null, createdBy: PlayerId | null = null, template: TrainingTemplate = currentTemplates()[0]): Training {
+export function newTraining(
+  id: string,
+  today: string,
+  last: Training | null,
+  createdBy: PlayerId | null = null,
+  template: TrainingTemplate | undefined = currentTemplates()[0],
+): Training {
   const tables = last?.tables ?? 4;
   // Výběr a délka podle šablony (9. 11. 2026, dřív z posledního tréninku). Vyřazené disciplíny se
   // nepřebírají; vyřazená s nástupcem (stará Penalta z místa → proti brankáři) se nahradí nástupcem.
-  const selection = [...new Set(template.selection.flatMap((id) => {
+  // Bez šablony nic vybráno není (10. 11. 2026).
+  const selection = [...new Set((template?.selection ?? []).flatMap((id) => {
     const d = DISCIPLINES.find((x) => x.id === id);
     if (!d) return [];
     return d.retired ? (d.successor ? [d.successor] : []) : [id];
   }))];
-  const durationMin = template.durationMin;
+  const durationMin = template?.durationMin ?? DEFAULT_DURATION;
   // Délky kol podle aktuálního katalogu – trénink si je nese, pozdější změna katalogu jeho časy nehne.
   const disciplineMin = catalogMins();
-  const breaks = templateBreaks(template);
+  const breaks = template ? templateBreaks(template) : [];
   return {
     id,
     date: today,
@@ -33,7 +42,7 @@ export function newTraining(id: string, today: string, last: Training | null, cr
     format: 'custom',
     durationMin,
     // Přesně kola ze šablony (cvičení se dopočítají podle přítomných), nic se nedoplňuje.
-    plan: manualPlan(selection, 0, tables, template.rounds),
+    plan: manualPlan(selection, 0, tables, template?.rounds),
     lockedRounds: [],
     createdBy,
     disciplineMin,
@@ -214,13 +223,57 @@ export function replan(before: Training, after: Training): Training {
   const played = lockedCounts(after);
   let selection = selectedDisciplines(after.plan);
   if (toSolo) selection = [...new Set([...selection, ...SOLO_SELECTION])];
-  // Se šablonou (disciplineOrder) se vrátí přesně její výběr, bez ní se odeberou volitelná.
-  const order = after.disciplineOrder;
-  const added = (id: DisciplineId) => (order ? !order.includes(id) : discipline(id).optional);
+  // Vrátí se výběr šablony (disciplineOrder); sólová cvičení mimo ni (a u tréninku bez pořadí všechna) se odeberou.
+  const order = after.disciplineOrder ?? [];
+  const added = (id: DisciplineId) => !order.includes(id);
   if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && added(id) && !played[id]));
   return {
     ...after,
     // Bez doplňování (9. 11. 2026): cvičení podle přítomných, zápasy s počtem kol, jak jsou.
     plan: manualPlan(selection, after.attendees.length, after.tables, after.plan, lockedCounts(after), new Set(after.lockedRounds.map((l) => l.discipline))),
   };
+}
+
+/**
+ * Přeřadí vybranou disciplínu na pozici `to` mezi vybranými disciplínami stejného druhu (tabulka v průvodci,
+ * 10. 11. 2026). Uloží pořadí vybraných; pauza za disciplínou se přesune s ní. Mimo rozsah = beze změny.
+ */
+export function moveDiscipline(t: Training, id: DisciplineId, to: number): Training {
+  const kind = DISCIPLINES.find((d) => d.id === id)?.kind;
+  const selected = orderedDisciplines(t.disciplineOrder).filter((x) => (t.plan[x] ?? 0) > 0);
+  const same = selected.filter((x) => DISCIPLINES.find((d) => d.id === x)?.kind === kind);
+  const from = same.indexOf(id);
+  if (from < 0 || to < 0 || to >= same.length || to === from) return t;
+  const moved = [...same];
+  moved.splice(from, 1);
+  moved.splice(to, 0, id);
+  let k = 0;
+  const order = selected.map((x) => (same.includes(x) ? moved[k++] : x));
+  return { ...t, disciplineOrder: order, breaks: anchorBreaks(t) };
+}
+
+/**
+ * Nastavení disciplín tréninku jako šablona (10. 11. 2026, admin v průvodci): délka, vybrané disciplíny
+ * v pořadí, počty kol zápasů a pauzy po disciplínách. Cvičení mají v šabloně kola „podle hráčů“ a simulace 1,
+ * takže se jejich počty neukládají; pauza uprostřed disciplíny se uloží za tu disciplínu.
+ */
+export function templateFromTraining(t: Training, id: string, name: string): TrainingTemplate {
+  const kindAt = (x: DisciplineId) => ['drill', 'match', 'sim'].indexOf(DISCIPLINES.find((d) => d.id === x)?.kind ?? 'sim');
+  const selection = orderedDisciplines(t.disciplineOrder)
+    .filter((x) => (t.plan[x] ?? 0) > 0)
+    .sort((a, b) => kindAt(a) - kindAt(b));
+  const rounds = Object.fromEntries(selection.filter((x) => kindAt(x) === 1).map((x) => [x, t.plan[x]!]));
+  const seq = roundSequence(t);
+  const breaks: TemplateBreak[] = [];
+  for (const b of breaksOf(t)) {
+    const after = seq[b.after - 1];
+    if (after && !breaks.some((x) => x.after === after)) breaks.push({ after, min: b.min });
+  }
+  return { id, name: name.trim(), durationMin: t.durationMin, selection, rounds, breaks };
+}
+
+/** Nastaví přítomné najednou („Jako minule“, „Nikdo“): v pořadí soupisky, jen aktivní hráči ze soupisky. */
+export function withAttendees(t: Training, ids: PlayerId[], players: Player[]): Training {
+  const want = new Set(ids);
+  return { ...t, attendees: sortedRoster(players).filter((p) => want.has(p.id) && !p.archived).map((p) => p.id) };
 }

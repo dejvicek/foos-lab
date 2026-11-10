@@ -1,13 +1,14 @@
-import { applyCatalog, catalogForm, helpOwner, resetDiscipline, resolveCatalog, saveDiscipline, saveSkills, matchingTemplate, saveTemplates, templatePlan, templateRounds, templateTimeline, trainingTemplates, validateDisciplineForm, validateSkills, validateTemplates, type CatalogData } from './catalog';
+import { addTemplate, applyCatalog, catalogForm, helpOwner, resetDiscipline, resolveCatalog, saveDiscipline, saveSkills, matchingTemplate, saveTemplates, templatePlan, templateRounds, templateTimeline, trainingTemplates, validateDisciplineForm, validateSkills, validateTemplates, type CatalogData } from './catalog';
 import type { DisciplineId } from './types';
 import { catalogMins, discipline, DISCIPLINES, roundMin } from './disciplines';
 import { explanation, explanationTitle } from './explain';
 import { disciplineHelp } from './disciplineInfo';
 import { DEFAULT_SKILLS, skillName, SKILLS } from './skills';
-import { defaultSelection, manualPlan, orderedDisciplines, placeDisciplineBreaks, plannedMinutes, planSequence, planTimeline } from './plan';
+import { manualPlan, orderedDisciplines, placeDisciplineBreaks, plannedMinutes, planSequence, planTimeline } from './plan';
 import { roundSequence } from './customSchedule';
 import { breaksOf, setBreakMin } from './breaks';
-import { newTraining, withTemplate } from './training';
+import { newTraining, templateFromTraining, withTemplate } from './training';
+import { DEFAULT_SELECTION } from '../test/fixtures';
 
 afterEach(() => applyCatalog({}));
 
@@ -18,19 +19,18 @@ describe('katalog disciplín (9. 11. 2026)', () => {
     expect(c.skills).toEqual(DEFAULT_SKILLS);
   });
 
-  it('úprava názvu, délky, volitelnosti, štítků a nápovědy se promítne do discipline() a explanation()', () => {
+  it('úprava názvu, délky, štítků a nápovědy se promítne do discipline() a explanation()', () => {
     const data: CatalogData = {
       disciplines: {
-        wall: { name: 'Betonová zeď', min: 10, optional: true, skills: ['tempo'], help: [{ text: 'Nový text.' }] },
+        wall: { name: 'Betonová zeď', min: 10, skills: ['tempo'], help: [{ text: 'Nový text.' }] },
       },
     };
     applyCatalog(data);
-    expect(discipline('wall')).toMatchObject({ name: 'Betonová zeď', min: 10, optional: true, skills: ['tempo'] });
+    expect(discipline('wall')).toMatchObject({ name: 'Betonová zeď', min: 10, skills: ['tempo'] });
     expect(explanation('Zeď').parts).toEqual([{ text: 'Nový text.' }]);
     expect(explanationTitle('Zeď')).toBe('Betonová zeď');
     expect(explanationTitle('Penalta z místa')).toBe('Penalta z místa'); // nepřejmenovaná → název vysvětlivky
     expect(disciplineHelp('wall')[0].parts[0].text).toBe('Nový text.');
-    expect(defaultSelection()).not.toContain('wall');
     expect(catalogMins().wall).toBe(10);
     // ostatní beze změny
     expect(discipline('normal')).toMatchObject({ name: 'Normální leg', min: 8 });
@@ -98,16 +98,27 @@ describe('katalog disciplín (9. 11. 2026)', () => {
 });
 
 describe('šablony tréninku (9. 11. 2026)', () => {
-  it('bez uložených šablon je jedna výchozí: nevolitelné disciplíny, 3:00', () => {
-    const [t, ...rest] = trainingTemplates({});
-    expect(rest).toEqual([]);
-    expect(t).toMatchObject({ name: 'Výchozí', durationMin: 180 });
-    expect(t.selection).toEqual(defaultSelection());
+  it('bez uložených šablon žádná není; nový trénink nemá nic vybráno, 3:00 (10. 11. 2026)', () => {
+    expect(trainingTemplates({})).toEqual([]);
+    applyCatalog({});
+    const t = newTraining('t', '2026-11-10', null);
+    expect(t.plan).toEqual({});
+    expect(t.durationMin).toBe(180);
+    expect(t.breaks).toEqual([]);
+    expect(t.disciplineOrder).toEqual([]);
+  });
+
+  it('disciplíny nemají povinná / volitelná: uložený příznak z katalogu se ignoruje a při uložení zmizí', () => {
+    const data = { disciplines: { wall: { optional: true, min: 9 } } } as unknown as CatalogData;
+    applyCatalog(data);
+    expect(discipline('wall')).not.toHaveProperty('optional');
+    expect(DISCIPLINES.some((d) => 'optional' in d)).toBe(false);
+    expect(saveDiscipline(data, 'wall', catalogForm('wall', data))).toEqual({ disciplines: { wall: { min: 9 } } });
   });
 
   it('nový trénink začne první šablonou (výběr, délka, počet kol), bez pauz a bez doplňování', () => {
     const short = { id: 's', name: 'Krátký', durationMin: 60, selection: ['warmupPasses', 'normal', 'lossTax'] as DisciplineId[] };
-    applyCatalog({ templates: [short, { id: 'l', name: 'Dlouhý', durationMin: 180, selection: defaultSelection() }] });
+    applyCatalog({ templates: [short, { id: 'l', name: 'Dlouhý', durationMin: 180, selection: DEFAULT_SELECTION }] });
     const last = { ...newTraining('x', '2026-11-01', null), durationMin: 120, plan: { wall: 2 } };
     const t = newTraining('t', '2026-11-09', last);
     expect(t.durationMin).toBe(60);
@@ -218,5 +229,49 @@ describe('pořadí disciplín v šabloně (9. 11. 2026)', () => {
     expect(t.disciplineOrder).toEqual(['normal', 'warmupPasses']);
     expect(roundSequence({ ...t, plan: { normal: 1, warmupPasses: 1 } })).toEqual(['normal', 'warmupPasses']);
     expect(withTemplate({ ...t, disciplineOrder: null }, tpl).disciplineOrder).toEqual(['normal', 'warmupPasses']);
+  });
+});
+
+describe('nastavení tréninku jako šablona (10. 11. 2026)', () => {
+  afterEach(() => applyCatalog({}));
+  const t = {
+    ...newTraining('t', '2026-11-10', null, null, undefined),
+    attendees: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+    durationMin: 120,
+    plan: { warmupPasses: 4, normal: 5, wall: 2, sim: 1 },
+    disciplineOrder: ['warmupPasses', 'wall', 'normal', 'sim'] as DisciplineId[],
+    breaks: [{ after: 4, min: 15 }, { after: 7, min: 5 }],
+  };
+
+  it('délka, výběr v pořadí, kola zápasů; pauzy po disciplínách (i ta uprostřed disciplíny)', () => {
+    const tpl = templateFromTraining(t, 'x', '  Úterý  ');
+    expect(tpl).toEqual({
+      id: 'x',
+      name: 'Úterý',
+      durationMin: 120,
+      selection: ['warmupPasses', 'wall', 'normal', 'sim'],
+      rounds: { wall: 2, normal: 5 },
+      // po 4. kole končí cvičení; po 7. kole je uprostřed Normálního legu → za Normální leg
+      breaks: [{ after: 'warmupPasses', min: 15 }, { after: 'normal', min: 5 }],
+    });
+  });
+
+  it('z uložené šablony vznikne stejný plán (cvičení podle hráčů)', () => {
+    const tpl = templateFromTraining(t, 'x', 'Úterý');
+    const again = withTemplate({ ...t, plan: {}, breaks: [] }, tpl);
+    expect(again.plan).toMatchObject({ normal: 5, wall: 2, sim: 1 });
+    // cvičení: ručně navýšená 4 kola se neukládají, šablona dá kola podle hráčů (8 hráčů, 4 stoly = 1)
+    expect(planSequence(again.plan, again.disciplineOrder).slice(0, 4)).toEqual(['warmupPasses', 'wall', 'wall', 'normal']);
+    expect(breaksOf(again)[0]).toEqual({ after: 1, min: 15 });
+  });
+
+  it('addTemplate: přidá na konec, výchozí zůstane; stejný název nebo moc kol = chyba', () => {
+    const data: CatalogData = { templates: [{ id: 'd', name: 'Výchozí', durationMin: 180, selection: ['normal'] }] };
+    const out = addTemplate(data, templateFromTraining(t, 'x', 'Úterý'));
+    expect('error' in out).toBe(false);
+    expect((out as CatalogData).templates!.map((x) => x.name)).toEqual(['Výchozí', 'Úterý']);
+    expect((out as CatalogData).disciplines).toBeUndefined(); // délky kol beze změny
+    expect(addTemplate(data, templateFromTraining(t, 'y', 'výchozí'))).toEqual({ error: 'Šablona „výchozí“ už existuje.' });
+    expect(addTemplate(data, templateFromTraining({ ...t, plan: { normal: 25 } }, 'z', 'Dlouhá'))).toEqual({ error: 'Počet kol v šabloně „Dlouhá“ musí být 1–20 (párové po dvou).' });
   });
 });

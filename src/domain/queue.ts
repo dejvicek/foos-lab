@@ -144,6 +144,17 @@ export const TRAINING_ITEM = 'training';
 /** Pauza k (0 = první pauza ve frontě): zahájení pauzy / ruční spuštění dalšího kola. */
 export const pauseId = (k: number) => `pause|${k}`;
 
+/**
+ * Časy utkání, která v rozpisu nemají místo (po přegenerování běžícího tréninku, 10. 11. 2026):
+ * zahájení tréninku zůstává, utkání a pauzy jen ty, které v novém rozpisu jsou.
+ */
+export function stalePlayTimes(times: PlayTimes | undefined, s: Schedule | null): string[] {
+  const queue = s ? queueOf(s) : [];
+  const ids = new Set([TRAINING_ITEM, ...queue.flatMap((e) => (e.kind === 'item' ? [e.id] : []))]);
+  queue.filter((e) => e.kind === 'pause').forEach((_, k) => ids.add(pauseId(k)));
+  return Object.keys(times ?? {}).filter((id) => !ids.has(id));
+}
+
 /** Kdy trénink začal: zahájení organizátorem, u staršího tréninku první zahájené utkání; jinak null. */
 function trainingStart(queue: QueueEntry[], times: PlayTimes): number | null {
   const t = times[TRAINING_ITEM]?.startedAt;

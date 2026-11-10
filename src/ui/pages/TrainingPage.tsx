@@ -17,7 +17,7 @@ import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
 import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
 import { DelayTable, type ItemTiming } from '../components/Timing';
-import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, trainingStarted, type QueueEntry } from '../../domain/queue';
+import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
@@ -347,14 +347,11 @@ export function TrainingPage({
           {plural(training.tables, 'stůl', 'stoly', 'stolů')}
           {training.format === 'custom' && `, ${Math.floor(training.durationMin / 60)}:${String(training.durationMin % 60).padStart(2, '0')}`}
         </p>
-        {manage &&
-          (trainingStarted(training) ? (
-            <span className="muted no-print">Trénink běží – nastavení už nejde měnit.</span>
-          ) : (
-            <button type="button" className="ghost no-print" onClick={() => navigate({ page: 'training-edit', id: training.id })}>
-              Upravit nastavení
-            </button>
-          ))}
+        {manage && (
+          <button type="button" className="ghost no-print" onClick={() => navigate({ page: 'training-edit', id: training.id })}>
+            Upravit nastavení
+          </button>
+        )}
       </div>
       {!schedule && (
         <p className="note">
