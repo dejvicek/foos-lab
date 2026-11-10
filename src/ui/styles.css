@@ -1507,12 +1507,19 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 
 /* ── kroky ── */
 .guide .g-steps { display: flex; flex-direction: column; gap: 88px; padding-block: 24px; }
+/* Skupiny kroků (Než začneš / U stolu / Přehled a výsledky) */
+.guide .g-group { font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 14px; margin-bottom: -48px; }
+.guide .g-group::after { content: ""; flex: 1; height: 1px; background: var(--line-strong); }
+.guide .g-rules { gap: 0; padding-block: 4px; }
+.guide .g-rule { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.guide .g-rule:last-child { border-bottom: 0; }
+.guide .g-rule span { color: var(--muted); text-align: right; }
 .guide .g-step { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px; align-items: center; }
-.guide .g-step:nth-child(even) { grid-template-columns: 320px minmax(0, 1fr); }
-.guide .g-step:nth-child(even) .g-copy { order: 2; }
+.guide .g-step:nth-of-type(even) { grid-template-columns: 320px minmax(0, 1fr); }
+.guide .g-step:nth-of-type(even) .g-copy { order: 2; }
 .guide .g-num { font-family: var(--font); font-stretch: 125%; font-weight: 800; font-size: 15px; color: var(--felt); display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .guide .g-num::after { content: ""; height: 2px; width: 40px; background: var(--felt); }
-.guide .g-step h2 { font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -.025em; }
+.guide .g-step h3 { font-family: var(--font); font-stretch: 118%; font-weight: 800; font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -.025em; }
 .guide .g-step .g-copy > p { margin-top: 14px; color: var(--muted); max-width: 34em; }
 .guide .g-list { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-width: 34em; }
 .guide .g-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; }
@@ -1626,9 +1633,10 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-foot { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
 @media (max-width: 860px) {
-  .guide .g-hero, .guide .g-step, .guide .g-step:nth-child(even), .guide .g-faq { grid-template-columns: minmax(0, 1fr); gap: 28px; }
-  .guide .g-step:nth-child(even) .g-copy { order: 0; }
+  .guide .g-hero, .guide .g-step, .guide .g-step:nth-of-type(even), .guide .g-faq { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .guide .g-step:nth-of-type(even) .g-copy { order: 0; }
   .guide .g-steps { gap: 64px; }
+  .guide .g-group { margin-bottom: -36px; }
   .guide .g-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .guide .g-top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
