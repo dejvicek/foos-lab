@@ -6,6 +6,7 @@ import { createSupabase, supabaseRepository } from './storage/supabaseRepository
 import { memoryAuth, supabaseAuth, type AuthService } from './storage/auth';
 import type { Repository } from './storage/repository';
 import { localOutbox, type Outbox } from './storage/outbox';
+import { fetchLatestVersion } from './storage/appVersion';
 import './ui/styles.css';
 
 function createBackend(): { repo: Repository; auth: AuthService; outboxFor?: (playerId: string) => Outbox } | null {
@@ -21,7 +22,7 @@ const backend = createBackend();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {backend ? (
-      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} />
+      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} latestVersion={import.meta.env.PROD ? fetchLatestVersion : undefined} />
     ) : (
       <main className="page">
         <p>Chybí nastavení Supabase. Doplň .env.local podle .env.example.</p>

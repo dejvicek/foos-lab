@@ -7,6 +7,8 @@ import { memoryAuth, type AuthService, type Me } from '../storage/auth';
 import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
 import type { Outbox } from '../storage/outbox';
+import type { AppVersion } from '../storage/appVersion';
+import { useAppVersion } from './useAppVersion';
 import { MainNav } from './components/MainNav';
 import { LadderPage } from './pages/LadderPage';
 import { DisciplinesPage } from './pages/DisciplinesPage';
@@ -28,11 +30,14 @@ export function App({
   repo,
   auth = defaultAuth,
   outboxFor,
+  latestVersion,
 }: {
   repo: Repository;
   auth?: AuthService;
   /** Fronta neodeslaných zápisů v zařízení pro přihlášeného hráče; bez ní fronta zavření appky nepřežije. */
   outboxFor?: (playerId: string) => Outbox;
+  /** Zjistí právě nasazenou verzi appky; bez ní se verze nekontroluje (testy, vývoj). */
+  latestVersion?: () => Promise<AppVersion | null>;
 }) {
   const [me, setMe] = useState<Me | null | 'loading'>('loading');
   const [nick, setNick] = useState<string | null>(null);
@@ -80,6 +85,7 @@ export function App({
       repo={repo}
       auth={auth}
       outboxFor={outboxFor}
+      latestVersion={latestVersion}
       viewer={{ playerId: me.playerId, isAdmin: me.isAdmin }}
       onChangePassword={() => setChanging(true)}
       onSignOut={async () => {
@@ -95,6 +101,7 @@ function SignedIn({
   repo,
   auth,
   outboxFor,
+  latestVersion,
   viewer: me,
   onChangePassword,
   onSignOut,
@@ -102,12 +109,14 @@ function SignedIn({
   repo: Repository;
   auth: AuthService;
   outboxFor?: (playerId: string) => Outbox;
+  latestVersion?: () => Promise<AppVersion | null>;
   viewer: Viewer;
   onChangePassword(): void;
   onSignOut(): void;
 }) {
   const outbox = useMemo(() => (me.playerId ? outboxFor?.(me.playerId) : undefined), [outboxFor, me.playerId]);
   const store = useAppState(repo, { outbox });
+  const version = useAppVersion(latestVersion);
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
   const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
@@ -146,8 +155,22 @@ function SignedIn({
     </div>
   );
 
+  const reload = () => window.location.reload();
   let body: React.ReactNode;
-  if (store.status === 'loading') body = <p className="note">Načítám…</p>;
+  if (version === 'required')
+    // Starší verze by počítala jiný rozpis nebo nerozuměla databázi – dál se s ní nepracuje.
+    body = (
+      <div className="load-error" role="alert">
+        <p>
+          <strong>Appka má novou verzi a bez obnovení nejde pokračovat.</strong>
+        </p>
+        <p className="note">Změny, které ještě neodešly, zůstanou v zařízení a odešlou se po obnovení.</p>
+        <button type="button" onClick={reload}>
+          Obnovit
+        </button>
+      </div>
+    );
+  else if (store.status === 'loading') body = <p className="note">Načítám…</p>;
   else if (store.status === 'error')
     body = (
       <div className="load-error">
@@ -188,6 +211,14 @@ function SignedIn({
         myTurn={!!active?.myTurn}
         admin={viewer.isAdmin}
       />
+      {version === 'update' && (
+        <div className="update-banner" role="status">
+          Je k dispozici nová verze appky.{' '}
+          <button type="button" className="ghost banner-ok" onClick={reload}>
+            Obnovit
+          </button>
+        </div>
+      )}
       {store.saveState === 'retrying' && (
         <div className="save-banner" role="status">
           Neuloženo – zkouším znovu

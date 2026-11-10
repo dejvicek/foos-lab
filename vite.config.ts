@@ -1,11 +1,26 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { COMPAT } from './src/version';
+
+// Označení sestavení: commit z GitHub Actions, lokálně čas sestavení.
+const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
+const BUILD = env.GITHUB_SHA?.slice(0, 7) ?? `local-${Date.now().toString(36)}`;
+
+/** version.json vedle appky – běžící appka podle něj pozná, že je nasazená novější verze. */
+const versionFile = (): Plugin => ({
+  name: 'foos-lab-version-file',
+  apply: 'build',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD, compat: COMPAT }) });
+  },
+});
 
 export default defineConfig({
   // relativní cesty: funguje na GitHub Pages pod /foos-lab/ i lokálně
   base: './',
-  plugins: [react()],
+  plugins: [react(), versionFile()],
+  define: { __APP_BUILD__: JSON.stringify(BUILD) },
   test: {
     environment: 'jsdom',
     globals: true,
