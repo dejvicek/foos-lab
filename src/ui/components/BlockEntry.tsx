@@ -256,7 +256,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <div className="entry-head">Stůl {j + 1}</div>
                 <span className="entry-players">{c.players.map((p) => names[p] ?? '?').join(', ')}</span>
                 {wtmr.bar}
-                <WarmupTimer startedAt={startedAt} now={now} compact={!tap} />
+                <WarmupTimer startedAt={startedAt} now={now} compact={!tap && !timing?.allowStart} />
               </div>
             );
           }

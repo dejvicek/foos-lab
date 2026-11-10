@@ -1,3 +1,4 @@
+import { WarmupTimer } from './WarmupTimer';
 import { useState } from 'react';
 import type { ItemState, QueueEntry } from '../../domain/queue';
 import type { SoloMetricDef } from '../../domain/solo';
@@ -101,6 +102,8 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
           const e = onTable(t);
           const s = e ? states.get(e.id)! : null;
           const mine = !!e && !!me && e.players.includes(me);
+          // Rozcvička: nic se nezapisuje, jen timer a potvrzení konce.
+          const warmup = e?.discipline === 'warmup';
           return (
             <div key={t} role="group" aria-label={`Stůl ${t}`} className={['active-table', s?.state ?? 'free', mine ? 'mine' : '', e && open === e.id ? 'entry-open' : ''].filter(Boolean).join(' ')}>
               <div className="active-head">
@@ -113,22 +116,23 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                     čeká na zahájení{now - (s.activeAt ?? now) >= 1000 ? ` ${fmtDur(now - (s.activeAt ?? now))}` : ''}
                   </span>
                 )}
-                {s?.state === 'playing' && <span className="chip play">hraje {fmtDur(now - (s.startedAt ?? now))}</span>}
+                {s?.state === 'playing' && !warmup && <span className="chip play">hraje {fmtDur(now - (s.startedAt ?? now))}</span>}
                 {!e && <span className="chip free">volný</span>}
               </div>
               {e ? (
                 <>
                   <div className="active-names">{itemNames(e, names)}</div>
+                  {warmup && s?.state === 'playing' && <WarmupTimer startedAt={s.startedAt} now={now} compact />}
                   {manage && canWrite(e) ? (
                     // Organizátor: nahlášený výsledek zadá a potvrdí konec; rozehrané (z telefonu) jen potvrdí.
                     <div className="active-actions">
                       {open === e.id && entry && <ResultEntry e={e} table={t} names={names} entry={entry} />}
-                      {open !== e.id && entry && (
+                      {open !== e.id && entry && !warmup && (
                         <button type="button" className={s?.state === 'playing' ? 'link' : undefined} onClick={() => setOpen(e.id)}>
                           Zadat výsledek
                         </button>
                       )}
-                      {(s?.state === 'playing' || open === e.id || !entry) && (
+                      {(s?.state === 'playing' || open === e.id || !entry || warmup) && (
                         <button
                           type="button"
                           className="ghost"

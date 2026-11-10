@@ -27,7 +27,7 @@ import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
-import { isWarmupItem } from '../../domain/warmup';
+import { isWarmupItem, warmupRunning } from '../../domain/warmup';
 
 /** „Změna smaže skóre u N zápasů a M výsledků sólové části. Pokračovat?“ – null, když se nic nesmaže. */
 
@@ -60,10 +60,10 @@ export function TrainingPage({
     ([k, v]) => k.startsWith('pause|') && v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000,
   );
   // Běžící Rozcvička: odpočet fáze i v rozpisu po sekundě.
-  const warmupRunning = Object.entries(training?.playTimes ?? {}).some(
+  const warmupLive = Object.entries(training?.playTimes ?? {}).some(
     ([k, v]) => v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000 && !!schedule && isWarmupItem(schedule, k),
   );
-  const tick = useTick(view === 'schedule' && !pauseRunning && !warmupRunning ? 30_000 : 1000, !!training);
+  const tick = useTick(view === 'schedule' && !pauseRunning && !warmupLive ? 30_000 : 1000, !!training);
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {
@@ -175,6 +175,8 @@ export function TrainingPage({
         // Konec vždy potvrzuje člověk. Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
         end: (id) => {
           const now = Date.now();
+          // Rozcvička: timer ještě běží → ukončit jen po potvrzení.
+          if (warmupRunning(schedule!, id, training.playTimes?.[id]?.startedAt, now) && !confirm('Rozcvička ještě běží – opravdu ukončit?')) return;
           const startedAt = training.playTimes?.[id]?.startedAt ?? queueInfo.states.get(id)?.activeAt ?? now;
           store.setPlayTime(training.id, id, { startedAt: Math.min(startedAt, now), endedAt: now });
         },

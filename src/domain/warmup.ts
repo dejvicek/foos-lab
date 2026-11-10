@@ -36,3 +36,8 @@ export function isWarmupItem(s: Schedule, itemId: string): boolean {
         if (c?.type === 'group' && c.discipline === 'warmup' && drillItemId(row, j + 1, c.players) === itemId) return true;
   return false;
 }
+
+/** Rozcvička je zahájená a timer ještě nedoběhl – Ukončit se má zeptat. */
+export function warmupRunning(s: Schedule, itemId: string, startedAt: number | undefined, nowMs: number): boolean {
+  return startedAt !== undefined && isWarmupItem(s, itemId) && (nowMs - startedAt) / 1000 < WARMUP_TOTAL_SEC;
+}

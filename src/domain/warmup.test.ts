@@ -3,7 +3,7 @@ import { disciplineHelp } from './disciplineInfo';
 import { DEFAULT_SELECTION } from './plan';
 import { SOLO_METRICS } from './solo';
 import { WARMUP_PHASES } from './content';
-import { isWarmupItem, WARMUP_TOTAL_SEC, warmupState } from './warmup';
+import { isWarmupItem, WARMUP_TOTAL_SEC, warmupRunning, warmupState } from './warmup';
 import { drillRoundsNeeded } from './plan';
 import { buildSchedule } from './schedule';
 import { soloSlots } from './solo';
@@ -94,5 +94,19 @@ describe('Rozcvička v rozpisu', () => {
     expect(isWarmupItem(s, 'nic')).toBe(false);
     const items = queueOf(s).filter((e) => e.kind === 'item');
     expect(items.find((e) => e.id === id)).toMatchObject({ discipline: 'warmup' });
+  });
+});
+
+describe('Rozcvička – běží (kvůli potvrzení Ukončit)', () => {
+  it('warmupRunning: zahájená a nedoběhlá; ne po 8:35, ne nezahájená, ne zápas', () => {
+    const s = buildSchedule(custom(8, 4, { warmup: 1, normal: 1 }));
+    const row = s.sections[0].rows[0];
+    const id = drillItemId(row, 1, groupsOf(row)[0]);
+    const t0 = 5_000_000;
+    expect(warmupRunning(s, id, t0, t0 + 100_000)).toBe(true);
+    expect(warmupRunning(s, id, t0, t0 + 515_000)).toBe(false);
+    expect(warmupRunning(s, id, undefined, t0)).toBe(false);
+    const m = s.sections.flatMap((x) => x.rows).flatMap((r) => r.cells).find((c) => c?.type === 'match');
+    expect(m?.type === 'match' && warmupRunning(s, m.match.id, t0, t0 + 100_000)).toBe(false);
   });
 });
