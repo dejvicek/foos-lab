@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
@@ -54,7 +54,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </div>
           <div>
             <MirrorDemo />
-            <p className="g-hint">Vyzkoušej si to: ťukej do polí. Konec legu appka pozná sama.</p>
+            <p className="g-hint">Vyzkoušej si to: ťukej do polí. Konec legu appka pozná sama, ty ho jen potvrdíš.</p>
           </div>
         </section>
 
@@ -88,7 +88,10 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </Step>
 
           <Step n={3} label="Hra" title="Zahájit, zapisovat, potvrdit konec" phone={<FinishPhone />}>
-            <p>Každé utkání má stejný průběh. Když je výsledek dohraný, máš 15 s na kontrolu: potvrď konec hned, nebo výsledek oprav. Jinak utkání skončí samo.</p>
+            <p>
+              Každé utkání má stejný průběh. Když je ťukaný výsledek dohraný, máš 15 s na kontrolu: potvrď konec hned, nebo výsledek oprav. Jinak utkání
+              skončí samo. Rozcvička a výsledek zadaný číslem na notebooku samy neskončí, tam konec potvrď vždy.
+            </p>
             <div className="g-flow">
               <div>
                 <b>Zahájit</b>Jakmile stojíte u stolu. Rozjedou se stopky.
@@ -127,6 +130,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               <Li i="1">Kroužení kolem míčku na dvojce: pravá a levá ruka, po směru i proti směru.</Li>
               <Li i="2">Na pětce absorbování, tic-tac nahrávky a postupka.</Li>
               <Li i="~">Na Androidu telefon na začátku fáze zavibruje. Safari na iPhonu vibrace neumí.</Li>
+              <Li i="■">
+                Rozcvička sama neskončí. Po odpočtu ťukni <b>Potvrdit konec</b>, jinak další utkání u stolu čeká.
+              </Li>
             </ul>
           </Step>
 
@@ -154,7 +160,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 kolo, které přijde.
               </Li>
               <Li i="▣">
-                <b>Tvůj stůl</b> je podbarvený. Ťuknutím na stůl otevřeš zápis, u odehrané hry rozbalíš <b>Průběh</b>: kdy padly góly a ztráty a kdo vedl – jako sloupec, nebo křivka.
+                <b>Tvůj stůl</b> je podbarvený. Zapisovat můžeš jen u stolu, kde hraješ nebo jsi rozhodčí. U odehrané hry rozbalíš <b>Průběh</b>: kdy padly góly a ztráty a kdo vedl – jako sloupec, nebo křivka.
               </Li>
               <Li i="Σ">
                 <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre, pak výhry, góly a výhry v simulaci. Pod ním jsou Zdržovači.
@@ -265,12 +271,13 @@ function Li({ i, red, children }: { i: React.ReactNode; red?: boolean; children:
   );
 }
 
-type Tab = 'live' | 'my' | 'trainings' | 'ladder';
+type Tab = 'live' | 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
   ['live', 'Živě'],
   ['my', 'Moje hry'],
   ['trainings', 'Trénink'],
   ['ladder', 'Žebříček'],
+  ['disciplines', 'Disciplíny'],
 ];
 
 /** Spodní lišta ukázkového telefonu se stejnými ikonami jako appka. */
@@ -314,6 +321,7 @@ const SCEN: Record<Scen, { a: number; b: number; rule: string; label: string }> 
   s55: { a: 5, b: 5, rule: 'Start 5:5 · o 2 góly, strop 10', label: 'Start 5:5' },
 };
 type Key = 'a' | 'b' | 'la' | 'lb';
+const END_WAIT = 15;
 
 /** Konec legu v ukázce (stejná pravidla jako v appce: do 6; 5:5 o 2 góly nebo strop 10). */
 const legDone = (scen: Scen, a: number, b: number) =>
@@ -325,7 +333,19 @@ function MirrorDemo() {
   const [m, setM] = useState(fresh('normal'));
   const [hist, setHist] = useState<Key[]>([]);
   const [locked, setLocked] = useState(false);
-  const reset = (s: Scen) => (setScen(s), setM(fresh(s)), setHist([]), setLocked(false));
+  // Dohraný leg čeká na Potvrdit konec nejdéle 15 s, pak skončí sám (jako v appce).
+  const [left, setLeft] = useState(END_WAIT);
+  const [confirmed, setConfirmed] = useState(false);
+  useEffect(() => {
+    if (!locked || confirmed) return;
+    if (left <= 0) {
+      setConfirmed(true);
+      return;
+    }
+    const t = setTimeout(() => setLeft(left - 1), 1000);
+    return () => clearTimeout(t);
+  }, [locked, confirmed, left]);
+  const reset = (s: Scen) => (setScen(s), setM(fresh(s)), setHist([]), setLocked(false), setConfirmed(false), setLeft(END_WAIT));
   const tap = (k: Key) => {
     if (locked) return;
     const next = { ...m, [k]: m[k] + 1 };
@@ -339,6 +359,8 @@ function MirrorDemo() {
     setM({ ...m, [k]: m[k] - 1 });
     setHist(hist.slice(0, -1));
     setLocked(false);
+    setConfirmed(false);
+    setLeft(END_WAIT);
   };
   return (
     <Phone time="18:42" title="3. kolo · stůl 2" sub={SCEN[scen].rule} tab="my" label="Ukázka: zápis zápasu na telefonu">
@@ -381,7 +403,7 @@ function MirrorDemo() {
       </div>
       {locked && (
         <div className="g-done" role="status">
-          Leg dohrán {m.a}:{m.b} · uloženo
+          {confirmed ? `Konec potvrzen ${m.a}:${m.b} · uloženo` : `Leg dohrán ${m.a}:${m.b} · skončí samo za ${left} s`}
         </div>
       )}
       <div className="g-mrow">
@@ -390,9 +412,15 @@ function MirrorDemo() {
             <button type="button" onClick={undo}>
               Opravit
             </button>
-            <button type="button" className="g-go" onClick={() => reset(scen)}>
-              Na další kolo
-            </button>
+            {confirmed ? (
+              <button type="button" className="g-go" onClick={() => reset(scen)}>
+                Na další kolo
+              </button>
+            ) : (
+              <button type="button" className="g-go" onClick={() => setConfirmed(true)}>
+                Potvrdit konec
+              </button>
+            )}
           </>
         ) : (
           <button type="button" disabled={!hist.length} onClick={undo}>
@@ -544,7 +572,7 @@ function FinishPhone() {
         {side('g-l', 'Dejv + Milan', 6, 2)}
         {side('g-r', 'Osky + Denys', 4, 3)}
       </div>
-      <div className="g-done">Leg dohrán 6:4 · skončí samo za 12 s, potvrdit jde hned</div>
+      <div className="g-done">Leg dohrán 6:4 · skončí samo za 12 s</div>
       <span className="g-bigbtn">Potvrdit konec</span>
       <span className="g-ghostbtn">Opravit</span>
     </Phone>

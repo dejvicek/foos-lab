@@ -16,8 +16,11 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     // ukázka: leg do 6, pak zamčeno; Opravit vrátí poslední ťuknutí
     const demo = within(guide).getByLabelText('Ukázka: zápis zápasu na telefonu');
     for (let i = 0; i < 6; i++) await user.click(within(demo).getByRole('button', { name: 'Gól vlevo' }));
-    expect(within(demo).getByRole('status')).toHaveTextContent('Leg dohrán 6:0 · uloženo');
+    expect(within(demo).getByRole('status')).toHaveTextContent('Leg dohrán 6:0 · skončí samo za 15 s');
     expect(within(demo).getByRole('button', { name: 'Gól vpravo' })).toBeDisabled();
+    await user.click(within(demo).getByRole('button', { name: 'Potvrdit konec' }));
+    expect(within(demo).getByRole('status')).toHaveTextContent('Konec potvrzen 6:0 · uloženo');
+    expect(within(demo).getByRole('button', { name: 'Na další kolo' })).toBeInTheDocument();
     await user.click(within(demo).getByRole('button', { name: 'Opravit' }));
     expect(within(demo).queryByRole('status')).toBeNull();
     // Start 5:5: o 2 góly

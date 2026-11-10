@@ -1477,7 +1477,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-shead b { font-size: 17px; }
 .guide .g-shead span { font-size: 12px; color: var(--muted); }
 .guide .g-sbody { flex: 1; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-.guide .g-tabbar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding: 6px 4px 12px; }
+.guide .g-tabbar { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--surface); padding: 6px 4px 12px; }
 .guide .g-tabbar span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; font-weight: 600; color: var(--muted); position: relative; }
 .guide .g-tabbar span svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
 .guide .g-tabbar span.g-on { color: var(--felt); }
