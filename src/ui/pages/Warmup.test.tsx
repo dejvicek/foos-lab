@@ -75,3 +75,14 @@ it('Živě: u Rozcvičky organizátor nezadává výsledek, jen potvrdí konec; 
   expect(ask).toHaveBeenCalledWith('Rozcvička ještě běží – opravdu ukončit?');
   expect(ended(repo, id)).toBeUndefined();
 });
+
+it('Moje hry: u Rozcvičky jen odpočet (bez stopek „Doba hry“) a po konci bez „zkontroluj výsledek“', async () => {
+  window.location.hash = '#/moje-hry';
+  const id = warmupItemOf('id1');
+  const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 700_000 }, [id]: { startedAt: Date.now() - 600_000 } } }] });
+  render(<App repo={repo} auth={authAs('id1')} />);
+  await screen.findByRole('heading', { name: 'Moje hry' });
+  expect(screen.queryByLabelText('Doba hry')).toBeNull();
+  expect(screen.queryByText(/zkontroluj výsledek/)).toBeNull();
+  expect(screen.getByText('Hotovo – Rozcvička skončila.')).toBeInTheDocument();
+});

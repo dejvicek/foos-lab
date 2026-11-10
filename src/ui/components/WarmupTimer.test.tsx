@@ -46,3 +46,33 @@ describe('Rozcvička – timer', () => {
     expect(screen.getByText('Rozcvička – 7 fází, 8:35')).toBeInTheDocument();
   });
 });
+
+describe('Rozcvička – ukončená a probuzená obrazovka', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('ukončená Rozcvička: timer stojí a nevibruje', () => {
+    const spy = vi.spyOn(vib, 'vibrate').mockImplementation(() => {});
+    const { rerender } = render(<WarmupTimer startedAt={t0} endedAt={t0 + 240_000} now={t0 + 241_000} compact={false} />);
+    expect(screen.getByText('Rozcvička ukončena.')).toBeInTheDocument();
+    rerender(<WarmupTimer startedAt={t0} endedAt={t0 + 240_000} now={t0 + 265_000} compact={false} />);
+    expect(spy).not.toHaveBeenCalled();
+    rerender(<WarmupTimer startedAt={t0} endedAt={t0 + 240_000} now={t0 + 265_000} compact />);
+    expect(screen.getByText('Rozcvička – ukončeno')).toBeInTheDocument();
+  });
+
+  it('běžící Rozcvička na telefonu drží obrazovku zapnutou, po konci ji pustí', async () => {
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release }));
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
+    const { rerender } = render(<WarmupTimer startedAt={t0} now={t0 + 30_000} compact={false} />);
+    await vi.waitFor(() => expect(request).toHaveBeenCalledWith('screen'));
+    rerender(<WarmupTimer startedAt={t0} now={t0 + 520_000} compact={false} />);
+    await vi.waitFor(() => expect(release).toHaveBeenCalled());
+    // notebook (kompaktní) obrazovku nedrží
+    request.mockClear();
+    render(<WarmupTimer startedAt={t0} now={t0 + 30_000} compact />);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(request).not.toHaveBeenCalled();
+    delete (navigator as { wakeLock?: unknown }).wakeLock;
+  });
+});

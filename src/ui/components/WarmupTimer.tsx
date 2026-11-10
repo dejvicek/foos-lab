@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { WARMUP_PHASES } from '../../domain/content';
 import { rodName, WARMUP_TOTAL_SEC, warmupState, type WarmupState } from '../../domain/warmup';
 import { vibrate } from '../vibrate';
+import { useWakeLock } from '../wakeLock';
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 const stateKey = (s: WarmupState) => (s.done ? 'done' : `${s.index}${s.prep ? 'p' : ''}`);
@@ -9,14 +10,18 @@ const stateKey = (s: WarmupState) => (s.done ? 'done' : `${s.index}${s.prep ? 'p
 interface Props {
   /** Zahájení utkání (ms); bez něj Rozcvička ještě neběží. */
   startedAt: number | undefined;
+  /** Potvrzený konec (ms): timer stojí, nevibruje. */
+  endedAt?: number;
   now: number;
   /** Notebook: jeden řádek; telefon: velký odpočet a vibrace. */
   compact: boolean;
 }
 
 /** Rozcvička: timer fází od zahájení – všechny obrazovky u stolu počítají ze stejného času. */
-export function WarmupTimer({ startedAt, now, compact }: Props) {
-  const s = startedAt === undefined ? null : warmupState((now - startedAt) / 1000);
+export function WarmupTimer({ startedAt, endedAt, now, compact }: Props) {
+  const ended = endedAt !== undefined;
+  const s = startedAt === undefined || ended ? null : warmupState((now - startedAt) / 1000);
+  useWakeLock(!compact && !!s && !s.done);
   const key = s ? stateKey(s) : null;
   const prev = useRef(key);
   useEffect(() => {
@@ -29,13 +34,21 @@ export function WarmupTimer({ startedAt, now, compact }: Props) {
   }, [key, compact, s]);
 
   if (compact) {
-    const text = !s
+    const text = ended
+      ? 'Rozcvička – ukončeno'
+      : !s
       ? `Rozcvička – ${WARMUP_PHASES.length} fází, ${mmss(WARMUP_TOTAL_SEC)}`
       : s.done
         ? 'Rozcvička – hotovo'
         : `Rozcvička – fáze ${s.index + 1} / ${s.total}, zbývá ${mmss(s.remainingSec)}`;
     return <p className="warmup-line">{text}</p>;
   }
+  if (ended)
+    return (
+      <div className="warmup done">
+        <p className="warmup-phase">Rozcvička ukončena.</p>
+      </div>
+    );
   if (!s)
     return (
       <div className="warmup">

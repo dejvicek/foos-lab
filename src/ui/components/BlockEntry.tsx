@@ -155,7 +155,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     );
   };
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
-  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match) => {
+  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match, countdown = false) => {
     const st = timing?.state(id);
     // Zapisovat jde po zahájení; organizátor bez zahájení; hotový výsledek jde opravit vždy.
     const open = !timing || !st || st.startedAt !== undefined || hasResult || timing.manage;
@@ -167,6 +167,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         allowStart={timing.allowStart}
         manage={timing.manage}
         finished={finished}
+        countdown={countdown}
         onStart={() => timing.start(id)}
         onEnd={() => timing.end(id)}
       />
@@ -249,14 +250,15 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           if (c.discipline === 'warmup') {
             const wid = drillItemId(row, j + 1, c.players);
             const startedAt = timing?.state(wid)?.startedAt;
+            const endedAt = timing?.state(wid)?.endedAt;
             const now = timing?.now ?? Date.now();
-            const wtmr = timer(wid, c.players, false, startedAt !== undefined && warmupState((now - startedAt) / 1000).done);
+            const wtmr = timer(wid, c.players, false, startedAt !== undefined && warmupState((now - startedAt) / 1000).done, undefined, true);
             return (
               <div key={j} className="entry-card" role="group" aria-label={label}>
                 <div className="entry-head">Stůl {j + 1}</div>
                 <span className="entry-players">{c.players.map((p) => names[p] ?? '?').join(', ')}</span>
                 {wtmr.bar}
-                <WarmupTimer startedAt={startedAt} now={now} compact={!tap && !timing?.allowStart} />
+                <WarmupTimer startedAt={startedAt} endedAt={endedAt} now={now} compact={!tap && !timing?.allowStart} />
               </div>
             );
           }

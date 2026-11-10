@@ -29,12 +29,14 @@ interface BarProps {
   manage: boolean;
   /** Výsledek je dohraný (leg / všechny pokusy) – vyzvat k potvrzení konce. */
   finished?: boolean;
+  /** Vlastní odpočet (Rozcvička): bez stopek „Doba hry“ a bez výzvy ke kontrole výsledku. */
+  countdown?: boolean;
   onStart(): void;
   onEnd(): void;
 }
 
 /** Stopky utkání: Zahájit (jen Moje hry) a Potvrdit konec; časy se ručně neupravují. */
-export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, onStart, onEnd }: BarProps) {
+export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, countdown, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
@@ -54,6 +56,8 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
                   ? 'Pauza – další kolo spustí organizátor'
                   : 'Utkání ještě není na řadě'}
           </span>
+        ) : countdown ? (
+          <span className="timing-label">{ended === undefined ? 'běží' : ''}</span>
         ) : (
           <span className="timing-clock" aria-label="Doba hry">
             {fmtDur((ended ?? now) - started)}
@@ -71,7 +75,7 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
         )}
         {ended !== undefined && <span className="timing-label">dohráno</span>}
       </div>
-      {finished && ended === undefined && <p className="timing-hint">Hotovo – zkontroluj výsledek a potvrď konec.</p>}
+      {finished && !countdown && ended === undefined && <p className="timing-hint">Hotovo – zkontroluj výsledek a potvrď konec.</p>}
       {(s.activeAt !== null || started !== undefined) && (
         <div className="timing-times">
           {s.activeAt !== null && <span>aktivní od {clockOf(s.activeAt)}</span>}
