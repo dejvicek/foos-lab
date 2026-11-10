@@ -1632,6 +1632,8 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
   .guide .g-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .guide .g-top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+/* Ukázka Průběhu: přepínač jako v appce (reset tlačítek návodu ho jinak srazí) */
+.guide .tl-switch button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
 .guide button.g-back { min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--action-edge); background: var(--action); color: var(--action-ink); font-weight: 700; font-size: 14px; }
 .guide span.g-bigbtn, .guide span.g-ghostbtn { display: flex; align-items: center; justify-content: center; }
 @media (max-width: 600px) { .guide .g-top .g-tag { display: none; } }

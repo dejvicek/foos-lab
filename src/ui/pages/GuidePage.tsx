@@ -2,6 +2,8 @@ import { Fragment, useState } from 'react';
 import { MIN_TRAININGS as MIN } from '../../domain/ladder';
 import { isShamed, Medal, Progress, ShameRank, Snail } from '../components/Rank';
 import { BrandMark, NAV_ICONS } from '../components/MainNav';
+import { MatchTimeline, TimelineBox } from '../components/GameTimeline';
+import type { GameEvent, Match } from '../../domain/types';
 import { toHash } from '../useHashRoute';
 
 /**
@@ -160,7 +162,27 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={8} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
+          <Step n={8} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
+            <p>
+              Každá ťuknutá hra má <b>Průběh</b>. V Moje hry je rozbalený rovnou, v rozpisu ho rozbalíš u stolu. Nahoře přepínáš <b>Sloupec</b> a{' '}
+              <b>Křivku</b>, telefon si volbu pamatuje.
+            </p>
+            <ul className="g-list">
+              <Li i="≡">
+                <b>Sloupec:</b> řádek na každý gól a ztrátu s časem. Góly levé strany vlevo, pravé vpravo, uprostřed stav po gólu. Podbarvení ukazuje, kdo
+                zrovna vede.
+              </Li>
+              <Li i="↗">
+                <b>Křivka:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Nad nulou vede levá, pod nulou pravá, takže obrat poznáš na
+                první pohled.
+              </Li>
+              <Li i="✓">
+                <b>Cvičení</b> ukáže ve sloupci pokusy každého hráče (číslo = kolikátý povedený, ✗ nepovedený), v křivce porovná hráče u stolu.
+              </Li>
+            </ul>
+          </Step>
+
+          <Step n={9} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
               Žebříček má tři části: <b>Zápasy</b>, <b>Stanoviště</b> a <b>Zdržovači</b>. Výchozí období je <b>forma</b>: tréninky za posledních 28 dní.
             </p>
@@ -422,6 +444,27 @@ function DrillDemo() {
           ↶ Zpět
         </button>
       </div>
+    </Phone>
+  );
+}
+
+/* ── Ukázka: průběh legu (skutečná komponenta, přepínač Sloupec / Křivka) ── */
+const DEMO_NAMES = { dejv: 'Dejv', milan: 'Milan', osky: 'Osky', denys: 'Denys' };
+const DEMO_MATCH = { id: 'guide', kind: 'doubles', block: 'league', sideA: ['dejv', 'milan'], sideB: ['osky', 'denys'] } as unknown as Match;
+// Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení, l = ztráta).
+const DEMO_EVENTS: GameEvent[] = (
+  [['B', 35], ['B', 80], ['A', 125], ['lB', 150], ['A', 190], ['A', 230], ['B', 270], ['A', 315], ['B', 350], ['lA', 375], ['A', 410], ['A', 455]] as const
+).map(([k, t], i) => ({ id: `g${i}`, itemId: 'guide', at: t * 1000, kind: k.length > 1 ? 'loss' : 'goal', side: k.slice(-1) as 'A' | 'B', delta: 1 }));
+
+function ProgressPhone() {
+  return (
+    <Phone time="19:06" title="Stůl 2 · Normální leg" sub="Dejv + Milan vs Osky + Denys · 6:4" tab="my" label="Ukázka: průběh legu">
+      <div className="g-card">
+        <TimelineBox count={DEMO_EVENTS.length} open>
+          <MatchTimeline match={DEMO_MATCH} events={DEMO_EVENTS} from={0} to={470_000} names={DEMO_NAMES} />
+        </TimelineBox>
+      </div>
+      <p className="g-hint">Přepni na Křivku a zpět.</p>
     </Phone>
   );
 }

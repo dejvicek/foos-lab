@@ -40,6 +40,13 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     const drill = within(guide).getByLabelText('Ukázka: zápis cvičení');
     for (let i = 0; i < 8; i++) await user.click(within(drill).getByRole('button', { name: 'Gól' }));
     expect(within(drill).getByRole('status')).toHaveTextContent('Hotovo 17 z 20');
+    // průběh: sloupec s góly obou stran v pořadí, přepínač na křivku
+    const progress = within(guide).getByLabelText('Ukázka: průběh legu');
+    expect(within(progress).getByRole('row', { name: 'Gól: Osky + Denys, 0:2 v 1:20' })).toBeInTheDocument();
+    expect(within(progress).getByRole('row', { name: 'Gól: Dejv + Milan, 6:4 v 7:35' })).toBeInTheDocument();
+    await user.click(within(progress).getByRole('button', { name: 'Křivka' }));
+    expect(within(progress).getByRole('img', { name: 'Křivka vedení, konečný stav 6:4' })).toBeInTheDocument();
+    await user.click(within(progress).getByRole('button', { name: 'Sloupec' }));
     // žebříček: medaile v Zápasech, Zdržovači se šnekem a „Brzda“
     const ladder = within(guide).getByLabelText('Ukázka: žebříček');
     expect(within(ladder).getByTitle('1. místo')).toBeInTheDocument();
