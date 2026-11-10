@@ -19,55 +19,66 @@ export function effectiveEvents(events: GameEvent[]): GameEvent[] {
   return out;
 }
 
-export interface LaneMark {
+export interface ProgressStep {
   kind: 'goal' | 'loss';
-  /** Pořadí gólu strany (1, 2, …); u ztráty null. */
-  n: number | null;
+  side: 'A' | 'B';
+  at: number;
   /** Poloha na časové ose 0…1. */
   pos: number;
-  at: number;
+  /** Stav skóre po události včetně scénářového startu; ztráta ho nemění. */
+  score: [number, number];
 }
 
-/** Minimální rozestup značek na dráze (podíl šířky), aby se nepřekrývaly. */
-const MIN_GAP = 0.045;
-
-/** Rozestoupí značky těsně u sebe (dopředu), a když přetečou konec, posune je zpět; pořadí zůstává. */
-function spread(marks: LaneMark[]): LaneMark[] {
-  const out = marks.map((m) => ({ ...m }));
-  for (let i = 1; i < out.length; i++) out[i].pos = Math.max(out[i].pos, out[i - 1].pos + MIN_GAP);
-  if (out.length && out[out.length - 1].pos > 1) {
-    out[out.length - 1].pos = 1;
-    for (let i = out.length - 2; i >= 0; i--) out[i].pos = Math.min(out[i].pos, out[i + 1].pos - MIN_GAP);
-  }
-  return out;
+export interface MatchProgress {
+  /** Osa: od zahájení (nebo prvního ťuknutí) do konce (nebo posledního ťuknutí). */
+  start: number;
+  end: number;
+  /** Stav na začátku (scénářový start, jinak 0:0). */
+  initial: [number, number];
+  /** Góly a ztráty obou stran v časovém pořadí. */
+  steps: ProgressStep[];
+  /** Konečný stav. */
+  score: [number, number];
+  /** Největší náskok kterékoli strany, aspoň 2 – rozsah křivky vedení. */
+  maxLead: number;
 }
 
-/** Zápas – dvě dráhy (PRD 4.9, varianta B): góly a ztráty levé / pravé strany na společné časové ose. */
-export function matchTimeline(events: GameEvent[], from: number, to: number) {
-  const list = effectiveEvents(events).filter((e) => e.kind === 'goal' || e.kind === 'loss');
+/** Kdo vede: A, B, nebo nikdo (nerozhodně). */
+export const leader = ([a, b]: [number, number]): 'A' | 'B' | null => (a > b ? 'A' : b > a ? 'B' : null);
+
+/**
+ * Zápas (PRD 4.9, Sloupec / Křivka): góly a ztráty obou stran v jednom pořadí se stavem skóre po každé události.
+ * U simulace jsou „góly“ vyhrané sety.
+ */
+export function matchProgress(events: GameEvent[], from: number, to: number, initial: [number, number] = [0, 0]): MatchProgress {
+  const list = effectiveEvents(events).filter((e) => (e.kind === 'goal' || e.kind === 'loss') && (e.side === 'A' || e.side === 'B'));
   const start = Math.min(from, ...list.map((e) => e.at));
   const end = Math.max(to, ...list.map((e) => e.at), start + 1);
-  const lane = (side: 'A' | 'B'): LaneMark[] => {
-    let n = 0;
-    return list
-      .filter((e) => e.side === side)
-      .map((e) => ({ kind: e.kind as 'goal' | 'loss', n: e.kind === 'goal' ? ++n : null, pos: (e.at - start) / (end - start), at: e.at }));
-  };
-  const A = spread(lane('A'));
-  const B = spread(lane('B'));
-  return { A, B, start, end, score: [A.filter((x) => x.kind === 'goal').length, B.filter((x) => x.kind === 'goal').length] as [number, number] };
+  let [a, b] = initial;
+  let maxLead = Math.max(2, Math.abs(a - b));
+  const steps = list.map((e): ProgressStep => {
+    if (e.kind === 'goal') {
+      if (e.side === 'A') a++;
+      else b++;
+      maxLead = Math.max(maxLead, Math.abs(a - b));
+    }
+    return { kind: e.kind as 'goal' | 'loss', side: e.side!, at: e.at, pos: (e.at - start) / (end - start), score: [a, b] };
+  });
+  return { start, end, initial: [...initial], steps, score: [a, b], maxLead };
 }
 
 export interface DrillRow {
   /** Pokusy po řadě: true = povedený (✓), false = nepovedený (✗). */
   marks: boolean[];
+  /** Povedené celkem po každém pokusu (1, 2, 2, 3 …). */
+  running: number[];
   /** Nejdelší série povedených (start = index prvního). */
   streak: { start: number; length: number } | null;
   /** Povedené v první a druhé polovině odehraných pokusů. */
   halves: [number, number];
 }
 
-/** Cvičení – řada pokusů po hráčích (varianta D). */
+/** Cvičení – pokusy po hráčích (PRD 4.9, Sloupec / Křivky). */
 export function drillTimeline(events: GameEvent[], players: PlayerId[]): Record<PlayerId, DrillRow> {
   const list = effectiveEvents(events).filter((e) => e.kind === 'hit' || e.kind === 'miss');
   const out: Record<PlayerId, DrillRow> = {};
@@ -75,12 +86,14 @@ export function drillTimeline(events: GameEvent[], players: PlayerId[]): Record<
     const marks = list.filter((e) => e.playerId === p).map((e) => e.kind === 'hit');
     let best: DrillRow['streak'] = null;
     let run = 0;
+    let hits = 0;
+    const running = marks.map((ok) => (hits += ok ? 1 : 0));
     marks.forEach((ok, i) => {
       run = ok ? run + 1 : 0;
       if (run > 0 && (!best || run > best.length)) best = { start: i - run + 1, length: run };
     });
     const half = Math.ceil(marks.length / 2);
-    out[p] = { marks, streak: best, halves: [marks.slice(0, half).filter(Boolean).length, marks.slice(half).filter(Boolean).length] };
+    out[p] = { marks, running, streak: best, halves: [marks.slice(0, half).filter(Boolean).length, marks.slice(half).filter(Boolean).length] };
   }
   return out;
 }

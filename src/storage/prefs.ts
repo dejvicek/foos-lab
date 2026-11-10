@@ -39,3 +39,34 @@ export function savePrefs(p: UiPrefs): void {
     /* bez uložení to běží dál */
   }
 }
+
+/** Zobrazení Průběhu (PRD 4.9): sloupec, nebo křivka; platí pro zápasy i cvičení, výchozí sloupec. */
+export type TimelineView = 'column' | 'curve';
+
+const TIMELINE_KEY = 'foosball-practice.timeline-view.v1';
+const timelineListeners = new Set<() => void>();
+
+export function loadTimelineView(): TimelineView {
+  try {
+    return localStorage.getItem(TIMELINE_KEY) === 'curve' ? 'curve' : 'column';
+  } catch {
+    return 'column';
+  }
+}
+
+/** Uloží volbu a dá vědět všem otevřeným průběhům (přepnou se najednou). */
+export function saveTimelineView(v: TimelineView): void {
+  try {
+    localStorage.setItem(TIMELINE_KEY, v);
+  } catch {
+    /* bez uložení to běží dál */
+  }
+  timelineListeners.forEach((l) => l());
+}
+
+export function subscribeTimelineView(listener: () => void): () => void {
+  timelineListeners.add(listener);
+  return () => {
+    timelineListeners.delete(listener);
+  };
+}

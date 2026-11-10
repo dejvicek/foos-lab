@@ -913,30 +913,81 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
   .drill-line .drill-progress { grid-column: 1 / -1; order: 9; }
 }
 
-/* ── Průběh hry (PRD 4.9): dvě dráhy, řada pokusů ───────── */
+/* ── Průběh hry (PRD 4.9): Sloupec / Křivka ───────────────── */
 .tl-box { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
 .tl-box > summary { cursor: pointer; color: var(--felt); font-weight: 700; font-size: 13px; min-height: 28px; }
-.tl-match { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
-.tl-lane, .tl-axis { display: grid; grid-template-columns: minmax(70px, 120px) 1fr; gap: 8px; align-items: center; }
-.tl-name { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
-.tl-track { position: relative; height: 26px; margin: 0 10px; padding: 0; list-style: none; border-bottom: 1px dashed var(--line-strong); }
-.tl-track li {
-  position: absolute; top: 3px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800;
-}
-.side-a .tl-goal { background: var(--gold); color: var(--gold-ink); }
-.side-b .tl-goal { background: var(--side-b); color: var(--side-b-ink); }
-.tl-track li.tl-loss { width: 12px; height: 12px; margin-left: -6px; top: 7px; background: var(--surface); border: 2px solid var(--warn); }
-.tl-axis { font-size: 11px; color: var(--muted); }
-.tl-axis > span:last-child { display: flex; justify-content: space-between; margin: 0 10px; }
-.tl-drill { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-.tl-drill-row { display: grid; grid-template-columns: minmax(70px, 120px) 1fr; gap: 4px 8px; align-items: center; }
-.tl-marks { display: flex; flex-wrap: wrap; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.tl-marks li { width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
-.tl-marks li.ok { background: var(--felt-soft); color: var(--felt); }
-.tl-marks li.ko { background: var(--warn-soft); color: var(--warn); }
-.tl-marks li.streak { outline: 2px solid var(--felt); outline-offset: -2px; }
-.tl-sum { grid-column: 2; color: var(--muted); font-size: 12px; }
+.segmented.tl-switch { margin: 2px 0 6px; }
+.tl-switch button { min-height: 30px; padding: 3px 12px; font-size: 12px; }
+/* Barvy stran a hráčů (tečka, pilulka, výplň v SVG) */
+.tl-dot { flex: none; display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.tl-dot.side-a, .tl-dot.pl-0 { background: var(--gold); }
+.tl-dot.side-b, .tl-dot.pl-1 { background: var(--side-b); }
+.tl-dot.pl-2 { background: var(--ink); }
+/* Zápas – sloupec */
+.tl-col { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(52px, auto) minmax(0, 1fr); font-size: 13px; }
+.tl-col-row { display: contents; }
+.tl-col-row > span { display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 30px; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+.tl-col-head > span { min-height: 24px; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.tl-col-head > span:first-child, .tl-col-head .tl-col-s { color: var(--faint); font-size: 11px; font-weight: 600; }
+.tl-col-t { color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tl-col-a { justify-content: flex-end; text-align: right; }
+.tl-col .tl-col-s { justify-content: center; gap: 0; font-size: 15px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-col-s b { color: var(--ink); font-weight: 800; }
+.tl-colon { padding: 0 1px; }
+.tl-col-s.lead-a { background: var(--felt-soft); }
+.tl-col-s.lead-b { background: var(--side-b-soft); }
+.tl-pill { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 11px; font-size: 12px; font-weight: 800; }
+.tl-pill.side-a { background: var(--gold); color: var(--gold-ink); }
+.tl-pill.side-b { background: var(--side-b); color: var(--side-b-ink); }
+.tl-loss-lbl { color: var(--warn); font-size: 11px; font-weight: 700; }
+.tl-ring { flex: none; position: relative; display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--warn); background: var(--surface); }
+.tl-ring::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; }
+.tl-ring.side-a::after { background: var(--gold); }
+.tl-ring.side-b::after { background: var(--side-b); }
+/* Cvičení – sloupec */
+.tl-dcol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 4px 14px; }
+.tl-dcol-b { display: grid; align-content: start; }
+.tl-dcol-b .tl-col-row > span { justify-content: center; min-height: 26px; padding: 2px 4px; }
+.tl-dcol-b .tl-col-row > .tl-dh { flex-direction: column; justify-content: flex-end; gap: 2px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: break-word; }
+.tl-dcol-b .tl-col-row > .tl-dn { justify-content: flex-end; color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tl-dsum > span { border-bottom: 0; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tl-try { display: flex; align-items: center; justify-content: center; width: 22px; height: 20px; border-radius: 3px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tl-try.ko { background: var(--warn-soft); color: var(--warn); }
+.tl-try.ok.pl-0 { background: var(--gold); color: var(--gold-ink); }
+.tl-try.ok.pl-1 { background: var(--side-b); color: var(--side-b-ink); }
+.tl-try.ok.pl-2 { background: var(--ink); color: var(--surface); }
+.tl-try.streak { outline: 2px solid var(--ink); outline-offset: 1px; }
+.tl-sums { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.tl-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; color: var(--muted); font-size: 12px; }
+.tl-sum b { color: var(--ink); }
+/* Křivky (SVG) */
+.tl-curve { width: 100%; overflow: hidden; }
+.tl-curve svg { display: block; }
+.tl-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
+.tl-axis-line { stroke: var(--line-strong); stroke-width: 1; }
+.tl-tick { stroke: var(--line-strong); stroke-width: 1; }
+.tl-diag { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
+.tl-area-a { fill: var(--gold); fill-opacity: 0.28; }
+.tl-area-b { fill: var(--side-b); fill-opacity: 0.22; }
+.tl-step { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.tl-pt { stroke: var(--surface); stroke-width: 1.5; }
+.tl-pt.side-a, .tl-fill.side-a { fill: var(--gold); }
+.tl-pt.side-b, .tl-fill.side-b { fill: var(--side-b); }
+.tl-loss-pt { fill: var(--surface); stroke: var(--warn); stroke-width: 2; }
+.tl-pline { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.tl-pline.pl-0 { stroke: var(--gold); }
+.tl-pline.pl-1 { stroke: var(--side-b); }
+.tl-pline.pl-2 { stroke: var(--ink); stroke-dasharray: 5 3; }
+.tl-curve text { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.tl-time { font-size: 10px; fill: var(--muted); }
+.tl-pt-lbl, .tl-side-lbl { font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.tl-pt-lbl { font-weight: 800; fill: var(--ink); }
+.tl-side-lbl { font-weight: 700; fill: var(--muted); }
+.tl-side-lbl.side-a { fill: var(--felt); }
+.tl-side-lbl.side-b { fill: var(--side-b-text); }
+.tl-end-lbl { font-size: 13px; font-weight: 800; fill: var(--ink); }
+.tl-end-lbl.pl-0 { fill: var(--felt); }
+.tl-end-lbl.pl-1 { fill: var(--side-b-text); }
 
 /* Ovládání pauzy v jejím řádku rozpisu (Trénink tab) */
 .pause-inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: 12px; color: var(--ink); }

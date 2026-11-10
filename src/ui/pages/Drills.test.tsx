@@ -25,9 +25,9 @@ describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
     expect(card).toHaveTextContent('2 (pokus 3 / 20)');
     await user.click(within(card).getByRole('button', { name: 'Zpět: H2' }));
     expect(card).toHaveTextContent('2 (pokus 2 / 20)');
-    // průběh: řada pokusů po hráči (✓ ✓, ✗ vrácený)
-    const marks = within(card).getByRole('list', { name: 'Pokusy: H2' });
-    expect(within(marks).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['✓', '✓']);
+    // průběh: sloupec pokusů po hráči (1., 2. povedená, ✗ vrácený)
+    const tries = within(card).getByRole('table', { name: 'Pokusy' });
+    expect(within(tries).getAllByRole('cell', { name: /^H2, / }).map((c) => c.textContent)).toEqual(['1', '2']);
     await vi.waitFor(() => {
       const s = repo.snapshot().trainings[0];
       expect(s.soloResults.id2).toEqual({ 'warmupPasses@1': 2 });

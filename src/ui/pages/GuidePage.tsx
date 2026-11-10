@@ -152,7 +152,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 kolo, které přijde.
               </Li>
               <Li i="▣">
-                <b>Tvůj stůl</b> je podbarvený. Ťuknutím na stůl otevřeš zápis, u odehrané hry rozbalíš <b>Průběh</b>: kdy padly góly a ztráty.
+                <b>Tvůj stůl</b> je podbarvený. Ťuknutím na stůl otevřeš zápis, u odehrané hry rozbalíš <b>Průběh</b>: kdy padly góly a ztráty a kdo vedl – jako sloupec, nebo křivka.
               </Li>
               <Li i="Σ">
                 <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre, pak výhry, góly a výhry v simulaci. Pod ním jsou Zdržovači.

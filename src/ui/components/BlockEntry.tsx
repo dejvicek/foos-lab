@@ -9,7 +9,7 @@ import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } 
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror } from './ScoreMirror';
 import { TimingBar, type ItemTiming } from './Timing';
-import { DrillMarks, MatchLanes, TimelineBox } from './GameTimeline';
+import { DrillTimeline, MatchTimeline, TimelineBox } from './GameTimeline';
 import { drillItemId } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
 import { discipline } from '../../domain/disciplines';
@@ -143,13 +143,13 @@ export function HelpItem({ title, item }: { title?: string; item: ExplanationIte
 }
 
 export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false }: Props) {
-  /** Průběh cvičení u stolu (řada pokusů ✓ / ✗). */
+  /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
     const id = drillItemId(r, j + 1, players);
     const evs = (training.events ?? []).filter((e) => e.itemId === id);
     return (
       <TimelineBox count={evs.length} open={timelineOpen}>
-        <DrillMarks players={players} events={evs} names={names} />
+        <DrillTimeline players={players} events={evs} names={names} />
       </TimelineBox>
     );
   };
@@ -234,7 +234,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   const to = pt?.endedAt ?? (pt?.startedAt !== undefined ? Date.now() : last);
                   return (
                     <TimelineBox count={evs.length} open={timelineOpen}>
-                      <MatchLanes match={m} events={evs} from={pt?.startedAt ?? first} to={to} names={names} />
+                      <MatchTimeline match={m} events={evs} from={pt?.startedAt ?? first} to={to} names={names} />
                     </TimelineBox>
                   );
                 })()}
