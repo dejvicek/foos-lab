@@ -651,6 +651,15 @@ button.pick-clear { align-self: center; font-size: 12px; }
 .timing-main button { min-height: 44px; padding: 0 22px; border-radius: 22px; }
 .timing-clock { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .timing-label { color: var(--muted); font-weight: 600; }
+.warmup { display: grid; gap: 4px; margin-top: 8px; text-align: center; overflow-wrap: anywhere; }
+.warmup-step { color: var(--muted); font-size: 13px; font-weight: 600; margin: 0; }
+.warmup-phase { font-size: 18px; font-weight: 700; margin: 0; }
+.warmup-clock { font-size: 56px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; margin: 0; }
+.warmup.prep .warmup-clock, .warmup.prep .warmup-phase { color: var(--warn); }
+.warmup-next { color: var(--muted); font-size: 13px; margin: 0; }
+.warmup-note { color: var(--muted); font-size: 13px; margin: 0; text-align: left; }
+.warmup-phases { margin: 0; padding-left: 20px; text-align: left; font-size: 14px; }
+.warmup-line { margin: 6px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 .timing.ready .timing-label { color: var(--warn); }
 .timing-times { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12px; align-items: center; }
 .timing-times input { min-height: 28px; padding: 1px 4px; font-size: 13px; }

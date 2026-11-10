@@ -14,6 +14,8 @@ import { drillItemId } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
 import { discipline } from '../../domain/disciplines';
 import { SkillTags } from './SkillTags';
+import { WarmupTimer } from './WarmupTimer';
+import { warmupState } from '../../domain/warmup';
 
 /** Zápis ťukáním (telefon, Můj stůl) místo číselných políček. */
 export interface TapEntry {
@@ -244,6 +246,20 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
               </div>
             );
           }
+          if (c.discipline === 'warmup') {
+            const wid = drillItemId(row, j + 1, c.players);
+            const startedAt = timing?.state(wid)?.startedAt;
+            const now = timing?.now ?? Date.now();
+            const wtmr = timer(wid, c.players, false, startedAt !== undefined && warmupState((now - startedAt) / 1000).done);
+            return (
+              <div key={j} className="entry-card" role="group" aria-label={label}>
+                <div className="entry-head">Stůl {j + 1}</div>
+                <span className="entry-players">{c.players.map((p) => names[p] ?? '?').join(', ')}</span>
+                {wtmr.bar}
+                <WarmupTimer startedAt={startedAt} now={now} compact={!tap} />
+              </div>
+            );
+          }
           if (!c.metric) return null;
           const def = soloMetric(c.metric);
           const gkey = soloKey(c.metric, c.soloRound);
@@ -302,7 +318,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         {scenario && <p className="entry-warn">Zapisuje se stav na stole, startovní góly appka odečte sama.</p>}
         {unassigned.length > 0 && (
           <p className="muted">
-            {refs.size ? 'Čeká' : waitingLabel}: {unassigned.map((p) => names[p] ?? '?').join(', ')}
+            {refs.size ? 'Čeká' : (row.waitingLabel ?? waitingLabel)}: {unassigned.map((p) => names[p] ?? '?').join(', ')}
           </p>
         )}
         {hasHelp && (

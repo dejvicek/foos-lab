@@ -27,6 +27,7 @@ import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
+import { isWarmupItem } from '../../domain/warmup';
 
 /** „Změna smaže skóre u N zápasů a M výsledků sólové části. Pokračovat?“ – null, když se nic nesmaže. */
 
@@ -58,7 +59,11 @@ export function TrainingPage({
   const pauseRunning = Object.entries(training?.playTimes ?? {}).some(
     ([k, v]) => k.startsWith('pause|') && v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000,
   );
-  const tick = useTick(view === 'schedule' && !pauseRunning ? 30_000 : 1000, !!training);
+  // Běžící Rozcvička: odpočet fáze i v rozpisu po sekundě.
+  const warmupRunning = Object.entries(training?.playTimes ?? {}).some(
+    ([k, v]) => v.startedAt !== undefined && v.endedAt === undefined && v.startedAt > Date.now() - 60 * 60_000 && !!schedule && isWarmupItem(schedule, k),
+  );
+  const tick = useTick(view === 'schedule' && !pauseRunning && !warmupRunning ? 30_000 : 1000, !!training);
   // Po vlastní změně (Ukončit) přepočítat hned, ne až s dalším tikem stopek.
   const queueInfo = useMemo(() => (training && schedule ? trainingQueue(training, Math.max(tick, Date.now()), schedule) : null), [training, schedule, tick]);
   if (!training) {

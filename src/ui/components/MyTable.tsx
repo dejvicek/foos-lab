@@ -111,7 +111,7 @@ export function MyTable(props: Props) {
       </div>
       <p className="my-role">
         <strong>{names[playerId] ?? ''}</strong>: {summary(a, names, playerId)}
-        {a.role === 'wait' && sec?.id === 'drills' && ', počítáš'}
+        {a.role === 'wait' && sec?.id === 'drills' && !a.row.waitingLabel && ', počítáš'}
       </p>
       {a.role !== 'wait' && (
         <BlockEntry

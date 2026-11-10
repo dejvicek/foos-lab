@@ -36,3 +36,24 @@ describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
     });
   });
 });
+
+describe('Rozcvička v rozpisu (notebook)', () => {
+  it('karta stolu bez zápisu, kompaktní timer, mimo stůl „Čeká“; rozbalený je zápas s chybějícím zápisem', async () => {
+    window.location.hash = '#/trenink/tw';
+    const p9: Player[] = Array.from({ length: 9 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
+    const tw: Training = { ...t, id: 'tw', tables: 4, attendees: p9.map((p) => p.id), plan: { warmup: 2, normal: 1 } };
+    render(<App repo={memoryRepository({ players: p9, trainings: [tw] })} />);
+    const user = userEvent.setup();
+    const table = await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    // výchozí rozbalený blok = první s chybějícím zápisem → zápas (Rozcvička nic nezapisuje)
+    expect(screen.getByRole('group', { name: '3. kolo, stůl 1' })).toBeInTheDocument();
+    await user.click(within(table).getByText('1. kolo'));
+    const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
+    expect(within(card).queryAllByRole('textbox')).toHaveLength(0);
+    expect(within(card).queryAllByRole('spinbutton')).toHaveLength(0);
+    expect(within(card).queryByRole('button', { name: /povedená/ })).toBeNull();
+    expect(card).toHaveTextContent('Rozcvička – 7 fází, 8:35');
+    expect(screen.getByText(/^Čeká: /)).toBeInTheDocument();
+    expect(screen.queryByText(/^Počítá: /)).toBeNull();
+  });
+});

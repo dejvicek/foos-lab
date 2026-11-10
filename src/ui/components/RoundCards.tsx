@@ -153,7 +153,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, now = 
                     </div>
                     {row.waiting.length > 0 && (
                       <p className="note">
-                        {sec.waitingLabel}: {row.waiting.map((p) => names[p] ?? '?').join(', ')}
+                        {row.waitingLabel ?? sec.waitingLabel}: {row.waiting.map((p) => names[p] ?? '?').join(', ')}
                       </p>
                     )}
                     {cell && (
