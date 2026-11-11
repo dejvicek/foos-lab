@@ -2,6 +2,7 @@ import { addDays } from './dates';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { compareStat, computeStandings, emptyStat, type StatLine } from './standings';
 import { parseSoloKey } from './solo';
+import { isClub } from './practice';
 import { pruneEntries } from './training';
 import type { Mode, PlayerId, SoloMetric, Training } from './types';
 
@@ -33,11 +34,11 @@ function inRange(date: string, r: { from: string | null; to: string | null }): b
   return (r.from === null || date >= r.from) && (r.to === null || date <= r.to);
 }
 
-/** Tréninky v období, které jde postavit, se svým souhrnem. */
+/** Klubové tréninky v období, které jde postavit, se svým souhrnem (vlastní tréninky se nepočítají, 5.11). */
 function trainingsWithStandings(trainings: Training[], range: LadderRange, today: string) {
   const r = resolveRange(range, today);
   return trainings
-    .filter((t) => inRange(t.date, r) && canBuildSchedule(t))
+    .filter((t) => isClub(t) && inRange(t.date, r) && canBuildSchedule(t))
     .map((t) => ({ training: t, standings: computeStandings(buildSchedule(t), t.scores, t.attendees) }));
 }
 

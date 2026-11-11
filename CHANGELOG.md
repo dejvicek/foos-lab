@@ -7,7 +7,19 @@
 - **Hlavní verze** (**2**.0.0): velká změna, po které se appka používá jinak.
 
 Když nová verze nesmí běžet vedle starší (jiný rozpis nebo databáze), zvyšuje se navíc `COMPAT` v `src/version.ts`.
-Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z`.
+Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z` na `main`; z tagu se appka nasadí a vznikne GitHub Release s tímto záznamem. Postup je v README → Vydání nové verze.
+
+## 1.1.0 – 11. 11. 2026
+
+Vlastní trénink: zacvič si kdykoli sám nebo ve dvou, i bez organizátora.
+
+- **Vlastní trénink** na stránce Trénink: vyber, jestli cvičíš sám, nebo se spoluhráčem.
+- Zaškrtneš cvičení a jejich pořadí, appka je projde **po kolech s časem** jako na klubovém tréninku; cvičení na dvě varianty má dvě kola za sebou. Do dalšího kola se jde po uplynutí času nebo po všech pokusech.
+- Sám se nabízí jen cvičení, která jdou bez bránícího soupeře; ve dvou všechna.
+- Zápis po pokusech ✓ / ✗; ve dvou zapisuje kterýkoli z vás za oba a oba telefony ukazují totéž.
+- Na konci souhrn s výsledky a s tím, kolikátý jsi.
+- **Žebříček Vlastní**: nová záložka v Žebříčku, počítá jen vlastní tréninky. Klubové žebříčky a docházka se nemění.
+- Po aktualizaci appku obnov – starší verze vlastní tréninky nezná.
 
 ## 1.0.0 – 10. 11. 2026
 

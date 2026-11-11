@@ -1,4 +1,5 @@
 import { TRAINING_ITEM, type ItemState, type QueueEntry } from '../domain/queue';
+import { isClub } from '../domain/practice';
 import { canBuildSchedule } from '../domain/schedule';
 import type { PlayerId, Training } from '../domain/types';
 import { trainingQueue } from './queue';
@@ -30,7 +31,7 @@ function startedAt(t: Training): number | null {
 export function activeFor(trainings: Training[], playerId: PlayerId | null, now: number): Active | null {
   if (!playerId) return null;
   const candidates = trainings
-    .filter((t) => (t.attendees.includes(playerId) || t.createdBy === playerId) && canBuildSchedule(t))
+    .filter((t) => isClub(t) && (t.attendees.includes(playerId) || t.createdBy === playerId) && canBuildSchedule(t))
     .map((t) => ({ t, s: startedAt(t) }))
     .filter((x): x is { t: Training; s: number } => x.s !== null && now - x.s < MAX_AGE_MS)
     .sort((a, b) => b.s - a.s);

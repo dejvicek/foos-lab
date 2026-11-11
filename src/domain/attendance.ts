@@ -1,4 +1,5 @@
 import { FORM_DAYS, resolveRange } from './ladder';
+import { isClub } from './practice';
 import { sortTrainings } from './training';
 import type { PlayerId, Training } from './types';
 
@@ -13,8 +14,8 @@ export interface PlayerAttendance {
 
 export { FORM_DAYS };
 
-/** Uložené tréninky do dneška (budoucí se nepočítají), bez `except` (trénink, který se právě upravuje). */
-const past = (trainings: Training[], today: string, except?: string) => trainings.filter((t) => t.id !== except && t.date <= today);
+/** Uložené klubové tréninky do dneška (budoucí a vlastní se nepočítají), bez `except` (trénink, který se právě upravuje). */
+const past = (trainings: Training[], today: string, except?: string) => trainings.filter((t) => isClub(t) && t.id !== except && t.date <= today);
 
 /** Docházka všech hráčů, kteří na nějakém tréninku byli. `today` jako parametr (žádné new Date v doméně). */
 export function attendance(trainings: Training[], today: string, except?: string): Map<PlayerId, PlayerAttendance> {

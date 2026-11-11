@@ -1,5 +1,6 @@
 import { MIN_TRAININGS, resolveRange, type LadderRange, type LadderView } from './ladder';
 import { parseSoloKey, SOLO_METRICS, soloMetric } from './solo';
+import { isPractice } from './practice';
 import { pruneEntries } from './training';
 import type { PlayerId, SoloMetric, SoloResults, Training } from './types';
 
@@ -23,10 +24,17 @@ export interface SoloLadderTable {
   lowData: SoloLadderRow[];
 }
 
-/** Výsledky sólové části, které mají v rozpisu tréninku místo (stejně jako úklid 5.8). */
+/**
+ * Výsledky sólové části, které mají v rozpisu tréninku místo (stejně jako úklid 5.8). Vlastní trénink
+ * (5.11) rozpis nemá – platí každá série (klíč `metrika@n`).
+ */
 export function validSolo(t: Training): SoloResults {
+  if (isPractice(t)) return t.soloResults;
   return pruneEntries(t).soloResults;
 }
+
+/** Odkud žebříček bere výsledky: klubové tréninky (Stanoviště, 5.9), nebo vlastní tréninky (Vlastní, 5.11). */
+export type SoloSource = 'club' | 'practice';
 
 /** Součty jedné metriky: tréninky se záznamem, počet záznamů a součet hodnot. */
 export function aggregateSolo(
@@ -56,15 +64,19 @@ export function aggregateSolo(
 /**
  * PRD 5.9: žebříček pro každou metriku sólové části. Řazení i hranice „málo dat“ jsou v Průměru
  * i v Celkem stejné (od 10. 11. 2026); zobrazení mění jen to, jak UI hodnotu ukáže.
+ * `source` 'practice' = žebříček Vlastní (5.11): stejná pravidla, jen z vlastních tréninků.
  */
 export function computeSoloLadder(
   trainings: Training[],
   range: LadderRange,
   _view: LadderView,
   today: string,
+  source: SoloSource = 'club',
 ): SoloLadderTable[] {
   const r = resolveRange(range, today);
-  const inRange = trainings.filter((t) => !((r.from && t.date < r.from) || (r.to && t.date > r.to)));
+  const inRange = trainings.filter(
+    (t) => isPractice(t) === (source === 'practice') && !((r.from && t.date < r.from) || (r.to && t.date > r.to)),
+  );
   const valid = new Map(inRange.map((t) => [t, validSolo(t)]));
   return SOLO_METRICS.flatMap((def) => {
     const acc = aggregateSolo(inRange, def.id, (t) => valid.get(t)!);

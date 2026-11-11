@@ -4,6 +4,8 @@ const routes: [Route, string][] = [
   [{ page: 'trainings' }, '#/trainings'],
   [{ page: 'training', id: 't1' }, '#/trainings/t1'],
   [{ page: 'training-new' }, '#/trainings/new'],
+  [{ page: 'practice-new' }, '#/practice/new'],
+  [{ page: 'practice', id: 'p1' }, '#/practice/p1'],
   [{ page: 'training-edit', id: 't1' }, '#/trainings/t1/settings'],
   [{ page: 'live' }, '#/live'],
   [{ page: 'my' }, '#/my-games'],

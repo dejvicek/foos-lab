@@ -46,7 +46,8 @@ export interface SimTeams {
   B: PlayerId[];
 }
 
-export type TrainingFormat = 'classic' | 'custom';
+/** 'practice' = vlastní trénink hráče sám / ve dvou (PRD 5.11). */
+export type TrainingFormat = 'classic' | 'custom' | 'practice';
 export type DisciplineId =
   | SoloMetric
   | 'warmup'
@@ -80,7 +81,7 @@ export interface Training {
   simSplit: SimSplit;
   /** Ruční týmy, nebo zamčené týmy (od prvního zapsaného výsledku simulace); jinak null. */
   simTeams: SimTeams | null;
-  /** 'classic' = pevná struktura PRD 4.1–4.3, 'custom' = disciplíny PRD 4.6. */
+  /** 'classic' = pevná struktura PRD 4.1–4.3, 'custom' = disciplíny PRD 4.6, 'practice' = vlastní trénink 5.11. */
   format: TrainingFormat;
   /** Délka tréninku v minutách (custom). */
   durationMin: number;

@@ -3,7 +3,7 @@ import { computeLadder, FORM_DAYS, MIN_TRAININGS, type LadderRow, type LadderVie
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
 import type { LadderPart, UiPrefs } from '../../storage/prefs';
-import { computeSoloLadder, type SoloLadderRow } from '../../domain/soloLadder';
+import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
@@ -154,6 +154,7 @@ function SoloTable({
   max,
   name,
   open,
+  attempts = false,
 }: {
   ranked: SoloLadderRow[];
   lowData: SoloLadderRow[];
@@ -162,9 +163,12 @@ function SoloTable({
   max: number;
   name(id: PlayerId): string;
   open(id: PlayerId): void;
+  /** Sloupec Pokusy (žebříček Vlastní). */
+  attempts?: boolean;
 }) {
   const rows = [...ranked, ...lowData];
   const cut = ranked.length;
+  const cols = attempts ? 5 : 4;
   return (
     <div className="wrap">
       <table aria-label={label} className="solo-table">
@@ -173,6 +177,7 @@ function SoloTable({
             <th className="n rank">#</th>
             <th>Hráč</th>
             <th className="n">Tréninky</th>
+            {attempts && <th className="n">Pokusy</th>}
             <th className="n">{view === 'avg' ? 'Průměr' : 'Celkem'}</th>
           </tr>
         </thead>
@@ -181,7 +186,7 @@ function SoloTable({
             const isRanked = i < cut;
             return (
               <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={4} />}
+                {i === cut && <Cutoff cols={cols} />}
                 <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
                   <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                   <td>
@@ -190,6 +195,7 @@ function SoloTable({
                     </button>
                   </td>
                   <td className="n">{r.trainings}</td>
+                  {attempts && <td className="n">{r.sumMax}</td>}
                   <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
                 </tr>
               </Fragment>
@@ -220,9 +226,31 @@ function DelayLadder({ store, prefs, today, open }: { store: AppStore; prefs: Ui
   );
 }
 
-function SoloLadder({ store, prefs, today, name, open }: { store: AppStore; prefs: UiPrefs; today: string; name(id: PlayerId): string; open(id: PlayerId): void }) {
-  const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today);
-  if (!tables.length) return <p className="note">V tomhle období zatím nejsou žádné výsledky ze sólové části.</p>;
+function SoloLadder({
+  store,
+  prefs,
+  today,
+  name,
+  open,
+  source = 'club',
+}: {
+  store: AppStore;
+  prefs: UiPrefs;
+  today: string;
+  name(id: PlayerId): string;
+  open(id: PlayerId): void;
+  /** practice = žebříček Vlastní (PRD 5.11). */
+  source?: SoloSource;
+}) {
+  const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today, source);
+  if (!tables.length)
+    return (
+      <p className="note">
+        {source === 'practice'
+          ? 'V tomhle období zatím nikdo nezapsal vlastní trénink. Začít ho jde na stránce Trénink.'
+          : 'V tomhle období zatím nejsou žádné výsledky ze sólové části.'}
+      </p>
+    );
   return (
     <div className="solo-grid">
       {tables.map((t) => {
@@ -233,7 +261,7 @@ function SoloLadder({ store, prefs, today, name, open }: { store: AppStore; pref
             <p className="note">
               {def.what}, {def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}
             </p>
-            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} />
+            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} attempts={source === 'practice'} />
           </section>
         );
       })}
@@ -270,6 +298,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         options={[
           ['matches', 'Zápasy'],
           ['solo', 'Stanoviště'],
+          ['practice', 'Vlastní'],
           ['delays', 'Zdržovači'],
         ]}
       />
@@ -300,7 +329,10 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
           <span aria-hidden="true">
             <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
           </span>
-          Pro umístění je potřeba zúčastnit se aspoň {MIN_TRAININGS} tréninků v období. Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
+          {prefs.ladderPart === 'practice'
+            ? `Počítají se jen vlastní tréninky (sám nebo ve dvou). Pro umístění je potřeba aspoň ${MIN_TRAININGS} vlastních tréninků se záznamem v období.`
+            : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
+          Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}
 
@@ -308,6 +340,8 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         <DelayLadder store={store} prefs={prefs} today={today} open={open} />
       ) : prefs.ladderPart === 'solo' ? (
         <SoloLadder store={store} prefs={prefs} today={today} name={name} open={open} />
+      ) : prefs.ladderPart === 'practice' ? (
+        <SoloLadder store={store} prefs={prefs} today={today} name={name} open={open} source="practice" />
       ) : (
         <>
       {ranked.length === 0 && lowData.length === 0 ? (

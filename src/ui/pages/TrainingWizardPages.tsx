@@ -1,3 +1,4 @@
+import { clubTrainings } from '../../domain/practice';
 import { useState } from 'react';
 import { canCreateTraining, canManage, type Viewer } from '../../domain/my';
 import { TRAINING_ITEM, trainingStarted } from '../../domain/queue';
@@ -36,7 +37,7 @@ const templateSaver = (store: AppStore, viewer: Viewer) =>
 /** Nový trénink v krocích; uloží se a rovnou zahájí až tlačítkem „Zahájit trénink“. */
 export function NewTrainingPage({ store, navigate, viewer }: { store: AppStore; navigate(r: Route): void; viewer: Viewer }) {
   const [initial] = useState<Training>(() => ({
-    ...newTraining(store.newId(), todayIso(), sortTrainings(store.data.trainings)[0] ?? null, viewer.playerId),
+    ...newTraining(store.newId(), todayIso(), sortTrainings(clubTrainings(store.data.trainings))[0] ?? null, viewer.playerId),
     startTime: nextHalfHour(new Date()), // aktuální čas zaokrouhlený na 30 min nahoru
   }));
   if (!canCreateTraining(viewer)) return <p>Zakládat tréninky smí jen admin a organizátoři. Organizátora nastavuje admin na stránce Hráči.</p>;
@@ -45,7 +46,7 @@ export function NewTrainingPage({ store, navigate, viewer }: { store: AppStore; 
       initial={initial}
       mode="new"
       players={store.data.players}
-      trainings={store.data.trainings}
+      trainings={clubTrainings(store.data.trainings)}
       onAddPlayer={rosterAdd(store)}
       onSaveTemplate={templateSaver(store, viewer)}
       onCancel={() => navigate({ page: 'trainings' })}
@@ -72,7 +73,7 @@ export function EditTrainingPage({ store, id, navigate, viewer }: { store: AppSt
       mode="edit"
       running={running}
       players={store.data.players}
-      trainings={store.data.trainings}
+      trainings={clubTrainings(store.data.trainings)}
       onAddPlayer={rosterAdd(store)}
       onSaveTemplate={templateSaver(store, viewer)}
       onCancel={() => navigate({ page: 'training', id })}

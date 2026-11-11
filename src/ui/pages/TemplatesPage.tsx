@@ -1,3 +1,4 @@
+import { clubTrainings } from '../../domain/practice';
 import { useState } from 'react';
 import { TemplatesEditor } from '../components/TemplatesEditor';
 import type { AppStore } from '../useAppState';
@@ -21,7 +22,7 @@ export function TemplatesPage({ store, admin }: { store: AppStore; admin: boolea
       <TemplatesEditor
         key={version}
         catalog={store.data.catalog ?? {}}
-        trainings={store.data.trainings}
+        trainings={clubTrainings(store.data.trainings)}
         newId={store.newId}
         onChange={() => setSaved(false)}
         onSave={(c) => {

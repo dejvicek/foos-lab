@@ -4,4 +4,5 @@
  *  - změna databáze nebo jejích funkcí, kterou starší verze neumí.
  * Telefon se starší kompatibilitou pak bez obnovení nepustí dál; běžná nová verze jen nabídne obnovení.
  */
-export const COMPAT = 1;
+// 2 (11. 11. 2026): vlastní trénink (format 'practice', migrace 26) – starší verze by ho brala jako klasický trénink.
+export const COMPAT = 2;

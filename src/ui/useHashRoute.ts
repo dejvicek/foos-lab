@@ -5,6 +5,9 @@ export type Route =
   | { page: 'training'; id: string }
   | { page: 'training-new' }
   | { page: 'training-edit'; id: string }
+  /** Vlastní trénink (PRD 5.11): začít a běžící / souhrn. */
+  | { page: 'practice-new' }
+  | { page: 'practice'; id: string }
   | { page: 'live' }
   | { page: 'my' }
   | { page: 'ladder' }
@@ -28,6 +31,7 @@ export function parseHash(hash: string): Route {
     if (n === 2) return b === 'new' ? { page: 'training-new' } : { page: 'training', id: b };
     if (n === 3 && c === 'settings') return { page: 'training-edit', id: b };
   }
+  if (a === 'practice' && n === 2) return b === 'new' ? { page: 'practice-new' } : { page: 'practice', id: b };
   if (a === 'ladder') {
     if (n === 1) return { page: 'ladder' };
     if (n === 3 && b === 'player') return { page: 'player', id: c };
@@ -53,6 +57,10 @@ export function toHash(r: Route): string {
       return '#/trainings/new';
     case 'training-edit':
       return `#/trainings/${encodeURIComponent(r.id)}/settings`;
+    case 'practice-new':
+      return '#/practice/new';
+    case 'practice':
+      return `#/practice/${encodeURIComponent(r.id)}`;
     case 'live':
       return '#/live';
     case 'my':
