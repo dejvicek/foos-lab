@@ -1,4 +1,4 @@
-import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
+import { DEFAULT_START, parseSoloKey, soloKey, soloMetric } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
 import { DISCIPLINES } from '../domain/disciplines';
 import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, Breaks, PlayTime, PlayTimes, GameEvent } from '../domain/types';
@@ -233,8 +233,9 @@ export function soloToRows(t: Training): SoloRow[] {
 
 export function soloRow(trainingId: string, playerId: PlayerId, key: SoloKey, value: number): SoloRow {
   const k = parseSoloKey(key);
-  // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
-  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: null };
+  // Zapsáno číslem = dokončené cvičení: plný počet pokusů se zapíše výslovně (od 11. 11. 2026, kdy se
+  // změnil z 10 na 20 – prázdné pokusy v databázi pak znamenají jen starší výsledky z 10, migrace 27).
+  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: soloMetric(k.metric)?.max ?? null };
 }
 
 /** Odpověď funkce changes_since (migrace 23): řádky tabulek tak, jak jsou v databázi. */
