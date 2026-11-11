@@ -146,3 +146,16 @@ describe('Čistá desítka v klubovém tréninku (11. 11. 2026)', () => {
     expect(discipline('streakShot2').needsPartner).toBeFalsy();
   });
 });
+
+describe('Goalie war do 6 a Penalty do 6 (12. 11. 2026)', () => {
+  it('singly do 6 jako Jedničky, kolo 8 min jako Normální leg; nápověda u kola', () => {
+    for (const id of ['goalieWar', 'penalty6'] as const) {
+      expect(discipline(id)).toMatchObject({ kind: 'match', min: discipline('normal').min, singlesOnly: true });
+      const r = play(custom(4, 2, { [id]: 1 }));
+      expect(r).toHaveLength(1);
+      const kinds = r[0].cells.filter((c) => c?.type === 'match').map((c) => (c as { match: { kind: string } }).match.kind);
+      expect(kinds).toEqual(['singles', 'singles']);
+    }
+    expect(play(custom(4, 2, { goalieWar: 1 }))[0].rule).toMatch(/^Goalie war do 6/);
+  });
+});

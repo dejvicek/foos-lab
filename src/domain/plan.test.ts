@@ -7,7 +7,7 @@ describe('katalog disciplín', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
       'warmup', 'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
       'clearing', 'looseBall', 'backRodsBuildUp', 'chain', 'streakShot3', 'streakPass5', 'streakShot2', 'streakPass2',
-      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
+      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6', 'sim',
     ]);
     expect(discipline('start03')).toMatchObject({ kind: 'match', min: 5, lossTax: true, start: [0, 3] });
     expect(discipline('singles')).toMatchObject({ kind: 'match', min: 8, singlesOnly: true });

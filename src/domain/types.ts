@@ -63,6 +63,8 @@ export type DisciplineId =
   | 'start45'
   | 'start55'
   | 'singles'
+  | 'goalieWar'
+  | 'penalty6'
   | 'sim';
 export interface LockedRound {
   discipline: DisciplineId;

@@ -82,6 +82,9 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'start45', kind: 'match', name: 'Start 4:5', min: 5, explain: 'Start 4:5', start: [4, 5], paired: true, skills: ['clutch'] },
   { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5], skills: ['clutch'] },
   { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['matchPlay', 'buildUp2', 'defense'] },
+  // 12. 11. 2026: singly do 6 jako Jedničky, skóre do souhrnu i žebříčku Zápasy.
+  { id: 'goalieWar', kind: 'match', name: 'Goalie war do 6', min: 8, explain: 'Goalie war do 6', singlesOnly: true, skills: ['shot2', 'defense'] },
+  { id: 'penalty6', kind: 'match', name: 'Penalty do 6', min: 8, explain: 'Penalty do 6', singlesOnly: true, skills: ['shot3', 'defense'] },
   { id: 'sim', kind: 'sim', name: 'Simulace ligového kola', min: 40, explain: 'Simulace ligového kola', skills: ['doubles', 'matchPlay', 'clutch'] },
 ];
 

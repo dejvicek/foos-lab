@@ -50,7 +50,7 @@ describe('stránka Disciplíny', () => {
     window.location.hash = '#/disciplines';
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
-    expect(rows()).toHaveLength(24);
+    expect(rows()).toHaveLength(26);
     // cvičení po sekcích (12. 11. 2026): Rozcvička bez sekce, pak Obrana, Pětka, Trojka
     const drills = screen.getByRole('region', { name: /^Cvičení/ });
     expect(within(drills).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);
@@ -67,14 +67,14 @@ describe('stránka Disciplíny', () => {
     const chips = await screen.findByRole('list', { name: 'Sekce dovedností' });
     await user.click(within(chips).getByRole('button', { name: 'Obrana' }));
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
-      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky',
+      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky', 'Goalie war do 6', 'Penalty do 6',
     ]); // cvičení po sekcích Obrana / Pětka / Trojka
-    expect(screen.getByText(/· 6 z 24/)).toBeInTheDocument();
+    expect(screen.getByText(/· 8 z 26/)).toBeInTheDocument();
     await user.click(within(row('Jedničky')).getByRole('button', { name: 'Zápasová praxe' }));
     expect(row('Normální leg')).toBeInTheDocument();
     expect(row('Simulace ligového kola')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
-    expect(rows()).toHaveLength(24);
+    expect(rows()).toHaveLength(26);
   });
 
   it('admin upraví disciplínu: název, délka, štítky, nápověda; Obnovit výchozí', async () => {
