@@ -129,7 +129,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     soloResults,
     simSplit: r.sim_split === 'order' || r.sim_split === 'manual' ? r.sim_split : 'performance',
     simTeams: r.sim_teams ?? null,
-    format: r.format === 'custom' ? 'custom' : 'classic',
+    format: r.format === 'custom' || r.format === 'practice' ? r.format : 'classic',
     durationMin: r.duration_min ?? 180,
     // Odstraněné disciplíny (např. Obrana do držení, 3. 11. 2026) se z uloženého plánu vynechají.
     plan: Object.fromEntries(Object.entries(r.plan ?? {}).filter(([id]) => KNOWN.has(id))) as Training['plan'],

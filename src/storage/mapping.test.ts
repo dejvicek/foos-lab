@@ -62,6 +62,13 @@ describe('mapping', () => {
     expect(soloToRows(t).map((r) => [r.metric, r.round])).toEqual([['setShooting', 1], ['setShooting', 2]]);
   });
 
+  it('vlastní trénink (5.11) tam a zpět: formát, 1–2 hráči, série metrika@n', () => {
+    const t: Training = { ...training, scores: {}, format: 'practice', mode: 'single', tables: 1, attendees: ['A', 'B'], durationMin: 0, createdBy: 'A', soloResults: { A: { 'penaltySolo@1': 7, 'penaltySolo@2': 5 } } };
+    const back = trainingFromRow(trainingToRow(t), [], soloToRows(t));
+    expect(back).toEqual(t);
+    expect(soloToRows(t).map((r) => [r.metric, r.round])).toEqual([['penaltySolo', 1], ['penaltySolo', 2]]);
+  });
+
   it('starý řádek bez nových sloupců je klasický trénink', () => {
     const row = { ...trainingToRow(training), format: null, duration_min: null, plan: null, locked_rounds: null };
     expect(trainingFromRow(row, [], [])).toMatchObject({ format: 'classic', durationMin: 180, plan: {}, lockedRounds: [] });
