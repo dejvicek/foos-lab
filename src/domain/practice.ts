@@ -1,12 +1,15 @@
 /**
  * Vlastní trénink (PRD 5.11, 11. 11. 2026): hráč cvičí mimo klubový trénink sám nebo ve dvou.
- * Ukládá se jako Training s formátem 'practice'; výsledky jsou výsledky sólové části s klíčem
- * `metrika@n` (n = pořadí série), zahájení a konec jsou časy utkání `training`.
+ * Ukládá se jako Training s formátem 'practice' s plánem (vybraná cvičení v pořadí, kola s časem jako
+ * v klubovém tréninku). Výsledky jsou výsledky sólové části s klíčem `metrika@n` (n = číslo kola),
+ * zahájení a konec tréninku a kol jsou časy utkání `training` a `round|n`.
  */
-import { DISCIPLINES, type DisciplineDef } from './disciplines';
+import { DISCIPLINES, discipline, roundMin, type DisciplineDef } from './disciplines';
+import { drillCount } from './drillTap';
+import { CHANGEOVER_MIN } from './plan';
 import { TRAINING_ITEM } from './queue';
-import { parseSoloKey, soloMetric } from './solo';
-import type { PlayerId, SoloKey, SoloMetric, Training } from './types';
+import { parseSoloKey, soloKey, soloMetric } from './solo';
+import type { DisciplineId, PlayerId, SoloKey, SoloMetric, Training } from './types';
 
 export const PRACTICE_MAX_PLAYERS = 2;
 /** Neukončený vlastní trénink zahájený před víc než 12 h se bere jako skončený (zapomenuté „Ukončit“). */
@@ -28,7 +31,15 @@ export function practicesFor(ts: Training[], playerId: PlayerId | null, all = fa
     .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : a.startTime < b.startTime ? 1 : a.startTime > b.startTime ? -1 : 0));
 }
 
-export function newPractice(id: string, date: string, startTime: string, me: PlayerId, partner: PlayerId | null = null): Training {
+/** Kolik kol má cvičení v plánu: na dvě varianty dvě kola (každá varianta jedno), jinak jedno. */
+export const roundsOf = (d: DisciplineDef): number => d.variants?.length ?? 1;
+
+/**
+ * Nový vlastní trénink s plánem: vybraná cvičení v pořadí `drills`, kola podle roundsOf, délky kol
+ * z aktuálního katalogu (trénink si je nese, pozdější změna katalogu jeho časy nehne).
+ */
+export function newPractice(id: string, date: string, startTime: string, me: PlayerId, partner: PlayerId | null = null, drills: DisciplineId[] = []): Training {
+  const list = drills.filter((d, i) => drills.indexOf(d) === i && DISCIPLINES.some((x) => x.id === d));
   return {
     id,
     date,
@@ -41,11 +52,19 @@ export function newPractice(id: string, date: string, startTime: string, me: Pla
     simSplit: 'performance',
     simTeams: null,
     format: 'practice',
-    durationMin: 0,
-    plan: {},
+    durationMin: practicePlanMinutes(list),
+    plan: Object.fromEntries(list.map((d) => [d, roundsOf(discipline(d))])),
+    disciplineOrder: list,
+    disciplineMin: Object.fromEntries(list.map((d) => [d, discipline(d).min])),
     lockedRounds: [],
     createdBy: me,
   };
+}
+
+/** Naplánovaná délka (min): kola cvičení podle katalogu a mezi koly přechod jako v klubovém tréninku. */
+export function practicePlanMinutes(drills: DisciplineId[]): number {
+  const rounds = drills.flatMap((id) => Array.from({ length: roundsOf(discipline(id)) }, () => discipline(id).min));
+  return rounds.reduce((a, b) => a + b, 0) + Math.max(0, rounds.length - 1) * CHANGEOVER_MIN;
 }
 
 /** Nabídka cvičení: nevyřazená cvičení s metrikou a Rozcvička; sám jen ta bez bránícího soupeře. */
@@ -103,14 +122,83 @@ export function practiceSeries(t: Training): PracticeSeries[] {
     .sort((a, b) => a.n - b.n || (a.metric < b.metric ? -1 : a.metric > b.metric ? 1 : 0));
 }
 
-/** Číslo nové série: nejvyšší zapsané + 1. */
-export function nextSeriesNo(t: Training): number {
-  return practiceSeries(t).reduce((m, s) => Math.max(m, s.n), 0) + 1;
+export interface PracticeRound {
+  /** Číslo kola (1, 2, …) = n v klíči výsledku `metrika@n`. */
+  n: number;
+  drill: DisciplineId;
+  /** Metrika kola; Rozcvička žádnou nemá. */
+  metric?: SoloMetric;
+  /** Varianta kola u cvičení na dvě varianty. */
+  variant?: string;
+  min: number;
+  /** Klíč časů kola (zahájení / konec). */
+  item: string;
 }
 
-/** Varianta série (0 / 1) u cvičení na dvě varianty: střídá se podle dřívějších sérií téže metriky. */
-export function seriesVariant(t: Training, metric: SoloMetric, n: number): 0 | 1 {
-  return (practiceSeries(t).filter((s) => s.metric === metric && s.n < n).length % 2) as 0 | 1;
+export const roundItem = (n: number): string => `round|${n}`;
+
+/** Kola plánu vlastního tréninku v pořadí (cvičení podle disciplineOrder, varianty po sobě). */
+export function practiceRounds(t: Training): PracticeRound[] {
+  const out: PracticeRound[] = [];
+  for (const id of t.disciplineOrder ?? []) {
+    const d = DISCIPLINES.find((x) => x.id === id);
+    if (!d) continue; // cvičení z novější verze appky
+    for (let v = 0; v < (t.plan[id] ?? 0); v++) {
+      const n = out.length + 1;
+      out.push({ n, drill: id, metric: practiceMetric(d, t.attendees.length), variant: d.variants?.[v], min: roundMin(id, t.disciplineMin), item: roundItem(n) });
+    }
+  }
+  return out;
+}
+
+/** Klíč výsledku kola; Rozcvička nic nezapisuje. */
+export const roundKey = (r: PracticeRound): SoloKey | null => (r.metric ? soloKey(r.metric, r.n) : null);
+
+/** Kolo, které se právě hraje (nebo je na řadě): první neukončené; null = plán dohraný. */
+export function currentRound(t: Training): PracticeRound | null {
+  return practiceRounds(t).find((r) => t.playTimes?.[r.item]?.endedAt === undefined) ?? null;
+}
+
+/** Všichni hráči mají v kole odehrané všechny pokusy. */
+export function roundAttemptsDone(t: Training, r: PracticeRound): boolean {
+  const key = roundKey(r);
+  if (!key) return false;
+  const def = soloMetric(r.metric!);
+  return t.attendees.every((p) => drillCount({ value: t.soloResults[p]?.[key], attempts: t.soloAttempts?.[p]?.[key] }, def).done);
+}
+
+/** Zbývající čas kola v sekundách (záporný = přetažené); kolo bez zahájení = celá délka. */
+export function roundRemainingSec(t: Training, r: PracticeRound, now: number): number {
+  const s = t.playTimes?.[r.item]?.startedAt;
+  return s === undefined ? r.min * 60 : Math.ceil(r.min * 60 - (now - s) / 1000);
+}
+
+/** Pevný plán: do dalšího kola, až uplyne čas kola, nebo když jsou odehrané všechny pokusy. */
+export const canAdvance = (t: Training, r: PracticeRound, now: number): boolean =>
+  roundRemainingSec(t, r, now) <= 0 || roundAttemptsDone(t, r);
+
+/**
+ * Hodiny kol: odehraná podle skutečných časů, hrané od zahájení (konec nejdřív teď), další navazují
+ * s přechodem. Bez zahájeného kola se počítá od `now`.
+ */
+export function roundTimes(t: Training, now: number): { round: PracticeRound; start: number; end: number; state: 'done' | 'playing' | 'next' }[] {
+  let next = now;
+  return practiceRounds(t).map((round) => {
+    const p = t.playTimes?.[round.item];
+    if (p?.endedAt !== undefined) {
+      const start = p.startedAt ?? p.endedAt;
+      next = p.endedAt + CHANGEOVER_MIN * 60_000;
+      return { round, start, end: p.endedAt, state: 'done' as const };
+    }
+    if (p?.startedAt !== undefined) {
+      const end = Math.max(p.startedAt + round.min * 60_000, now);
+      next = end + CHANGEOVER_MIN * 60_000;
+      return { round, start: p.startedAt, end, state: 'playing' as const };
+    }
+    const start = Math.max(next, now);
+    next = start + (round.min + CHANGEOVER_MIN) * 60_000;
+    return { round, start, end: start + round.min * 60_000, state: 'next' as const };
+  });
 }
 
 const startOf = (t: Training) => t.playTimes?.[TRAINING_ITEM]?.startedAt;

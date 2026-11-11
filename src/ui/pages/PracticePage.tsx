@@ -1,98 +1,89 @@
-import { useEffect, useState } from 'react';
-import { discipline, type DisciplineDef } from '../../domain/disciplines';
+import { useEffect, useRef, useState } from 'react';
+import { DISCIPLINES, discipline, type DisciplineDef } from '../../domain/disciplines';
 import { activePlayers, alphabetical } from '../../domain/roster';
 import {
+  canAdvance,
+  currentRound,
   isPractice,
-  nextSeriesNo,
+  newPractice,
   practiceDrills,
   practiceMetric,
   practiceMinutes,
+  practicePlanMinutes,
+  practiceRounds,
   practiceRunning,
   practiceSeries,
   practicesFor,
-  newPractice,
+  roundKey,
+  roundRemainingSec,
+  roundsOf,
+  roundTimes,
   seriesDrill,
-  seriesVariant,
+  type PracticeRound,
   type PracticeSeries,
 } from '../../domain/practice';
+import { SOLO_SELECTION } from '../../domain/plan';
 import { TRAINING_ITEM } from '../../domain/queue';
-import { soloKey, soloMetric } from '../../domain/solo';
+import { soloMetric } from '../../domain/solo';
 import { computeSoloLadder } from '../../domain/soloLadder';
 import { MIN_TRAININGS } from '../../domain/ladder';
-import { drillCount } from '../../domain/drillTap';
 import type { DisciplineId, PlayerId, SoloMetric, Training } from '../../domain/types';
 import type { Viewer } from '../../domain/my';
+import { loadPracticeDrills, savePracticeDrills } from '../../storage/prefs';
 import { DrillMirror } from '../components/ScoreMirror';
 import { WarmupTimer } from '../components/WarmupTimer';
+import { hm } from '../components/DisciplinePicker';
 import { Medal, Progress } from '../components/Rank';
 import { formatDateLong, todayIso } from '../dates';
 import { plural } from '../format';
+import { vibrate } from '../vibrate';
+import { useWakeLock } from '../wakeLock';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 
-/** Co je na obrazovce běžícího vlastního tréninku: série, Rozcvička, nebo výběr cvičení; null = poslední rozdělaná série. */
-type Current = { kind: 'series'; n: number; drill: DisciplineId } | { kind: 'warmup'; startedAt: number } | { kind: 'list' } | null;
-
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const mmss = (sec: number) => `${Math.floor(Math.abs(sec) / 60)}:${String(Math.abs(sec) % 60).padStart(2, '0')}`;
 
 /** Varianty bez vlastního názvu („varianta 1“) si hráč určí sám – stačí jejich počet. */
 const namedVariants = (v: readonly string[]) => !v.every((x) => /^varianta /.test(x));
 /** „Varianta 1“ / „Varianta: ke zdi“. */
 const variantText = (v: string) => (/^varianta /.test(v) ? `V${v.slice(1)}` : `Varianta: ${v}`);
 
-/** Popisek cvičení v nabídce: počet pokusů, varianty, jen ve dvou. */
+/** Délka cvičení v plánu: „8 min“, u dvou variant „2× 4 min“. */
+const lengthText = (d: DisciplineDef) => (roundsOf(d) > 1 ? `${roundsOf(d)}× ${d.min} min` : `${d.min} min`);
+
+/** Popisek cvičení v nabídce: délka, pokusy, varianty, s bránícím. */
 function drillSub(d: DisciplineDef, players: number): string {
-  if (d.individual && !d.metric) return 'timer, nic se nezapisuje';
   const m = practiceMetric(d, players);
-  const parts = [m ? `${soloMetric(m).max} pokusů` : ''];
+  const parts = [lengthText(d), m ? `${soloMetric(m).max} pokusů` : 'timer, nic se nezapisuje'];
   if (d.variants) parts.push(namedVariants(d.variants) ? d.variants.join(' / ') : `${d.variants.length} varianty`);
   if (d.needsPartner) parts.push('s bránícím spoluhráčem');
-  return parts.filter(Boolean).join(' · ');
+  return parts.join(' · ');
 }
 
-function DrillPicker({ players, disabled, onPick }: { players: number; disabled?: boolean; onPick(d: DisciplineDef): void }) {
-  return (
-    <ul className="training-list practice-drills" aria-label="Cvičení">
-      {practiceDrills(players).map((d) => (
-        <li key={d.id}>
-          <button type="button" disabled={disabled} onClick={() => onPick(d)}>
-            <span>{d.name}</span>
-            <span className="sub">{drillSub(d, players)}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
+/** Zařadí cvičení do výběru podle katalogu: před první vybrané, které je v katalogu za ním. */
+function insertByCatalog(sel: DisciplineId[], id: DisciplineId): DisciplineId[] {
+  const pos = (x: DisciplineId) => DISCIPLINES.findIndex((d) => d.id === x);
+  const at = sel.findIndex((x) => pos(x) > pos(id));
+  return at < 0 ? [...sel, id] : [...sel.slice(0, at), id, ...sel.slice(at)];
 }
 
-const seriesName = (t: Training, s: Pick<PracticeSeries, 'metric' | 'n'>) => {
-  const d = seriesDrill(s.metric);
-  const v = d.variants ? ` – ${d.variants[seriesVariant(t, s.metric, s.n)]}` : '';
-  return `${d.name}${v}`;
-};
+const roundName = (r: Pick<PracticeRound, 'drill' | 'variant'>) => `${discipline(r.drill).name}${r.variant ? ` – ${r.variant}` : ''}`;
+
+/** Název série: podle kola plánu, starší bez plánu podle metriky. */
+function seriesName(rounds: PracticeRound[], s: PracticeSeries): string {
+  const r = rounds.find((x) => x.n === s.n);
+  return r ? roundName(r) : seriesDrill(s.metric).name;
+}
 
 /** Výsledek série jednoho hráče: „7 / 10“, nedokončená „4 z 7 pokusů“. */
 const resultText = (value: number, attempts: number, max: number, metric: SoloMetric) =>
   attempts < max ? `${value} z ${attempts} ${plural(attempts, 'pokusu', 'pokusů', 'pokusů')}` : `${value} / ${max}${soloMetric(metric).lowerIsBetter ? ' ztrát' : ''}`;
 
-function SeriesList({ t, series, name, title }: { t: Training; series: PracticeSeries[]; name(id: PlayerId): string; title: string }) {
-  if (!series.length) return null;
+function seriesResults(t: Training, s: PracticeSeries | undefined, name: (id: PlayerId) => string): string {
+  if (!s) return '';
   const pair = t.attendees.length > 1;
-  return (
-    <section className="practice-done" aria-label={title}>
-      <h2>{title}</h2>
-      <ul className="training-list">
-        {series.map((s) => (
-          <li key={s.key} className="practice-series">
-            <span>{seriesName(t, s)}</span>
-            <span className="sub">
-              {s.results.map((r) => `${pair ? `${name(r.playerId)} ` : ''}${resultText(r.value, r.attempts, r.max, s.metric)}`).join(' · ')}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+  return s.results.map((r) => `${pair ? `${name(r.playerId)} ` : ''}${resultText(r.value, r.attempts, r.max, s.metric)}`).join(' · ');
 }
 
 /** PRD 5.11: Pořadí hráčů vlastního tréninku v žebříčku Vlastní za formu, pro každou metriku tréninku. */
@@ -136,33 +127,153 @@ function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: Play
   );
 }
 
+/** Plán kol s hodinami a stavem (odehráno ✓ s výsledkem / hraje se / bude). */
+function PlanList({ t, now, name }: { t: Training; now: number; name(id: PlayerId): string }) {
+  const series = practiceSeries(t);
+  return (
+    <section aria-label="Plán">
+      <h2>Plán</h2>
+      <ol className="practice-plan">
+        {roundTimes(t, now).map(({ round: r, start, state }) => (
+          <li key={r.n} className={state}>
+            <span className="pp-mark" aria-hidden="true">
+              {state === 'done' ? '✓' : state === 'playing' ? '●' : '○'}
+            </span>
+            <span className="pp-time">{hhmm(new Date(start))}</span>
+            <span className="pp-name">
+              {r.n}. kolo · {roundName(r)}
+              <small>
+                {state === 'done'
+                  ? seriesResults(t, series.find((s) => s.n === r.n), name) || (r.metric ? 'nezapsáno' : 'odcvičeno')
+                  : state === 'playing'
+                    ? 'hraje se'
+                    : `${r.min} min`}
+              </small>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** Hrané kolo: zahájení, odpočet, zápis ✓ / ✗ (u Rozcvičky timer) a další kolo. */
+function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: Training; r: PracticeRound; now: number; canWrite: boolean; name(id: PlayerId): string }) {
+  const rounds = practiceRounds(t);
+  const last = r.n === rounds.length;
+  const next = rounds[r.n];
+  const startedAt = t.playTimes?.[r.item]?.startedAt;
+  const left = roundRemainingSec(t, r, now);
+  const advance = canAdvance(t, r, now);
+  // Konec času: zavibrovat jednou (Rozcvička vibruje sama po fázích).
+  const timeUp = startedAt !== undefined && left <= 0;
+  const buzzed = useRef<number | null>(null);
+  useEffect(() => {
+    if (timeUp && r.metric && buzzed.current !== r.n) {
+      buzzed.current = r.n;
+      vibrate([200, 100, 200]);
+    }
+  }, [timeUp, r.n, r.metric]);
+
+  const goOn = () => {
+    store.endItem(t.id, r.item);
+    if (last) store.endItem(t.id, TRAINING_ITEM);
+    else store.startItem(t.id, rounds[r.n].item);
+  };
+  const key = roundKey(r);
+  const players = t.attendees;
+
+  return (
+    <section className="practice-round" aria-label={`${r.n}. kolo`}>
+      <div className="practice-round-head">
+        <div>
+          <p className="pr-count">
+            {r.n}. kolo z {rounds.length}
+          </p>
+          <h2>{discipline(r.drill).name}</h2>
+          {r.variant && <p className="practice-variant">{variantText(r.variant)}</p>}
+        </div>
+        {startedAt !== undefined && (
+          <p className={`practice-clock${timeUp ? ' over' : ''}`} role="timer" aria-label={timeUp ? 'Čas kola vypršel' : 'Zbývá'}>
+            {timeUp ? `+${mmss(-left)}` : mmss(left)}
+          </p>
+        )}
+      </div>
+      {startedAt === undefined ? (
+        canWrite && (
+          <button type="button" className="practice-start" onClick={() => store.startItem(t.id, r.item)}>
+            Zahájit {r.n}. kolo
+          </button>
+        )
+      ) : key ? (
+        <DrillMirror
+          key={key}
+          players={players}
+          def={soloMetric(r.metric!)}
+          values={Object.fromEntries(players.map((p) => [p, { value: t.soloResults[p]?.[key], attempts: t.soloAttempts?.[p]?.[key] }]))}
+          names={Object.fromEntries(players.map((p) => [p, name(p)]))}
+          canSolo={() => canWrite}
+          onTap={(p, ok, delta) => store.tapSolo(t.id, p, key, soloMetric(r.metric!), ok, delta, r.item)}
+        />
+      ) : (
+        <WarmupTimer startedAt={startedAt} now={now} compact={false} />
+      )}
+      {startedAt !== undefined && canWrite && (
+        <div className="actions-row">
+          <button type="button" disabled={!advance} onClick={goOn}>
+            {last ? 'Dokončit trénink' : `Další kolo: ${roundName(next)}`}
+          </button>
+          {!advance && <span className="note">Dál až po {r.metric ? 'všech pokusech nebo po ' : ''}uplynutí času kola.</span>}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function PracticePage({ store, id, navigate, viewer }: { store: AppStore; id: string | null; navigate(r: Route): void; viewer: Viewer }) {
-  const [current, setCurrent] = useState<Current>(null);
   const [pair, setPair] = useState(false);
   const [partner, setPartner] = useState<PlayerId>('');
+  const [sel, setSel] = useState<DisciplineId[]>(() => loadPracticeDrills() ?? SOLO_SELECTION);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
+  const t = id === null ? undefined : store.data.trainings.find((x) => x.id === id);
+  const running = !!t && isPractice(t) && practiceRunning(t, now);
+  useWakeLock(running);
 
   const byId = new Map(store.data.players.map((p) => [p.id, p]));
   const name = (pid: PlayerId) => byId.get(pid)?.name ?? '?';
   const me = viewer.playerId;
 
-  // ── Začít ──────────────────────────────────────────────
+  // ── Začít: kdo cvičí a plán ────────────────────────────
   if (id === null) {
-    const mine = practicesFor(store.data.trainings, me).find((t) => practiceRunning(t, now));
-    const partners = alphabetical(activePlayers(store.data.players)).filter((p) => p.id !== me);
-    const start = (d: DisciplineDef) => {
-      if (!me) return;
-      const t = newPractice(store.newId(), todayIso(), hhmm(new Date()), me, pair ? partner : null);
-      store.saveTraining(t);
-      store.startItem(t.id, TRAINING_ITEM);
-      setCurrent(d.metric ? { kind: 'series', n: 1, drill: d.id } : { kind: 'warmup', startedAt: Date.now() });
-      navigate({ page: 'practice', id: t.id });
-    };
     if (!me) return <p className="note">Vlastní trénink může začít jen hráč ze soupisky.</p>;
+    const mine = practicesFor(store.data.trainings, me).find((x) => practiceRunning(x, now));
+    const partners = alphabetical(activePlayers(store.data.players)).filter((p) => p.id !== me);
+    const offered = practiceDrills(pair ? 2 : 1);
+    const chosen = sel.filter((x) => offered.some((d) => d.id === x));
+    const toggle = (x: DisciplineId) => setSel(sel.includes(x) ? sel.filter((y) => y !== x) : insertByCatalog(sel, x));
+    const move = (x: DisciplineId, dir: -1 | 1) => {
+      const i = chosen.indexOf(x);
+      const other = chosen[i + dir];
+      if (!other) return;
+      const a = sel.indexOf(x);
+      const b = sel.indexOf(other);
+      const next = [...sel];
+      [next[a], next[b]] = [next[b], next[a]];
+      setSel(next);
+    };
+    const start = () => {
+      const p = newPractice(store.newId(), todayIso(), hhmm(new Date()), me, pair ? partner : null, chosen);
+      savePracticeDrills(sel);
+      store.saveTraining(p);
+      store.startItem(p.id, TRAINING_ITEM);
+      store.startItem(p.id, practiceRounds(p)[0].item);
+      navigate({ page: 'practice', id: p.id });
+    };
+    const total = practicePlanMinutes(chosen);
     return (
       <section className="practice">
         <button type="button" className="back" onClick={() => navigate({ page: 'trainings' })}>
@@ -203,14 +314,62 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
             <p className="note">Spoluhráč uvidí trénink u sebe a může zapisovat za oba.</p>
           </div>
         )}
-        <h2>Vyber cvičení</h2>
-        <p className="note">Klepnutím cvičení hned začne – plán ani čas se nenastavují.</p>
-        <DrillPicker players={pair ? 2 : 1} disabled={pair && !partner} onPick={start} />
+        <div className="practice-setup">
+          <div>
+            <h2>Cvičení</h2>
+            <ul className="training-list practice-pick" aria-label="Cvičení">
+              {offered.map((d) => (
+                <li key={d.id}>
+                  <label>
+                    <input type="checkbox" checked={chosen.includes(d.id)} onChange={() => toggle(d.id)} />
+                    <span>
+                      <strong>{d.name}</strong>
+                      <small>{drillSub(d, pair ? 2 : 1)}</small>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h2>Plán</h2>
+            {chosen.length ? (
+              <ol className="practice-order" aria-label="Pořadí cvičení">
+                {chosen.map((x, i) => {
+                  const d = discipline(x);
+                  return (
+                    <li key={x}>
+                      <span className="po-n">{i + 1}.</span>
+                      <span className="po-name">
+                        {d.name}
+                        <small>{lengthText(d)}</small>
+                      </span>
+                      <button type="button" className="icon" aria-label={`Posunout ${d.name} nahoru`} disabled={i === 0} onClick={() => move(x, -1)}>
+                        ↑
+                      </button>
+                      <button type="button" className="icon" aria-label={`Posunout ${d.name} dolů`} disabled={i === chosen.length - 1} onClick={() => move(x, 1)}>
+                        ↓
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="note">Zaškrtni aspoň jedno cvičení.</p>
+            )}
+            <p className="practice-total" role="status" aria-label="Naplánováno">
+              Naplánováno {hm(total)}
+            </p>
+            <button type="button" className="practice-start" disabled={!chosen.length || (pair && !partner)} onClick={start}>
+              Začít vlastní trénink
+            </button>
+            {pair && !partner && <p className="note">Vyber spoluhráče.</p>}
+          </div>
+        </div>
       </section>
     );
   }
 
-  const t = store.data.trainings.find((x) => x.id === id);
   if (!t || !isPractice(t))
     return (
       <div className="empty-live">
@@ -231,7 +390,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
   const others = players.filter((p) => p !== me);
   const who = !plays ? players.map(name).join(' a ') : others.length ? `s ${others.map(name).join(', ')}` : 'sám';
   const series = practiceSeries(t);
-  const running = practiceRunning(t, now);
+  const rounds = practiceRounds(t);
   const remove = () => {
     if (!confirm('Smazat vlastní trénink i se všemi výsledky?')) return;
     store.deleteTraining(t.id);
@@ -253,7 +412,17 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         </p>
         {series.length ? (
           <>
-            <SeriesList t={t} series={series} name={name} title="Výsledky" />
+            <section aria-label="Výsledky">
+              <h2>Výsledky</h2>
+              <ul className="training-list">
+                {series.map((s) => (
+                  <li key={s.key} className="practice-series">
+                    <span>{seriesName(rounds, s)}</span>
+                    <span className="sub">{seriesResults(t, s, name)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
             <Ranks store={store} t={t} name={name} />
           </>
         ) : (
@@ -274,66 +443,16 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
   }
 
   // ── Běží ───────────────────────────────────────────────
-  const latest = series[series.length - 1];
-  const latestOpen = !!latest && (latest.results.length < players.length || latest.results.some((r) => r.attempts < r.max));
-  const shown: Current =
-    current ?? (latest && latestOpen ? { kind: 'series', n: latest.n, drill: seriesDrill(latest.metric).id } : { kind: 'list' });
+  const r = currentRound(t);
   const startedAt = t.playTimes?.[TRAINING_ITEM]?.startedAt;
   const runMin = startedAt !== undefined ? Math.max(0, Math.floor((now - startedAt) / 60_000)) : 0;
-  const pick = (d: DisciplineDef) =>
-    setCurrent(d.metric ? { kind: 'series', n: nextSeriesNo(t), drill: d.id } : { kind: 'warmup', startedAt: Date.now() });
-
-  let body: React.ReactNode;
-  if (shown.kind === 'series') {
-    const d = discipline(shown.drill);
-    const metric = practiceMetric(d, players.length)!;
-    const def = soloMetric(metric);
-    const key = soloKey(metric, shown.n);
-    const values = Object.fromEntries(players.map((p) => [p, { value: t.soloResults[p]?.[key], attempts: t.soloAttempts?.[p]?.[key] }]));
-    const done = players.every((p) => drillCount(values[p], def).done);
-    body = (
-      <>
-        {d.variants && <p className="practice-variant">{variantText(d.variants[seriesVariant(t, metric, shown.n)])}</p>}
-        <DrillMirror
-          key={key}
-          players={players}
-          def={def}
-          values={values}
-          names={Object.fromEntries(players.map((p) => [p, name(p)]))}
-          canSolo={() => canWrite}
-          onTap={(p, ok, delta) => store.tapSolo(t.id, p, key, def, ok, delta, `series|${shown.n}`)}
-        />
-        <div className="actions-row">
-          {done && (
-            <button type="button" onClick={() => setCurrent({ kind: 'series', n: nextSeriesNo(t), drill: d.id })}>
-              {d.variants ? `Znovu – ${d.variants[seriesVariant(t, metric, nextSeriesNo(t))]}` : 'Znovu totéž'}
-            </button>
-          )}
-          <button type="button" className="ghost" onClick={() => setCurrent({ kind: 'list' })}>
-            Jiné cvičení
-          </button>
-        </div>
-      </>
-    );
-  } else if (shown.kind === 'warmup') {
-    body = (
-      <>
-        <WarmupTimer startedAt={shown.startedAt} now={now} compact={false} />
-        <div className="actions-row">
-          <button type="button" className="ghost" onClick={() => setCurrent({ kind: 'list' })}>
-            Jiné cvičení
-          </button>
-        </div>
-      </>
-    );
-  } else {
-    body = (
-      <>
-        <h2>{series.length ? 'Další cvičení' : 'Vyber cvičení'}</h2>
-        <DrillPicker players={players.length} disabled={!canWrite} onPick={pick} />
-      </>
-    );
-  }
+  const times = roundTimes(t, now);
+  const planEnd = times.length ? times[times.length - 1].end : null;
+  const end = () => {
+    if (r && !confirm('Ukončit vlastní trénink? Zbývající kola se už neodcvičí.')) return;
+    if (r && t.playTimes?.[r.item]?.startedAt !== undefined) store.endItem(t.id, r.item);
+    store.endItem(t.id, TRAINING_ITEM);
+  };
 
   return (
     <section className="practice">
@@ -344,17 +463,28 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         <div>
           <h1>Vlastní trénink</h1>
           <p className="dateline">
-            {who} · běží {runMin} min
+            {who} · běží {runMin} min{planEnd !== null ? ` · konec asi v ${hhmm(new Date(planEnd))}` : ''}
           </p>
         </div>
         {canWrite && (
-          <button type="button" className="ghost" onClick={() => store.endItem(t.id, TRAINING_ITEM)}>
+          <button type="button" className="ghost" onClick={end}>
             Ukončit
           </button>
         )}
       </div>
-      {body}
-      <SeriesList t={t} series={series} name={name} title="Dnes hotovo" />
+      {r ? (
+        <RoundView store={store} t={t} r={r} now={now} canWrite={canWrite} name={name} />
+      ) : (
+        <div className="flow-bar" role="status">
+          <span>Plán je odcvičený.</span>
+          {canWrite && (
+            <button type="button" onClick={() => store.endItem(t.id, TRAINING_ITEM)}>
+              Dokončit trénink
+            </button>
+          )}
+        </div>
+      )}
+      {rounds.length > 0 && <PlanList t={t} now={now} name={name} />}
       {canDelete && (
         <div className="actions-row">
           <button type="button" className="danger" onClick={remove}>

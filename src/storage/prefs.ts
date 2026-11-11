@@ -1,3 +1,4 @@
+import type { DisciplineId } from '../domain/types';
 import type { LadderRange, LadderView } from '../domain/ladder';
 
 /** practice = žebříček Vlastní (vlastní tréninky, PRD 5.11). */
@@ -90,5 +91,26 @@ export function saveTheme(t: Theme): void {
     localStorage.setItem(THEME_KEY, t);
   } catch {
     /* bez uložení platí volba do zavření appky */
+  }
+}
+
+/** Vybraná cvičení vlastního tréninku v pořadí (PRD 5.11) – zařízení si je pamatuje pro příště; null = ještě nic. */
+const PRACTICE_KEY = 'foosball-practice.practice-drills.v1';
+
+export function loadPracticeDrills(): DisciplineId[] | null {
+  try {
+    const raw = localStorage.getItem(PRACTICE_KEY);
+    const v = raw ? JSON.parse(raw) : null;
+    return Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as DisciplineId[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePracticeDrills(ids: DisciplineId[]): void {
+  try {
+    localStorage.setItem(PRACTICE_KEY, JSON.stringify(ids));
+  } catch {
+    /* bez uložení se příště začne výchozím výběrem */
   }
 }

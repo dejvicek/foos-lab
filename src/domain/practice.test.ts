@@ -6,7 +6,8 @@ import {
   isClub,
   isPractice,
   newPractice,
-  nextSeriesNo,
+  canAdvance,
+  currentRound,
   practiceDrills,
   practiceEnded,
   practiceMetric,
@@ -14,7 +15,10 @@ import {
   practiceSeries,
   practicesFor,
   seriesDrill,
-  seriesVariant,
+  practicePlanMinutes,
+  practiceRounds,
+  roundRemainingSec,
+  roundTimes,
 } from './practice';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
@@ -99,21 +103,80 @@ describe('série', () => {
     expect(practiceSeries(u)[2].results[0]).toEqual({ playerId: 'A', value: 6, attempts: 8, max: 10 });
   });
 
-  it('další série = nejvyšší + 1; prázdný trénink začíná 1', () => {
-    expect(nextSeriesNo(t)).toBe(4);
-    expect(nextSeriesNo(practice('q', TODAY, ['A']))).toBe(1);
-  });
-
-  it('varianta: první série metriky varianta 0, druhá 1, třetí zase 0', () => {
-    expect(seriesVariant(t, 'penaltySolo', 2)).toBe(0);
-    expect(seriesVariant(t, 'penaltySolo', 3)).toBe(1);
-    expect(seriesVariant(t, 'penaltySolo', 4)).toBe(0);
-    expect(seriesVariant(t, 'warmupPasses', 4)).toBe(1);
-  });
-
   it('disciplína série: fiveBarSolo → Udržení míče na pětce', () => {
     expect(seriesDrill('fiveBarSolo').id).toBe('fiveBarControl');
     expect(seriesDrill('penaltySolo').id).toBe('penaltySolo');
+  });
+});
+
+describe('plán (PRD 5.11, 11. 11. 2026)', () => {
+  const plan = newPractice('p', TODAY, '17:30', 'A', null, ['warmup', 'penaltySolo', 'fiveBarControl']);
+  const T0 = Date.UTC(2026, 10, 11, 16, 30);
+  const MIN = 60_000;
+
+  it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám → fiveBarSolo', () => {
+    expect(practiceRounds(plan).map((r) => [r.n, r.drill, r.metric, r.variant, r.min, r.item])).toEqual([
+      [1, 'warmup', undefined, undefined, 9, 'round|1'],
+      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 4, 'round|2'],
+      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 4, 'round|3'],
+      [4, 'fiveBarControl', 'fiveBarSolo', undefined, 8, 'round|4'],
+    ]);
+    expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'fiveBarControl']);
+  });
+
+  it('naplánovaný čas: kola + přechod 1 min mezi koly', () => {
+    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'fiveBarControl'])).toBe(9 + 4 + 4 + 8 + 3);
+    expect(plan.durationMin).toBe(28);
+    expect(practicePlanMinutes([])).toBe(0);
+  });
+
+  it('délky kol jsou v tréninku – změna katalogu je nehne', () => {
+    applyCatalog({ disciplines: { penaltySolo: { min: 6 } } });
+    expect(practiceRounds(plan)[1].min).toBe(4);
+    expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(13);
+  });
+
+  it('aktuální kolo = první neukončené; dohraný plán null', () => {
+    expect(currentRound(plan)?.n).toBe(1);
+    const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
+    expect(currentRound(t)?.n).toBe(2);
+    const all = { ...plan, playTimes: Object.fromEntries([1, 2, 3, 4].map((n) => [`round|${n}`, { startedAt: T0, endedAt: T0 }])) };
+    expect(currentRound(all)).toBeNull();
+  });
+
+  it('pevný plán: dál až po čase kola, nebo když jsou odehrané všechny pokusy', () => {
+    const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
+    const r2 = practiceRounds(t)[1];
+    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(180);
+    expect(canAdvance(t, r2, T0 + 11 * MIN)).toBe(false);
+    expect(canAdvance(t, r2, T0 + 14 * MIN)).toBe(true);
+    const done = setAttempts(setSolo(t, 'A', 'penaltySolo@2', 6), 'A', 'penaltySolo@2', 10);
+    expect(canAdvance(done, r2, T0 + 11 * MIN)).toBe(true);
+    // Rozcvička nic nezapisuje – jen po čase
+    expect(canAdvance(plan, practiceRounds(plan)[0], T0)).toBe(false);
+  });
+
+  it('ve dvou: dál až po pokusech obou hráčů', () => {
+    const pair = newPractice('p2', TODAY, '17:30', 'A', 'B', ['warmupPasses']);
+    const t = { ...pair, playTimes: { 'round|1': { startedAt: T0 } } };
+    const r = practiceRounds(t)[0];
+    const a = setAttempts(setSolo(t, 'A', 'warmupPasses@1', 15), 'A', 'warmupPasses@1', 20);
+    expect(canAdvance(a, r, T0 + MIN)).toBe(false);
+    const ab = setAttempts(setSolo(a, 'B', 'warmupPasses@1', 12), 'B', 'warmupPasses@1', 20);
+    expect(canAdvance(ab, r, T0 + MIN)).toBe(true);
+  });
+
+  it('hodiny kol: odehrané skutečně, hrané od zahájení, další navazují s přechodem', () => {
+    const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
+    const times = roundTimes(t, T0 + 11 * MIN).map((x) => [x.state, (x.start - T0) / MIN, (x.end - T0) / MIN]);
+    expect(times).toEqual([
+      ['done', 0, 9],
+      ['playing', 10, 14],
+      ['next', 15, 19],
+      ['next', 20, 28],
+    ]);
+    // přetažené kolo posune další
+    expect((roundTimes(t, T0 + 16 * MIN)[2].start - T0) / MIN).toBe(17);
   });
 });
 
