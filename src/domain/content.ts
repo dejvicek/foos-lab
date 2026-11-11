@@ -113,11 +113,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 10 sérií, pak výměna. Sám (trénink pro 1 hráče): stejné série bez bránící pětky; výsledky mají v žebříčku vlastní tabulku."
+            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 20 sérií, pak výměna. Sám (trénink pro 1 hráče): stejné série bez bránící pětky; výsledky mají v žebříčku vlastní tabulku."
           },
           {
             "label": "Počítá se:",
-            "text": "ztráty na 10 sérií."
+            "text": "ztráty na 20 sérií."
           }
         ]
       },
@@ -147,11 +147,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "míč zastavený na pětce, nikdo nebrání. 1. kolo 10 přihrávek ke zdi, 2. kolo 10 přihrávek po lajně. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Každý hráč za sebe, jde i sám."
+            "text": "míč zastavený na pětce, nikdo nebrání. 1. kolo 20 přihrávek ke zdi, 2. kolo 20 přihrávek po lajně. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Každý hráč za sebe, jde i sám."
           },
           {
             "label": "Počítá se:",
-            "text": "povedené přihrávky z 10 v každém kole."
+            "text": "povedené přihrávky z 20 v každém kole."
           }
         ]
       },
@@ -164,11 +164,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "střelec si nastaví míč na trojce, rozehraje ho (3 dotyky) a vystřelí z místa. Celý pokus do 15 s. Soupeř brání brankou a dvojkou. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si střelec určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce). Ve dvojici se po 10 střelách vystřídáte."
+            "text": "střelec si nastaví míč na trojce, rozehraje ho (3 dotyky) a vystřelí z místa. Celý pokus do 15 s. Soupeř brání brankou a dvojkou. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si střelec určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce). Ve dvojici se po 20 střelách vystřídáte."
           },
           {
             "label": "Počítá se:",
-            "text": "góly z 10 v každém kole."
+            "text": "góly z 20 v každém kole."
           }
         ]
       },
@@ -181,11 +181,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "jako Penalta z místa proti brankáři, jen nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si hráč určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce)."
+            "text": "jako Penalta z místa proti brankáři, jen nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce)."
           },
           {
             "label": "Počítá se:",
-            "text": "góly z 10 v každém kole; v žebříčku má vlastní tabulku."
+            "text": "góly z 20 v každém kole; v žebříčku má vlastní tabulku."
           }
         ]
       },
@@ -198,11 +198,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "míč nastavený na dvojce, střela na bránu, soupeř brání. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si střelec určí sám. Ve dvojici se po 10 střelách vystřídáte."
+            "text": "míč nastavený na dvojce, střela na bránu, soupeř brání. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si střelec určí sám. Ve dvojici se po 20 střelách vystřídáte."
           },
           {
             "label": "Počítá se:",
-            "text": "góly z 10 v každém kole."
+            "text": "góly z 20 v každém kole."
           }
         ]
       },
@@ -215,11 +215,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "míč nastavený na dvojce, střela na bránu, nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 10 střelách, v každém kole jedna varianta, kterou si hráč určí sám."
+            "text": "míč nastavený na dvojce, střela na bránu, nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám."
           },
           {
             "label": "Počítá se:",
-            "text": "góly z 10 v každém kole; v žebříčku má vlastní tabulku."
+            "text": "góly z 20 v každém kole; v žebříčku má vlastní tabulku."
           }
         ]
       },
@@ -232,11 +232,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "obránce má míč v brance nebo na dvojce, soupeř brání trojkou i pětkou. Obránce míč vyčistí dopředu. Dvě kola po 10 pokusech, v každém kole jedna varianta, kterou si obránce určí sám. Ve dvojici se po 10 pokusech vystřídáte."
+            "text": "obránce má míč v brance nebo na dvojce, soupeř brání trojkou i pětkou. Obránce míč vyčistí dopředu. Dvě kola po 20 pokusech, v každém kole jedna varianta, kterou si obránce určí sám. Ve dvojici se po 20 pokusech vystřídáte."
           },
           {
             "label": "Počítá se:",
-            "text": "povedené clearingy z 10 v každém kole – míč se dostal za soupeřovu pětku."
+            "text": "povedené clearingy z 20 v každém kole – míč se dostal za soupeřovu pětku."
           }
         ]
       },
@@ -249,11 +249,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "obránce na brance a dvojce, partner posílá míč do jeho zóny, ale ne střelou: odrazem, pomalu kutálený nebo nepřesnou přihrávkou. 1. kolo míče po zdi, 2. kolo míče středem, po 10 pokusech. Ve dvojici se po 10 pokusech vystřídáte."
+            "text": "obránce na brance a dvojce, partner posílá míč do jeho zóny, ale ne střelou: odrazem, pomalu kutálený nebo nepřesnou přihrávkou. 1. kolo míče po zdi, 2. kolo míče středem, po 20 pokusech. Ve dvojici se po 20 pokusech vystřídáte."
           },
           {
             "label": "Počítá se:",
-            "text": "míče pod kontrolou z 10 v každém kole – stačí míč zastavit a mít ho pod kontrolou v zadních tyčích."
+            "text": "míče pod kontrolou z 20 v každém kole – stačí míč zastavit a mít ho pod kontrolou v zadních tyčích."
           }
         ]
       },
@@ -288,6 +288,74 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           {
             "label": "Počítá se:",
             "text": "dokončené rozehrávky z 10."
+          }
+        ]
+      },
+      {
+        "name": "Čistá desítka – střela z trojky",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "jedna střela, která drží i pod tlakem série."
+          },
+          {
+            "label": "Provedení:",
+            "text": "vyber si jednu střelu z trojky (např. stahovačku do dlouhého rohu) a opakuj pořád tu stejnou, dokud nedáš 10 gólů po sobě. Po každém pokusu ✓ nebo ✗; nepovedený pokus sérii vynuluje a počítá se znovu od 0. Každý hráč cvičí sám na své straně s vlastním míčkem, nikdo nebrání."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "čas od začátku kola do desátého povedeného pokusu po sobě; méně je lépe. V klubovém tréninku je limit délka kola (10 min), pak se jde na další disciplínu a série zůstane nesplněná. V žebříčku rozhoduje nejlepší čas."
+          }
+        ]
+      },
+      {
+        "name": "Čistá desítka – přihrávka na pětce",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "spolehlivá přihrávka z pětky na trojku."
+          },
+          {
+            "label": "Provedení:",
+            "text": "vyber si jednu přihrávku z pětky na trojku (např. ke zdi) a opakuj pořád tu stejnou, dokud nemáš 10 povedených po sobě. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Po každém pokusu ✓ nebo ✗; nepovedený pokus sérii vynuluje a počítá se znovu od 0. Každý hráč cvičí sám na své straně s vlastním míčkem, nikdo nebrání."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "čas od začátku kola do desátého povedeného pokusu po sobě; méně je lépe. V klubovém tréninku je limit délka kola (10 min), pak se jde na další disciplínu a série zůstane nesplněná. V žebříčku rozhoduje nejlepší čas."
+          }
+        ]
+      },
+      {
+        "name": "Čistá desítka – střela z dvojky",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "jistá střela ze zadní řady."
+          },
+          {
+            "label": "Provedení:",
+            "text": "vyber si jednu střelu z dvojky a opakuj pořád tu stejnou, dokud nedáš 10 gólů po sobě. Po každém pokusu ✓ nebo ✗; nepovedený pokus sérii vynuluje a počítá se znovu od 0. Každý hráč cvičí sám na své straně s vlastním míčkem, nikdo nebrání."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "čas od začátku kola do desátého povedeného pokusu po sobě; méně je lépe. V klubovém tréninku je limit délka kola (10 min), pak se jde na další disciplínu a série zůstane nesplněná. V žebříčku rozhoduje nejlepší čas."
+          }
+        ]
+      },
+      {
+        "name": "Čistá desítka – přihrávka z dvojky",
+        "parts": [
+          {
+            "label": "Cíl:",
+            "text": "čistá rozehrávka ze zadních tyčí."
+          },
+          {
+            "label": "Provedení:",
+            "text": "vyber si jednu přihrávku z dvojky na pětku a opakuj pořád tu stejnou, dokud nemáš 10 povedených po sobě. Platí jen přihrávka, kterou pětka přijme pod kontrolou. Po každém pokusu ✓ nebo ✗; nepovedený pokus sérii vynuluje a počítá se znovu od 0. Každý hráč cvičí sám na své straně s vlastním míčkem, nikdo nebrání."
+          },
+          {
+            "label": "Počítá se:",
+            "text": "čas od začátku kola do desátého povedeného pokusu po sobě; méně je lépe. V klubovém tréninku je limit délka kola (10 min), pak se jde na další disciplínu a série zůstane nesplněná. V žebříčku rozhoduje nejlepší čas."
           }
         ]
       },

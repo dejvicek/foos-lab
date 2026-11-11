@@ -30,7 +30,8 @@ import { MIN_TRAININGS } from '../../domain/ladder';
 import type { DisciplineId, PlayerId, SoloMetric, Training } from '../../domain/types';
 import type { Viewer } from '../../domain/my';
 import { loadPracticeDrills, savePracticeDrills } from '../../storage/prefs';
-import { DrillMirror } from '../components/ScoreMirror';
+import { DrillMirror, StreakMirror } from '../components/ScoreMirror';
+import { streakTime, trainingStreak } from '../../domain/streak';
 import { WarmupTimer } from '../components/WarmupTimer';
 import { hm } from '../components/DisciplinePicker';
 import { Medal, Progress } from '../components/Rank';
@@ -55,7 +56,8 @@ const lengthText = (d: DisciplineDef) => (roundsOf(d) > 1 ? `${roundsOf(d)}× ${
 /** Popisek cvičení v nabídce: délka, pokusy, varianty, s bránícím. */
 function drillSub(d: DisciplineDef, players: number): string {
   const m = practiceMetric(d, players);
-  const parts = [lengthText(d), m ? `${soloMetric(m).max} pokusů` : 'timer, nic se nezapisuje'];
+  const def = m ? soloMetric(m) : null;
+  const parts = [lengthText(d), def ? (def.streak ? `${def.streak} povedených po sobě na čas` : `${def.max} pokusů`) : 'timer, nic se nezapisuje'];
   if (d.variants) parts.push(namedVariants(d.variants) ? d.variants.join(' / ') : `${d.variants.length} varianty`);
   if (d.needsPartner) parts.push('s bránícím spoluhráčem');
   return parts.join(' · ');
@@ -76,9 +78,12 @@ function seriesName(rounds: PracticeRound[], s: PracticeSeries): string {
   return r ? roundName(r) : seriesDrill(s.metric).name;
 }
 
-/** Výsledek série jednoho hráče: „7 / 10“, nedokončená „4 z 7 pokusů“. */
-const resultText = (value: number, attempts: number, max: number, metric: SoloMetric) =>
-  attempts < max ? `${value} z ${attempts} ${plural(attempts, 'pokusu', 'pokusů', 'pokusů')}` : `${value} / ${max}${soloMetric(metric).lowerIsBetter ? ' ztrát' : ''}`;
+/** Výsledek série jednoho hráče: „7 / 20“, nedokončená „4 z 7 pokusů“, Čistá desítka „za 2:05 (14 pokusů)“. */
+function resultText(value: number, attempts: number, max: number, metric: SoloMetric): string {
+  const pokusu = `${attempts} ${plural(attempts, 'pokus', 'pokusy', 'pokusů')}`;
+  if (soloMetric(metric).streak) return value > 0 ? `za ${streakTime(value)} (${pokusu})` : `nesplněno (${pokusu})`;
+  return attempts < max ? `${value} z ${attempts} ${plural(attempts, 'pokusu', 'pokusů', 'pokusů')}` : `${value} / ${max}${soloMetric(metric).lowerIsBetter ? ' ztrát' : ''}`;
+}
 
 function seriesResults(t: Training, s: PracticeSeries | undefined, name: (id: PlayerId) => string): string {
   if (!s) return '';
@@ -205,6 +210,18 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
             Zahájit {r.n}. kolo
           </button>
         )
+      ) : key && soloMetric(r.metric!).streak ? (
+        <StreakMirror
+          key={key}
+          players={players}
+          def={soloMetric(r.metric!)}
+          states={Object.fromEntries(players.map((p) => [p, trainingStreak(t, p, r.item, soloMetric(r.metric!))]))}
+          names={Object.fromEntries(players.map((p) => [p, name(p)]))}
+          now={now}
+          limitSec={null}
+          canSolo={() => canWrite}
+          onTap={(p, ok, delta) => store.tapSolo(t.id, p, key, soloMetric(r.metric!), ok, delta, r.item)}
+        />
       ) : key ? (
         <DrillMirror
           key={key}
@@ -223,7 +240,11 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
           <button type="button" disabled={!advance} onClick={goOn}>
             {last ? 'Dokončit trénink' : `Další kolo: ${roundName(next)}`}
           </button>
-          {!advance && <span className="note">Dál až po {r.metric ? 'všech pokusech nebo po ' : ''}uplynutí času kola.</span>}
+          {!advance && (
+            <span className="note">
+              Dál až po {r.metric ? (soloMetric(r.metric).streak ? 'splnění série nebo po ' : 'všech pokusech nebo po ') : ''}uplynutí času kola.
+            </span>
+          )}
         </div>
       )}
     </section>
@@ -242,6 +263,9 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
   const t = id === null ? undefined : store.data.trainings.find((x) => x.id === id);
   const running = !!t && isPractice(t) && practiceRunning(t, now);
   useWakeLock(running);
+  // Průběh ťukání: z něj se počítá série Čisté desítky.
+  const { watchEvents } = store;
+  useEffect(() => (id === null ? undefined : watchEvents(id)), [watchEvents, id]);
 
   const byId = new Map(store.data.players.map((p) => [p.id, p]));
   const name = (pid: PlayerId) => byId.get(pid)?.name ?? '?';

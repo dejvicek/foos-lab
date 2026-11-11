@@ -38,7 +38,7 @@ describe('čas plánu v průvodci', () => {
   });
 
   it('zbývá čas: v kroku Kdy, kde a disciplíny nabídne doplnit kola, po doplnění se plán prodlouží', async () => {
-    const user = await wizard(['Ada'], 60); // trénink pro 1 hráče: sólová cvičení, zbývá čas
+    const user = await wizard(['Ada'], 90); // trénink pro 1 hráče: sólová cvičení (1:11), zbývá čas
     const status = () => screen.getByRole('status', { name: 'Naplánováno' }).textContent;
     const before = status();
     expect(before).toMatch(/zbývá \d+ min/);

@@ -5,6 +5,7 @@ import type { PlayerId } from '../../domain/types';
 import type { LadderPart, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
+import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
 import { dec1, pct, plural, signed } from '../format';
@@ -155,6 +156,7 @@ function SoloTable({
   name,
   open,
   attempts = false,
+  streak = false,
 }: {
   ranked: SoloLadderRow[];
   lowData: SoloLadderRow[];
@@ -165,10 +167,13 @@ function SoloTable({
   open(id: PlayerId): void;
   /** Sloupec Pokusy (žebříček Vlastní). */
   attempts?: boolean;
+  /** Čistá desítka: splněné série a nejlepší čas místo průměru / celku. */
+  streak?: boolean;
 }) {
   const rows = [...ranked, ...lowData];
   const cut = ranked.length;
-  const cols = attempts ? 5 : 4;
+  const showAttempts = attempts && !streak;
+  const cols = showAttempts || streak ? 5 : 4;
   return (
     <div className="wrap">
       <table aria-label={label} className="solo-table">
@@ -177,8 +182,9 @@ function SoloTable({
             <th className="n rank">#</th>
             <th>Hráč</th>
             <th className="n">Tréninky</th>
-            {attempts && <th className="n">Pokusy</th>}
-            <th className="n">{view === 'avg' ? 'Průměr' : 'Celkem'}</th>
+            {showAttempts && <th className="n">Pokusy</th>}
+            {streak && <th className="n">Splněno</th>}
+            <th className="n">{streak ? 'Nejlepší čas' : view === 'avg' ? 'Průměr' : 'Celkem'}</th>
           </tr>
         </thead>
         <tbody>
@@ -195,8 +201,9 @@ function SoloTable({
                     </button>
                   </td>
                   <td className="n">{r.trainings}</td>
-                  {attempts && <td className="n">{r.sumMax}</td>}
-                  <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+                  {showAttempts && <td className="n">{r.sumMax}</td>}
+                  {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
+                  <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
                 </tr>
               </Fragment>
             );
@@ -259,9 +266,9 @@ function SoloLadder({
           <section key={t.metric} className="solo-block">
             <h3>{def.name}</h3>
             <p className="note">
-              {def.what}, {def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}
+              {def.streak ? `${def.what}, řazeno podle nejlepšího času` : `${def.what}, ${def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}`}
             </p>
-            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} attempts={source === 'practice'} />
+            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} attempts={source === 'practice'} streak={!!def.streak} />
           </section>
         );
       })}

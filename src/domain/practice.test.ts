@@ -55,7 +55,7 @@ describe('newPractice (PRD 5.11)', () => {
 describe('nabídka cvičení', () => {
   it('sám: jen cvičení bez bránícího soupeře (a Rozcvička), bez vyřazených', () => {
     const ids = practiceDrills(1).map((d) => d.id);
-    expect(ids).toEqual(['warmup', 'passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo']);
+    expect(ids).toEqual(['warmup', 'passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo', 'streakShot3', 'streakPass5', 'streakShot2', 'streakPass2']);
   });
 
   it('ve dvou: i cvičení s bránícím soupeřem; vyřazená ne', () => {
@@ -100,7 +100,7 @@ describe('série', () => {
 
   it('nedokončená série: odehrané pokusy', () => {
     const u = setAttempts(t, 'A', 'penaltySolo@3', 8);
-    expect(practiceSeries(u)[2].results[0]).toEqual({ playerId: 'A', value: 6, attempts: 8, max: 10 });
+    expect(practiceSeries(u)[2].results[0]).toEqual({ playerId: 'A', value: 6, attempts: 8, max: 20 });
   });
 
   it('disciplína série: fiveBarSolo → Udržení míče na pětce', () => {
@@ -117,22 +117,22 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám → fiveBarSolo', () => {
     expect(practiceRounds(plan).map((r) => [r.n, r.drill, r.metric, r.variant, r.min, r.item])).toEqual([
       [1, 'warmup', undefined, undefined, 9, 'round|1'],
-      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 4, 'round|2'],
-      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 4, 'round|3'],
-      [4, 'fiveBarControl', 'fiveBarSolo', undefined, 8, 'round|4'],
+      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 8, 'round|2'],
+      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 8, 'round|3'],
+      [4, 'fiveBarControl', 'fiveBarSolo', undefined, 16, 'round|4'],
     ]);
     expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'fiveBarControl']);
   });
 
   it('naplánovaný čas: kola + přechod 1 min mezi koly', () => {
-    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'fiveBarControl'])).toBe(9 + 4 + 4 + 8 + 3);
-    expect(plan.durationMin).toBe(28);
+    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'fiveBarControl'])).toBe(9 + 8 + 8 + 16 + 3);
+    expect(plan.durationMin).toBe(44);
     expect(practicePlanMinutes([])).toBe(0);
   });
 
   it('délky kol jsou v tréninku – změna katalogu je nehne', () => {
     applyCatalog({ disciplines: { penaltySolo: { min: 6 } } });
-    expect(practiceRounds(plan)[1].min).toBe(4);
+    expect(practiceRounds(plan)[1].min).toBe(8);
     expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(13);
   });
 
@@ -147,10 +147,10 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('pevný plán: dál až po čase kola, nebo když jsou odehrané všechny pokusy', () => {
     const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
     const r2 = practiceRounds(t)[1];
-    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(180);
+    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(420);
     expect(canAdvance(t, r2, T0 + 11 * MIN)).toBe(false);
-    expect(canAdvance(t, r2, T0 + 14 * MIN)).toBe(true);
-    const done = setAttempts(setSolo(t, 'A', 'penaltySolo@2', 6), 'A', 'penaltySolo@2', 10);
+    expect(canAdvance(t, r2, T0 + 18 * MIN)).toBe(true);
+    const done = setAttempts(setSolo(t, 'A', 'penaltySolo@2', 6), 'A', 'penaltySolo@2', 20);
     expect(canAdvance(done, r2, T0 + 11 * MIN)).toBe(true);
     // Rozcvička nic nezapisuje – jen po čase
     expect(canAdvance(plan, practiceRounds(plan)[0], T0)).toBe(false);
@@ -171,12 +171,12 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
     const times = roundTimes(t, T0 + 11 * MIN).map((x) => [x.state, (x.start - T0) / MIN, (x.end - T0) / MIN]);
     expect(times).toEqual([
       ['done', 0, 9],
-      ['playing', 10, 14],
-      ['next', 15, 19],
-      ['next', 20, 28],
+      ['playing', 10, 18],
+      ['next', 19, 27],
+      ['next', 28, 44],
     ]);
     // přetažené kolo posune další
-    expect((roundTimes(t, T0 + 16 * MIN)[2].start - T0) / MIN).toBe(17);
+    expect((roundTimes(t, T0 + 20 * MIN)[2].start - T0) / MIN).toBe(21);
   });
 });
 
@@ -218,7 +218,7 @@ describe('oddělené od klubu', () => {
     ];
     const pen = computeSoloLadder(ts, { kind: 'all' }, 'avg', TODAY, 'practice').find((x) => x.metric === 'penaltySolo')!;
     expect(pen.ranked.map((r) => r.playerId)).toEqual(['A']);
-    expect(pen.ranked[0]).toMatchObject({ trainings: 3, records: 4, sum: 30, sumMax: 40, avg: 7.5 });
+    expect(pen.ranked[0]).toMatchObject({ trainings: 3, records: 4, sum: 30, sumMax: 80, avg: 7.5 });
     expect(pen.lowData.map((r) => r.playerId)).toEqual(['B']);
     expect(pen.lowData[0]).toMatchObject({ trainings: 2, sum: 18 });
   });
@@ -231,7 +231,7 @@ describe('oddělené od klubu', () => {
   it('Vlastní: období podle data vlastního tréninku', () => {
     const ts = [practice('old', '2026-09-01', ['A'], [['A', 'penaltySolo@1', 7]]), practice('new', '2026-11-01', ['A'], [['A', 'penaltySolo@1', 3]])];
     const pen = computeSoloLadder(ts, { kind: 'form' }, 'total', TODAY, 'practice')[0];
-    expect(pen.lowData[0]).toMatchObject({ trainings: 1, sum: 3, sumMax: 10 });
+    expect(pen.lowData[0]).toMatchObject({ trainings: 1, sum: 3, sumMax: 20 });
   });
 });
 

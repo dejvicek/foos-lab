@@ -16,6 +16,8 @@ export interface SoloLadderRow {
   avg: number;
   /** sum / sumMax */
   rate: number;
+  /** Cvičení na čas (Čistá desítka): nejlepší čas v sekundách; null = ani jednou nesplněno. */
+  best?: number | null;
 }
 
 export interface SoloLadderTable {
@@ -79,6 +81,7 @@ export function computeSoloLadder(
   );
   const valid = new Map(inRange.map((t) => [t, validSolo(t)]));
   return SOLO_METRICS.flatMap((def) => {
+    if (def.streak) return streakTable(inRange, def.id, (t) => valid.get(t)!);
     const acc = aggregateSolo(inRange, def.id, (t) => valid.get(t)!);
     if (!acc.size) return [];
     const rows: SoloLadderRow[] = [...acc.entries()].map(([playerId, x]) => ({
@@ -104,4 +107,47 @@ export function computeSoloLadder(
       },
     ];
   });
+}
+
+/**
+ * Čistá desítka (11. 11. 2026): pořadí podle nejlepšího času (méně = lépe), kdo ještě nesplnil, je
+ * za ostatními. Hranice „málo dat“ jako jinde: tréninky, ve kterých hráč cvičení zkoušel.
+ * sum = splněné série, sumMax = všechny série, avg = nejlepší čas.
+ */
+function streakTable(trainings: Training[], metric: SoloMetric, solo: (t: Training) => SoloResults): SoloLadderTable[] {
+  const acc = new Map<PlayerId, { trainings: number; records: number; done: number; best: number | null }>();
+  for (const t of trainings)
+    for (const [p, values] of Object.entries(solo(t))) {
+      const vals = Object.entries(values).filter(([k, v]) => parseSoloKey(k).metric === metric && v !== undefined && v !== null);
+      if (!vals.length) continue;
+      const cur = acc.get(p) ?? { trainings: 0, records: 0, done: 0, best: null };
+      cur.trainings++;
+      for (const [, v] of vals) {
+        cur.records++;
+        if (v > 0) {
+          cur.done++;
+          cur.best = cur.best === null ? v : Math.min(cur.best, v);
+        }
+      }
+      acc.set(p, cur);
+    }
+  if (!acc.size) return [];
+  const rows: SoloLadderRow[] = [...acc.entries()].map(([playerId, x]) => ({
+    playerId,
+    trainings: x.trainings,
+    records: x.records,
+    sum: x.done,
+    sumMax: x.records,
+    avg: x.best ?? 0,
+    rate: x.records ? x.done / x.records : 0,
+    best: x.best,
+  }));
+  rows.sort(
+    (a, b) =>
+      (a.best === null ? 1 : 0) - (b.best === null ? 1 : 0) ||
+      (a.best ?? 0) - (b.best ?? 0) ||
+      b.trainings - a.trainings ||
+      (a.playerId < b.playerId ? -1 : a.playerId > b.playerId ? 1 : 0),
+  );
+  return [{ metric, ranked: rows.filter((x) => x.trainings >= MIN_TRAININGS), lowData: rows.filter((x) => x.trainings < MIN_TRAININGS) }];
 }

@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { DrillMirror, ScoreMirror } from './ScoreMirror';
+import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
+import { streakState } from '../../domain/streak';
 import { bump } from '../../domain/legState';
 import { tapDrill, type DrillValue } from '../../domain/drillTap';
 import { soloMetric } from '../../domain/solo';
@@ -134,8 +135,8 @@ describe('ScoreMirror', () => {
 });
 
 describe('DrillMirror – pokusy', () => {
-  const def = soloMetric('looseBall'); // míče pod kontrolou z 10
-  function DrillHarness({ log = [] as [string, boolean, number][], disabledFor = [] as string[], init = { a: { value: 7, attempts: 9 } } as Record<string, DrillValue> }) {
+  const def = soloMetric('looseBall'); // míče pod kontrolou z 20
+  function DrillHarness({ log = [] as [string, boolean, number][], disabledFor = [] as string[], init = { a: { value: 7, attempts: 19 } } as Record<string, DrillValue> }) {
     const [v, setV] = useState<Record<string, DrillValue>>(init);
     return (
       <DrillMirror
@@ -161,10 +162,10 @@ describe('DrillMirror – pokusy', () => {
     render(<DrillHarness log={log} />);
     expect(screen.getAllByRole('button', { name: /^pod kontrolou:/ })).toHaveLength(3);
     const lavi = screen.getByRole('group', { name: 'Lavi' });
-    expect(lavi).toHaveTextContent('pokus 0 / 10');
+    expect(lavi).toHaveTextContent('pokus 0 / 20');
     await user.click(within(lavi).getByRole('button', { name: 'pod kontrolou: Lavi' }));
     await user.click(within(lavi).getByRole('button', { name: 'nezachycený: Lavi' }));
-    expect(lavi).toHaveTextContent('pokus 2 / 10');
+    expect(lavi).toHaveTextContent('pokus 2 / 20');
     expect(lavi).toHaveTextContent('1');
     await user.click(screen.getByRole('button', { name: /Zpět/ }));
     expect(log).toEqual([['c', true, 1], ['c', false, 1], ['c', false, -1]]);
@@ -175,7 +176,7 @@ describe('DrillMirror – pokusy', () => {
     render(<DrillHarness />);
     const milan = screen.getByRole('group', { name: 'Milan' });
     await user.click(within(milan).getByRole('button', { name: 'pod kontrolou: Milan' }));
-    expect(milan).toHaveTextContent('Všechny pokusy: 8 z 10');
+    expect(milan).toHaveTextContent('Všechny pokusy: 8 z 20');
     expect(within(milan).queryByRole('button', { name: /: Milan$/ })).toBeNull();
   });
 
@@ -219,5 +220,35 @@ describe('ScoreMirror – Daň za ztrátu', () => {
     await user.click(screen.getByRole('button', { name: 'Ubrat ztrátu vlevo' }));
     expect(log).toEqual([['la', -1], ['gb', -1]]);
     expect(goal('vpravo')).toHaveTextContent('1');
+  });
+});
+
+describe('StreakMirror – Čistá desítka', () => {
+  const def = soloMetric('streakPass5');
+  const T0 = 1_000_000;
+  const hit = (i: number, ok = true) => ({ id: `e${i}`, itemId: 'x', at: T0 + i * 1000, kind: ok ? ('hit' as const) : ('miss' as const), playerId: 'a', delta: 1 as const });
+
+  it('série po sobě, po limitu kola (klubový trénink) už ťukat nejde', () => {
+    const s = streakState([hit(1), hit(2), hit(3, false), hit(4)], 'a', 'x', T0, 10);
+    const { rerender } = render(
+      <StreakMirror players={['a']} def={def} states={{ a: s }} names={{ a: 'Lavi' }} now={T0 + 60_000} limitSec={600} canSolo={() => true} onTap={() => {}} />,
+    );
+    const lavi = screen.getByRole('group', { name: 'Lavi' });
+    expect(lavi).toHaveTextContent('1z 10 po sobě');
+    expect(lavi).toHaveTextContent('pokus 4 · 1:00');
+    expect(within(lavi).getByRole('button', { name: 'nepovedená: Lavi' })).toHaveTextContent('znovu od 0');
+    rerender(<StreakMirror players={['a']} def={def} states={{ a: s }} names={{ a: 'Lavi' }} now={T0 + 601_000} limitSec={600} canSolo={() => true} onTap={() => {}} />);
+    expect(lavi).toHaveTextContent('Čas kola vypršel – nesplněno');
+    expect(within(lavi).queryByRole('button', { name: 'povedená: Lavi' })).toBeNull();
+  });
+
+  it('splněno: čas a Zpět vrací poslední povedený', async () => {
+    const user = userEvent.setup();
+    const taps: [string, boolean, number][] = [];
+    const s = streakState(Array.from({ length: 10 }, (_, i) => hit(i + 1)), 'a', 'x', T0, 10);
+    render(<StreakMirror players={['a']} def={def} states={{ a: s }} names={{ a: 'Lavi' }} now={T0} limitSec={null} canSolo={() => true} onTap={(p, ok, d) => taps.push([p, ok, d])} />);
+    expect(screen.getByRole('group', { name: 'Lavi' })).toHaveTextContent('Splněno za 0:10');
+    await user.click(screen.getByRole('button', { name: 'Zpět: Lavi' }));
+    expect(taps).toEqual([['a', true, -1]]);
   });
 });

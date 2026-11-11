@@ -33,7 +33,11 @@ export type SoloMetric =
   | 'clearing'
   | 'looseBall'
   | 'backRodsBuildUp'
-  | 'chain';
+  | 'chain'
+  | 'streakShot3'
+  | 'streakPass5'
+  | 'streakShot2'
+  | 'streakPass2';
 /** Klíč výsledku: `metrika` (klasický trénink) nebo `metrika@kolo` (konfigurovatelný). */
 export type SoloKey = string;
 /** Výsledky sólové části: hráč → klíč → hodnota (PRD 5.8, 6). */

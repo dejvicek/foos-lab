@@ -20,14 +20,14 @@ describe('stránka Disciplíny – obsah', () => {
 
   it('délka, kdo hraje a podrobnosti jen z definice disciplíny', () => {
     expect(disciplineDuration('warmupPasses')).toEqual({ rounds: 1, min: 8 });
-    expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 4 });
+    expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 8 });
     expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 8 });
     expect(disciplineWho('warmupPasses')).toEqual({ icon: 'pair', label: 's bránícím soupeřem' });
     expect(disciplineWho('fiveBarControl')?.icon).toBe('solo');
     expect(disciplineWho('wall')?.icon).toBe('swap');
     expect(disciplineWho('normal')).toBeNull();
-    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 10: ke zdi / po lajně', 'jde i sám']);
-    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 10 pokusech, variantu si určí hráč', 's bránícím soupeřem']);
+    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'jde i sám']);
+    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem']);
     expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role']);
     expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
     expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem']);

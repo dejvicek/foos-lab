@@ -2,6 +2,7 @@ import type { ExplanationItem } from './content';
 import { DISCIPLINES, discipline, roundStep, type DisciplineDef } from './disciplines';
 import { explanation } from './explain';
 import { SIM_MIN_PLAYERS } from './plan';
+import { soloMetric } from './solo';
 import type { DisciplineId } from './types';
 
 /** Stránka Disciplíny: co se nabízí (vyřazené ne), v pořadí rozpisu. */
@@ -36,8 +37,12 @@ export function disciplineWho(id: DisciplineId): { icon: 'pair' | 'solo' | 'swap
 export function disciplineFacts(id: DisciplineId): string[] {
   const d = discipline(id);
   const out: string[] = [];
-  if (d.variants)
-    out.push(d.variants.every((v) => /^varianta \d$/.test(v)) ? '2 kola po 10 pokusech, variantu si určí hráč' : `2 kola po 10: ${d.variants.join(' / ')}`);
+  const m = d.metric ? soloMetric(d.metric) : null;
+  if (d.variants) {
+    const n = m?.max ?? 20;
+    out.push(d.variants.every((v) => /^varianta \d$/.test(v)) ? `2 kola po ${n} pokusech, variantu si určí hráč` : `2 kola po ${n}: ${d.variants.join(' / ')}`);
+  }
+  if (m?.streak) out.push(`${m.streak} povedených po sobě na čas, nepovedený nuluje`);
   if (d.paired) out.push('2 kola, strany si prohodí role');
   if (d.kind === 'drill') out.push(d.needsPartner ? 's bránícím soupeřem' : 'jde i sám');
   if (d.singlesOnly) out.push('jen singly');

@@ -132,7 +132,7 @@ describe('šablony tréninku (9. 11. 2026)', () => {
   it('šablona přesně: cvičení podle hráčů a stolů, zápasy podle počtu kol v šabloně, nic se nedoplňuje', () => {
     const t = (selection: DisciplineId[], rounds = {}) => ({ id: 'x', name: 'X', durationMin: 60, selection, rounds });
     // 8 hráčů / 4 stoly: cvičení 1 vystřídání; Penalta (2 varianty) = 2 kola
-    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(9 + 2 * 5 + 9);
+    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(9 + 2 * 9 + 9);
     expect(templateTimeline(t(['warmupPasses']), 12, 4).total).toBe(2 * 9);
     expect(templateTimeline(t(['normal'], { normal: 3 }), 8, 4).total).toBe(3 * 9);
     expect(templateTimeline(t(['normal']), 8, 4, { normal: 10 }).total).toBe(11);

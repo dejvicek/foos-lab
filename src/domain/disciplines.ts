@@ -20,7 +20,7 @@ export interface DisciplineDef {
   paired?: boolean;
   /** Vyřazená (už se nenabízí); zůstává kvůli starším tréninkům a historii. */
   retired?: boolean;
-  /** Cvičení na dvě varianty: kola po dvou (stejné skupiny), v každém jedna varianta po 10 pokusech. */
+  /** Cvičení na dvě varianty: kola po dvou (stejné skupiny), v každém jedna varianta po 20 pokusech. */
   variants?: [string, string];
   /** Cvičení s bránícím soupeřem – sám ho hráč hrát nemůže (trénink pro 1 hráče ho vynechá). */
   needsPartner?: boolean;
@@ -38,18 +38,23 @@ export interface DisciplineDef {
 export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, explain: 'Rozcvička', individual: true, skills: ['control', 'pass5'] },
   { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses', needsPartner: true, skills: ['pass5', 'control', 'reading'] },
-  { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 4, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], skills: ['pass5'] },
-  { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 8, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['control', 'pass5'] },
+  { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 8, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], skills: ['pass5'] },
+  { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 16, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['control', 'pass5'] },
   { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper' },
-  { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 4, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot3', 'defense', 'reading'] },
-  { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 4, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot3'] },
-  { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 4, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot2', 'defense'] },
-  { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 4, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot2'] },
-  { id: 'clearing', kind: 'drill', name: 'Clearing', min: 4, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['clearing'] },
-  { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 4, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, skills: ['looseBall', 'control'] },
+  { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 8, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot3', 'defense', 'reading'] },
+  { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 8, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot3'] },
+  { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 8, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot2', 'defense'] },
+  { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 8, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot2'] },
+  { id: 'clearing', kind: 'drill', name: 'Clearing', min: 8, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['clearing'] },
+  { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 8, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, skills: ['looseBall', 'control'] },
   { id: 'backRodsBuildUp', kind: 'drill', name: 'Rozehrávka ze zadních tyčí', min: 8, explain: 'Rozehrávka ze zadních tyčí', metric: 'backRodsBuildUp', retired: true },
   // Řetězec znovu (10. 11. 2026): z dvojky přes pětku a trojku do gólu; kolo 8 min, ve dvojici se střídají, každý 20 pokusů.
   { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec', metric: 'chain', needsPartner: true, skills: ['buildUp2', 'pass5', 'shot3'] },
+  // Čistá desítka (11. 11. 2026): 10 povedených stejných pokusů po sobě na čas; každý sám na své straně.
+  { id: 'streakShot3', kind: 'drill', name: 'Čistá desítka – střela z trojky', min: 10, explain: 'Čistá desítka – střela z trojky', metric: 'streakShot3', individual: true, skills: ['shot3'] },
+  { id: 'streakPass5', kind: 'drill', name: 'Čistá desítka – přihrávka na pětce', min: 10, explain: 'Čistá desítka – přihrávka na pětce', metric: 'streakPass5', individual: true, skills: ['pass5'] },
+  { id: 'streakShot2', kind: 'drill', name: 'Čistá desítka – střela z dvojky', min: 10, explain: 'Čistá desítka – střela z dvojky', metric: 'streakShot2', individual: true, skills: ['shot2'] },
+  { id: 'streakPass2', kind: 'drill', name: 'Čistá desítka – přihrávka z dvojky', min: 10, explain: 'Čistá desítka – přihrávka z dvojky', metric: 'streakPass2', individual: true, skills: ['buildUp2'] },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'] },
   { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'] },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true, skills: ['tempo', 'reading', 'control'] },
@@ -84,7 +89,15 @@ export type DisciplineMins = Partial<Record<DisciplineId, number>>;
  * před katalogem, 9. 11. 2026) má výchozí délky z kódu – jeho časy se změnou katalogu nehnou.
  */
 export const roundMin = (id: DisciplineId, mins?: DisciplineMins | null): number =>
-  mins?.[id] ?? DEFAULT_DISCIPLINES.find((d) => d.id === id)!.min;
+  mins?.[id] ?? MIN_BEFORE_20[id] ?? DEFAULT_DISCIPLINES.find((d) => d.id === id)!.min;
+
+/**
+ * Výchozí délky kol cvičení před 20 pokusy (11. 11. 2026 se zdvojnásobily). Platí pro tréninky bez
+ * snímku délek – ty vznikly dřív, takže jejich časy zůstanou.
+ */
+const MIN_BEFORE_20: DisciplineMins = {
+  passWallLane: 4, fiveBarControl: 8, penaltyKeeper: 4, penaltySolo: 4, backShotKeeper: 4, backShotSolo: 4, clearing: 4, looseBall: 4,
+};
 
 /** Snímek aktuálních délek kol (nabízených disciplín) – ukládá se do nového / upraveného tréninku. */
 export const catalogMins = (): DisciplineMins => Object.fromEntries(DISCIPLINES.filter((d) => !d.retired).map((d) => [d.id, d.min]));

@@ -861,6 +861,7 @@ button.drill-fail { min-height: 48px; border: 2px dashed var(--warn); border-rad
 button.drill-ok:active:not(:disabled) { background: var(--side-fill); color: var(--side-ink); }
 button.drill-fail:active:not(:disabled) { background: var(--warn-soft); }
 .drill-done { background: var(--side-fill); color: var(--side-ink); border-radius: 10px; text-align: center; padding: 14px 4px; font-weight: 800; }
+.drill-done.streak-over { background: var(--warn-soft); color: var(--warn); }
 .drill-fix { display: flex; gap: 4px; }
 .drill-fix button { flex: 1; }
 .drill-line { display: grid; grid-template-columns: minmax(70px, 1fr) 64px auto auto auto auto; gap: 6px; align-items: center; }

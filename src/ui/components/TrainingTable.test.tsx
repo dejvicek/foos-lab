@@ -59,8 +59,8 @@ describe('tabulka tréninku', () => {
     await user.type(input, '3');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ id3: { fiveBarControl: 3 } }));
     await user.clear(input);
-    await user.type(input, '11');
-    expect(input).toHaveValue(1);
+    await user.type(input, '21'); // 20 sérií (11. 11. 2026)
+    expect(input).toHaveValue(2);
     expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 8');
   });
 

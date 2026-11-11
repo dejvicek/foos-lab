@@ -7,7 +7,8 @@ import { drillCount } from '../../domain/drillTap';
 import { legOver } from '../../domain/legState';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScorePicker } from './ScorePicker';
-import { DrillMirror, ScoreMirror } from './ScoreMirror';
+import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
+import { streakLimitSec, trainingStreak } from '../../domain/streak';
 import { TimingBar, type ItemTiming } from './Timing';
 import { DrillTimeline, MatchTimeline, TimelineBox } from './GameTimeline';
 import { drillItemId } from '../../domain/queue';
@@ -272,6 +273,28 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             c.players.every((p) => drillCount({ value: training.soloResults[p]?.[gkey], attempts: training.soloAttempts?.[p]?.[gkey] }, def).done),
           );
           const canP = (p: PlayerId) => canSolo(c.players, p) && gtmr.open;
+          if (def.streak) {
+            // Čistá desítka: notebook i telefon ťukají stejně (čas se měří od zahájení stolu).
+            const item = drillItemId(row, j + 1, c.players);
+            return (
+              <div key={j} className="entry-card" role="group" aria-label={label}>
+                <div className="entry-head">Stůl {j + 1}</div>
+                {gtmr.bar}
+                <StreakMirror
+                  key={gkey}
+                  players={c.players}
+                  def={def}
+                  states={Object.fromEntries(c.players.map((p) => [p, trainingStreak(training, p, item, def)]))}
+                  names={names}
+                  now={timing?.now ?? Date.now()}
+                  limitSec={streakLimitSec(training, gkey)}
+                  canSolo={canP}
+                  onTap={(p, ok, d) => (tap?.onTapSolo ?? onTapSolo)?.(p, gkey, def, ok, d)}
+                />
+                {drillBox(c.players, row, j)}
+              </div>
+            );
+          }
           if (tap) {
             const key = gkey;
             return (

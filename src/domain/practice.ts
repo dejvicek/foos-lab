@@ -107,10 +107,11 @@ export function practiceSeries(t: Training): PracticeSeries[] {
       if (value === null || value === undefined) continue;
       const { metric, round } = parseSoloKey(key);
       if (!round) continue;
-      const max = soloMetric(metric)?.max;
-      if (max === undefined) continue; // metrika z novější verze appky
+      const def = soloMetric(metric);
+      if (!def) continue; // metrika z novější verze appky
+      const max = def.max;
       const s = byKey.get(key) ?? { n: round, metric, key, results: [] };
-      s.results.push({ playerId, value, attempts: t.soloAttempts?.[playerId]?.[key] ?? max, max });
+      s.results.push({ playerId, value, attempts: t.soloAttempts?.[playerId]?.[key] ?? (def.streak ? 0 : max), max });
       byKey.set(key, s);
     }
   const order = (p: PlayerId) => {
@@ -159,7 +160,7 @@ export function currentRound(t: Training): PracticeRound | null {
   return practiceRounds(t).find((r) => t.playTimes?.[r.item]?.endedAt === undefined) ?? null;
 }
 
-/** Všichni hráči mají v kole odehrané všechny pokusy. */
+/** Všichni hráči mají v kole odehrané všechny pokusy (u Čisté desítky: všichni sérii splnili). */
 export function roundAttemptsDone(t: Training, r: PracticeRound): boolean {
   const key = roundKey(r);
   if (!key) return false;
@@ -170,7 +171,8 @@ export function roundAttemptsDone(t: Training, r: PracticeRound): boolean {
 /** Zbývající čas kola v sekundách (záporný = přetažené); kolo bez zahájení = celá délka. */
 export function roundRemainingSec(t: Training, r: PracticeRound, now: number): number {
   const s = t.playTimes?.[r.item]?.startedAt;
-  return s === undefined ? r.min * 60 : Math.ceil(r.min * 60 - (now - s) / 1000);
+  // Hodiny telefonu chvíli za zahájením (zápis z jiného telefonu) – nikdy víc než celé kolo.
+  return s === undefined ? r.min * 60 : Math.min(r.min * 60, Math.ceil(r.min * 60 - (now - s) / 1000));
 }
 
 /** Pevný plán: do dalšího kola, až uplyne čas kola, nebo když jsou odehrané všechny pokusy. */

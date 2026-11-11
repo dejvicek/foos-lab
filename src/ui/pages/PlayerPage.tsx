@@ -1,5 +1,6 @@
 import { playerHistory } from '../../domain/ladder';
 import { SOLO_METRICS } from '../../domain/solo';
+import { streakTime } from '../../domain/streak';
 import type { UiPrefs } from '../../storage/prefs';
 import { rangeText } from '../components/RangeLabel';
 import { formatDate, todayIso } from '../dates';
@@ -62,7 +63,7 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                   <td className="n">{r.simM ? `${r.simW} / ${r.simM}` : '–'}</td>
                   {metrics.map((m) => (
                     <td key={m.id} className="n">
-                      {r.solo[m.id] === undefined ? '–' : `${r.solo[m.id]} / ${m.max}`}
+                      {r.solo[m.id] === undefined ? '–' : m.streak ? (r.solo[m.id]! > 0 ? streakTime(r.solo[m.id]!) : 'nesplněno') : `${r.solo[m.id]} / ${m.max}`}
                     </td>
                   ))}
                 </tr>

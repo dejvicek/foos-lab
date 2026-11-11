@@ -135,10 +135,12 @@ describe('žebříček stanovišť', () => {
   const withSolo = (id: string, date: string, a: number, b: number) => ({
     ...training(id, date, 'team', H8, 4),
     soloResults: { H1: { fiveBarControl: a }, H2: { fiveBarControl: b } },
+    // starší výsledky z 10 sérií (po migraci 27 nesou počet pokusů)
+    soloAttempts: { H1: { fiveBarControl: 10 }, H2: { fiveBarControl: 10 } },
   });
   const repo2 = () => memoryRepository({ players: ps, trainings: [withSolo('s1', '2026-10-20', 2, 5), withSolo('s2', '2026-10-25', 4, 5)] });
 
-  it('kritérium 16: Průměr „3,0 / 10“, Celkem „6 / 20“, méně ztrát je výš; volba se pamatuje', async () => {
+  it('kritérium 16: Průměr na plnou sérii (3 z 10 = „6,0 / 20“ od 11. 11. 2026), Celkem „6 / 20“, méně ztrát je výš; volba se pamatuje', async () => {
     const user = userEvent.setup();
     const r = repo2();
     const { unmount } = render(<App repo={r} />);
@@ -148,7 +150,7 @@ describe('žebříček stanovišť', () => {
     const table = screen.getByRole('table', { name: 'Udržení míče na pětce' });
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent('Hráč H1');
-    expect(rows[0]).toHaveTextContent('3,0 / 10');
+    expect(rows[0]).toHaveTextContent('6,0 / 20');
     expect(within(rows[0]).getByTitle('2 ze 3 tréninků')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
     expect(within(screen.getByRole('table', { name: 'Udržení míče na pětce' })).getAllByRole('row')[1]).toHaveTextContent('6 / 20');

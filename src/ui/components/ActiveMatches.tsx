@@ -41,6 +41,8 @@ function ResultEntry({ e, table, names, entry }: { e: Item; table: number; names
     return <ScorePicker label={label} match={e.match} score={entry.training.scores[e.match.id]} names={names} disabled={false} onChange={(sc) => entry.onScore(e.match!.id, sc)} />;
   const drill = entry.drillOf(e);
   if (!drill) return null;
+  // Čistá desítka se měří na čas z jednotlivých pokusů – číslem zpětně zapsat nejde.
+  if (drill.def.streak) return <p className="note">{drill.def.name} se zapisuje ťukáním pokusů v Moje hry.</p>;
   return (
     <div className="active-entry-drill">
       <small className="muted">{drill.def.what}</small>
