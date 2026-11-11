@@ -18,8 +18,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes,
-} from './practice';
+  roundTimes, drillSections } from './practice';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
 import { training } from '../test/fixtures';
@@ -66,6 +65,20 @@ describe('nabídka cvičení', () => {
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
     expect(ids.every((id) => discipline(id).kind === 'drill')).toBe(true);
+  });
+
+  it('sekce Obrana / Pětka / Trojka (12. 11. 2026): Rozcvička bez sekce nahoře, uvnitř pořadí katalogu', () => {
+    const g = drillSections(practiceDrills(1)).map((x) => [x.name, x.drills.map((d) => d.id)]);
+    expect(g).toEqual([
+      [null, ['warmup']],
+      ['Obrana', ['backShotSolo', 'streakShot2', 'streakPass2']],
+      ['Pětka', ['passWallLane', 'fiveBarControl', 'streakPass5']],
+      ['Trojka', ['penaltySolo', 'streakShot3']],
+    ]);
+    const pair = drillSections(practiceDrills(2));
+    expect(pair.find((x) => x.area === 'defense')!.drills.map((d) => d.id)).toEqual(['backShotKeeper', 'backShotSolo', 'clearing', 'looseBall', 'streakShot2', 'streakPass2']);
+    expect(pair.find((x) => x.area === 'threeBar')!.drills.map((d) => d.id)).toContain('chain');
+    expect(drillSections([discipline('penaltySolo')]).map((x) => x.name)).toEqual(['Trojka']);
   });
 
   it('Udržení míče na pětce sám → fiveBarSolo, ve dvou → fiveBarControl; Rozcvička bez metriky', () => {

@@ -6,6 +6,7 @@ import {
   currentRound,
   isPractice,
   newPractice,
+  drillSections,
   practiceDrills,
   practiceMetric,
   practiceMinutes,
@@ -63,9 +64,10 @@ function drillSub(d: DisciplineDef, players: number): string {
   return parts.join(' · ');
 }
 
-/** Zařadí cvičení do výběru podle katalogu: před první vybrané, které je v katalogu za ním. */
+/** Zařadí cvičení do výběru podle nabídky (sekce, v nich katalog): před první vybrané, které je v nabídce za ním. */
 function insertByCatalog(sel: DisciplineId[], id: DisciplineId): DisciplineId[] {
-  const pos = (x: DisciplineId) => DISCIPLINES.findIndex((d) => d.id === x);
+  const order = drillSections(DISCIPLINES.filter((d) => d.kind === 'drill')).flatMap((g) => g.drills.map((d) => d.id));
+  const pos = (x: DisciplineId) => order.indexOf(x);
   const at = sel.findIndex((x) => pos(x) > pos(id));
   return at < 0 ? [...sel, id] : [...sel.slice(0, at), id, ...sel.slice(at)];
 }
@@ -341,19 +343,26 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         <div className="practice-setup">
           <div>
             <h2>Cvičení</h2>
-            <ul className="training-list practice-pick" aria-label="Cvičení">
-              {offered.map((d) => (
-                <li key={d.id}>
-                  <label>
-                    <input type="checkbox" checked={chosen.includes(d.id)} onChange={() => toggle(d.id)} />
-                    <span>
-                      <strong>{d.name}</strong>
-                      <small>{drillSub(d, pair ? 2 : 1)}</small>
-                    </span>
-                  </label>
-                </li>
+            <div role="group" aria-label="Cvičení">
+              {drillSections(offered).map((g) => (
+                <section key={g.area ?? 'none'} className="practice-section" aria-label={g.name ?? undefined}>
+                  {g.name && <h3>{g.name}</h3>}
+                  <ul className="training-list practice-pick" aria-label={g.name ?? 'Rozcvička'}>
+                    {g.drills.map((d) => (
+                      <li key={d.id}>
+                        <label>
+                          <input type="checkbox" checked={chosen.includes(d.id)} onChange={() => toggle(d.id)} />
+                          <span>
+                            <strong>{d.name}</strong>
+                            <small>{drillSub(d, pair ? 2 : 1)}</small>
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           </div>
           <div>
             <h2>Plán</h2>

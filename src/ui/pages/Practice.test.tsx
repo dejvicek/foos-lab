@@ -33,7 +33,10 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.click(await screen.findByRole('button', { name: 'Začít vlastní trénink' }));
 
     // Sám: cvičení s bránícím se nenabízí; výchozí výběr = cvičení pro jednoho.
-    const list = screen.getByRole('list', { name: 'Cvičení' });
+    const list = screen.getByRole('group', { name: 'Cvičení' });
+    // sekce: Obrana, Pětka, Trojka (Rozcvička bez sekce nahoře)
+    expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);
+    expect(within(screen.getByRole('list', { name: 'Trojka' })).getByRole('checkbox', { name: /^Čistá desítka – střela z trojky/ })).toBeInTheDocument();
     expect(within(list).queryByRole('checkbox', { name: /^Přihrávky na pětce/ })).toBeNull();
     expect(within(list).getByRole('checkbox', { name: /^Penalta z místa bez brankáře/ })).toBeChecked();
     await user.click(within(list).getByRole('checkbox', { name: /^Přihrávky ke zdi/ }));
@@ -84,7 +87,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     render(<App repo={repo} auth={asPlayer()} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Ve dvou' }));
-    const list = screen.getByRole('list', { name: 'Cvičení' });
+    const list = screen.getByRole('group', { name: 'Cvičení' });
     for (const cb of within(list).getAllByRole('checkbox')) if ((cb as HTMLInputElement).checked) await user.click(cb);
     await user.click(within(list).getByRole('checkbox', { name: /^Přihrávky na pětce/ }));
     expect(screen.getByRole('button', { name: 'Začít vlastní trénink' })).toBeDisabled();
@@ -130,7 +133,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     const repo = memoryRepository({ players, trainings: [] });
     render(<App repo={repo} auth={asPlayer()} />);
     const user = userEvent.setup();
-    const list = await screen.findByRole('list', { name: 'Cvičení' });
+    const list = await screen.findByRole('group', { name: 'Cvičení' });
     for (const cb of within(list).getAllByRole('checkbox')) if ((cb as HTMLInputElement).checked) await user.click(cb);
     const pick = within(list).getByRole('checkbox', { name: /^Čistá desítka – střela z trojky/ });
     expect(pick.closest('label')).toHaveTextContent('10 min · 10 povedených po sobě na čas');

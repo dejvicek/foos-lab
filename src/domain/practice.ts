@@ -4,7 +4,7 @@
  * v klubovém tréninku). Výsledky jsou výsledky sólové části s klíčem `metrika@n` (n = číslo kola),
  * zahájení a konec tréninku a kol jsou časy utkání `training` a `round|n`.
  */
-import { DISCIPLINES, discipline, roundMin, type DisciplineDef } from './disciplines';
+import { DISCIPLINES, DRILL_AREAS, discipline, roundMin, type DisciplineDef, type DrillArea } from './disciplines';
 import { drillCount } from './drillTap';
 import { CHANGEOVER_MIN } from './plan';
 import { TRAINING_ITEM } from './queue';
@@ -70,6 +70,15 @@ export function practicePlanMinutes(drills: DisciplineId[]): number {
 /** Nabídka cvičení: nevyřazená cvičení s metrikou a Rozcvička; sám jen ta bez bránícího soupeře. */
 export function practiceDrills(players: number): DisciplineDef[] {
   return DISCIPLINES.filter((d) => d.kind === 'drill' && !d.retired && (d.metric || d.individual) && (players >= 2 || !d.needsPartner));
+}
+
+/** Sekce nabídky: Rozcvička bez sekce nahoře, pak Obrana / Pětka / Trojka; uvnitř pořadí katalogu. Prázdné sekce chybí. */
+export function drillSections(list: DisciplineDef[]): { area: DrillArea | null; name: string | null; drills: DisciplineDef[] }[] {
+  const out = [
+    { area: null, name: null, drills: list.filter((d) => !d.area) },
+    ...DRILL_AREAS.map((a) => ({ area: a.id, name: a.name, drills: list.filter((d) => d.area === a.id) })),
+  ];
+  return out.filter((x) => x.drills.length);
 }
 
 /** Metrika cvičení ve vlastním tréninku (Udržení míče na pětce sám → fiveBarSolo); Rozcvička žádnou nemá. */
