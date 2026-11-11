@@ -273,6 +273,7 @@ export function computeDelayLadder(
   const r = resolveRange(range, today);
   const acc = new Map<PlayerId, Acc>();
   for (const t of trainings) {
+    if (t.format === 'practice') continue; // vlastní trénink (5.11) nemá utkání ani čekání
     if ((r.from && t.date < r.from) || (r.to && t.date > r.to)) continue;
     const c = ctx(t);
     if (c) accumulate(acc, c.queue, c.states);
