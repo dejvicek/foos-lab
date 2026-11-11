@@ -35,12 +35,17 @@ type Current = { kind: 'series'; n: number; drill: DisciplineId } | { kind: 'war
 
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
+/** Varianty bez vlastního názvu („varianta 1“) si hráč určí sám – stačí jejich počet. */
+const namedVariants = (v: readonly string[]) => !v.every((x) => /^varianta /.test(x));
+/** „Varianta 1“ / „Varianta: ke zdi“. */
+const variantText = (v: string) => (/^varianta /.test(v) ? `V${v.slice(1)}` : `Varianta: ${v}`);
+
 /** Popisek cvičení v nabídce: počet pokusů, varianty, jen ve dvou. */
 function drillSub(d: DisciplineDef, players: number): string {
   if (d.individual && !d.metric) return 'timer, nic se nezapisuje';
   const m = practiceMetric(d, players);
   const parts = [m ? `${soloMetric(m).max} pokusů` : ''];
-  if (d.variants) parts.push(`varianty ${d.variants.join(' / ')}`);
+  if (d.variants) parts.push(namedVariants(d.variants) ? d.variants.join(' / ') : `${d.variants.length} varianty`);
   if (d.needsPartner) parts.push('s bránícím spoluhráčem');
   return parts.filter(Boolean).join(' · ');
 }
@@ -288,7 +293,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
     const done = players.every((p) => drillCount(values[p], def).done);
     body = (
       <>
-        {d.variants && <p className="practice-variant">Varianta: {d.variants[seriesVariant(t, metric, shown.n)]}</p>}
+        {d.variants && <p className="practice-variant">{variantText(d.variants[seriesVariant(t, metric, shown.n)])}</p>}
         <DrillMirror
           key={key}
           players={players}

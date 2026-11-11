@@ -31,7 +31,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.click(within(drills).getByText('Penalta z místa bez brankáře'));
 
     expect(window.location.hash).toMatch(/^#\/practice\/[^/]+$/);
-    expect(screen.getByText('Varianta: varianta 1')).toBeInTheDocument();
+    expect(screen.getByText('Varianta 1')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'gól: H1' }));
     await user.click(screen.getByRole('button', { name: 'gól: H1' }));
     await user.click(screen.getByRole('button', { name: 'vedle: H1' }));
