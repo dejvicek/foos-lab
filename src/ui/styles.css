@@ -1218,6 +1218,8 @@ button.dp-chip.small { font-size: 12px; min-height: 26px; padding: 1px 9px 1px 7
 .dp-general p { margin: 0 0 4px; font-size: 14px; max-width: 75ch; }
 
 .dp-rows { list-style: none; margin: 0; padding: 0; }
+.dp-area-head { margin: 16px 0 2px; font-size: 15px; font-weight: 800; color: var(--ink); }
+.dp-area:first-of-type .dp-area-head { margin-top: 10px; }
 .dp-row { border-bottom: 1px solid var(--line); }
 .dp-head { display: grid; grid-template-columns: minmax(200px, 1.1fr) 76px 26px minmax(0, 1.5fr) 74px; align-items: center; gap: 4px 10px;
   padding: 6px 8px 6px 0; border-radius: 6px; cursor: pointer; }

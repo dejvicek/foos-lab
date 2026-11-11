@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
 import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines } from '../../domain/disciplineInfo';
-import { discipline, DISCIPLINES, type DisciplineDef } from '../../domain/disciplines';
+import { discipline, DISCIPLINES, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
@@ -130,41 +130,46 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                   ))}
                 </div>
               )}
-              <ul className="dp-rows">
-                {list.map((d) => (
-                  <DisciplineRow
-                    key={d.id}
-                    d={d}
-                    open={open.has(d.id)}
-                    onToggle={() => toggleOpen(d.id)}
-                    hit={hit}
-                    onTag={(s) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }))}
-                  >
-                    {editing === d.id ? (
-                      <DisciplineEditor
-                        id={d.id}
-                        catalog={catalog}
-                        onSave={(c) => (save(c), setEditing(null))}
-                        onCancel={() => setEditing(null)}
-                      />
-                    ) : (
-                      <>
-                        <HelpList id={d.id} />
-                        <div className="dp-facts">
-                          {disciplineFacts(d.id).map((f) => (
-                            <span key={f}>{f}</span>
-                          ))}
-                        </div>
-                        {admin && (
-                          <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
-                            Upravit
-                          </button>
+              {(kind === 'drill' ? drillSections(list) : [{ area: null, name: null, drills: list }]).map((g) => (
+                <div key={g.area ?? 'none'} className="dp-area" role={g.name ? 'group' : undefined} aria-label={g.name ?? undefined}>
+                  {g.name && <h3 className="dp-area-head">{g.name}</h3>}
+                  <ul className="dp-rows">
+                    {g.drills.map((d) => (
+                      <DisciplineRow
+                        key={d.id}
+                        d={d}
+                        open={open.has(d.id)}
+                        onToggle={() => toggleOpen(d.id)}
+                        hit={hit}
+                        onTag={(s) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }))}
+                      >
+                        {editing === d.id ? (
+                          <DisciplineEditor
+                            id={d.id}
+                            catalog={catalog}
+                            onSave={(c) => (save(c), setEditing(null))}
+                            onCancel={() => setEditing(null)}
+                          />
+                        ) : (
+                          <>
+                            <HelpList id={d.id} />
+                            <div className="dp-facts">
+                              {disciplineFacts(d.id).map((f) => (
+                                <span key={f}>{f}</span>
+                              ))}
+                            </div>
+                            {admin && (
+                              <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
+                                Upravit
+                              </button>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-                  </DisciplineRow>
-                ))}
-              </ul>
+                      </DisciplineRow>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </section>
           );
         })}

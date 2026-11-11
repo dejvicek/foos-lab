@@ -18,7 +18,8 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes, drillSections } from './practice';
+  roundTimes } from './practice';
+import { drillSections } from './disciplines';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
 import { training } from '../test/fixtures';

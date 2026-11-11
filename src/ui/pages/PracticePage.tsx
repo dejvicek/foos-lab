@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { DISCIPLINES, discipline, type DisciplineDef } from '../../domain/disciplines';
+import { DISCIPLINES, discipline, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { activePlayers, alphabetical } from '../../domain/roster';
 import {
   canAdvance,
   currentRound,
   isPractice,
   newPractice,
-  drillSections,
   practiceDrills,
   practiceMetric,
   practiceMinutes,

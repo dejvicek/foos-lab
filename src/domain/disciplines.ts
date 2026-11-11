@@ -44,6 +44,15 @@ export const DRILL_AREAS: readonly { id: DrillArea; name: string }[] = [
   { id: 'threeBar', name: 'Trojka' },
 ];
 
+/** Cvičení po sekcích: bez sekce (Rozcvička) nahoře, pak Obrana / Pětka / Trojka; uvnitř pořadí seznamu. Prázdné sekce chybí. */
+export function drillSections(list: DisciplineDef[]): { area: DrillArea | null; name: string | null; drills: DisciplineDef[] }[] {
+  const out = [
+    { area: null, name: null, drills: list.filter((d) => !d.area) },
+    ...DRILL_AREAS.map((a) => ({ area: a.id, name: a.name, drills: list.filter((d) => d.area === a.id) })),
+  ];
+  return out.filter((x) => x.drills.length);
+}
+
 /** PRD 4.6 – pořadí je i pořadím v rozpisu. Výchozí hodnoty; admin je upravuje v katalogu (catalog.ts). */
 export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, explain: 'Rozcvička', individual: true, skills: ['control', 'pass5'] },

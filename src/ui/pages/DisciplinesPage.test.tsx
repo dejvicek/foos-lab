@@ -51,6 +51,12 @@ describe('stránka Disciplíny', () => {
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
     expect(rows()).toHaveLength(24);
+    // cvičení po sekcích (12. 11. 2026): Rozcvička bez sekce, pak Obrana, Pětka, Trojka
+    const drills = screen.getByRole('region', { name: /^Cvičení/ });
+    expect(within(drills).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);
+    expect(within(within(drills).getByRole('group', { name: 'Pětka' })).getAllByRole('listitem').map((li) => li.getAttribute('aria-label')).filter(Boolean)).toEqual([
+      'Přihrávky na pětce', 'Přihrávky ke zdi a po lajně', 'Udržení míče na pětce', 'Čistá desítka – přihrávka na pětce',
+    ]);
     for (const retired of ['Penalta z místa (20 střel)', 'Rozehrávka ze zadních tyčí']) expect(screen.queryByRole('listitem', { name: retired })).toBeNull();
   });
 
@@ -61,8 +67,8 @@ describe('stránka Disciplíny', () => {
     const chips = await screen.findByRole('list', { name: 'Sekce dovedností' });
     await user.click(within(chips).getByRole('button', { name: 'Obrana' }));
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
-      'Penalta z místa proti brankáři', 'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Daň za ztrátu', 'Jedničky',
-    ]);
+      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky',
+    ]); // cvičení po sekcích Obrana / Pětka / Trojka
     expect(screen.getByText(/· 6 z 24/)).toBeInTheDocument();
     await user.click(within(row('Jedničky')).getByRole('button', { name: 'Zápasová praxe' }));
     expect(row('Normální leg')).toBeInTheDocument();
