@@ -2,6 +2,7 @@ import { applyCatalog } from './catalog';
 import { attendance, lastTraining } from './attendance';
 import { computeSoloLadder } from './soloLadder';
 import {
+  clubTrainings,
   isClub,
   isPractice,
   newPractice,
@@ -11,6 +12,7 @@ import {
   practiceMetric,
   practiceRunning,
   practiceSeries,
+  practicesFor,
   seriesDrill,
   seriesVariant,
 } from './practice';
@@ -167,5 +169,27 @@ describe('oddělené od klubu', () => {
     const ts = [practice('old', '2026-09-01', ['A'], [['A', 'penaltySolo@1', 7]]), practice('new', '2026-11-01', ['A'], [['A', 'penaltySolo@1', 3]])];
     const pen = computeSoloLadder(ts, { kind: 'form' }, 'total', TODAY, 'practice')[0];
     expect(pen.lowData[0]).toMatchObject({ trainings: 1, sum: 3, sumMax: 10 });
+  });
+});
+
+describe('seznam vlastních tréninků', () => {
+  const ts = [
+    practice('a', '2026-11-01', ['A']),
+    { ...practice('b', '2026-11-05', ['B', 'A']), startTime: '09:00' },
+    { ...practice('c', '2026-11-05', ['A']), startTime: '18:00' },
+    practice('d', '2026-11-06', ['B']),
+    training('club', '2026-11-07', 'team', ['A', 'B', 'C', 'D']),
+  ];
+
+  it('hráč vidí své (i jako spoluhráč), nejnovější nahoře; klubové ne', () => {
+    expect(practicesFor(ts, 'A').map((t) => t.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('admin vidí všechny', () => {
+    expect(practicesFor(ts, 'X', true).map((t) => t.id)).toEqual(['d', 'c', 'b', 'a']);
+  });
+
+  it('klubové tréninky bez vlastních', () => {
+    expect(clubTrainings(ts).map((t) => t.id)).toEqual(['club']);
   });
 });

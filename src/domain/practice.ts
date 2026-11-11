@@ -16,6 +16,18 @@ export const isPractice = (t: Pick<Training, 'format'>): boolean => t.format ===
 /** Klubový trénink (klasický nebo konfigurovatelný) – jen ty se počítají do klubových žebříčků a docházky. */
 export const isClub = (t: Pick<Training, 'format'>): boolean => !isPractice(t);
 
+export const clubTrainings = (ts: Training[]): Training[] => ts.filter(isClub);
+
+/**
+ * Vlastní tréninky, které hráč vidí v seznamu: kde cvičil; admin všechny (smí je mazat).
+ * Nejnovější nahoře (datum, pak čas začátku).
+ */
+export function practicesFor(ts: Training[], playerId: PlayerId | null, all = false): Training[] {
+  return ts
+    .filter((t) => isPractice(t) && (all || (playerId !== null && t.attendees.includes(playerId))))
+    .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : a.startTime < b.startTime ? 1 : a.startTime > b.startTime ? -1 : 0));
+}
+
 export function newPractice(id: string, date: string, startTime: string, me: PlayerId, partner: PlayerId | null = null): Training {
   return {
     id,

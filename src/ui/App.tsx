@@ -20,6 +20,8 @@ import { ChangePasswordPage, LoginPage } from './pages/LoginPage';
 import { GuidePage } from './pages/GuidePage';
 import { PlayerPage } from './pages/PlayerPage';
 import { PlayersPage } from './pages/PlayersPage';
+import { PracticePage } from './pages/PracticePage';
+import { isPractice } from '../domain/practice';
 import { TrainingPage } from './pages/TrainingPage';
 import { TrainingsPage } from './pages/TrainingsPage';
 import { useAppState } from './useAppState';
@@ -195,6 +197,9 @@ function SignedIn({
     );
   else if (route.page === 'players') body = <PlayersPage store={store} viewer={viewer} auth={auth} />;
   else if (route.page === 'trainings') body = <TrainingsPage store={store} navigate={navigate} viewer={viewer} />;
+  else if (route.page === 'practice-new' || route.page === 'practice' || (route.page === 'training' && store.data.trainings.some((t) => t.id === route.id && isPractice(t))))
+    // Stejný klíč: po založení (practice-new → practice) zůstane vybrané cvičení na obrazovce.
+    body = <PracticePage key="practice" store={store} id={route.page === 'practice-new' ? null : route.id} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'training')
     body = <TrainingPage key={route.id} store={store} id={route.id} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'training-new') body = <NewTrainingPage store={store} navigate={navigate} viewer={viewer} />;

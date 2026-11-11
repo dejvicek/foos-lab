@@ -1,6 +1,7 @@
 import type { LadderRange, LadderView } from '../domain/ladder';
 
-export type LadderPart = 'matches' | 'solo' | 'delays';
+/** practice = žebříček Vlastní (vlastní tréninky, PRD 5.11). */
+export type LadderPart = 'matches' | 'solo' | 'practice' | 'delays';
 
 export interface UiPrefs {
   ladderRange: LadderRange;
@@ -26,7 +27,7 @@ export function loadPrefs(): UiPrefs {
     const raw = localStorage.getItem(KEY);
     const p = raw ? JSON.parse(raw) : null;
     if (!valid(p)) return defaultPrefs();
-    return { ...p, ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'delays' ? p.ladderPart : 'matches' };
+    return { ...p, ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches' };
   } catch {
     return defaultPrefs();
   }

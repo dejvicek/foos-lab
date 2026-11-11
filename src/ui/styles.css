@@ -248,6 +248,26 @@ details.archived { margin-top: 16px; }
 .training-list button > span:first-child { font-weight: 700; }
 .training-list .sub { color: var(--muted); font-weight: 400; font-size: 13px; }
 
+/* ── Vlastní trénink (PRD 5.11) ─────────────────────────── */
+.practice-card {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  margin: 16px 0 0; padding: 14px; background: var(--surface); border: 2px solid var(--gold); border-radius: 10px;
+}
+.practice-card > div { display: flex; flex-direction: column; gap: 2px; flex: 1 1 260px; }
+.practice-card strong { font-size: 16px; }
+.practice-card button { min-height: 44px; padding: 0 18px; }
+@media (max-width: 767px) { .practice-card button { flex: 1 1 100%; } }
+.practice .segmented button { min-height: 40px; padding: 0 18px; }
+.practice-drills button:disabled { opacity: 0.45; }
+.practice-series, .practice-rank { display: flex; flex-direction: column; gap: 1px; padding: 10px 14px; }
+.practice-series > span:first-child { font-weight: 700; }
+.practice-rank { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; }
+.practice-place { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
+.practice-place.muted { font-weight: 400; font-size: 13px; }
+.practice-variant { margin: 0 0 6px; font-weight: 700; color: var(--felt); }
+.practice-resume { margin: 0 0 8px; }
+.practice .mirror { max-width: 640px; }
+
 /* ── Nastavení tréninku ─────────────────────────────────── */
 .setup { display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 12px; }
 .setup .field { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }

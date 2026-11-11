@@ -92,7 +92,7 @@ export function MainNav({
           ...(mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
         ]
       : []),
-    { key: 'trainings', label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit'] },
+    { key: 'trainings', label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
     { key: 'ladder', label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
     { key: 'disciplines', label: 'Disciplíny', route: { page: 'disciplines' }, match: ['disciplines'] },
     ...(admin ? [{ key: 'templates', label: 'Šablony', route: { page: 'templates' } as Route, match: ['templates'] as Route['page'][] }] : []),
