@@ -7,7 +7,7 @@
 - **Hlavní verze** (**2**.0.0): velká změna, po které se appka používá jinak.
 
 Když nová verze nesmí běžet vedle starší (jiný rozpis nebo databáze), zvyšuje se navíc `COMPAT` v `src/version.ts`.
-Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z`.
+Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z` na `main`; z tagu se appka nasadí a vznikne GitHub Release s tímto záznamem. Postup je v README → Vydání nové verze.
 
 ## 1.0.0 – 10. 11. 2026
 

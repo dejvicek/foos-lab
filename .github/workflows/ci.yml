@@ -1,0 +1,27 @@
+name: Testy
+
+# Každý push do develop / main a každý pull request: testy, databáze a sestavení. Nic se nenasazuje.
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Kontrola migrací a funkcí databáze (lokální Postgres v Dockeru)
+        run: sh supabase/tests/run.sh
+      - name: Build
+        run: npm run build
