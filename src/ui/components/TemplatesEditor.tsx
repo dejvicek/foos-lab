@@ -3,7 +3,7 @@ import { cleanFormats, formatOf } from '../../domain/matchFormat';
 import { MatchFormatPicker } from './MatchFormatPicker';
 import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
 import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
-import { catalogMins, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
+import { catalogMins, clubOffered, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
 import { defaultMatchRounds, DURATION_OPTIONS, playable } from '../../domain/plan';
 import { sortTrainings } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
@@ -96,7 +96,7 @@ export function TemplatesEditor({
   };
   const add = (id: DisciplineId) => setChosen(kindOf(id), [...chosenIn(kindOf(id)), id]);
   // Označit / odznačit vše: vybrané si nechají pořadí, ostatní se přidají za ně v pořadí katalogu.
-  const offered = DISCIPLINES.filter((d) => !d.retired).map((d) => d.id);
+  const offered = DISCIPLINES.filter(clubOffered).map((d) => d.id);
   const allChosen = offered.every((id) => tpl.selection.includes(id));
   const toggleAll = () =>
     allChosen
@@ -242,7 +242,7 @@ export function TemplatesEditor({
         </div>
         {KINDS.map((kind) => {
           const chosen = chosenIn(kind);
-          const rest = DISCIPLINES.filter((d) => !d.retired && d.kind === kind && !tpl.selection.includes(d.id));
+          const rest = DISCIPLINES.filter((d) => clubOffered(d) && d.kind === kind && !tpl.selection.includes(d.id));
           return (
             <section key={kind} className="tpl-sec" aria-label={KIND_TITLE[kind]}>
               <SectionHead kind={kind} chosen={chosen.length} total={chosen.length + rest.length} />

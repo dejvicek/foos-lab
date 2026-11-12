@@ -1,3 +1,4 @@
+import { DISCIPLINES } from './disciplines';
 import { explanationsFor } from './explain';
 import { EXPLANATIONS } from './content';
 import { buildSchedule } from './schedule';
@@ -49,6 +50,8 @@ describe('vysvětlivky u bloků', () => {
         const e = explanationsFor(row);
         [...e.main, ...e.general, ...e.perTable].forEach((i) => i && shown.add(i.name));
       }
-    expect([...shown].sort()).toEqual(EXPLANATIONS.flatMap((g) => g.items.map((i) => i.name)).sort());
+    // Čistá desítka je jen ve vlastním tréninku (nápověda na stránce Disciplíny), v rozpisu není.
+    const practiceOnly = new Set(DISCIPLINES.filter((d) => d.practiceOnly).map((d) => d.explain));
+    expect([...shown].sort()).toEqual(EXPLANATIONS.flatMap((g) => g.items.map((i) => i.name)).filter((n) => !practiceOnly.has(n)).sort());
   });
 });

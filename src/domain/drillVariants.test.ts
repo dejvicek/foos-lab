@@ -1,4 +1,4 @@
-import { DISCIPLINES, discipline } from './disciplines';
+import { clubOffered, DISCIPLINES, discipline } from './disciplines';
 import { autoPlan, manualPlan, plannedMinutes, SOLO_SELECTION } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { SOLO_METRICS, soloMetric } from './solo';
@@ -130,20 +130,12 @@ it('Obrana do držení je úplně odstraněná (3. 11. 2026): není v katalogu a
   expect(SOLO_METRICS.some((m) => m.name === 'Obrana do držení')).toBe(false);
 });
 
-describe('Čistá desítka v klubovém tréninku (11. 11. 2026)', () => {
-  it('kolo 10 min, každý sám na své straně (u stolu nejvýš 2, lichý sám u volného stolu)', () => {
-    const r = play(custom(5, 3, { streakShot3: 1 }, { disciplineMin: { streakShot3: 10 } }));
-    expect(r).toHaveLength(1);
-    expect(r[0].rule).toBe('Čistá desítka – střela z trojky, 10 min');
-    const groups = r[0].cells.filter((c) => c?.type === 'group').map((c) => (c as { players: string[]; metric?: string }));
-    expect(groups.map((g) => g.players.length)).toEqual([2, 2, 1]);
-    expect(groups.every((g) => g.metric === 'streakShot3')).toBe(true);
-  });
-
-  it('jde i sám; nový trénink dostane z katalogu 10 min', () => {
-    expect(play(custom(1, 1, { streakPass2: 1 })).map((x) => x.discipline)).toEqual(['streakPass2']);
-    expect(discipline('streakPass5')).toMatchObject({ min: 10, individual: true, metric: 'streakPass5' });
-    expect(discipline('streakShot2').needsPartner).toBeFalsy();
+describe('Čistá desítka jen ve vlastním tréninku (12. 11. 2026)', () => {
+  it('klubový rozpis ji vynechá, i když je v plánu; nabízí ji jen vlastní trénink', () => {
+    expect(play(custom(5, 3, { streakShot3: 1, normal: 1 }, { disciplineMin: { streakShot3: 10 } })).map((r) => r.discipline)).toEqual(['normal']);
+    expect(play(custom(1, 1, { streakPass2: 1 }))).toEqual([]);
+    expect(discipline('streakPass5')).toMatchObject({ min: 10, individual: true, practiceOnly: true, metric: 'streakPass5' });
+    expect(DISCIPLINES.filter(clubOffered).some((d) => d.practiceOnly)).toBe(false);
   });
 });
 

@@ -43,6 +43,7 @@ export function disciplineFacts(id: DisciplineId): string[] {
     out.push(d.variants.every((v) => /^varianta \d$/.test(v)) ? `2 kola po ${n} pokusech, variantu si určí hráč` : `2 kola po ${n}: ${d.variants.join(' / ')}`);
   }
   if (m?.streak) out.push(`${m.streak} povedených po sobě na čas, nepovedený nuluje`);
+  if (d.practiceOnly) out.push('jen ve vlastním tréninku');
   if (d.paired) out.push('2 kola, strany si prohodí role');
   if (d.kind === 'drill') out.push(d.needsPartner ? 's bránícím soupeřem' : 'jde i sám');
   if (d.singlesOnly) out.push('jen singly');

@@ -20,8 +20,9 @@ export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl',
  * aspoň 2 (trénink pro 1 hráče je vynechá). Bez počtu hráčů (undefined) se nic nevynechává.
  */
 export function playable(id: DisciplineId, players?: number): boolean {
-  if (players === undefined) return true;
   const d = discipline(id);
+  if (d.practiceOnly) return false; // Čistá desítka jen ve vlastním tréninku (ten má vlastní plán)
+  if (players === undefined) return true;
   if (d.kind === 'sim') return players >= SIM_MIN_PLAYERS;
   if (d.kind === 'match' || d.needsPartner) return players >= 2;
   return true;

@@ -54,6 +54,9 @@ it('štítky dovedností: u disciplín v kroku Kdy, kde a disciplíny', async ()
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user);
+  // Čistá desítka je jen ve vlastním tréninku (12. 11. 2026)
+  expect(screen.queryByRole('checkbox', { name: /^Čistá desítka/ })).toBeNull();
+  expect(screen.getByRole('checkbox', { name: 'Goalie war' })).toBeInTheDocument();
   // výchozí stav: štítky schované
   expect(screen.queryByRole('list', { name: 'Trénuje' })).toBeNull();
   expect(screen.queryByRole('list', { name: 'Sekce dovedností' })).toBeNull();

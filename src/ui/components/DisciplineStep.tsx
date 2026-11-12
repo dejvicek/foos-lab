@@ -4,7 +4,7 @@ import { MatchFormatPicker } from './MatchFormatPicker';
 import { addBreakAt, anchorBreaks, breakMovable, disciplineStepTarget, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { currentTemplates, matchingTemplate, templateRounds } from '../../domain/catalog';
 import { roundSequence } from '../../domain/customSchedule';
-import { DISCIPLINES, roundMin, roundStep } from '../../domain/disciplines';
+import { clubOffered, DISCIPLINES, roundMin, roundStep } from '../../domain/disciplines';
 import { fairness, neverCount } from '../../domain/fairness';
 import { CHANGEOVER_MIN, fillPlan, orderedDisciplines, planTimeline, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
@@ -368,7 +368,7 @@ function DisciplineTable({
       );
     });
 
-  const offered = DISCIPLINES.filter((d) => !d.retired || (t.plan[d.id] ?? 0) > 0);
+  const offered = DISCIPLINES.filter((d) => clubOffered(d) || (!d.practiceOnly && (t.plan[d.id] ?? 0) > 0));
   const restIn = (kind: Kind) => offered.filter((d) => d.kind === kind && !played(d.id));
   const shownRest = (kind: Kind) => restIn(kind).filter((d) => matchesSkillFilter(d.skills, filter));
   const restCount = KINDS.reduce((s, k) => s + restIn(k).length, 0);

@@ -211,6 +211,8 @@ describe('stránka Disciplíny', () => {
     await user.click(within(form).getByRole('button', { name: '+ Šablona' }));
     expect(within(form).getByRole('tab', { name: /Nová šablona/ })).toHaveAttribute('aria-selected', 'true');
     expect(within(form).queryByRole('list', { name: /^Pořadí:/ })).toBeNull();
+    // Čistá desítka je jen ve vlastním tréninku – šablona ji nenabízí
+    expect(within(form).queryByRole('checkbox', { name: /^Čistá desítka/ })).toBeNull();
     await user.click(within(form).getByRole('button', { name: 'Označit vše' }));
     expect(within(form).queryAllByRole('list', { name: /^Další:/ })).toEqual([]);
     expect(within(form).getByRole('list', { name: 'Pořadí: Simulace' })).toBeInTheDocument();

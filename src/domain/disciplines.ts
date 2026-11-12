@@ -34,7 +34,12 @@ export interface DisciplineDef {
   individual?: boolean;
   /** Sekce cvičení (Obrana / Pětka / Trojka); Rozcvička žádnou nemá. */
   area?: DrillArea;
+  /** Jen vlastní trénink (Čistá desítka, 12. 11. 2026) – klubový trénink ani šablona ji nenabízí. */
+  practiceOnly?: boolean;
 }
+
+/** Disciplína pro klubový trénink (šablony, průvodce, rozpis): nevyřazená a ne jen pro vlastní trénink. */
+export const clubOffered = (d: DisciplineDef): boolean => !d.retired && !d.practiceOnly;
 
 /** Sekce cvičení (12. 11. 2026): kde na stole se trénuje. Obrana = branka a dvojka. */
 export type DrillArea = 'defense' | 'fiveBar' | 'threeBar';
@@ -75,10 +80,11 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   // Řetězec znovu (10. 11. 2026): z dvojky přes pětku a trojku do gólu; kolo 8 min, ve dvojici se střídají, každý 20 pokusů.
   { id: 'chain', kind: 'drill', name: 'Řetězec', min: 8, explain: 'Řetězec', metric: 'chain', needsPartner: true, skills: ['buildUp2', 'pass5', 'shot3'], area: 'threeBar' },
   // Čistá desítka (11. 11. 2026): 10 povedených stejných pokusů po sobě na čas; každý sám na své straně.
-  { id: 'streakShot3', kind: 'drill', name: 'Čistá desítka – střela z trojky', min: 10, explain: 'Čistá desítka – střela z trojky', metric: 'streakShot3', individual: true, skills: ['shot3'], area: 'threeBar' },
-  { id: 'streakPass5', kind: 'drill', name: 'Čistá desítka – přihrávka na pětce', min: 10, explain: 'Čistá desítka – přihrávka na pětce', metric: 'streakPass5', individual: true, skills: ['pass5'], area: 'fiveBar' },
-  { id: 'streakShot2', kind: 'drill', name: 'Čistá desítka – střela z dvojky', min: 10, explain: 'Čistá desítka – střela z dvojky', metric: 'streakShot2', individual: true, skills: ['shot2'], area: 'defense' },
-  { id: 'streakPass2', kind: 'drill', name: 'Čistá desítka – přihrávka z dvojky', min: 10, explain: 'Čistá desítka – přihrávka z dvojky', metric: 'streakPass2', individual: true, skills: ['buildUp2'], area: 'defense' },
+  // Od 12. 11. 2026 jen ve vlastním tréninku.
+  { id: 'streakShot3', kind: 'drill', name: 'Čistá desítka – střela z trojky', min: 10, explain: 'Čistá desítka – střela z trojky', metric: 'streakShot3', individual: true, practiceOnly: true, skills: ['shot3'], area: 'threeBar' },
+  { id: 'streakPass5', kind: 'drill', name: 'Čistá desítka – přihrávka na pětce', min: 10, explain: 'Čistá desítka – přihrávka na pětce', metric: 'streakPass5', individual: true, practiceOnly: true, skills: ['pass5'], area: 'fiveBar' },
+  { id: 'streakShot2', kind: 'drill', name: 'Čistá desítka – střela z dvojky', min: 10, explain: 'Čistá desítka – střela z dvojky', metric: 'streakShot2', individual: true, practiceOnly: true, skills: ['shot2'], area: 'defense' },
+  { id: 'streakPass2', kind: 'drill', name: 'Čistá desítka – přihrávka z dvojky', min: 10, explain: 'Čistá desítka – přihrávka z dvojky', metric: 'streakPass2', individual: true, practiceOnly: true, skills: ['buildUp2'], area: 'defense' },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'] },
   { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'] },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true, skills: ['tempo', 'reading', 'control'] },
