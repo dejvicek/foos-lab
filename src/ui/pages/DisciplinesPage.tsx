@@ -10,7 +10,7 @@ import { MinStepper } from '../components/MinStepper';
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
 const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
 
-const ICON: Record<'pair' | 'solo' | 'swap', ReactNode> = {
+const ICON: Record<'pair' | 'solo' | 'swap' | 'practice' | 'club', ReactNode> = {
   pair: (
     <>
       <circle cx="8" cy="8" r="3" />
@@ -25,6 +25,20 @@ const ICON: Record<'pair' | 'solo' | 'swap', ReactNode> = {
     </>
   ),
   swap: <path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5" />,
+  // Kde se hraje (12. 11. 2026): domeček = jen vlastní trénink, štít = jen klubový trénink.
+  practice: (
+    <>
+      <path d="M4 11.5L12 5l8 6.5" />
+      <path d="M6.5 10v9h11v-9" />
+      <path d="M10.5 19v-4.5h3V19" />
+    </>
+  ),
+  club: (
+    <>
+      <path d="M12 3.5l7 2.5v5.5c0 4.3-2.9 7.6-7 9-4.1-1.4-7-4.7-7-9V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </>
+  ),
 };
 const Icon = ({ name }: { name: keyof typeof ICON }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -101,14 +115,11 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
         <span>
           <Icon name="swap" /> 2 kola, strany si prohodí role
         </span>
-      </p>
-      <p className="dp-legend dp-scope-legend" aria-label="Kde se hraje">
-        <span>Bez označení: v klubovém i vlastním tréninku.</span>
         <span>
-          <span className="dp-scope s-practice">{SCOPE_LABEL.practice}</span> nenabízí šablony ani klubový trénink
+          <Icon name="practice" /> {SCOPE_LABEL.practice}
         </span>
         <span>
-          <span className="dp-scope s-club">{SCOPE_LABEL.club}</span> vlastní trénink (1–2 hráči) ji nenabízí
+          <Icon name="club" /> {SCOPE_LABEL.club}
         </span>
       </p>
       {!visible.length && <p className="muted">Žádná disciplína neodpovídá filtru.</p>}
@@ -208,21 +219,21 @@ function DisciplineRow({
     <li className={`dp-row${open ? ' open' : ''}`} aria-label={d.name}>
       {/* Kliknutí kamkoli do řádku rozbalí; pro klávesnici je přepínač u názvu. */}
       <div className="dp-head" onClick={onToggle}>
-        <span className="dp-title">
-          <button type="button" className="dp-toggle" aria-expanded={open} aria-controls={`dp-detail-${d.id}`} onClick={(e) => (e.stopPropagation(), onToggle())}>
-            <svg className="dp-chev" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="dp-name">{d.name}</span>
-          </button>
-          {scope && <span className={`dp-scope s-${scope}`}>{SCOPE_LABEL[scope]}</span>}
-        </span>
+        <button type="button" className="dp-toggle" aria-expanded={open} aria-controls={`dp-detail-${d.id}`} onClick={(e) => (e.stopPropagation(), onToggle())}>
+          <svg className="dp-chev" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="dp-name">{d.name}</span>
+        </button>
         <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
           {dur.rounds === 2 && '2× '}
           <b>{dur.min}</b> min
         </span>
         <span className="dp-who" title={who?.label} aria-label={who?.label} role={who ? 'img' : undefined}>
           {who && <Icon name={who.icon} />}
+        </span>
+        <span className="dp-who dp-where" title={scope ? SCOPE_LABEL[scope] : undefined} aria-label={scope ? SCOPE_LABEL[scope] : undefined} role={scope ? 'img' : undefined}>
+          {scope && <Icon name={scope} />}
         </span>
         <ul className="dp-tags" aria-label="Trénuje">
           {bySkillGroup(d.skills).map((s) => (
