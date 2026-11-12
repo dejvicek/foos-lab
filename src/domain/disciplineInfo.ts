@@ -3,6 +3,7 @@ import { DISCIPLINES, discipline, roundStep, type DisciplineDef } from './discip
 import { explanation } from './explain';
 import { SIM_MIN_PLAYERS } from './plan';
 import { soloMetric } from './solo';
+import { practiceDrills } from './practice';
 import type { DisciplineId } from './types';
 
 /** Stránka Disciplíny: co se nabízí (vyřazené ne), v pořadí rozpisu. */
@@ -33,6 +34,18 @@ export function disciplineWho(id: DisciplineId): { icon: 'pair' | 'solo' | 'swap
   return null;
 }
 
+/**
+ * Kde se disciplína hraje (12. 11. 2026): jen ve vlastním tréninku (Čistá desítka), jen v klubovém
+ * (co vlastní trénink pro 1–2 hráče nenabízí – simulace), jinak v obou (null).
+ */
+export function disciplineScope(id: DisciplineId): 'practice' | 'club' | null {
+  const d = discipline(id);
+  if (d.practiceOnly) return 'practice';
+  return practiceDrills(2).some((x) => x.id === id) ? null : 'club';
+}
+
+export const SCOPE_LABEL = { practice: 'jen vlastní trénink', club: 'jen klubový trénink' } as const;
+
 /** Podrobnosti v rozbaleném řádku – jen z definice disciplíny. */
 export function disciplineFacts(id: DisciplineId): string[] {
   const d = discipline(id);
@@ -43,7 +56,6 @@ export function disciplineFacts(id: DisciplineId): string[] {
     out.push(d.variants.every((v) => /^varianta \d$/.test(v)) ? `2 kola po ${n} pokusech, variantu si určí hráč` : `2 kola po ${n}: ${d.variants.join(' / ')}`);
   }
   if (m?.streak) out.push(`${m.streak} povedených po sobě na čas, nepovedený nuluje`);
-  if (d.practiceOnly) out.push('jen ve vlastním tréninku');
   if (d.paired) out.push('2 kola, strany si prohodí role');
   if (d.kind === 'drill') out.push(d.needsPartner ? 's bránícím soupeřem' : 'jde i sám');
   if (d.singlesOnly) out.push('jen singly');

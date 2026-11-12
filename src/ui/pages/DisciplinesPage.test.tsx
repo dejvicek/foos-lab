@@ -51,6 +51,11 @@ describe('stránka Disciplíny', () => {
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
     expect(rows()).toHaveLength(26);
+    // kde se hraje: Čistá desítka jen vlastní trénink, simulace jen klubový
+    expect(row('Čistá desítka – střela z trojky')).toHaveTextContent('jen vlastní trénink');
+    expect(row('Simulace ligového kola')).toHaveTextContent('jen klubový trénink');
+    expect(row('Goalie war')).not.toHaveTextContent(/jen (vlastní|klubový)/);
+    expect(screen.getByLabelText('Kde se hraje')).toHaveTextContent('Bez označení: v klubovém i vlastním tréninku.');
     // cvičení po sekcích (12. 11. 2026): Rozcvička bez sekce, pak Obrana, Pětka, Trojka
     const drills = screen.getByRole('region', { name: /^Cvičení/ });
     expect(within(drills).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);

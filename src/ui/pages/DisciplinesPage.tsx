@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
-import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines } from '../../domain/disciplineInfo';
+import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineScope, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, SCOPE_LABEL } from '../../domain/disciplineInfo';
 import { discipline, DISCIPLINES, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import type { DisciplineId } from '../../domain/types';
@@ -102,6 +102,15 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
           <Icon name="swap" /> 2 kola, strany si prohodí role
         </span>
       </p>
+      <p className="dp-legend dp-scope-legend" aria-label="Kde se hraje">
+        <span>Bez označení: v klubovém i vlastním tréninku.</span>
+        <span>
+          <span className="dp-scope s-practice">{SCOPE_LABEL.practice}</span> nenabízí šablony ani klubový trénink
+        </span>
+        <span>
+          <span className="dp-scope s-club">{SCOPE_LABEL.club}</span> vlastní trénink (1–2 hráči) ji nenabízí
+        </span>
+      </p>
       {!visible.length && <p className="muted">Žádná disciplína neodpovídá filtru.</p>}
       {(['drill', 'match', 'sim'] as const)
         .filter((kind) => visible.some((d) => d.kind === kind))
@@ -194,16 +203,20 @@ function DisciplineRow({
 }) {
   const dur = disciplineDuration(d.id);
   const who = disciplineWho(d.id);
+  const scope = disciplineScope(d.id);
   return (
     <li className={`dp-row${open ? ' open' : ''}`} aria-label={d.name}>
       {/* Kliknutí kamkoli do řádku rozbalí; pro klávesnici je přepínač u názvu. */}
       <div className="dp-head" onClick={onToggle}>
-        <button type="button" className="dp-toggle" aria-expanded={open} aria-controls={`dp-detail-${d.id}`} onClick={(e) => (e.stopPropagation(), onToggle())}>
-          <svg className="dp-chev" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 5l7 7-7 7" />
-          </svg>
-          <span className="dp-name">{d.name}</span>
-        </button>
+        <span className="dp-title">
+          <button type="button" className="dp-toggle" aria-expanded={open} aria-controls={`dp-detail-${d.id}`} onClick={(e) => (e.stopPropagation(), onToggle())}>
+            <svg className="dp-chev" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="dp-name">{d.name}</span>
+          </button>
+          {scope && <span className={`dp-scope s-${scope}`}>{SCOPE_LABEL[scope]}</span>}
+        </span>
         <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
           {dur.rounds === 2 && '2× '}
           <b>{dur.min}</b> min

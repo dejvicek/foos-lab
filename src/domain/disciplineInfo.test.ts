@@ -1,5 +1,5 @@
 import { DISCIPLINES } from './disciplines';
-import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines } from './disciplineInfo';
+import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, disciplineScope } from './disciplineInfo';
 
 describe('stránka Disciplíny – obsah', () => {
   it('nabízí jen nevyřazené disciplíny v pořadí rozpisu', () => {
@@ -38,5 +38,11 @@ describe('stránka Disciplíny – obsah', () => {
 
   it('obecná pravidla zápasů', () => {
     expect(MATCH_GENERAL_HELP.map((i) => i.name)).toEqual(['Každý gól se počítá', 'Role rozhodčího']);
+  });
+
+  it('kde se hraje (12. 11. 2026): Čistá desítka jen vlastní, simulace jen klubový, ostatní obojí', () => {
+    expect(disciplineScope('streakShot3')).toBe('practice');
+    expect(disciplineScope('sim')).toBe('club');
+    for (const id of ['warmup', 'penaltySolo', 'warmupPasses', 'normal', 'goalieWar', 'wall'] as const) expect(disciplineScope(id)).toBeNull();
   });
 });
