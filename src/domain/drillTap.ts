@@ -17,6 +17,8 @@ export interface DrillCount {
 
 export function drillCount(v: DrillValue, def: SoloMetricDef): DrillCount {
   const value = v.value ?? 0;
+  // Cvičení na čas: hotovo = série splněná (výsledek je čas); povedené / nepovedené ukazuje průběh (streak.ts).
+  if (def.streak) return { value, attempts: v.attempts ?? 0, hits: 0, misses: 0, done: value > 0 };
   const attempts = v.attempts ?? (v.value !== undefined ? def.max : 0);
   const bad = def.lowerIsBetter ? value : attempts - value;
   return { value, attempts, hits: attempts - bad, misses: bad, done: attempts >= def.max };

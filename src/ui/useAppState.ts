@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isEmptyScore, setAttempts, setSolo } from '../domain/training';
 import { tapDelta, tapDrill } from '../domain/drillTap';
+import { streakLimitSec, streakTap, trainingStreak } from '../domain/streak';
 import type { SoloMetricDef } from '../domain/solo';
 import type { CatalogData } from '../domain/catalog';
 import { bump, bumpLimit } from '../domain/legState';
@@ -545,12 +546,20 @@ export function useAppState(
       tapSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1, itemId: string) => {
         const t = dataRef.current.trainings.find((x) => x.id === trainingId);
         if (!t) return;
-        const next = tapDrill({ value: t.soloResults[playerId]?.[key], attempts: t.soloAttempts?.[playerId]?.[key] }, def, ok, delta);
-        if (!next) return; // všechny pokusy odehrané / není co vracet
-        const e: GameEvent = { id: newUuid(), itemId, at: Date.now(), kind: ok ? 'hit' : 'miss', playerId, delta };
+        const at = Date.now();
+        const cur = { value: t.soloResults[playerId]?.[key], attempts: t.soloAttempts?.[playerId]?.[key] };
+        // Čistá desítka: série z událostí, poslední povedený zapíše čas (streak.ts).
+        const dlt = def.streak
+          ? (() => {
+              const s = streakTap(trainingStreak(t, playerId, itemId, def), def, ok, delta, at, cur.value ?? 0, streakLimitSec(t, key));
+              return s && { value: s.dValue, attempts: s.dAttempts };
+            })()
+          : tapDrill(cur, def, ok, delta) && tapDelta(def, ok, delta);
+        if (!dlt) return; // všechny pokusy odehrané / není co vracet
+        const next = { value: (cur.value ?? 0) + dlt.value, attempts: (cur.attempts ?? (cur.value !== undefined && !def.streak ? def.max : 0)) + dlt.attempts };
+        const e: GameEvent = { id: newUuid(), itemId, at, kind: ok ? 'hit' : 'miss', playerId, delta };
         update((d) => inTraining(d, trainingId, (x) => withEvent(setAttempts(setSolo(x, playerId, key, next.value), playerId, key, next.attempts), e)));
         // Stejné meze hlídá i databáze (tap_drill), takže rychlé dvojité ťuknutí na hranici nic nepokazí.
-        const dlt = tapDelta(def, ok, delta);
         enqueue({ kind: 'tapDrill', trainingId, playerId, key, max: def.max, taps: [{ id: e.id, at: e.at, itemId, ok, delta, dValue: dlt.value, dAttempts: dlt.attempts }] });
       },
       startItem: (trainingId: string, itemId: string) => {

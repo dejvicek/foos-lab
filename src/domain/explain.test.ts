@@ -1,12 +1,13 @@
+import { DISCIPLINES } from './disciplines';
 import { explanationsFor } from './explain';
 import { EXPLANATIONS } from './content';
 import { buildSchedule } from './schedule';
 import { H } from '../test/fixtures';
 
 const team = buildSchedule({ mode: 'team', tables: 4, attendees: H(13) });
-const custom = buildSchedule({ mode: 'team', tables: 4, attendees: H(8), format: 'custom', plan: { warmupPasses: 1, chain: 1, start03: 1, singles: 1 }, lockedRounds: [] });
+const custom = buildSchedule({ mode: 'team', tables: 4, attendees: H(8), format: 'custom', plan: { warmupPasses: 1, chain: 1, start03: 1, singles: 1, goalieWar: 1, penalty6: 1 }, lockedRounds: [] });
 const single = buildSchedule({ mode: 'single', tables: 2, attendees: H(5) });
-const drills = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { warmup: 1, passWallLane: 2, penaltyKeeper: 2, penaltySolo: 2, backShotKeeper: 2, backShotSolo: 2, clearing: 2, looseBall: 2 }, lockedRounds: [] });
+const drills = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { warmup: 1, passWallLane: 2, penaltyKeeper: 2, penaltySolo: 2, backShotKeeper: 2, backShotSolo: 2, clearing: 2, looseBall: 2, streakShot3: 1, streakPass5: 1, streakShot2: 1, streakPass2: 1 }, lockedRounds: [] });
 const ending = buildSchedule({ mode: 'team', tables: 2, attendees: H(4), format: 'custom', plan: { start45: 2 }, lockedRounds: [] });
 const rowByLabel = (s: typeof team, label: string) => s.sections.flatMap((x) => x.rows).find((r) => r.label === label)!;
 const names = (items: { name: string }[]) => items.map((i) => i.name);
@@ -49,6 +50,8 @@ describe('vysvětlivky u bloků', () => {
         const e = explanationsFor(row);
         [...e.main, ...e.general, ...e.perTable].forEach((i) => i && shown.add(i.name));
       }
-    expect([...shown].sort()).toEqual(EXPLANATIONS.flatMap((g) => g.items.map((i) => i.name)).sort());
+    // Čistá desítka je jen ve vlastním tréninku (nápověda na stránce Disciplíny), v rozpisu není.
+    const practiceOnly = new Set(DISCIPLINES.filter((d) => d.practiceOnly).map((d) => d.explain));
+    expect([...shown].sort()).toEqual(EXPLANATIONS.flatMap((g) => g.items.map((i) => i.name)).filter((n) => !practiceOnly.has(n)).sort());
   });
 });

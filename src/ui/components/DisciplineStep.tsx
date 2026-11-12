@@ -1,8 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { cleanFormats, formatMins, formatOf } from '../../domain/matchFormat';
+import { MatchFormatPicker } from './MatchFormatPicker';
 import { addBreakAt, anchorBreaks, breakMovable, disciplineStepTarget, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { currentTemplates, matchingTemplate, templateRounds } from '../../domain/catalog';
 import { roundSequence } from '../../domain/customSchedule';
-import { DISCIPLINES, roundMin, roundStep } from '../../domain/disciplines';
+import { clubOffered, DISCIPLINES, roundMin, roundStep } from '../../domain/disciplines';
 import { fairness, neverCount } from '../../domain/fairness';
 import { CHANGEOVER_MIN, fillPlan, orderedDisciplines, planTimeline, plannedMinutes, playable, SIM_MIN_PLAYERS } from '../../domain/plan';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
@@ -14,7 +16,7 @@ import { plural } from '../format';
 import { hm } from './DisciplinePicker';
 import { FairnessReport } from './FairnessPanel';
 import { PlanPreview, type Highlight } from './PlanPreview';
-import { CountStepper, endLiner, FreeRow, GapButton, KIND_TITLE, KINDS, MoveButtons, PauseRow, rowHeight, SectionHead, TimeCell, type Kind, type Span } from './PlanTable';
+import { CountStepper, endLiner, FreeRow, GapButton, KIND_TITLE, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, type Kind, type Span } from './PlanTable';
 import { SkillLegend, SkillTags } from './SkillTags';
 
 type View = 'plan' | 'rounds' | 'who';
@@ -46,7 +48,8 @@ export function DisciplineStep({
   const [saved, setSaved] = useState<string | null>(null);
   const t = training;
   const n = t.attendees.length;
-  const mins = t.disciplineMin ?? null;
+  // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
+  const mins = formatMins(t.disciplineMin ?? null, t.matchFormats);
   const tl = planTimeline(roundSequence(t), t.breaks, mins);
   const over = tl.total - t.durationMin;
   const fmt = (m: number) => clockAt(t.startTime, m);
@@ -129,9 +132,7 @@ export function DisciplineStep({
             <b>
               Naplánováno {hm(tl.total)} z {hm(t.durationMin)}
             </b>
-            <span className="tt-meter" aria-hidden="true">
-              <i style={{ width: `${Math.min(100, (tl.total / t.durationMin) * 100)}%` }} />
-            </span>
+            <PlanMeter items={tl.items} total={tl.total} durationMin={t.durationMin} />
             <span>{over > 0 ? `přes o ${hm(over)}` : over === 0 ? 'přesně' : `zbývá ${-over} min`}</span>
             <span className="disc-end">konec {fmt(tl.total)}</span>
           </p>
@@ -273,7 +274,8 @@ function DisciplineTable({
   const filtering = filter.skills.length + filter.groups.length > 0;
 
   const n = t.attendees.length;
-  const mins = t.disciplineMin ?? null;
+  // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
+  const mins = formatMins(t.disciplineMin ?? null, t.matchFormats);
   const locked = lockedCounts(t);
   const seq = roundSequence(t);
   const free = new Set(freeSlots(t));
@@ -330,6 +332,14 @@ function DisciplineTable({
           <span>{d.name}</span>
         </label>
         {note}
+        {checked && d.kind === 'match' && (
+          <MatchFormatPicker
+            id={id}
+            name={d.name}
+            value={formatOf(t.matchFormats, id)}
+            onChange={(f) => onChange({ ...t, matchFormats: cleanFormats({ ...t.matchFormats, [id]: f }) ?? null })}
+          />
+        )}
         {showTags && <SkillTags skills={d.skills} filter={filter} onToggle={toggleSkill} />}
       </span>
     );
@@ -358,7 +368,7 @@ function DisciplineTable({
       );
     });
 
-  const offered = DISCIPLINES.filter((d) => !d.retired || (t.plan[d.id] ?? 0) > 0);
+  const offered = DISCIPLINES.filter((d) => clubOffered(d) || (!d.practiceOnly && (t.plan[d.id] ?? 0) > 0));
   const restIn = (kind: Kind) => offered.filter((d) => d.kind === kind && !played(d.id));
   const shownRest = (kind: Kind) => restIn(kind).filter((d) => matchesSkillFilter(d.skills, filter));
   const restCount = KINDS.reduce((s, k) => s + restIn(k).length, 0);

@@ -1,7 +1,7 @@
 import { addDays } from './dates';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { compareStat, computeStandings, emptyStat, type StatLine } from './standings';
-import { parseSoloKey } from './solo';
+import { parseSoloKey, soloMetric } from './solo';
 import { isClub } from './practice';
 import { pruneEntries } from './training';
 import type { Mode, PlayerId, SoloMetric, Training } from './types';
@@ -150,5 +150,11 @@ function averageByMetric(values: Record<string, number>): Partial<Record<SoloMet
     const m = parseSoloKey(k).metric;
     acc.set(m, [...(acc.get(m) ?? []), v]);
   }
-  return Object.fromEntries([...acc.entries()].map(([m, vs]) => [m, vs.reduce((a, b) => a + b, 0) / vs.length]));
+  return Object.fromEntries(
+    [...acc.entries()].map(([m, vs]) => {
+      // Čistá desítka: nejlepší splněný čas (0 = nesplněno), ne průměr.
+      if (soloMetric(m)?.streak) return [m, vs.filter((v) => v > 0).reduce((a, b) => (a ? Math.min(a, b) : b), 0)];
+      return [m, vs.reduce((a, b) => a + b, 0) / vs.length];
+    }),
+  );
 }

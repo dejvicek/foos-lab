@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
+import { cleanFormats, formatOf } from '../../domain/matchFormat';
+import { MatchFormatPicker } from './MatchFormatPicker';
+import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
 import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
-import { catalogMins, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
+import { catalogMins, clubOffered, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
 import { defaultMatchRounds, DURATION_OPTIONS, playable } from '../../domain/plan';
 import { sortTrainings } from '../../domain/training';
 import type { DisciplineId, Training } from '../../domain/types';
@@ -93,6 +95,13 @@ export function TemplatesEditor({
     setChosen(kindOf(id), list);
   };
   const add = (id: DisciplineId) => setChosen(kindOf(id), [...chosenIn(kindOf(id)), id]);
+  // Označit / odznačit vše: vybrané si nechají pořadí, ostatní se přidají za ně v pořadí katalogu.
+  const offered = DISCIPLINES.filter(clubOffered).map((d) => d.id);
+  const allChosen = offered.every((id) => tpl.selection.includes(id));
+  const toggleAll = () =>
+    allChosen
+      ? setTpl({ selection: [], rounds: {}, breaks: [], formats: undefined })
+      : setTpl({ selection: KINDS.flatMap((k) => [...chosenIn(k), ...offered.filter((id) => kindOf(id) === k && !tpl.selection.includes(id))]) });
   const remove = (id: DisciplineId) => {
     const { [id]: _, ...rounds } = tpl.rounds ?? {};
     setTpl({ selection: tpl.selection.filter((x) => x !== id), rounds, breaks: breaks.filter((b) => b.after !== id) });
@@ -159,7 +168,11 @@ export function TemplatesEditor({
           type="button"
           className="tpl-tab add"
           onClick={() => {
-            setDraft((xs) => [...xs, { ...tpl, id: newId(), name: `${tpl.name} – kopie`, selection: [...tpl.selection], rounds: { ...tpl.rounds }, breaks: [...breaks] }]);
+            // Nová šablona začíná prázdná (12. 11. 2026): nic vybraného, výchozí délka.
+            const names = new Set(draft.map((x) => x.name.trim()));
+            let name = 'Nová šablona';
+            for (let k = 2; names.has(name); k++) name = `Nová šablona ${k}`;
+            setDraft((xs) => [...xs, { ...blankTemplate(newId()), name }]);
             setTab(draft.length);
           }}
         >
@@ -204,9 +217,7 @@ export function TemplatesEditor({
           <b>
             Naplánováno {hm(total)} z {hm(tpl.durationMin)}
           </b>
-          <span className="tt-meter" aria-hidden="true">
-            <i style={{ width: `${Math.min(100, (total / tpl.durationMin) * 100)}%` }} />
-          </span>
+          <PlanMeter items={tl.items} total={total} durationMin={tpl.durationMin} />
           <span>{over > 0 ? `přes o ${hm(over)}` : over === 0 ? 'přesně' : `zbývá ${-over} min`}</span>
         </p>
       </div>
@@ -224,9 +235,14 @@ export function TemplatesEditor({
             <b>Délka kola</b> (− / +) platí pro všechny šablony a pro nové tréninky.
           </li>
         </ul>
+        <div className="tpl-all">
+          <button type="button" className="ghost" onClick={toggleAll}>
+            {allChosen ? 'Odznačit vše' : 'Označit vše'}
+          </button>
+        </div>
         {KINDS.map((kind) => {
           const chosen = chosenIn(kind);
-          const rest = DISCIPLINES.filter((d) => !d.retired && d.kind === kind && !tpl.selection.includes(d.id));
+          const rest = DISCIPLINES.filter((d) => clubOffered(d) && d.kind === kind && !tpl.selection.includes(d.id));
           return (
             <section key={kind} className="tpl-sec" aria-label={KIND_TITLE[kind]}>
               <SectionHead kind={kind} chosen={chosen.length} total={chosen.length + rest.length} />
@@ -263,17 +279,24 @@ export function TemplatesEditor({
                         <span className="tpl-drag" aria-hidden="true" title="Přetáhni na jiné místo">
                           ⠿
                         </span>
-                        <label className="tpl-check">
-                          <input type="checkbox" checked onChange={() => remove(id)} />
-                          <span>{d.name}</span>
-                        </label>
+                        <span className="tt-name">
+                          <label className="tpl-check">
+                            <input type="checkbox" checked onChange={() => remove(id)} />
+                            <span>{d.name}</span>
+                          </label>
+                          {d.kind === 'match' && (
+                            <MatchFormatPicker id={id} name={d.name} value={formatOf(tpl.formats, id)} onChange={(f) => setTpl({ formats: cleanFormats({ ...tpl.formats, [id]: f }) })} />
+                          )}
+                        </span>
                         <MoveButtons
                           up={{ label: `Dřív: ${d.name}`, disabled: i === 0, onClick: () => move(id, i - 1) }}
                           down={{ label: `Později: ${d.name}`, disabled: i === chosen.length - 1, onClick: () => move(id, i + 1) }}
                         />
                         {roundsCell(id)}
                         <MinStepper value={mins[id] ?? d.min} label={d.name} onChange={(v) => setMins((x) => ({ ...x, [id]: v }))} />
-                        <span className="tpl-total">{playable(id, players) ? `${n * ((mins[id] ?? d.min) + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}</span>
+                        <span className="tpl-total">
+                          {playable(id, players) ? `${n * ((mins[id] ?? d.min) * formatOf(tpl.formats, id).bestOf + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}
+                        </span>
                         {!brk && span && id !== lastPlayed && <GapButton name={d.name} onClick={() => setBreaks([...breaks, { after: id, min: 10 }])} />}
                         {span && endLine(span)}
                       </li>,

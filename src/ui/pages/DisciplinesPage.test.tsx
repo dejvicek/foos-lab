@@ -7,7 +7,7 @@ import { applyCatalog } from '../../domain/catalog';
 import type { Player } from '../../domain/types';
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
-const roster: Player[] = ['Dejv', 'Milan'].map((name, order) => ({ id: `id${order + 1}`, name, order, archived: false }));
+const roster: Player[] = ['Dejv', 'Milan', 'Lavi', 'Luky'].map((name, order) => ({ id: `id${order + 1}`, name, order, archived: false }));
 const authPlayers = roster.map((p) => ({ id: p.id, name: p.name, isAdmin: p.name === 'Dejv' }));
 const rows = () => screen.getAllByRole('listitem').filter((li) => li.classList.contains('dp-row'));
 const row = (name: string) => screen.getByRole('listitem', { name });
@@ -28,8 +28,9 @@ describe('stránka Disciplíny', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Disciplíny' })).toBeInTheDocument();
 
     const r = row('Penalta z místa proti brankáři');
-    expect(r).toHaveTextContent('2× 4 min');
-    expect(within(r).getByRole('img', { name: 's bránícím soupeřem' })).toBeInTheDocument();
+    expect(r).toHaveTextContent('2× 8 min');
+    // panáčci: kde se hraje (klub a vlastní ve dvou)
+    expect(within(r).getByRole('group', { name: 'Hraje se: klubový trénink, duo' })).toBeInTheDocument();
     expect(within(within(r).getByRole('list', { name: 'Trénuje' })).getAllByRole('button').map((b) => b.textContent)).toEqual([
       'Střela z trojky', 'Obrana', 'Čtení soupeře',
     ]);
@@ -39,7 +40,7 @@ describe('stránka Disciplíny', () => {
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(r).toHaveTextContent('Cílstřílet až z kontrolovaného míče');
-    expect(r).toHaveTextContent('2 kola po 10 pokusech, variantu si určí hráč');
+    expect(r).toHaveTextContent('2 kola po 20 pokusech, variantu si určí hráč');
     expect(within(r).queryByRole('button', { name: 'Upravit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Upravit štítky' })).toBeNull();
     // šablony jsou jen pro admina: hráč je v navigaci nemá a na adrese dostane jen informaci
@@ -50,7 +51,32 @@ describe('stránka Disciplíny', () => {
     window.location.hash = '#/disciplines';
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
 
-    expect(rows()).toHaveLength(20);
+    expect(rows()).toHaveLength(26);
+    // kde se hraje: Čistá desítka jen vlastní trénink, simulace jen klubový
+    expect(within(row('Čistá desítka – střela z trojky')).getByRole('group', { name: 'Hraje se: solo, duo' })).toBeInTheDocument();
+    expect(within(row('Penalta z místa bez brankáře')).getByRole('group', { name: 'Hraje se: solo' })).toBeInTheDocument();
+    expect(within(row('Jedničky')).getByRole('group', { name: 'Hraje se: klubový trénink, duo' })).toBeInTheDocument();
+    expect(within(row('Normální leg')).getByRole('group', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
+    expect(within(row('Přihrávky ke zdi a po lajně')).getByRole('group', { name: 'Hraje se: solo' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Vysvětlivky ikon')).toHaveTextContent(/klubový trénink.*solo.*duo/);
+    // filtr Hraje se: solo
+    // filtr kliknutím na panáčka (solo) v řádku; zvýrazní se ve všech řádcích, druhé kliknutí ho zruší
+    expect(screen.queryByRole('list', { name: 'Kde se hraje' })).toBeNull();
+    await user.click(within(row('Přihrávky ke zdi a po lajně')).getByRole('button', { name: 'Filtrovat: solo' }));
+    expect(within(row('Rozcvička')).getByRole('button', { name: 'Filtrovat: solo' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Filtr:/)).toHaveTextContent('solo');
+    expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
+      'Rozcvička', 'Střela z dvojky bez brankáře', 'Čistá desítka – střela z dvojky', 'Čistá desítka – přihrávka z dvojky',
+      'Přihrávky ke zdi a po lajně', 'Čistá desítka – přihrávka na pětce',
+      'Penalta z místa bez brankáře', 'Čistá desítka – střela z trojky',
+    ]);
+    await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
+    // cvičení po sekcích (12. 11. 2026): Rozcvička bez sekce, pak Obrana, Pětka, Trojka
+    const drills = screen.getByRole('region', { name: /^Cvičení/ });
+    expect(within(drills).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);
+    expect(within(within(drills).getByRole('group', { name: 'Pětka' })).getAllByRole('listitem').map((li) => li.getAttribute('aria-label')).filter(Boolean)).toEqual([
+      'Přihrávky na pětce', 'Přihrávky ke zdi a po lajně', 'Udržení míče na pětce', 'Čistá desítka – přihrávka na pětce',
+    ]);
     for (const retired of ['Penalta z místa (20 střel)', 'Rozehrávka ze zadních tyčí']) expect(screen.queryByRole('listitem', { name: retired })).toBeNull();
   });
 
@@ -61,14 +87,14 @@ describe('stránka Disciplíny', () => {
     const chips = await screen.findByRole('list', { name: 'Sekce dovedností' });
     await user.click(within(chips).getByRole('button', { name: 'Obrana' }));
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
-      'Penalta z místa proti brankáři', 'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Daň za ztrátu', 'Jedničky',
-    ]);
-    expect(screen.getByText(/· 6 z 20/)).toBeInTheDocument();
+      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky', 'Goalie war', 'Penalty',
+    ]); // cvičení po sekcích Obrana / Pětka / Trojka
+    expect(screen.getByText(/· 8 z 26/)).toBeInTheDocument();
     await user.click(within(row('Jedničky')).getByRole('button', { name: 'Zápasová praxe' }));
     expect(row('Normální leg')).toBeInTheDocument();
     expect(row('Simulace ligového kola')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
-    expect(rows()).toHaveLength(20);
+    expect(rows()).toHaveLength(26);
   });
 
   it('admin upraví disciplínu: název, délka, štítky, nápověda; Obnovit výchozí', async () => {
@@ -171,19 +197,19 @@ describe('stránka Disciplíny', () => {
     expect(status()).toMatch(/Naplánováno 2:\d\d z 1:00.*přes o/);
     for (const name of ['Penalta z místa proti brankáři', 'Zeď', 'Start 0:3 + daň', 'Start 5:5, o 2 góly, strop 10', 'Jedničky', 'Simulace ligového kola'])
       await user.click(within(form).getByRole('checkbox', { name }));
-    // 8 hráčů / 4 stoly: Přihrávky 9 + Udržení 9 + Normální 9 + Daň 9 + 4:4 6 = 42; nic se nedoplňuje
-    expect(status()).toBe('Naplánováno 0:42 z 1:00zbývá 18 min');
+    // 8 hráčů / 4 stoly: Přihrávky 9 + Udržení 17 + Normální 9 + Daň 9 + 4:4 6 = 50; nic se nedoplňuje
+    expect(status()).toBe('Naplánováno 0:50 z 1:00zbývá 10 min');
     const rows = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('listitem');
-    expect(rows('Cvičení')[1]).toHaveTextContent(/0:09.*0:18.*Udržení míče na pětce/);
+    expect(rows('Cvičení')[1]).toHaveTextContent(/0:09.*0:26.*Udržení míče na pětce/);
     await user.click(within(form).getByRole('button', { name: 'Delší kolo: Normální leg' }));
     await user.click(within(form).getByRole('button', { name: 'Delší kolo: Normální leg' }));
-    expect(status()).toMatch(/^Naplánováno 0:44 z 1:00/);
+    expect(status()).toMatch(/^Naplánováno 0:52 z 1:00/);
     // počet kol zápasu
     await user.click(within(form).getByRole('button', { name: 'Víc kol: Normální leg' }));
     expect(within(form).getByRole('status', { name: 'Počet kol: Normální leg' })).toHaveTextContent('2×');
-    expect(status()).toMatch(/^Naplánováno 0:55 z 1:00/);
+    expect(status()).toMatch(/^Naplánováno 1:03 z 1:00/);
     // pořadí uvnitř sekce
-    const order = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('checkbox').map((c) => c.closest('label')!.textContent);
+    const order = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('checkbox').filter((c) => !c.closest('.mf')).map((c) => c.closest('label')!.textContent);
     expect(order('Zápasy a scénáře')).toEqual(['Normální leg', 'Daň za ztrátu', 'Start 4:4']);
     await user.click(within(form).getByRole('button', { name: 'Dřív: Start 4:4' }));
     await user.click(within(form).getByRole('button', { name: 'Dřív: Start 4:4' }));
@@ -193,22 +219,32 @@ describe('stránka Disciplíny', () => {
     await user.click(within(form).getByRole('checkbox', { name: 'Start 4:5' }));
     // pauza jako řádek v tabulce
     await user.click(within(form).getByRole('button', { name: 'Přidat pauzu po: Udržení míče na pětce' }));
-    expect(status()).toMatch(/^Naplánováno 1:05 z 1:00.*přes o 0:05/);
+    expect(status()).toMatch(/^Naplánováno 1:13 z 1:00.*přes o 0:13/);
     const pause = within(form).getByRole('listitem', { name: 'Pauza po: Udržení míče na pětce' });
-    expect(pause).toHaveTextContent(/0:18.*0:28/);
+    expect(pause).toHaveTextContent(/0:26.*0:36/);
     await user.selectOptions(within(pause).getByRole('combobox', { name: 'Délka pauzy' }), '5');
-    expect(status()).toBe('Naplánováno 1:00 z 1:00přesně');
+    expect(status()).toBe('Naplánováno 1:08 z 1:00přes o 0:08');
     await user.click(within(form).getByRole('button', { name: 'Pauzu o disciplínu později' }));
     expect(within(form).getByRole('listitem', { name: 'Pauza po: Start 4:4' })).toBeInTheDocument();
 
+    // nová šablona je prázdná; Označit vše / Odznačit vše
     await user.click(within(form).getByRole('button', { name: '+ Šablona' }));
-    expect(within(form).getByRole('tab', { name: /Krátký – kopie/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(form).getByRole('tab', { name: /Nová šablona/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(form).queryByRole('list', { name: /^Pořadí:/ })).toBeNull();
+    // Čistá desítka je jen ve vlastním tréninku – šablona ji nenabízí
+    expect(within(form).queryByRole('checkbox', { name: /^Čistá desítka/ })).toBeNull();
+    await user.click(within(form).getByRole('button', { name: 'Označit vše' }));
+    expect(within(form).queryAllByRole('list', { name: /^Další:/ })).toEqual([]);
+    expect(within(form).getByRole('list', { name: 'Pořadí: Simulace' })).toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Odznačit vše' }));
+    expect(within(form).queryByRole('list', { name: /^Pořadí:/ })).toBeNull();
+    await user.click(within(form).getByRole('checkbox', { name: 'Normální leg' }));
     await user.selectOptions(within(form).getByRole('combobox', { name: 'Délka' }), '180');
     await user.click(within(form).getByRole('button', { name: 'Uložit šablony' }));
     expect(within(form).getByText('Uloženo')).toBeInTheDocument();
     await vi.waitFor(() => {
       const c = repo.snapshot().catalog!;
-      expect(c.templates?.map((t) => [t.name, t.durationMin])).toEqual([['Krátký', 60], ['Krátký – kopie', 180]]);
+      expect(c.templates?.map((t) => [t.name, t.durationMin, t.selection])).toEqual([['Krátký', 60, expect.any(Array)], ['Nová šablona', 180, ['normal']]]);
       expect(c.templates?.[0]).toMatchObject({
         selection: ['warmupPasses', 'fiveBarControl', 'start44', 'normal', 'lossTax'],
         rounds: { normal: 2 },
@@ -220,7 +256,7 @@ describe('stránka Disciplíny', () => {
     // nový trénink: první šablona (1:00), přesně její kola
     window.location.hash = '#/trainings/new';
     await screen.findByRole('heading', { name: 'Přítomní' });
-    await user.click(screen.getAllByRole('checkbox')[0]);
+    for (const n of ['Dejv', 'Milan', 'Lavi', 'Luky']) await user.click(screen.getByRole('checkbox', { name: n })); // aspoň 4 hráči
     await user.click(screen.getByRole('button', { name: /^Další:/ }));
     expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('60');
   });

@@ -59,8 +59,8 @@ describe('tabulka tréninku', () => {
     await user.type(input, '3');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ id3: { fiveBarControl: 3 } }));
     await user.clear(input);
-    await user.type(input, '11');
-    expect(input).toHaveValue(1);
+    await user.type(input, '21'); // 20 sérií (11. 11. 2026)
+    expect(input).toHaveValue(2);
     expect(rowOf('Stanoviště, rotace 2')).toHaveTextContent('zapsáno 1 z 8');
   });
 
@@ -301,4 +301,49 @@ it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
   if (r1.getAttribute('aria-expanded') !== 'true') await user.click(r1); // bývá rozbalené jako výchozí
   const help = document.querySelector<HTMLDetailsElement>('details.help')!;
   expect(within(help).getByRole('list', { name: 'Trénuje' })).toHaveTextContent('Střela z trojkyObranaČtení soupeře');
+});
+
+describe('BO formát v klubovém tréninku (12. 11. 2026)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 5, 12, 0));
+    window.location.hash = '#/trainings/t1';
+  });
+
+  it('BO3 do 5: legy po sobě, po rozhodnutí konec; souhrn počítá každý leg', async () => {
+    const user = userEvent.setup();
+    const t: Training = {
+      ...training(4, 'team', 2), format: 'custom', plan: { normal: 1 }, disciplineMin: { normal: 8 }, breaks: [],
+      matchFormats: { normal: { bestOf: 3, legTo: 5 } },
+    };
+    const repo = memoryRepository({ players: players(4), trainings: [t] });
+    render(<App repo={repo} />);
+    await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    expect(screen.getByText('Normální leg BO3 do 5, 24 min')).toBeInTheDocument();
+    // jiný den → rozbalený je první blok s chybějícím zápisem (tady 1. kolo)
+    const cell = () => screen.getByRole('group', { name: '1. kolo, stůl 1' });
+    const legs = () => within(cell()).getByRole('group', { name: 'Legy: 1. kolo, stůl 1' });
+    const pick = (name: string) => user.click(within(cell()).getByRole('button', { name: `1. kolo, stůl 1, ${name}` }));
+    expect(legs()).toHaveTextContent('BO3 · 0:0');
+    // do 5: šestka se nenabízí
+    expect(within(cell()).queryByRole('button', { name: '1. kolo, stůl 1, leg 1: góly vlevo 6' })).toBeNull();
+    await pick('leg 1: góly vpravo 3'); // předvyplní 5:3
+    expect(legs()).toHaveTextContent('BO3 · 1:0');
+    await pick('leg 2: góly vlevo 4');
+    expect(legs()).toHaveTextContent('BO3 · 1:1');
+    await pick('leg 3: góly vpravo 1');
+    expect(rowOf('1. kolo')).toHaveTextContent('2:1');
+    expect(rowOf('1. kolo')).toHaveTextContent('5:3, 4:5, 5:1');
+    // dohraný zápas: rozbalí se další kolo; oprava předchozího legu po otevření
+    if (!screen.queryByRole('group', { name: '1. kolo, stůl 1' })) await user.click(screen.getByRole('button', { name: /^1. kolo$/ }));
+    expect(legs()).toHaveTextContent('BO3 · 2:1 · konec');
+    await user.click(within(legs()).getByRole('button', { name: /^Leg 1/ }));
+    expect(within(cell()).getByRole('button', { name: '1. kolo, stůl 1, leg 1: góly vpravo 3' })).toHaveAttribute('aria-pressed', 'true');
+    await vi.waitFor(() => {
+      const sc = repo.snapshot().trainings[0].scores;
+      const mine = Object.keys(sc).filter((k) => k.startsWith('league|1|1|')).sort();
+      expect(mine).toHaveLength(3);
+      expect(mine[1]).toMatch(/#2$/);
+    });
+  });
 });

@@ -887,11 +887,11 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
     ['Denys', '7 legů · 57 %', '+0,9', 2],
   ];
   const solo: [string, string, string, number, boolean?][] = [
-    ['Milan', '5 tréninků', '1,4 / 10', 5],
-    ['Lavi', '6 tréninků', '2,0 / 10', 6],
-    ['Dejv', '4 tréninky', '2,7 / 10', 4, true],
-    ['Osky', '3 tréninky', '3,3 / 10', 3],
-    ['Ondra', '2 tréninky', '1,0 / 10', 2],
+    ['Milan', '5 tréninků', '17,2 / 20', 5],
+    ['Lavi', '6 tréninků', '16,0 / 20', 6],
+    ['Dejv', '4 tréninky', '14,6 / 20', 4, true],
+    ['Osky', '3 tréninky', '13,4 / 20', 3],
+    ['Ondra', '2 tréninky', '18,0 / 20', 2],
   ];
   // [jméno, utkání, čekání ⌀]
   const delays: [string, string, string][] = [
@@ -924,7 +924,7 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
     <Phone
       time="21:10"
       title="Žebříček"
-      sub={part === 'solo' ? 'Udržení míče na pětce · méně je lépe' : part === 'delays' ? 'forma · čekání na zahájení' : 'forma · průměr · 14. 10. – 10. 11.'}
+      sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na zahájení' : 'forma · průměr · 14. 10. – 10. 11.'}
       tab="ladder"
       label={label}
     >

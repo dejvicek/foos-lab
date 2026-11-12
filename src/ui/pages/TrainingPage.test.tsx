@@ -27,7 +27,7 @@ describe('stránka Trénink', () => {
     const repo = memoryRepository({ players: players(6), trainings: [] });
     window.location.hash = '#/trainings/new';
     render(<App repo={repo} />);
-    await user.click(await screen.findByRole('checkbox', { name: 'Ada' }));
+    for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(await screen.findByRole('checkbox', { name: n }));
     await next(user);
     expect(screen.getByLabelText('Začátek')).toHaveValue('18:30');
     await user.click(screen.getByRole('radio', { name: '1 stůl' }));
@@ -47,7 +47,7 @@ describe('stránka Trénink', () => {
     const bar = () => screen.getByRole('status', { name: 'Přítomní' });
     expect(bar()).toHaveTextContent(/^0 přítomných/);
     for (const n of NAMES.slice(0, 6)) expect(checkbox(n)).not.toBeChecked();
-    expect(screen.getByText(/Ještě chybí 1 hráč do minima 1./)).toBeInTheDocument();
+    expect(screen.getByText(/Ještě chybí 4 hráči do minima 4. Méně hráčů si zacvičí ve vlastním tréninku./)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Další:/ })).toBeDisabled(); // bez hráčů dál nejde
 
     for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(checkbox(n));
@@ -83,7 +83,7 @@ describe('stránka Trénink', () => {
 
     await user.click(screen.getByRole('button', { name: 'Trénink' }));
     await user.click(screen.getByRole('button', { name: 'Nový trénink' }));
-    await user.click(checkbox('Ada'));
+    for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(checkbox(n));
     await next(user);
     expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('180'); // délka ze šablony (9. 11. 2026)
     expect(screen.getByRole('radio', { name: '2 stoly' })).toBeChecked();

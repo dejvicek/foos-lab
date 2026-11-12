@@ -13,13 +13,20 @@ export function tableScore(m: Match, s: Score | undefined): [number, number] {
 }
 
 
-/** PRD 7.1: konec legu – do 6; 5:5 o 2 se stropem 10; simulace do 2 setů. */
+/** Góly na vyhraný leg (BO formát, jinak 6). */
+export const legTarget = (m: Match): number => m.legTo ?? LEG_TO;
+/** Leg o 2 góly: scénář 5:5, nebo rozhodující leg s nastavením „o 2“. */
+const byTwo = (m: Match) => isFiveFive(m) || !!m.winBy2;
+/** Strop legu o 2 góly. */
+export const legCap = (m: Match): number => (isFiveFive(m) ? LEG_CAP : (m.cap ?? LEG_CAP));
+
+/** PRD 7.1: konec legu – do 6 (BO formát: do legTo); 5:5 a rozhodující leg o 2 se stropem; simulace do 2 setů. */
 export function legOver(m: Match, s: Score | undefined): { over: boolean; winner: 'A' | 'B' | null } {
   const [a, b] = m.block === 'sim' ? [s?.ga ?? 0, s?.gb ?? 0] : tableScore(m, s);
   let over: boolean;
   if (m.block === 'sim') over = a >= 2 || b >= 2;
-  else if (isFiveFive(m)) over = (Math.max(a, b) >= LEG_TO && Math.abs(a - b) >= 2) || Math.max(a, b) >= LEG_CAP;
-  else over = Math.max(a, b) >= LEG_TO;
+  else if (byTwo(m)) over = (Math.max(a, b) >= legTarget(m) && Math.abs(a - b) >= 2) || Math.max(a, b) >= legCap(m);
+  else over = Math.max(a, b) >= legTarget(m);
   return { over, winner: over ? (a > b ? 'A' : b > a ? 'B' : null) : null };
 }
 
@@ -31,7 +38,7 @@ export function bumpLimit(m: Match, field: keyof Score): number {
   if (field === 'la' || field === 'lb') return MAX_LOSSES;
   if (m.block === 'sim') return 2;
   const offset = field === 'ga' ? (m.start?.[0] ?? 0) : (m.start?.[1] ?? 0);
-  return (isFiveFive(m) ? LEG_CAP : LEG_TO) - offset;
+  return (byTwo(m) ? legCap(m) : legTarget(m)) - offset;
 }
 
 /**
@@ -54,8 +61,8 @@ export function bump(m: Match, s: Score, field: keyof Score, delta: number): Sco
  */
 export function winnerFor(m: Match, v: number): number | null {
   if (m.block === 'sim') return v < 2 ? 2 : null;
-  if (isFiveFive(m)) return v >= LEG_CAP ? null : Math.min(LEG_CAP, Math.max(LEG_TO, v + 2));
-  return v < LEG_TO ? LEG_TO : null;
+  if (byTwo(m)) return v >= legCap(m) ? null : Math.min(legCap(m), Math.max(legTarget(m), v + 2));
+  return v < legTarget(m) ? legTarget(m) : null;
 }
 
 /** Daň za ztrátu: ztráta strany je hned gól soupeře – které gólové pole ztráta zvedne (jinak null). */

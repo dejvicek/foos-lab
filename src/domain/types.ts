@@ -33,7 +33,11 @@ export type SoloMetric =
   | 'clearing'
   | 'looseBall'
   | 'backRodsBuildUp'
-  | 'chain';
+  | 'chain'
+  | 'streakShot3'
+  | 'streakPass5'
+  | 'streakShot2'
+  | 'streakPass2';
 /** Klíč výsledku: `metrika` (klasický trénink) nebo `metrika@kolo` (konfigurovatelný). */
 export type SoloKey = string;
 /** Výsledky sólové části: hráč → klíč → hodnota (PRD 5.8, 6). */
@@ -59,6 +63,8 @@ export type DisciplineId =
   | 'start45'
   | 'start55'
   | 'singles'
+  | 'goalieWar'
+  | 'penalty6'
   | 'sim';
 export interface LockedRound {
   discipline: DisciplineId;
@@ -106,6 +112,8 @@ export interface Training {
    * vycházela – když ji mezitím změnilo jiné zařízení, uložení se odmítne. Chybí = ještě neuloženo.
    */
   version?: number;
+  /** BO formát zápasových disciplín (matchFormat.ts); chybí = BO1 do 6. */
+  matchFormats?: Partial<Record<DisciplineId, { bestOf: number; legTo: number; finalWinBy2?: boolean; cap?: number }>> | null;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
   createdBy?: PlayerId | null;
   notes?: string;
@@ -134,6 +142,16 @@ export interface Match {
   start?: [number, number];
   /** Disciplína kola (konfigurovatelný trénink). */
   discipline?: DisciplineId;
+  /** BO formát (matchFormat.ts): nejvyšší počet legů; chybí = 1. */
+  bestOf?: number;
+  /** Gólů na vyhraný leg; chybí = 6. */
+  legTo?: number;
+  /** Rozhodující leg o 2 góly se stropem `cap`. */
+  finalWinBy2?: boolean;
+  cap?: number;
+  /** Jen u legu (legOf): číslo legu a jestli se hraje o 2 góly. */
+  legNo?: number;
+  winBy2?: boolean;
 }
 
 export type Cell =

@@ -12,7 +12,7 @@ const shownRest = () =>
   screen
     .getAllByRole('list')
     .filter((l) => l.getAttribute('aria-label')?.startsWith('Další:'))
-    .flatMap((l) => within(l).getAllByRole('checkbox').map((c) => c.closest('label')!.textContent!));
+    .flatMap((l) => within(l).getAllByRole('checkbox').filter((c) => !c.closest('.mf')).map((c) => c.closest('label')!.textContent!));
 const rowOf = (name: string) => screen.getByRole('checkbox', { name }).closest('li')!;
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
@@ -38,7 +38,7 @@ describe('čas plánu v průvodci', () => {
   });
 
   it('zbývá čas: v kroku Kdy, kde a disciplíny nabídne doplnit kola, po doplnění se plán prodlouží', async () => {
-    const user = await wizard(['Ada'], 60); // trénink pro 1 hráče: sólová cvičení, zbývá čas
+    const user = await wizard(['Ada', 'Bára', 'Cyril', 'Dan'], 240); // klubový trénink aspoň pro 4; zbývá čas
     const status = () => screen.getByRole('status', { name: 'Naplánováno' }).textContent;
     const before = status();
     expect(before).toMatch(/zbývá \d+ min/);
@@ -54,6 +54,9 @@ it('štítky dovedností: u disciplín v kroku Kdy, kde a disciplíny', async ()
   await screen.findByRole('heading', { name: 'Přítomní' });
   for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user);
+  // Čistá desítka je jen ve vlastním tréninku (12. 11. 2026)
+  expect(screen.queryByRole('checkbox', { name: /^Čistá desítka/ })).toBeNull();
+  expect(screen.getByRole('checkbox', { name: 'Goalie war' })).toBeInTheDocument();
   // výchozí stav: štítky schované
   expect(screen.queryByRole('list', { name: 'Trénuje' })).toBeNull();
   expect(screen.queryByRole('list', { name: 'Sekce dovedností' })).toBeNull();
@@ -84,7 +87,7 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
   expect(screen.getByText(/zobrazeno 1 z \d+/)).toBeInTheDocument();
   // + sekce Útok (sčítá se)
   await user.click(within(screen.getByRole('list', { name: 'Sekce dovedností' })).getByRole('button', { name: 'Útok' }));
-  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Penalta z místa bez brankáře', 'Přihrávky ke zdi a po lajně']));
+  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Střela z dvojky proti brankáři', 'Řetězec']));
   expect(shown()).not.toContain('Zachycení volného míče');
   await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
   expect(shown()).toHaveLength(all);
@@ -190,7 +193,7 @@ describe('uložit nastavení disciplín jako šablonu (admin, 10. 11. 2026)', ()
     const roster = players.map((p) => (p.id === 'p1' ? { ...p, organizer: true } : p));
     render(<App repo={memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG })} auth={auth} />);
     await screen.findByRole('heading', { name: 'Přítomní' });
-    for (const n of ['Ada', 'Bára']) await user.click(screen.getByRole('checkbox', { name: n }));
+    for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
     await next(user);
     expect(screen.getByRole('tablist', { name: 'Šablona' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Uložit jako šablonu' })).toBeNull();

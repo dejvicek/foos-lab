@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { bumpLimit, legOver, tableScore, taxGoal } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
 import { drillCount, type DrillValue } from '../../domain/drillTap';
+import { streakTime, streakTimeUp, type StreakState } from '../../domain/streak';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 type Side = 'A' | 'B';
@@ -253,6 +254,79 @@ export function DrillMirror({ players, def, values, names, canSolo, onTap }: Dri
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+interface StreakProps {
+  players: PlayerId[];
+  def: SoloMetricDef;
+  states: Record<PlayerId, StreakState>;
+  names: Record<PlayerId, string>;
+  now: number;
+  /** Limit kola v sekundách (klubový trénink); null = bez limitu. */
+  limitSec: number | null;
+  canSolo(playerId: PlayerId): boolean;
+  onTap(playerId: PlayerId, ok: boolean, delta: 1 | -1): void;
+}
+
+/**
+ * Čistá desítka: ✓ / ✗ po každém pokusu, appka drží sérii povedených po sobě (✗ ji vynuluje)
+ * a po desátém povedeném zapíše čas. Zpět vrací poslední pokus hráče.
+ */
+export function StreakMirror({ players, def, states, names, now, limitSec, canSolo, onTap }: StreakProps) {
+  const len = def.streak ?? 0;
+  return (
+    <div className="mirror drill streak">
+      <div className="mirror-metric">
+        <strong>{def.name}</strong> <span>{def.what}</span>
+      </div>
+      <div className={`mirror-halves cols-${players.length}`}>
+        {players.map((p, i) => {
+          const s = states[p];
+          const nm = names[p] ?? '?';
+          const can = canSolo(p);
+          const up = streakTimeUp(s, limitSec, now);
+          const elapsed = s.startedAt !== null ? Math.max(0, Math.floor(((s.doneAt ?? now) - s.startedAt) / 1000)) : null;
+          return (
+            <div key={p} role="group" aria-label={nm} className={`mirror-half side-${i % 2 ? 'b' : 'a'}`}>
+              <div className="mirror-who">
+                <strong>{nm}</strong>
+                <small>
+                  pokus {s.attempts}
+                  {elapsed !== null && s.doneAt === null ? ` · ${streakTime(elapsed)}` : ''}
+                </small>
+              </div>
+              <div className="drill-bar" aria-hidden="true">
+                <i style={{ width: `${(100 * Math.min(s.run, len)) / len}%` }} />
+              </div>
+              <div className="drill-value" aria-label={`${nm}: ${s.run} po sobě`}>
+                <span className="mirror-num">{s.run}</span>
+                <small>z {len} po sobě</small>
+              </div>
+              {s.seconds !== null ? (
+                <div className="drill-done">Splněno za {streakTime(s.seconds)}</div>
+              ) : up ? (
+                <div className="drill-done streak-over">Čas kola vypršel – nesplněno</div>
+              ) : (
+                <>
+                  <button type="button" className="drill-ok" aria-label={`${def.ok}: ${nm}`} disabled={!can} onClick={() => onTap(p, true, 1)}>
+                    ✓ {def.ok}
+                  </button>
+                  <button type="button" className="drill-fail" aria-label={`${def.fail}: ${nm}`} disabled={!can} onClick={() => onTap(p, false, 1)}>
+                    ✗ {def.fail} · znovu od 0
+                  </button>
+                </>
+              )}
+              {can && (
+                <button type="button" className="pill" aria-label={`Zpět: ${nm}`} disabled={!s.last} onClick={() => s.last && onTap(p, s.last.kind === 'hit', -1)}>
+                  ↶ Zpět
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

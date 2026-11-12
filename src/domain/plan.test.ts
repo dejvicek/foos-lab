@@ -6,8 +6,8 @@ describe('katalog disciplín', () => {
   it('cvičení, zápasy včetně Jedniček a simulace v pořadí PRD 4.6', () => {
     expect(DISCIPLINES.map((d) => d.id)).toEqual([
       'warmup', 'warmupPasses', 'passWallLane', 'fiveBarControl', 'setShooting', 'penaltyKeeper', 'penaltySolo', 'backShotKeeper', 'backShotSolo',
-      'clearing', 'looseBall', 'backRodsBuildUp', 'chain',
-      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'sim',
+      'clearing', 'looseBall', 'backRodsBuildUp', 'chain', 'streakShot3', 'streakPass5', 'streakShot2', 'streakPass2',
+      'normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6', 'sim',
     ]);
     expect(discipline('start03')).toMatchObject({ kind: 'match', min: 5, lossTax: true, start: [0, 3] });
     expect(discipline('singles')).toMatchObject({ kind: 'match', min: 8, singlesOnly: true });
@@ -92,14 +92,14 @@ describe('doplnit kola, když zbývá čas (2. 11. 2026)', () => {
     expect(Math.abs(filled.normal! - filled.lossTax!)).toBeLessThanOrEqual(1);
   });
 
-  it('bez zápasů (trénink pro 1 hráče): doplní cvičení, dvouvariantní po dvou kolech', () => {
-    const plan = { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1 };
-    const before = plannedMinutes(plan, 1, []);
-    const filled = fillPlan(plan, 60, 1, []);
-    expect(plannedMinutes(filled, 1, [])).toBeGreaterThan(before);
-    expect(plannedMinutes(filled, 1, [])).toBeLessThanOrEqual(60);
-    expect(filled.passWallLane! % 2).toBe(0);
-    expect(filled.penaltySolo! % 2).toBe(0);
+  it('bez zápasů: doplní cvičení, dvouvariantní po dvou kolech', () => {
+    const plan = { looseBall: 2, penaltyKeeper: 2, fiveBarControl: 1 };
+    const before = plannedMinutes(plan, 4, []);
+    const filled = fillPlan(plan, 90, 4, []);
+    expect(plannedMinutes(filled, 4, [])).toBeGreaterThan(before);
+    expect(plannedMinutes(filled, 4, [])).toBeLessThanOrEqual(90);
+    expect(filled.looseBall! % 2).toBe(0);
+    expect(filled.penaltyKeeper! % 2).toBe(0);
   });
 
   it('párové zápasy po dvou; když se nic nevejde, plán zůstane', () => {

@@ -1,10 +1,13 @@
 import { Fragment } from 'react';
-import { computeLadder, FORM_DAYS, MIN_TRAININGS, type LadderRow, type LadderView } from '../../domain/ladder';
+import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
+import { computePracticeMatchLadder, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
+import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
 import type { LadderPart, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
+import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
 import { dec1, pct, plural, signed } from '../format';
@@ -155,6 +158,7 @@ function SoloTable({
   name,
   open,
   attempts = false,
+  streak = false,
 }: {
   ranked: SoloLadderRow[];
   lowData: SoloLadderRow[];
@@ -165,10 +169,13 @@ function SoloTable({
   open(id: PlayerId): void;
   /** Sloupec Pokusy (žebříček Vlastní). */
   attempts?: boolean;
+  /** Čistá desítka: splněné série a nejlepší čas místo průměru / celku. */
+  streak?: boolean;
 }) {
   const rows = [...ranked, ...lowData];
   const cut = ranked.length;
-  const cols = attempts ? 5 : 4;
+  const showAttempts = attempts && !streak;
+  const cols = showAttempts || streak ? 5 : 4;
   return (
     <div className="wrap">
       <table aria-label={label} className="solo-table">
@@ -177,8 +184,9 @@ function SoloTable({
             <th className="n rank">#</th>
             <th>Hráč</th>
             <th className="n">Tréninky</th>
-            {attempts && <th className="n">Pokusy</th>}
-            <th className="n">{view === 'avg' ? 'Průměr' : 'Celkem'}</th>
+            {showAttempts && <th className="n">Pokusy</th>}
+            {streak && <th className="n">Splněno</th>}
+            <th className="n">{streak ? 'Nejlepší čas' : view === 'avg' ? 'Průměr' : 'Celkem'}</th>
           </tr>
         </thead>
         <tbody>
@@ -195,8 +203,53 @@ function SoloTable({
                     </button>
                   </td>
                   <td className="n">{r.trainings}</td>
-                  {attempts && <td className="n">{r.sumMax}</td>}
-                  <td className="n">{view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+                  {showAttempts && <td className="n">{r.sumMax}</td>}
+                  {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
+                  <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+                </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Žebříček Vlastní – zápasy (12. 11. 2026): vyhrané zápasy, legy a rozdíl skóre. */
+function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
+  const rows = [...table.ranked, ...table.lowData];
+  const cut = table.ranked.length;
+  return (
+    <div className="wrap">
+      <table aria-label={discipline(table.discipline).name} className="solo-table">
+        <thead>
+          <tr>
+            <th className="n rank">#</th>
+            <th>Hráč</th>
+            <th className="n">Tréninky</th>
+            <th className="n">Zápasy</th>
+            <th className="n">Legy</th>
+            <th className="n">Rozdíl</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => {
+            const isRanked = i < cut;
+            return (
+              <Fragment key={r.playerId}>
+                {i === cut && <Cutoff cols={6} />}
+                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  <td>
+                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                      {name(r.playerId)}
+                    </button>
+                  </td>
+                  <td className="n">{r.trainings}</td>
+                  <td className="n">{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
+                  <td className="n">{`${r.legWins} / ${r.legs}`}</td>
+                  <td className={r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n'}>{signed(r.gf - r.gc)}</td>
                 </tr>
               </Fragment>
             );
@@ -243,11 +296,13 @@ function SoloLadder({
   source?: SoloSource;
 }) {
   const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today, source);
-  if (!tables.length)
+  const range = resolveRange(prefs.ladderRange, today);
+  const matchTables = source === 'practice' ? computePracticeMatchLadder(store.data.trainings, range.from ?? null, range.to ?? null, MIN_TRAININGS) : [];
+  if (!tables.length && !matchTables.length)
     return (
       <p className="note">
         {source === 'practice'
-          ? 'V tomhle období zatím nikdo nezapsal vlastní trénink. Začít ho jde na stránce Trénink.'
+          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení, Čisté desítky ani zápasů 1 na 1.'
           : 'V tomhle období zatím nejsou žádné výsledky ze sólové části.'}
       </p>
     );
@@ -259,12 +314,19 @@ function SoloLadder({
           <section key={t.metric} className="solo-block">
             <h3>{def.name}</h3>
             <p className="note">
-              {def.what}, {def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}
+              {def.streak ? `${def.what}, řazeno podle nejlepšího času` : `${def.what}, ${def.lowerIsBetter ? 'méně je lépe' : 'víc je lépe'}`}
             </p>
-            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} attempts={source === 'practice'} />
+            <SoloTable ranked={t.ranked} lowData={t.lowData} view={prefs.ladderView} label={def.name} max={def.max} name={name} open={open} attempts={source === 'practice'} streak={!!def.streak} />
           </section>
         );
       })}
+      {matchTables.map((t) => (
+        <section key={t.discipline} className="solo-block">
+          <h3>{discipline(t.discipline).name}</h3>
+          <p className="note">zápasy 1 na 1 (duo i singly v klubu), víc vyhraných je lépe</p>
+          <PracticeMatchTable table={t} name={name} open={open} />
+        </section>
+      ))}
     </div>
   );
 }
@@ -330,8 +392,10 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
           </span>
           {prefs.ladderPart === 'practice'
-            ? `Počítají se jen vlastní tréninky (sám nebo ve dvou). Pro umístění je potřeba aspoň ${MIN_TRAININGS} vlastních tréninků se záznamem v období.`
-            : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
+            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka) a zápasy 1 na 1 – z dua i singly z klubu. Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+            : prefs.ladderPart === 'solo'
+              ? `Cvičení z klubových tréninků i z vlastních tréninků duo (stejné podmínky). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
           Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}

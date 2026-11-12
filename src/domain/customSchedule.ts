@@ -3,6 +3,7 @@ import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters
 import { planSequence, planTimeline, playable, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
+import { baseMatchId, formatLabel, formatMins, formatOf, withFormat, type MatchFormat } from './matchFormat';
 import type {
   Cell,
   DisciplineId,
@@ -21,7 +22,7 @@ function cellsOf(items: Cell[], tables: TableCount): (Cell | null)[] {
   return Array.from({ length: tables }, (_, j) => items[j] ?? null);
 }
 
-function matchCells(def: DisciplineDef, roundNo: number, plans: MatchPlan[], waiting: PlayerId[]): Cell[] {
+function matchCells(def: DisciplineDef, roundNo: number, plans: MatchPlan[], waiting: PlayerId[], fmt: MatchFormat): Cell[] {
   return plans.map((p, j) => {
     const referee = waiting[j];
     const match: Match = {
@@ -39,7 +40,7 @@ function matchCells(def: DisciplineDef, roundNo: number, plans: MatchPlan[], wai
     if (referee) match.referee = referee;
     if (def.wall) match.wall = 'A';
     if (def.start) match.start = def.start;
-    return { type: 'match', match };
+    return { type: 'match', match: withFormat(match, fmt) };
   });
 }
 
@@ -87,7 +88,8 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   const drillsLeft = new Map<DisciplineId, number>();
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);
 
-  const timeline = planTimeline(seq, t.breaks, t.disciplineMin);
+  // Zápas s BO trvá délka legu × nejvyšší počet legů.
+  const timeline = planTimeline(seq, t.breaks, formatMins(t.disciplineMin, t.matchFormats));
   // Sekce jdou chronologicky: při změně druhu kola začne nová (cvičení přidané později je za zápasy).
   const META = {
     drills: { title: 'Cvičení', waitingLabel: 'Počítá' },
@@ -128,7 +130,8 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     // Cvičení na dvě varianty: liché výskyty varianta 1, sudé varianta 2 (počítají se i zamčená kola).
     const drillK = def.kind === 'drill' ? (drillSeen.get(def.id) ?? 0) : 0;
     if (def.kind === 'drill') drillSeen.set(def.id, drillK + 1);
-    const rule = def.variants ? `${def.name} – ${def.variants[drillK % 2]}, ${item.min} min` : `${def.name}, ${item.min} min`;
+    const bo = def.kind === 'match' ? formatLabel(formatOf(t.matchFormats, def.id)) : '';
+    const rule = def.variants ? `${def.name} – ${def.variants[drillK % 2]}, ${item.min} min` : `${def.name}${bo ? ` ${bo}` : ''}, ${item.min} min`;
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 
     if (def.kind === 'sim') {
@@ -222,7 +225,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         label,
         rule,
         kind: 'matches',
-        cells: cellsOf(matchCells(def, roundNo, r.matches, r.waiting), tables),
+        cells: cellsOf(matchCells(def, roundNo, r.matches, r.waiting, formatOf(t.matchFormats, def.id)), tables),
         waiting: r.waiting,
       };
     }
@@ -273,8 +276,9 @@ export function lockThrough(schedule: Schedule, locked: LockedRound[], roundNo: 
 
 /** Číslo kola, do kterého patří zápas nebo výsledek (pro zamykání). */
 export function roundOfMatch(schedule: Schedule, matchIdValue: string): number | null {
+  const id = baseMatchId(matchIdValue); // další leg BO zápasu patří do kola zápasu
   for (const sec of schedule.sections)
     for (const row of sec.rows)
-      if (row.cells.some((c) => c?.type === 'match' && c.match.id === matchIdValue)) return row.roundNo ?? null;
+      if (row.cells.some((c) => c?.type === 'match' && c.match.id === id)) return row.roundNo ?? null;
   return null;
 }

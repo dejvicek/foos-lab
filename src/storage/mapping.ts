@@ -1,4 +1,4 @@
-import { DEFAULT_START, parseSoloKey, soloKey } from '../domain/solo';
+import { DEFAULT_START, parseSoloKey, soloKey, soloMetric } from '../domain/solo';
 import { isEmptyScore } from '../domain/training';
 import { DISCIPLINES } from '../domain/disciplines';
 import type { MatchId, Mode, Player, PlayerId, Score, LockedRound, SimSplit, SimTeams, SoloKey, SoloMetric, SoloResults, TrainingFormat, TableCount, Training, Breaks, PlayTime, PlayTimes, GameEvent } from '../domain/types';
@@ -31,6 +31,7 @@ export interface TrainingRow {
   breaks: Breaks;
   /** Délky kol (snímek katalogu, migrace 18); null = výchozí z kódu. */
   discipline_min?: Training['disciplineMin'];
+  match_formats?: Training['matchFormats'];
   /** Pořadí disciplín ze šablony (migrace 19); null = pořadí katalogu. */
   discipline_order?: Training['disciplineOrder'];
   created_by: string | null;
@@ -91,6 +92,7 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   breaks: t.breaks ?? null,
   discipline_min: t.disciplineMin ?? null,
   discipline_order: t.disciplineOrder ?? null,
+  match_formats: t.matchFormats ?? null,
   created_by: t.createdBy ?? null,
   mode: t.mode,
   tables: t.tables,
@@ -138,6 +140,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     ...(r.version ? { version: r.version } : {}),
     ...(r.breaks ? { breaks: r.breaks } : {}),
     ...(r.discipline_min ? { disciplineMin: r.discipline_min } : {}),
+    ...(r.match_formats ? { matchFormats: r.match_formats } : {}),
     ...(r.discipline_order ? { disciplineOrder: r.discipline_order.filter((id) => KNOWN.has(id)) } : {}),
     ...(Object.keys(soloAttempts).length ? { soloAttempts } : {}),
     ...(() => {
@@ -233,8 +236,9 @@ export function soloToRows(t: Training): SoloRow[] {
 
 export function soloRow(trainingId: string, playerId: PlayerId, key: SoloKey, value: number): SoloRow {
   const k = parseSoloKey(key);
-  // Zapsáno číslem: pokusy se mažou (= dokončené cvičení).
-  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: null };
+  // Zapsáno číslem = dokončené cvičení: plný počet pokusů se zapíše výslovně (od 11. 11. 2026, kdy se
+  // změnil z 10 na 20 – prázdné pokusy v databázi pak znamenají jen starší výsledky z 10, migrace 27).
+  return { training_id: trainingId, player_id: playerId, metric: k.metric, round: k.round, value, attempts: soloMetric(k.metric)?.max ?? null };
 }
 
 /** Odpověď funkce changes_since (migrace 23): řádky tabulek tak, jak jsou v databázi. */

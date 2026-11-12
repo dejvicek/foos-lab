@@ -103,7 +103,8 @@ describe('pokusy cvičení', () => {
     ]);
     expect(t.soloResults).toEqual({ p1: { warmupPasses: 9 }, p2: { warmupPasses: 12 } });
     expect(t.soloAttempts).toEqual({ p1: { warmupPasses: 14 } });
-    expect(soloRow('t', 'p2', 'warmupPasses', 12)).toMatchObject({ value: 12, attempts: null });
+    // Nový zápis číslem nese plný počet výslovně (11. 11. 2026, 20 pokusů; prázdné = starší z 10).
+    expect(soloRow('t', 'p2', 'penaltySolo@1', 12)).toMatchObject({ value: 12, attempts: 20 });
   });
 });
 

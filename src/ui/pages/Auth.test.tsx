@@ -198,7 +198,7 @@ describe('přihlášení', () => {
     window.location.hash = '#/trainings';
     render(<App repo={repo} auth={auth} />);
     const user = userEvent.setup();
-    await createTraining(user, ['Milan', 'Lavi']);
+    await createTraining(user, ['Milan', 'Lavi', 'Luky', 'Osky']); // klubový trénink aspoň pro 4
     // zakladatel spravuje: nastavení (i běžícího tréninku) a mazání
     expect(await screen.findByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Smazat trénink' })).toBeInTheDocument();

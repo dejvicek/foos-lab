@@ -260,6 +260,8 @@ details.archived { margin-top: 16px; }
 .practice .segmented button { min-height: 40px; padding: 0 18px; }
 .practice-setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 32px; align-items: start; }
 @media (max-width: 767px) { .practice-setup { grid-template-columns: minmax(0, 1fr); } }
+.practice-section h3 { margin: 14px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.practice-section .practice-pick { margin-top: 0; }
 .practice-pick label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; cursor: pointer; font-weight: 400; font-size: 14px; }
 .practice-pick input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--ink); flex: none; }
 .practice-pick label span { display: flex; flex-direction: column; gap: 1px; }
@@ -861,6 +863,7 @@ button.drill-fail { min-height: 48px; border: 2px dashed var(--warn); border-rad
 button.drill-ok:active:not(:disabled) { background: var(--side-fill); color: var(--side-ink); }
 button.drill-fail:active:not(:disabled) { background: var(--warn-soft); }
 .drill-done { background: var(--side-fill); color: var(--side-ink); border-radius: 10px; text-align: center; padding: 14px 4px; font-weight: 800; }
+.drill-done.streak-over { background: var(--warn-soft); color: var(--warn); }
 .drill-fix { display: flex; gap: 4px; }
 .drill-fix button { flex: 1; }
 .drill-line { display: grid; grid-template-columns: minmax(70px, 1fr) 64px auto auto auto auto; gap: 6px; align-items: center; }
@@ -1215,8 +1218,10 @@ button.dp-chip.small { font-size: 12px; min-height: 26px; padding: 1px 9px 1px 7
 .dp-general p { margin: 0 0 4px; font-size: 14px; max-width: 75ch; }
 
 .dp-rows { list-style: none; margin: 0; padding: 0; }
+.dp-area-head { margin: 16px 0 2px; font-size: 15px; font-weight: 800; color: var(--ink); }
+.dp-area:first-of-type .dp-area-head { margin-top: 10px; }
 .dp-row { border-bottom: 1px solid var(--line); }
-.dp-head { display: grid; grid-template-columns: minmax(200px, 1.1fr) 76px 26px minmax(0, 1.5fr) 74px; align-items: center; gap: 4px 10px;
+.dp-head { display: grid; grid-template-columns: minmax(200px, 1.1fr) 76px 66px 22px minmax(0, 1.5fr) 74px; align-items: center; gap: 4px 10px;
   padding: 6px 8px 6px 0; border-radius: 6px; cursor: pointer; }
 .dp-head:hover { background: var(--row-hover); }
 button.dp-toggle { background: none; border: 0; color: var(--ink); padding: 4px 0; min-height: 32px; display: flex; align-items: center; gap: 6px; text-align: left; justify-content: flex-start; }
@@ -1277,7 +1282,7 @@ button.dp-edit { margin-top: 12px; min-height: 30px; font-size: 13px; }
 .dp-legend svg { width: 16px; height: 16px; }
 
 @media (max-width: 767px) {
-  .dp-head { grid-template-columns: minmax(0, 1fr) auto 22px; padding-right: 2px; }
+  .dp-head { grid-template-columns: minmax(0, 1fr) auto 62px 20px; padding-right: 2px; }
   .dp-head .dp-tags { grid-column: 1 / -1; grid-row: 2; padding-left: 20px; }
   .dp-head > .dp-opt { display: none; }
   .dp-opt-inline { display: inline-block; }
@@ -1319,17 +1324,25 @@ button.tpl-tab.add { color: var(--felt); }
 .tt-summary { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; font-size: 14px; color: var(--felt); }
 .tt-summary b { font-variant-numeric: tabular-nums; }
 .tt-summary.over { color: var(--warn); }
-.tt-meter { flex: 1; max-width: 260px; height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
-.tt-meter i { display: block; height: 100%; background: var(--gold); }
-.tt-summary.over .tt-meter i { background: var(--warn); }
+.tt-meter { position: relative; flex: 1; max-width: 260px; height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+/* Úseky plánu v barvách druhu (PlanMeter); pauzy šrafovaně, konec tréninku u přetaženého plánu. */
+.tt-meter i { position: absolute; top: 0; bottom: 0; background: var(--muted); }
+.tt-meter i.k-drill { background: var(--k-drill); }
+.tt-meter i.k-match { background: var(--k-match); }
+.tt-meter i.k-sim { background: var(--k-sim); }
+.tt-meter i.k-break { background: repeating-linear-gradient(135deg, var(--line-strong) 0 2px, transparent 2px 4px); }
+.tt-meter-end { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: var(--warn); }
 .tpl-body { padding: 4px 16px 4px; }
 .tpl-sec { margin-top: 14px; }
 .tpl-sec h3 { margin: 0; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .tpl-sec h3 i { width: 9px; height: 9px; border-radius: 2px; }
-/* Druh disciplíny (cvičení / zápasy / simulace) říká nadpis sekce; pruh je neutrální, aby se nepletl s barvami štítků. */
-.tpl-sec h3 i.k-drill, .tt-strip.k-drill,
-.tpl-sec h3 i.k-match, .tt-strip.k-match,
-.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--muted); }
+/* Druh disciplíny v časovém pruhu (12. 11. 2026 znovu barevně): cvičení modře, zápasy zeleně, simulace fialově. */
+:root { --k-drill: #2d5fa8; --k-match: #2f7d57; --k-sim: #8a4fb8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --k-drill: #6f9be0; --k-match: #4fae80; --k-sim: #b98ae6; } }
+:root[data-theme='dark'] { --k-drill: #6f9be0; --k-match: #4fae80; --k-sim: #b98ae6; }
+.tpl-sec h3 i.k-drill, .tt-strip.k-drill { background: var(--k-drill); }
+.tpl-sec h3 i.k-match, .tt-strip.k-match { background: var(--k-match); }
+.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--k-sim); }
 .tpl-count { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; }
 /* řádek: čas | pruh | ⠿ | disciplína | ↑↓ | kola | délka kola | celkem */
 .tt-rows { list-style: none; margin: 0; padding: 0; }
@@ -1765,3 +1778,26 @@ button, a, summary, label, input, select { touch-action: manipulation; }
   button { min-height: 44px; }
   button.back { min-height: 44px; }
 }
+
+/* ── BO formát zápasu (12. 11. 2026) ─────────────────── */
+.mf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 2px 0 4px 26px; font-size: 13px; color: var(--muted); }
+.mf select { min-height: 28px; min-width: 58px; padding: 0 22px 0 6px; font-size: 13px; }
+.mf label { display: inline-flex; align-items: center; gap: 4px; font-weight: 400; }
+.mf-check input { width: 16px; height: 16px; accent-color: var(--ink); }
+.mf-note { font-size: 12px; }
+.legs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; }
+.legs-score { font-weight: 800; font-size: 14px; margin-right: 4px; }
+.legs .pill[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.practice-order .mf { margin: 4px 0 0; font-weight: 400; }
+.tpl-all { display: flex; justify-content: flex-end; margin: 10px 0 -4px; }
+.dp-places { display: inline-flex; gap: 0; color: var(--ink); }
+.dp-place { display: inline-grid; place-items: center; width: 22px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: none; color: inherit; min-height: 0; }
+.dp-places svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.dp-places .off { color: var(--muted); opacity: .3; }
+button.dp-place { cursor: pointer; }
+button.dp-place:hover { background: var(--row-hover); color: var(--felt); }
+button.dp-place.hit { background: var(--felt); color: var(--surface); }
+button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 1px; }
+.practice-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.practice-plan-head h2 { margin-bottom: 0; }
+.practice-plan-head button { min-height: 32px; padding: 0 12px; font-size: 13px; }

@@ -4,6 +4,7 @@
  * Délka kola platí pro nové tréninky (a při úpravě nezahájeného) – trénink si ji uloží (roundMin).
  */
 import { EXPLANATIONS, type ExplanationPart } from './content';
+import { cleanFormats, formatMins, type MatchFormats } from './matchFormat';
 import { catalogMins, DEFAULT_DISCIPLINES, drillInPairs, setDisciplines, type DisciplineDef, type DisciplineMins } from './disciplines';
 import { setHelpOverrides } from './explain';
 import { DEFAULT_SKILLS, setSkills, type Skill, type SkillDef } from './skills';
@@ -28,6 +29,8 @@ export interface TrainingTemplate {
   rounds?: Plan;
   /** Pauzy po disciplínách. */
   breaks?: TemplateBreak[];
+  /** BO formát zápasů (12. 11. 2026); chybí = BO1 do 6. */
+  formats?: MatchFormats;
 }
 
 export interface CatalogData {
@@ -100,7 +103,7 @@ export const templateBreaks = (t: TrainingTemplate): Breaks => (t.breaks?.length
 /** Časová osa šablony (kola v pořadí šablony, pauzy) pro daný počet hráčů a stolů. */
 export function templateTimeline(t: TrainingTemplate, players: number, tables: number, mins: DisciplineMins = catalogMins()): { items: TimelineItem[]; total: number } {
   const plan = playablePlan(templatePlan(t, players, tables), players);
-  return planTimeline(planSequence(plan, t.selection), templateBreaks(t), mins);
+  return planTimeline(planSequence(plan, t.selection), templateBreaks(t), formatMins(mins, t.formats));
 }
 
 /** Kolik kol disciplína v šabloně má: cvičení podle hráčů a stolů (× 2 varianty), zápas podle šablony, simulace 1. */
@@ -119,7 +122,13 @@ export function matchingTemplate(templates: TrainingTemplate[], durationMin: num
 
 /** Uloží šablony a délky kol (u disciplín jen rozdíly proti výchozím). */
 export function saveTemplates(data: CatalogData, templates: TrainingTemplate[], mins: DisciplineMins): CatalogData {
-  let out: CatalogData = { ...data, templates: templates.map((t) => ({ ...t, name: t.name.trim(), selection: [...t.selection] })) };
+  let out: CatalogData = {
+    ...data,
+    templates: templates.map(({ formats, ...t }) => {
+      const f = cleanFormats(formats);
+      return { ...t, name: t.name.trim(), selection: [...t.selection], ...(f ? { formats: f } : {}) };
+    }),
+  };
   for (const d of DEFAULT_DISCIPLINES) {
     const m = mins[d.id];
     if (m === undefined) continue;

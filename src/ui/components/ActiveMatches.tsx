@@ -1,4 +1,5 @@
 import { WarmupTimer } from './WarmupTimer';
+import { matchState } from '../../domain/matchFormat';
 import { useState } from 'react';
 import type { ItemState, QueueEntry } from '../../domain/queue';
 import type { SoloMetricDef } from '../../domain/solo';
@@ -37,10 +38,29 @@ export interface ResultEntryProps {
 
 function ResultEntry({ e, table, names, entry }: { e: Item; table: number; names: Record<PlayerId, string>; entry: ResultEntryProps }) {
   const label = `${e.label}, stůl ${table}`;
-  if (e.match)
-    return <ScorePicker label={label} match={e.match} score={entry.training.scores[e.match.id]} names={names} disabled={false} onChange={(sc) => entry.onScore(e.match!.id, sc)} />;
+  if (e.match) {
+    // BO zápas: výběr pro každý leg, který se hraje nebo odehrál.
+    const legs = (e.match.bestOf ?? 1) > 1 ? matchState(e.match, entry.training.scores).legs.map((l) => l.leg) : [e.match];
+    return (
+      <>
+        {legs.map((leg) => (
+          <ScorePicker
+            key={leg.id}
+            label={legs.length > 1 || leg.legNo ? `${label}, leg ${leg.legNo ?? 1}` : label}
+            match={leg}
+            score={entry.training.scores[leg.id]}
+            names={names}
+            disabled={false}
+            onChange={(sc) => entry.onScore(leg.id, sc)}
+          />
+        ))}
+      </>
+    );
+  }
   const drill = entry.drillOf(e);
   if (!drill) return null;
+  // Čistá desítka se měří na čas z jednotlivých pokusů – číslem zpětně zapsat nejde.
+  if (drill.def.streak) return <p className="note">{drill.def.name} se zapisuje ťukáním pokusů v Moje hry.</p>;
   return (
     <div className="active-entry-drill">
       <small className="muted">{drill.def.what}</small>

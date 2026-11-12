@@ -29,8 +29,15 @@ export const MIN_PLAYERS_SIM = 4;
 export const minPlayers = (t: Pick<ScheduleInput, 'format'>): number => (t.format === 'custom' ? MIN_PLAYERS_CUSTOM : MIN_PLAYERS);
 export const MAX_PLAYERS = 13;
 
+/**
+ * Nový nebo upravovaný klubový trénink: aspoň 4 hráči (12. 11. 2026, *rozhodnutí uživatele*; méně hráčů
+ * patří do vlastního tréninku). Rozpis starších tréninků s méně hráči se dál sestaví (canBuildSchedule).
+ */
+export const MIN_CLUB_PLAYERS = 4;
+export const canSaveClubTraining = (t: ScheduleInput): boolean => canBuildSchedule(t) && t.attendees.length >= MIN_CLUB_PLAYERS;
+
 export type ScheduleInput = Pick<Training, 'mode' | 'tables' | 'attendees'> &
-  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds' | 'breaks' | 'disciplineMin' | 'disciplineOrder'>>;
+  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds' | 'breaks' | 'disciplineMin' | 'disciplineOrder' | 'matchFormats'>>;
 
 export function canBuildSchedule(t: ScheduleInput): boolean {
   return t.attendees.length >= minPlayers(t) && t.attendees.length <= MAX_PLAYERS;

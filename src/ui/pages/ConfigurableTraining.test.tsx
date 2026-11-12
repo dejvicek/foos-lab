@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import type { Player } from '../../domain/types';
-import { discView, next, stepButton } from '../../test/wizard';
+import { discView, next } from '../../test/wizard';
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
 const players = (n: number): Player[] =>
@@ -94,25 +94,19 @@ describe('konfigurovatelný trénink v UI', () => {
     });
   });
 
-  it('trénink pro 2 hráče: rozpis bez simulace, simulace vypnutá; při 4 hráčích se vrátí', async () => {
+  it('klubový trénink aspoň pro 4 hráče (12. 11. 2026): s méně dál nejde; při 4 je simulace', async () => {
     const user = userEvent.setup();
     const repo = memoryRepository({ players: players(4), trainings: [], catalog: DEFAULT_CATALOG });
     window.location.hash = '#/trainings';
     render(<App repo={repo} />);
     await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
     await user.click(screen.getByRole('checkbox', { name: 'H1' }));
-    expect(screen.queryByText(/Ještě chybí/)).toBeNull(); // jde i trénink pro 1 hráče
     await user.click(screen.getByRole('checkbox', { name: 'H2' }));
-    await next(user);
-    const sim = screen.getByRole('checkbox', { name: 'Simulace ligového kola' });
-    expect(sim).toBeDisabled();
-    expect(sim).not.toBeChecked();
-    expect(screen.getByText('potřebuje aspoň 4 hráče')).toBeInTheDocument();
-    await discView(user, 'Kolo po kole');
-    expect(preview()).not.toHaveTextContent('1. vlna');
-    await user.click(stepButton('Přítomní'));
+    expect(screen.getByText(/Ještě chybí 2 hráči do minima 4/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Další:/ })).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: 'H3' }));
     await user.click(screen.getByRole('checkbox', { name: 'H4' }));
+    expect(screen.queryByText(/Ještě chybí/)).toBeNull();
     await next(user);
     expect(screen.getByRole('checkbox', { name: 'Simulace ligového kola' })).toBeChecked();
     await discView(user, 'Kolo po kole');

@@ -94,12 +94,16 @@ export function saveTheme(t: Theme): void {
   }
 }
 
-/** Vybraná cvičení vlastního tréninku v pořadí (PRD 5.11) – zařízení si je pamatuje pro příště; null = ještě nic. */
-const PRACTICE_KEY = 'foosball-practice.practice-drills.v1';
+/**
+ * Vybraná cvičení vlastního tréninku v pořadí (PRD 5.11) – zařízení si je pamatuje pro příště, zvlášť
+ * pro solo a duo (12. 11. 2026; dřívější společný seznam patří solu). null = ještě nic.
+ */
+export type PracticeMode = 'solo' | 'duo';
+const PRACTICE_KEY: Record<PracticeMode, string> = { solo: 'foosball-practice.practice-drills.v1', duo: 'foosball-practice.practice-drills.duo.v1' };
 
-export function loadPracticeDrills(): DisciplineId[] | null {
+export function loadPracticeDrills(mode: PracticeMode = 'solo'): DisciplineId[] | null {
   try {
-    const raw = localStorage.getItem(PRACTICE_KEY);
+    const raw = localStorage.getItem(PRACTICE_KEY[mode]);
     const v = raw ? JSON.parse(raw) : null;
     return Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as DisciplineId[]) : null;
   } catch {
@@ -107,9 +111,9 @@ export function loadPracticeDrills(): DisciplineId[] | null {
   }
 }
 
-export function savePracticeDrills(ids: DisciplineId[]): void {
+export function savePracticeDrills(ids: DisciplineId[], mode: PracticeMode = 'solo'): void {
   try {
-    localStorage.setItem(PRACTICE_KEY, JSON.stringify(ids));
+    localStorage.setItem(PRACTICE_KEY[mode], JSON.stringify(ids));
   } catch {
     /* bez uložení se příště začne výchozím výběrem */
   }

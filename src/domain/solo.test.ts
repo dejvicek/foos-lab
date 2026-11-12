@@ -18,13 +18,18 @@ describe('clockAt', () => {
 });
 
 describe('SOLO_METRICS', () => {
-  it('metriky podle PRD 5.8 (+ cvičení z 2. 11. 2026), jen pětka je „méně je lépe“', () => {
+  it('metriky podle PRD 5.8 (+ cvičení z 2. 11. 2026); od 12. 11. 2026 všechny „víc je lépe“ kromě času', () => {
     expect(SOLO_METRICS.map((m) => [m.id, m.max])).toEqual([
-      ['warmupPasses', 20], ['passWallLane', 10], ['fiveBarControl', 10], ['fiveBarSolo', 10], ['setShooting', 20],
-      ['penaltyKeeper', 10], ['penaltySolo', 10], ['backShotKeeper', 10], ['backShotSolo', 10],
-      ['clearing', 10], ['looseBall', 10], ['backRodsBuildUp', 10], ['chain', 20],
+      ['warmupPasses', 20], ['passWallLane', 20], ['fiveBarControl', 20], ['fiveBarSolo', 20], ['setShooting', 20],
+      ['penaltyKeeper', 20], ['penaltySolo', 20], ['backShotKeeper', 20], ['backShotSolo', 20],
+      ['clearing', 20], ['looseBall', 20], ['backRodsBuildUp', 10], ['chain', 20],
+      ['streakShot3', 500], ['streakPass5', 500], ['streakShot2', 500], ['streakPass2', 500],
     ]);
-    expect(SOLO_METRICS.filter((m) => m.lowerIsBetter).map((m) => m.id)).toEqual(['fiveBarControl', 'fiveBarSolo']);
+    // Čistá desítka (11. 11. 2026): čas, méně je lépe.
+    // Udržení míče na pětce se od 12. 11. 2026 počítá na góly – „méně je lépe“ už nic kromě času
+    expect(SOLO_METRICS.filter((m) => m.lowerIsBetter && !m.streak).map((m) => m.id)).toEqual([]);
+    expect(soloMetric('fiveBarControl')).toMatchObject({ what: 'góly z 20 sérií', ok: 'gól', fail: 'bez gólu' });
+    expect(soloMetric('streakPass2')).toMatchObject({ streak: 10, lowerIsBetter: true, what: 'čas do 10 povedených po sobě', ok: 'povedená' });
     expect(soloMetric('setShooting').what).toBe('góly z 20 střel');
     expect(soloMetric('chain')).toMatchObject({ name: 'Řetězec', what: 'góly z 20', ok: 'gól', fail: 'bez gólu' });
   });

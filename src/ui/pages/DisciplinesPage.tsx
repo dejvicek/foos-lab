@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
-import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines } from '../../domain/disciplineInfo';
-import { discipline, DISCIPLINES, type DisciplineDef } from '../../domain/disciplines';
+import { disciplineDuration, disciplineFacts, disciplineHelp, disciplinePlaces, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, PLACE_KEYS, PLACE_LABEL, placesText } from '../../domain/disciplineInfo';
+import type { Places } from '../../domain/disciplines';
+import { discipline, DISCIPLINES, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
@@ -10,18 +11,27 @@ import { MinStepper } from '../components/MinStepper';
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
 const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
 
-const ICON: Record<'pair' | 'solo' | 'swap', ReactNode> = {
-  pair: (
+/** Ikony: kde se hraje (panáčci – 12. 11. 2026: skupina = klub, jeden = sám, dva = ve dvou) a párový zápas. */
+const ICON: Record<'club' | 'solo' | 'duo' | 'swap', ReactNode> = {
+  club: (
     <>
-      <circle cx="8" cy="8" r="3" />
-      <circle cx="16" cy="8" r="3" />
-      <path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M13 14.5c.9-.3 1.9-.5 3-.5 3 0 5.5 2 5.5 5" />
+      <circle cx="12" cy="6.8" r="2.5" />
+      <circle cx="5.3" cy="9.3" r="2.1" />
+      <circle cx="18.7" cy="9.3" r="2.1" />
+      <path d="M7.6 18.8c0-2.8 1.9-4.6 4.4-4.6s4.4 1.8 4.4 4.6M2 17.6c0-2.2 1.4-3.7 3.3-3.7M22 17.6c0-2.2-1.4-3.7-3.3-3.7" />
     </>
   ),
   solo: (
     <>
       <circle cx="12" cy="8" r="3.2" />
       <path d="M5.5 19.5c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
+    </>
+  ),
+  duo: (
+    <>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M13 14.5c.9-.3 1.9-.5 3-.5 3 0 5.5 2 5.5 5" />
     </>
   ),
   swap: <path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5" />,
@@ -40,9 +50,11 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
   const [editing, setEditing] = useState<DisciplineId | null>(null);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [general, setGeneral] = useState(false);
+  // Filtr „Hraje se“ (12. 11. 2026): klubový / vlastní sám / vlastní ve dvou.
+  const [place, setPlace] = useState<keyof Places | null>(null);
   const offered = offeredDisciplines();
-  const visible = offered.filter((d) => matchesSkillFilter(d.skills, filter));
-  const filtering = filter.skills.length + filter.groups.length > 0;
+  const visible = offered.filter((d) => matchesSkillFilter(d.skills, filter) && (!place || disciplinePlaces(d.id)[place]));
+  const filtering = filter.skills.length + filter.groups.length > 0 || place !== null;
   const hit = (s: Skill) => filtering && (filter.skills.includes(s) || filter.groups.includes(skillGroup(s).id));
   const toggleOpen = (id: DisciplineId) =>
     setOpen((o) => {
@@ -56,7 +68,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
   return (
     <section className="disciplines-page">
       <h1>Disciplíny</h1>
-      <p className="lead">Co se na tréninku hraje a co která disciplína trénuje. Klikni na řádek pro popis.</p>
+      <p className="lead">Co se na tréninku hraje a co která disciplína trénuje. Klikni na řádek pro popis, na štítek nebo panáčka pro filtr.</p>
       <div className="dp-filter">
         <span className="dp-filter-label">Trénuje:</span>
         <ul className="dp-chips" aria-label="Sekce dovedností">
@@ -83,8 +95,12 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
         )}
         {filtering && (
           <p className="dp-filter-status">
-            Filtr: <b>{[...filter.groups.map((g) => SKILL_GROUPS.find((x) => x.id === g)!.name), ...filter.skills.map(skillName)].join(', ')}</b> · {visible.length} z {offered.length}
-            <button type="button" className="link" onClick={() => setFilter({ skills: [], groups: [] })}>
+            Filtr:{' '}
+            <b>
+              {[...(place ? [PLACE_LABEL[place]] : []), ...filter.groups.map((g) => SKILL_GROUPS.find((x) => x.id === g)!.name), ...filter.skills.map(skillName)].join(', ')}
+            </b>{' '}
+            · {visible.length} z {offered.length}
+            <button type="button" className="link" onClick={() => (setFilter({ skills: [], groups: [] }), setPlace(null))}>
               Zrušit filtr
             </button>
           </p>
@@ -93,10 +109,13 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
       {admin && tagsOpen && <SkillsEditor catalog={catalog} newId={store.newId} onSave={(c) => (save(c), setTagsOpen(false))} onCancel={() => setTagsOpen(false)} />}
       <p className="dp-legend" aria-label="Vysvětlivky ikon">
         <span>
-          <Icon name="pair" /> s bránícím soupeřem
+          <Icon name="club" /> klubový trénink
         </span>
         <span>
-          <Icon name="solo" /> jde i sám
+          <Icon name="solo" /> solo
+        </span>
+        <span>
+          <Icon name="duo" /> duo
         </span>
         <span>
           <Icon name="swap" /> 2 kola, strany si prohodí role
@@ -130,41 +149,48 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                   ))}
                 </div>
               )}
-              <ul className="dp-rows">
-                {list.map((d) => (
-                  <DisciplineRow
-                    key={d.id}
-                    d={d}
-                    open={open.has(d.id)}
-                    onToggle={() => toggleOpen(d.id)}
-                    hit={hit}
-                    onTag={(s) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }))}
-                  >
-                    {editing === d.id ? (
-                      <DisciplineEditor
-                        id={d.id}
-                        catalog={catalog}
-                        onSave={(c) => (save(c), setEditing(null))}
-                        onCancel={() => setEditing(null)}
-                      />
-                    ) : (
-                      <>
-                        <HelpList id={d.id} />
-                        <div className="dp-facts">
-                          {disciplineFacts(d.id).map((f) => (
-                            <span key={f}>{f}</span>
-                          ))}
-                        </div>
-                        {admin && (
-                          <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
-                            Upravit
-                          </button>
+              {(kind === 'drill' ? drillSections(list) : [{ area: null, name: null, drills: list }]).map((g) => (
+                <div key={g.area ?? 'none'} className="dp-area" role={g.name ? 'group' : undefined} aria-label={g.name ?? undefined}>
+                  {g.name && <h3 className="dp-area-head">{g.name}</h3>}
+                  <ul className="dp-rows">
+                    {g.drills.map((d) => (
+                      <DisciplineRow
+                        key={d.id}
+                        d={d}
+                        open={open.has(d.id)}
+                        onToggle={() => toggleOpen(d.id)}
+                        hit={hit}
+                        onTag={(s) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }))}
+                        place={place}
+                        onPlace={(k) => setPlace(place === k ? null : k)}
+                      >
+                        {editing === d.id ? (
+                          <DisciplineEditor
+                            id={d.id}
+                            catalog={catalog}
+                            onSave={(c) => (save(c), setEditing(null))}
+                            onCancel={() => setEditing(null)}
+                          />
+                        ) : (
+                          <>
+                            <HelpList id={d.id} />
+                            <div className="dp-facts">
+                              {disciplineFacts(d.id).map((f) => (
+                                <span key={f}>{f}</span>
+                              ))}
+                            </div>
+                            {admin && (
+                              <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
+                                Upravit
+                              </button>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-                  </DisciplineRow>
-                ))}
-              </ul>
+                      </DisciplineRow>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </section>
           );
         })}
@@ -178,6 +204,8 @@ function DisciplineRow({
   onToggle,
   hit,
   onTag,
+  place,
+  onPlace,
   children,
 }: {
   d: DisciplineDef;
@@ -185,10 +213,14 @@ function DisciplineRow({
   onToggle(): void;
   hit(s: Skill): boolean;
   onTag(s: Skill): void;
+  /** Filtr „kde se hraje“ – kliknutí na panáčka (12. 11. 2026). */
+  place: keyof Places | null;
+  onPlace(k: keyof Places): void;
   children: ReactNode;
 }) {
   const dur = disciplineDuration(d.id);
   const who = disciplineWho(d.id);
+  const places = disciplinePlaces(d.id);
   return (
     <li className={`dp-row${open ? ' open' : ''}`} aria-label={d.name}>
       {/* Kliknutí kamkoli do řádku rozbalí; pro klávesnici je přepínač u názvu. */}
@@ -202,6 +234,27 @@ function DisciplineRow({
         <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
           {dur.rounds === 2 && '2× '}
           <b>{dur.min}</b> min
+        </span>
+        <span className="dp-places" role="group" aria-label={`Hraje se: ${placesText(places)}`}>
+          {PLACE_KEYS.map((k) =>
+            places[k] ? (
+              <button
+                key={k}
+                type="button"
+                className={`dp-place on${place === k ? ' hit' : ''}`}
+                aria-pressed={place === k}
+                aria-label={`Filtrovat: ${PLACE_LABEL[k]}`}
+                title={`${PLACE_LABEL[k]} – filtrovat`}
+                onClick={(e) => (e.stopPropagation(), onPlace(k))}
+              >
+                <Icon name={k} />
+              </button>
+            ) : (
+              <span key={k} className="dp-place off" aria-hidden="true">
+                <Icon name={k} />
+              </span>
+            ),
+          )}
         </span>
         <span className="dp-who" title={who?.label} aria-label={who?.label} role={who ? 'img' : undefined}>
           {who && <Icon name={who.icon} />}

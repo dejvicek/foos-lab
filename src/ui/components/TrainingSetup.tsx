@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { alphabetical, type RosterError } from '../../domain/roster';
-import { MAX_PLAYERS, minPlayers } from '../../domain/schedule';
+import { MAX_PLAYERS, MIN_CLUB_PLAYERS, minPlayers } from '../../domain/schedule';
 import { toggleAttendee, withAttendees } from '../../domain/training';
 import { attendance, lastTraining } from '../../domain/attendance';
 import { formatDayMonth } from '../dates';
@@ -88,7 +88,7 @@ export function AttendanceFields({
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const n = training.attendees.length;
-  const min = minPlayers(training);
+  const min = Math.max(minPlayers(training), MIN_CLUB_PLAYERS);
   const att = useMemo(() => attendance(trainings, today, training.id), [trainings, today, training.id]);
   const last = useMemo(() => lastTraining(trainings, today, training.id), [trainings, today, training.id]);
   const lastIds = new Set(last?.attendees ?? []);
@@ -186,7 +186,7 @@ export function AttendanceFields({
         <span className="att-names">{n ? training.attendees.map((p) => byId.get(p) ?? '?').join(', ') : 'nikdo vybraný'}</span>
         {n < min && (
           <span className="att-warn">
-            Ještě chybí {min - n} {plural(min - n, 'hráč', 'hráči', 'hráčů')} do minima {min}.
+            Ještě chybí {min - n} {plural(min - n, 'hráč', 'hráči', 'hráčů')} do minima {min}. Méně hráčů si zacvičí ve vlastním tréninku.
           </span>
         )}
         {n > MAX_PLAYERS && <span className="att-warn">Moc hráčů: rozpis umí nejvýš {MAX_PLAYERS}.</span>}
