@@ -26,11 +26,11 @@ describe('stránka Disciplíny – obsah', () => {
     expect(disciplineWho('warmupPasses')).toBeNull();
     expect(disciplineWho('wall')?.icon).toBe('swap');
     expect(disciplineWho('normal')).toBeNull();
-    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: klubový trénink, vlastní trénink sám, vlastní trénink ve dvou']);
-    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
-    expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
+    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: klubový trénink, solo, duo']);
+    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem', 'hraje se: klubový trénink, duo']);
+    expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role', 'hraje se: klubový trénink, duo']);
     expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
-    expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
+    expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem', 'hraje se: klubový trénink, duo']);
     expect(disciplineHelp('chain').map((i) => i.name)).toEqual(['Řetězec']);
     expect(disciplineFacts('singles')).toEqual(['jen singly', 'hraje se: klubový trénink']);
     expect(disciplineFacts('sim')).toEqual(['od 4 hráčů', 'hraje se: klubový trénink']);

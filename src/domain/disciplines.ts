@@ -42,7 +42,7 @@ export interface DisciplineDef {
   clubOnly?: boolean;
 }
 
-/** Kde se disciplína hraje (12. 11. 2026): klubový trénink, vlastní trénink sám, vlastní trénink ve dvou. */
+/** Kde se disciplína hraje (12. 11. 2026): klubový trénink, solo, duo. */
 export interface Places {
   club: boolean;
   solo: boolean;
@@ -72,7 +72,7 @@ export const DRILL_AREAS: readonly { id: DrillArea; name: string }[] = [
 
 /**
  * Po sekcích: cvičení bez sekce (Rozcvička) nahoře, pak Obrana / Pětka / Trojka, nakonec Zápasy
- * (vlastní trénink ve dvou); uvnitř pořadí seznamu. Prázdné sekce chybí.
+ * (duo); uvnitř pořadí seznamu. Prázdné sekce chybí.
  */
 export function drillSections(list: DisciplineDef[]): { area: DrillArea | 'match' | null; name: string | null; drills: DisciplineDef[] }[] {
   const drills = list.filter((d) => d.kind !== 'match');

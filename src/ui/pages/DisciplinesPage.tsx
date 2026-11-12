@@ -124,12 +124,11 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
           <Icon name="club" /> klubový trénink
         </span>
         <span>
-          <Icon name="solo" /> vlastní trénink sám
+          <Icon name="solo" /> solo
         </span>
         <span>
-          <Icon name="duo" /> vlastní trénink ve dvou
+          <Icon name="duo" /> duo
         </span>
-        <span>šedě: tam se nehraje</span>
         <span>
           <Icon name="swap" /> 2 kola, strany si prohodí role
         </span>

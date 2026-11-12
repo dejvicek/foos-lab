@@ -30,13 +30,13 @@ export function disciplineWho(id: DisciplineId): { icon: 'swap'; label: string }
   return discipline(id).paired ? { icon: 'swap', label: '2 kola, strany si prohodí role' } : null;
 }
 
-/** Kde se disciplína hraje (12. 11. 2026): klubový trénink, vlastní trénink sám, vlastní trénink ve dvou. */
+/** Kde se disciplína hraje (12. 11. 2026): klubový trénink, vlastní trénink solo (sám) a duo (ve dvou). */
 export const disciplinePlaces = (id: DisciplineId): Places => placesOf(discipline(id));
 
-export const PLACE_LABEL: Record<keyof Places, string> = { club: 'klubový trénink', solo: 'vlastní trénink sám', duo: 'vlastní trénink ve dvou' };
+export const PLACE_LABEL: Record<keyof Places, string> = { club: 'klubový trénink', solo: 'solo', duo: 'duo' };
 export const PLACE_KEYS: (keyof Places)[] = ['club', 'solo', 'duo'];
 
-/** „klubový trénink, vlastní trénink ve dvou“ */
+/** „klubový trénink, duo“ */
 export const placesText = (p: Places): string => PLACE_KEYS.filter((k) => p[k]).map((k) => PLACE_LABEL[k]).join(', ');
 
 /** Podrobnosti v rozbaleném řádku – jen z definice disciplíny. */
