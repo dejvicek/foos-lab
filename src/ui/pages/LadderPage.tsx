@@ -302,7 +302,7 @@ function SoloLadder({
     return (
       <p className="note">
         {source === 'practice'
-          ? 'V tomhle období zatím nikdo nezapsal vlastní trénink. Začít ho jde na stránce Trénink.'
+          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení, Čisté desítky ani zápasů 1 na 1.'
           : 'V tomhle období zatím nejsou žádné výsledky ze sólové části.'}
       </p>
     );
@@ -323,7 +323,7 @@ function SoloLadder({
       {matchTables.map((t) => (
         <section key={t.discipline} className="solo-block">
           <h3>{discipline(t.discipline).name}</h3>
-          <p className="note">zápasy ve vlastním tréninku, víc vyhraných je lépe</p>
+          <p className="note">zápasy 1 na 1 (duo i singly v klubu), víc vyhraných je lépe</p>
           <PracticeMatchTable table={t} name={name} open={open} />
         </section>
       ))}
@@ -392,8 +392,10 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
           </span>
           {prefs.ladderPart === 'practice'
-            ? `Počítají se jen vlastní tréninky (sám nebo ve dvou). Pro umístění je potřeba aspoň ${MIN_TRAININGS} vlastních tréninků se záznamem v období.`
-            : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
+            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka) a zápasy 1 na 1 – z dua i singly z klubu. Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+            : prefs.ladderPart === 'solo'
+              ? `Cvičení z klubových tréninků i z vlastních tréninků duo (stejné podmínky). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
           Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}

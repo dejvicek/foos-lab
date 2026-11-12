@@ -26,7 +26,7 @@ import {
 import { SOLO_SELECTION } from '../../domain/plan';
 import { TRAINING_ITEM } from '../../domain/queue';
 import { soloMetric } from '../../domain/solo';
-import { computeSoloLadder } from '../../domain/soloLadder';
+import { clubMetric, computeSoloLadder } from '../../domain/soloLadder';
 import { MIN_TRAININGS } from '../../domain/ladder';
 import type { DisciplineId, Match, PlayerId, SoloMetric, Training } from '../../domain/types';
 import type { Viewer } from '../../domain/my';
@@ -115,18 +115,22 @@ function seriesResults(t: Training, s: PracticeSeries | undefined, name: (id: Pl
   return s.results.map((r) => `${pair ? `${name(r.playerId)} ` : ''}${resultText(r.value, r.attempts, r.max, s.metric)}`).join(' · ');
 }
 
-/** PRD 5.11: Pořadí hráčů vlastního tréninku v žebříčku Vlastní za formu, pro každou metriku tréninku. */
+/**
+ * PRD 5.11: Pořadí hráčů vlastního tréninku za formu, pro každou metriku tréninku – cvičení, která jsou
+ * i v klubu, ve Stanovištích (12. 11. 2026, stejné podmínky napříč), ostatní ve Vlastní.
+ */
 function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: PlayerId): string }) {
   const metrics = [...new Set(practiceSeries(t).map((s) => s.metric))];
   if (!metrics.length) return null;
-  const tables = computeSoloLadder(store.data.trainings, { kind: 'form' }, 'avg', todayIso(), 'practice');
+  const club = computeSoloLadder(store.data.trainings, { kind: 'form' }, 'avg', todayIso(), 'club');
+  const own = computeSoloLadder(store.data.trainings, { kind: 'form' }, 'avg', todayIso(), 'practice');
   const pair = t.attendees.length > 1;
   return (
-    <section aria-label="Žebříček Vlastní">
-      <h2>Žebříček Vlastní · forma 28 dní</h2>
+    <section aria-label="Pořadí v žebříčku">
+      <h2>Pořadí v žebříčku · forma 28 dní</h2>
       <ul className="training-list">
         {metrics.flatMap((m) => {
-          const table = tables.find((x) => x.metric === m);
+          const table = (clubMetric(m) ? club : own).find((x) => x.metric === m);
           return t.attendees.map((p) => {
             const at = table?.ranked.findIndex((r) => r.playerId === p) ?? -1;
             const low = table?.lowData.find((r) => r.playerId === p);
@@ -136,6 +140,7 @@ function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: Play
                 <span>
                   {seriesDrill(m).name}
                   {pair ? ` · ${name(p)}` : ''}
+                  <small className="muted"> · {clubMetric(m) ? 'Stanoviště' : 'Vlastní'}</small>
                 </span>
                 {at >= 0 ? (
                   <span className="practice-place">

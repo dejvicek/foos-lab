@@ -1,3 +1,4 @@
+import { buildSchedule } from './schedule';
 import { applyCatalog } from './catalog';
 import { attendance, lastTraining } from './attendance';
 import { computeSoloLadder } from './soloLadder';
@@ -328,5 +329,38 @@ describe('žebříček Vlastní – zápasy (12. 11. 2026)', () => {
     // nedohraný zápas (g4, jen 1 leg) se počítá do legů, ne do zápasů
     expect(gw.lowData).toEqual([expect.objectContaining({ playerId: 'C', matches: 0, legs: 1, gf: 1, gc: 6 })]);
     expect(computePracticeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
+  });
+});
+
+describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
+  it('cvičení klub + duo: výsledky z vlastního tréninku duo jsou ve Stanovištích, ne ve Vlastní', () => {
+    const duo = (id: string, date: string, v: number) => setSolo(newPractice(id, date, '18:00', 'A', 'B', ['penaltyKeeper']), 'A', 'penaltyKeeper@1', v);
+    const ts = [duo('d1', '2026-11-01', 12), duo('d2', '2026-11-02', 14), practice('s1', '2026-11-03', ['A'], [['A', 'penaltySolo@1', 7]])];
+    const club = computeSoloLadder(ts, { kind: 'all' }, 'avg', TODAY, 'club');
+    expect(club.map((x) => x.metric)).toEqual(['penaltyKeeper']);
+    expect(club[0].lowData[0]).toMatchObject({ playerId: 'A', trainings: 2, sum: 26 });
+    const own = computeSoloLadder(ts, { kind: 'all' }, 'avg', TODAY, 'practice');
+    expect(own.map((x) => x.metric)).toEqual(['penaltySolo']); // jen cvičení pouze pro vlastní trénink
+  });
+
+  it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {
+    const clubT: Training = {
+      id: 'c', date: '2026-11-05', startTime: '18:00', mode: 'team', tables: 2, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'custom', durationMin: 60, plan: { normal: 1 }, lockedRounds: [], breaks: [], disciplineMin: { normal: 8 },
+    };
+    const s = buildSchedule(clubT);
+    const singles = s.matches.filter((m) => m.kind === 'singles');
+    const doubles = s.matches.filter((m) => m.kind === 'doubles');
+    expect(singles).toHaveLength(1);
+    const scored = { ...clubT, scores: { [singles[0].id]: { ga: 6, gb: 3 }, ...(doubles[0] ? { [doubles[0].id]: { ga: 6, gb: 1 } } : {}) } };
+    const duo = newPractice('p', '2026-11-06', '18:00', 'A', 'B', ['singles']);
+    const m = practiceRounds(duo)[0].match!;
+    const tables = computePracticeMatchLadder([scored, { ...duo, scores: { [m.id]: { ga: 6, gb: 4 } } }], null, null, 3);
+    expect(tables.map((x) => x.discipline)).toEqual(['singles']);
+    const rows = [...tables[0].ranked, ...tables[0].lowData];
+    const winner = singles[0].sideA[0];
+    expect(rows.find((r) => r.playerId === winner)).toMatchObject({ matches: winner === 'A' ? 2 : 1, wins: winner === 'A' ? 2 : 1 });
+    // čtyřhra z klubu do Vlastní nepatří
+    expect(rows.every((r) => [singles[0].sideA[0], singles[0].sideB[0], 'A', 'B'].includes(r.playerId))).toBe(true);
   });
 });
