@@ -394,18 +394,18 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         ]
       },
       {
-        "name": "Goalie war do 6",
+        "name": "Goalie war",
         "parts": [
           {
-            "text": "Singl. Hraje se jen zadními tyčemi (branka a dvojka) proti zadním tyčím soupeře, pětka a trojka se nepoužívají. Vyhrává, kdo dřív dá 6 gólů; zapisuje se skóre jako u legu."
+            "text": "Singl. Hraje se jen zadními tyčemi (branka a dvojka) proti zadním tyčím soupeře, pětka a trojka se nepoužívají. Leg vyhrává, kdo dřív dá 6 gólů (v BO formátu podle nastavení); zapisuje se skóre jako u legu."
           }
         ]
       },
       {
-        "name": "Penalty do 6",
+        "name": "Penalty",
         "parts": [
           {
-            "text": "Singl. Jeden střílí z trojky z nastaveného míče, druhý brání brankou a dvojkou; po každé střele se role prohodí. Vyhrává, kdo dřív dá 6 gólů; zapisuje se skóre jako u legu."
+            "text": "Singl. Jeden střílí z trojky z nastaveného míče, druhý brání brankou a dvojkou; po každé střele se role prohodí. Leg vyhrává, kdo dřív dá 6 gólů (v BO formátu podle nastavení); zapisuje se skóre jako u legu."
           }
         ]
       },

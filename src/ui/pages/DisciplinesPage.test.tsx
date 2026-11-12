@@ -67,7 +67,7 @@ describe('stránka Disciplíny', () => {
     const chips = await screen.findByRole('list', { name: 'Sekce dovedností' });
     await user.click(within(chips).getByRole('button', { name: 'Obrana' }));
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
-      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky', 'Goalie war do 6', 'Penalty do 6',
+      'Střela z dvojky proti brankáři', 'Clearing', 'Zachycení volného míče', 'Penalta z místa proti brankáři', 'Daň za ztrátu', 'Jedničky', 'Goalie war', 'Penalty',
     ]); // cvičení po sekcích Obrana / Pětka / Trojka
     expect(screen.getByText(/· 8 z 26/)).toBeInTheDocument();
     await user.click(within(row('Jedničky')).getByRole('button', { name: 'Zápasová praxe' }));

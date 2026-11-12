@@ -191,16 +191,16 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.selectOptions(screen.getByLabelText('Spoluhráč'), 'id2');
     const list = screen.getByRole('group', { name: 'Cvičení' });
     for (const cb of within(list).getAllByRole('checkbox')) if ((cb as HTMLInputElement).checked) await user.click(cb);
-    expect(within(screen.getByRole('list', { name: 'Zápasy' })).getAllByRole('checkbox').map((c) => c.closest('label')!.querySelector('strong')!.textContent)).toContain('Goalie war do 6');
-    await user.click(within(list).getByRole('checkbox', { name: /^Goalie war do 6/ }));
+    expect(within(screen.getByRole('list', { name: 'Zápasy' })).getAllByRole('checkbox').map((c) => c.closest('label')!.querySelector('strong')!.textContent)).toContain('Goalie war');
+    await user.click(within(list).getByRole('checkbox', { name: /^Goalie war/ }));
     // BO2: oba legy, rozhodující leg o 2 se nenabízí
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '2');
-    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).queryByRole('checkbox')).toBeNull();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '3');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war' }), '2');
+    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war' })).queryByRole('checkbox')).toBeNull();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war' }), '3');
     // výchozí BO3: do 6, rozhodující leg o 2, strop 10
-    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeChecked();
-    expect(screen.getByRole('combobox', { name: 'Strop: Goalie war do 6' })).toHaveValue('10');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Gólů na leg: Goalie war do 6' }), '5');
+    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Strop: Goalie war' })).toHaveValue('10');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Gólů na leg: Goalie war' }), '5');
     expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:24');
     await user.click(screen.getByRole('button', { name: 'Začít vlastní trénink' }));
 
@@ -214,7 +214,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     for (let i = 0; i < 5; i++) await goal('vlevo');
     expect(legs()).toHaveTextContent('BO3 · 2:0 · konec');
     await user.click(screen.getByRole('button', { name: 'Dokončit trénink' }));
-    expect(screen.getByRole('region', { name: 'Výsledky' })).toHaveTextContent('Goalie war do 6 BO3 do 5 rozhodující leg o 2 (strop 10)H1 2:0 H2 (5:0, 5:1)');
+    expect(screen.getByRole('region', { name: 'Výsledky' })).toHaveTextContent('Goalie war BO3 do 5 rozhodující leg o 2 (strop 10)H1 2:0 H2 (5:0, 5:1)');
     await vi.waitFor(() => {
       const p = practiceOf(repo);
       expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5, finalWinBy2: true, cap: 10 } });
@@ -234,7 +234,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Vlastní' }));
-    const table = screen.getByRole('table', { name: 'Goalie war do 6' });
+    const table = screen.getByRole('table', { name: 'Goalie war' });
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent(/H1.*3.*2 \/ 3.*4 \/ 7/);
     expect(rows[1]).toHaveTextContent(/H2.*3.*1 \/ 3/);
