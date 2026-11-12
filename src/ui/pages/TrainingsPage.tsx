@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { sortTrainings } from '../../domain/training';
-import { clubTrainings, practiceMinutes, practiceRunning, practiceSeries, practicesFor } from '../../domain/practice';
+import { clubTrainings, practiceMatches, practiceMinutes, practiceRunning, practiceSeries, practicesFor } from '../../domain/practice';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import { canCreateTraining, type Viewer } from '../../domain/my';
@@ -49,6 +49,7 @@ function Practices({ store, navigate, viewer, now }: { store: AppStore; navigate
           <ul className="training-list" aria-label="Vlastní tréninky">
             {shown.map((t) => {
               const n = practiceSeries(t).length;
+              const g = practiceMatches(t).length;
               const min = practiceMinutes(t);
               const live = practiceRunning(t, now);
               return (
@@ -58,7 +59,9 @@ function Practices({ store, navigate, viewer, now }: { store: AppStore; navigate
                     <span>{formatDateLong(t.date)}</span>
                     <span className="sub">
                       {who(t)}
-                      {min !== null ? ` · ${min} min` : ''} · {n} {plural(n, 'série', 'série', 'sérií')}
+                      {min !== null ? ` · ${min} min` : ''}
+                      {n || !g ? ` · ${n} ${plural(n, 'série', 'série', 'sérií')}` : ''}
+                      {g ? ` · ${g} ${plural(g, 'zápas', 'zápasy', 'zápasů')}` : ''}
                     </span>
                   </button>
                 </li>

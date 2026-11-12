@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { baseMatchId } from '../../domain/matchFormat';
 import { autoEndIn as autoEndAfter, dueAutoEnds } from '../../domain/autoEnd';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
@@ -119,7 +120,7 @@ export function TrainingPage({
   /** Před zápisem výsledku zamkne kola (a týmy simulace) – jedno uložení, jinak by se přepsala. */
   const lockForMatch = (matchId: MatchId) => {
     let next = withLocked(training, roundOfMatch(schedule!, matchId));
-    const m = schedule!.matches.find((x) => x.id === matchId);
+    const m = schedule!.matches.find((x) => x.id === baseMatchId(matchId));
     // První výsledek simulace zamkne týmy, aby je pozdější opravy ligy nepřeházely.
     if (m?.block === 'sim' && !training.simTeams && training.simSplit !== 'manual' && schedule!.teams)
       next = { ...next, simTeams: schedule!.teams };

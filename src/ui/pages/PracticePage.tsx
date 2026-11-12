@@ -12,6 +12,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   practiceRunning,
+  practiceMatches,
   practiceSeries,
   practicesFor,
   roundKey,
@@ -27,10 +28,14 @@ import { TRAINING_ITEM } from '../../domain/queue';
 import { soloMetric } from '../../domain/solo';
 import { computeSoloLadder } from '../../domain/soloLadder';
 import { MIN_TRAININGS } from '../../domain/ladder';
-import type { DisciplineId, PlayerId, SoloMetric, Training } from '../../domain/types';
+import type { DisciplineId, Match, PlayerId, SoloMetric, Training } from '../../domain/types';
 import type { Viewer } from '../../domain/my';
 import { loadPracticeDrills, savePracticeDrills } from '../../storage/prefs';
 import { DrillMirror, StreakMirror } from '../components/ScoreMirror';
+import { MatchScore } from '../components/BlockEntry';
+import { MatchFormatPicker } from '../components/MatchFormatPicker';
+import { cleanFormats, formatLabel, formatOf, matchState, type MatchFormats } from '../../domain/matchFormat';
+import { tableScore } from '../../domain/legState';
 import { streakTime, trainingStreak } from '../../domain/streak';
 import { WarmupTimer } from '../components/WarmupTimer';
 import { hm } from '../components/DisciplinePicker';
@@ -50,11 +55,15 @@ const namedVariants = (v: readonly string[]) => !v.every((x) => /^varianta /.tes
 /** „Varianta 1“ / „Varianta: ke zdi“. */
 const variantText = (v: string) => (/^varianta /.test(v) ? `V${v.slice(1)}` : `Varianta: ${v}`);
 
-/** Délka cvičení v plánu: „8 min“, u dvou variant „2× 4 min“. */
-const lengthText = (d: DisciplineDef) => (roundsOf(d) > 1 ? `${roundsOf(d)}× ${d.min} min` : `${d.min} min`);
+/** Délka v plánu: „8 min“, u dvou variant / párového zápasu „2× 4 min“; zápas s BO × počet legů. */
+const lengthText = (d: DisciplineDef, formats?: MatchFormats | null) => {
+  const min = d.min * (d.kind === 'match' ? formatOf(formats, d.id).bestOf : 1);
+  return roundsOf(d) > 1 ? `${roundsOf(d)}× ${min} min` : `${min} min`;
+};
 
-/** Popisek cvičení v nabídce: délka, pokusy, varianty, s bránícím. */
+/** Popisek v nabídce: délka, pokusy, varianty, s bránícím; u zápasu pravidlo. */
 function drillSub(d: DisciplineDef, players: number): string {
+  if (d.kind === 'match') return [`${d.min} min / leg`, d.paired ? '2 kola, strany si prohodí role' : ''].filter(Boolean).join(' · ');
   const m = practiceMetric(d, players);
   const def = m ? soloMetric(m) : null;
   const parts = [lengthText(d), def ? (def.streak ? `${def.streak} povedených po sobě na čas` : `${def.max} pokusů`) : 'timer, nic se nezapisuje'];
@@ -65,13 +74,27 @@ function drillSub(d: DisciplineDef, players: number): string {
 
 /** Zařadí cvičení do výběru podle nabídky (sekce, v nich katalog): před první vybrané, které je v nabídce za ním. */
 function insertByCatalog(sel: DisciplineId[], id: DisciplineId): DisciplineId[] {
-  const order = drillSections(DISCIPLINES.filter((d) => d.kind === 'drill')).flatMap((g) => g.drills.map((d) => d.id));
+  const order = drillSections(DISCIPLINES.filter((d) => d.kind === 'drill' || d.kind === 'match')).flatMap((g) => g.drills.map((d) => d.id));
   const pos = (x: DisciplineId) => order.indexOf(x);
   const at = sel.findIndex((x) => pos(x) > pos(id));
   return at < 0 ? [...sel, id] : [...sel.slice(0, at), id, ...sel.slice(at)];
 }
 
-const roundName = (r: Pick<PracticeRound, 'drill' | 'variant'>) => `${discipline(r.drill).name}${r.variant ? ` – ${r.variant}` : ''}`;
+const roundName = (r: Pick<PracticeRound, 'drill' | 'variant' | 'match'>) => {
+  const bo = r.match ? formatLabel(formatOf({ [r.drill]: { bestOf: r.match.bestOf ?? 1, legTo: r.match.legTo ?? 6, finalWinBy2: r.match.finalWinBy2, cap: r.match.cap } }, r.drill)) : '';
+  return `${discipline(r.drill).name}${r.variant ? ` – ${r.variant}` : ''}${bo ? ` ${bo}` : ''}`;
+};
+
+/** Výsledek zápasu: „H1 2:1 H2 (6:4, 3:6, 6:2)“, jeden leg „H1 6:4 H2“, nedohraný „… · hraje se“. */
+function matchText(t: Training, m: Match, name: (id: PlayerId) => string): string {
+  const st = matchState(m, t.scores);
+  const legs = st.legs.filter((l) => l.score?.ga !== undefined && l.score?.gb !== undefined).map((l) => tableScore(l.leg, l.score).join(':'));
+  if (!legs.length) return '';
+  const a = m.sideA.map(name).join(' + ');
+  const b = m.sideB.map(name).join(' + ');
+  const res = (m.bestOf ?? 1) > 1 ? `${a} ${st.legsA}:${st.legsB} ${b} (${legs.join(', ')})` : `${a} ${legs[0]} ${b}`;
+  return st.over ? res : `${res} · nedohráno`;
+}
 
 /** Název série: podle kola plánu, starší bez plánu podle metriky. */
 function seriesName(rounds: PracticeRound[], s: PracticeSeries): string {
@@ -150,7 +173,7 @@ function PlanList({ t, now, name }: { t: Training; now: number; name(id: PlayerI
               {r.n}. kolo · {roundName(r)}
               <small>
                 {state === 'done'
-                  ? seriesResults(t, series.find((s) => s.n === r.n), name) || (r.metric ? 'nezapsáno' : 'odcvičeno')
+                  ? (r.match ? matchText(t, r.match, name) : seriesResults(t, series.find((s) => s.n === r.n), name)) || (r.metric || r.match ? 'nezapsáno' : 'odcvičeno')
                   : state === 'playing'
                     ? 'hraje se'
                     : `${r.min} min`}
@@ -164,7 +187,7 @@ function PlanList({ t, now, name }: { t: Training; now: number; name(id: PlayerI
 }
 
 /** Hrané kolo: zahájení, odpočet, zápis ✓ / ✗ (u Rozcvičky timer) a další kolo. */
-function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: Training; r: PracticeRound; now: number; canWrite: boolean; name(id: PlayerId): string }) {
+function RoundView({ store, t, r, now, canWrite, name, me }: { store: AppStore; t: Training; r: PracticeRound; now: number; canWrite: boolean; name(id: PlayerId): string; me: PlayerId | null }) {
   const rounds = practiceRounds(t);
   const last = r.n === rounds.length;
   const next = rounds[r.n];
@@ -175,11 +198,11 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
   const timeUp = startedAt !== undefined && left <= 0;
   const buzzed = useRef<number | null>(null);
   useEffect(() => {
-    if (timeUp && r.metric && buzzed.current !== r.n) {
+    if (timeUp && (r.metric || r.match) && buzzed.current !== r.n) {
       buzzed.current = r.n;
       vibrate([200, 100, 200]);
     }
-  }, [timeUp, r.n, r.metric]);
+  }, [timeUp, r.n, r.metric, r.match]);
 
   const goOn = () => {
     store.endItem(t.id, r.item);
@@ -198,6 +221,11 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
           </p>
           <h2>{discipline(r.drill).name}</h2>
           {r.variant && <p className="practice-variant">{variantText(r.variant)}</p>}
+          {r.match && (
+            <p className="practice-variant">
+              {[formatLabel(formatOf(t.matchFormats, r.drill)), discipline(r.drill).paired && r.match.sideA[0] !== t.attendees[0] ? 'otočené role' : ''].filter(Boolean).join(' · ') || 'jeden leg'}
+            </p>
+          )}
         </div>
         {startedAt !== undefined && (
           <p className={`practice-clock${timeUp ? ' over' : ''}`} role="timer" aria-label={timeUp ? 'Čas kola vypršel' : 'Zbývá'}>
@@ -211,6 +239,17 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
             Zahájit {r.n}. kolo
           </button>
         )
+      ) : r.match ? (
+        <MatchScore
+          m={r.match}
+          training={t}
+          names={Object.fromEntries(players.map((p) => [p, name(p)]))}
+          label={`${r.n}. kolo`}
+          tap={{ me, onBumpScore: (leg, f, d) => store.bumpScore(t.id, leg, f, d) }}
+          disabled={!canWrite}
+          onScore={(id, sc) => store.saveScore(t.id, id, sc)}
+          timelineOpen={false}
+        />
       ) : key && soloMetric(r.metric!).streak ? (
         <StreakMirror
           key={key}
@@ -243,7 +282,7 @@ function RoundView({ store, t, r, now, canWrite, name }: { store: AppStore; t: T
           </button>
           {!advance && (
             <span className="note">
-              Dál až po {r.metric ? (soloMetric(r.metric).streak ? 'splnění série nebo po ' : 'všech pokusech nebo po ') : ''}uplynutí času kola.
+              Dál až po {r.match ? 'dohraném zápasu nebo po ' : r.metric ? (soloMetric(r.metric).streak ? 'splnění série nebo po ' : 'všech pokusech nebo po ') : ''}uplynutí času kola.
             </span>
           )}
         </div>
@@ -256,6 +295,8 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
   const [pair, setPair] = useState(false);
   const [partner, setPartner] = useState<PlayerId>('');
   const [sel, setSel] = useState<DisciplineId[]>(() => loadPracticeDrills() ?? SOLO_SELECTION);
+  // BO formát zápasů ve dvou (12. 11. 2026).
+  const [formats, setFormats] = useState<MatchFormats>({});
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -291,14 +332,14 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
       setSel(next);
     };
     const start = () => {
-      const p = newPractice(store.newId(), todayIso(), hhmm(new Date()), me, pair ? partner : null, chosen);
+      const p = newPractice(store.newId(), todayIso(), hhmm(new Date()), me, pair ? partner : null, chosen, pair ? formats : null);
       savePracticeDrills(sel);
       store.saveTraining(p);
       store.startItem(p.id, TRAINING_ITEM);
       store.startItem(p.id, practiceRounds(p)[0].item);
       navigate({ page: 'practice', id: p.id });
     };
-    const total = practicePlanMinutes(chosen);
+    const total = practicePlanMinutes(chosen, formats);
     return (
       <section className="practice">
         <button type="button" className="back" onClick={() => navigate({ page: 'trainings' })}>
@@ -341,7 +382,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         )}
         <div className="practice-setup">
           <div>
-            <h2>Cvičení</h2>
+            <h2>{pair ? 'Cvičení a zápasy' : 'Cvičení'}</h2>
             <div role="group" aria-label="Cvičení">
               {drillSections(offered).map((g) => (
                 <section key={g.area ?? 'none'} className="practice-section" aria-label={g.name ?? undefined}>
@@ -374,7 +415,10 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
                       <span className="po-n">{i + 1}.</span>
                       <span className="po-name">
                         {d.name}
-                        <small>{lengthText(d)}</small>
+                        <small>{lengthText(d, formats)}</small>
+                        {d.kind === 'match' && (
+                          <MatchFormatPicker id={x} name={d.name} value={formatOf(formats, x)} onChange={(f) => setFormats(cleanFormats({ ...formats, [x]: f }) ?? {})} />
+                        )}
                       </span>
                       <button type="button" className="icon" aria-label={`Posunout ${d.name} nahoru`} disabled={i === 0} onClick={() => move(x, -1)}>
                         ↑
@@ -423,6 +467,11 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
   const who = !plays ? players.map(name).join(' a ') : others.length ? `s ${others.map(name).join(', ')}` : 'sám';
   const series = practiceSeries(t);
   const rounds = practiceRounds(t);
+  // Výsledky v pořadí kol: série cvičení i zápasy (12. 11. 2026).
+  const results = [
+    ...series.map((s) => ({ n: s.n, key: s.key, name: seriesName(rounds, s), text: seriesResults(t, s, name) })),
+    ...practiceMatches(t).map((x) => ({ n: x.round.n, key: x.match.id, name: roundName(x.round), text: matchText(t, x.match, name) })),
+  ].sort((a, b) => a.n - b.n);
   const remove = () => {
     if (!confirm('Smazat vlastní trénink i se všemi výsledky?')) return;
     store.deleteTraining(t.id);
@@ -442,15 +491,15 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
           {formatDateLong(t.date)}, {t.startTime} · {who}
           {min !== null ? ` · ${min} min` : ''}
         </p>
-        {series.length ? (
+        {results.length ? (
           <>
             <section aria-label="Výsledky">
               <h2>Výsledky</h2>
               <ul className="training-list">
-                {series.map((s) => (
-                  <li key={s.key} className="practice-series">
-                    <span>{seriesName(rounds, s)}</span>
-                    <span className="sub">{seriesResults(t, s, name)}</span>
+                {results.map((x) => (
+                  <li key={x.key} className="practice-series">
+                    <span>{x.name}</span>
+                    <span className="sub">{x.text}</span>
                   </li>
                 ))}
               </ul>
@@ -505,7 +554,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         )}
       </div>
       {r ? (
-        <RoundView store={store} t={t} r={r} now={now} canWrite={canWrite} name={name} />
+        <RoundView store={store} t={t} r={r} now={now} canWrite={canWrite} name={name} me={me} />
       ) : (
         <div className="flow-bar" role="status">
           <span>Plán je odcvičený.</span>

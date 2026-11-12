@@ -1,4 +1,7 @@
 import { Fragment, useState, type DragEvent, type ReactNode } from 'react';
+import { matchState } from '../../domain/matchFormat';
+import { tableScore } from '../../domain/legState';
+import { isEmptyScore } from '../../domain/training';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 import { clockAt, soloKey } from '../../domain/solo';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
@@ -99,6 +102,20 @@ export function CompactCell({ cell, t, names }: { cell: Cell; t: Training; names
     );
   }
   const m = cell.match;
+  if ((m.bestOf ?? 1) > 1) {
+    // BO zápas: stav v legech a skóre legů.
+    const ms = matchState(m, t.scores);
+    const played = ms.legs.filter((l) => !isEmptyScore(l.score));
+    return (
+      <>
+        <span className="cell-names">
+          {nm(m.sideA)} <span className="vs">vs</span> {nm(m.sideB)}
+        </span>
+        <span className={played.length ? 'cell-score' : 'cell-score empty'}>{played.length ? `${ms.legsA}:${ms.legsB}` : `BO${m.bestOf}`}</span>
+        {played.length > 0 && <span className="cell-sub">{played.map((l) => tableScore(l.leg, l.score).join(':')).join(', ')}</span>}
+      </>
+    );
+  }
   const s = t.scores[m.id];
   const has = s && s.ga !== undefined && s.ga !== null && s.gb !== undefined && s.gb !== null;
   const st = m.start ?? [0, 0];

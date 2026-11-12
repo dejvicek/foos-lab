@@ -1,5 +1,5 @@
 import { Fragment, useState, type ReactNode } from 'react';
-import { legOver } from '../../domain/legState';
+import { matchState } from '../../domain/matchFormat';
 import { clockAt } from '../../domain/solo';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
@@ -30,7 +30,7 @@ interface Props {
 }
 
 /** Dohraný zápas: leg skončil (ťukání), nebo je zapsaný ručně z notebooku. */
-const scored = (t: Training, m: Match) => legOver(m, t.scores[m.id]).over;
+const scored = (t: Training, m: Match) => matchState(m, t.scores).over;
 
 function isMine(c: Cell | null, me: PlayerId | null): boolean {
   if (!c || !me) return false;

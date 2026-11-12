@@ -1,3 +1,4 @@
+import { cleanFormats, legIds } from './matchFormat';
 import { catalogMins, DISCIPLINES } from './disciplines';
 import { currentTemplates, templateBreaks, type TrainingTemplate } from './catalog';
 import { sortedRoster } from './roster';
@@ -50,6 +51,8 @@ export function newTraining(
     disciplineOrder: selection,
     // Pauzy po sekcích podle šablony, jinak žádné (9. 11. 2026); další jde přidat v náhledu plánu.
     breaks,
+    // BO formát zápasů ze šablony (12. 11. 2026).
+    ...(cleanFormats(template?.formats) ? { matchFormats: cleanFormats(template?.formats) } : {}),
   };
 }
 
@@ -60,6 +63,7 @@ export function withTemplate(t: Training, template: TrainingTemplate): Training 
     durationMin: template.durationMin,
     breaks: templateBreaks(template),
     disciplineOrder: [...template.selection],
+    matchFormats: cleanFormats(template.formats) ?? null,
     plan: manualPlan(template.selection, t.attendees.length, t.tables, template.rounds, lockedCounts(t), new Set(t.lockedRounds.map((l) => l.discipline))),
   };
 }
@@ -123,7 +127,8 @@ function soloKeys(t: Training): Set<string> {
 
 function matchIds(t: Training): Set<MatchId> {
   const s = built(t);
-  return new Set(s ? s.matches.map((m) => m.id) : []);
+  // BO formát: i skóre dalších legů (`ID#n`).
+  return new Set(s ? s.matches.flatMap((m) => legIds(m)) : []);
 }
 
 function filledSolo(t: Training): SoloSlot[] {

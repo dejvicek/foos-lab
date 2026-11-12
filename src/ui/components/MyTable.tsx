@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { matchState } from '../../domain/matchFormat';
 import { myAssignments, type Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
@@ -26,6 +27,7 @@ interface Props {
 
 function missing(a: Assignment, t: Training): boolean {
   if (a.match) {
+    if ((a.match.bestOf ?? 1) > 1) return !matchState(a.match, t.scores).over;
     const s = t.scores[a.match.id];
     return s?.ga === undefined || s?.ga === null || s?.gb === undefined || s?.gb === null;
   }

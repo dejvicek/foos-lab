@@ -1,5 +1,5 @@
 import { drillCount } from './drillTap';
-import { legOver } from './legState';
+import { baseMatchId, matchState } from './matchFormat';
 import { drillItemId } from './queue';
 import { soloKey, soloMetric } from './solo';
 import type { Schedule, Training } from './types';
@@ -16,7 +16,8 @@ export const AUTO_END_MS = 15_000;
  * nebo je zapsaný bez ťukání (notebook, organizátor) – to potvrzuje člověk. Rozcvička výsledek nemá.
  */
 export function finishedAt(t: Training, s: Schedule, itemId: string): number | null {
-  const last = (t.events ?? []).filter((e) => e.itemId === itemId).reduce<number | null>((m, e) => (m === null || e.at > m ? e.at : m), null);
+  // BO zápas: ťuká se do legů (`ID#n`).
+  const last = (t.events ?? []).filter((e) => baseMatchId(e.itemId) === itemId).reduce<number | null>((m, e) => (m === null || e.at > m ? e.at : m), null);
   if (last === null) return null;
   for (const sec of s.sections)
     for (const row of sec.rows)
@@ -24,7 +25,7 @@ export function finishedAt(t: Training, s: Schedule, itemId: string): number | n
         const c = row.cells[j];
         if (!c) continue;
         if (c.type === 'match') {
-          if (c.match.id === itemId) return legOver(c.match, t.scores[itemId]).over ? last : null;
+          if (c.match.id === itemId) return matchState(c.match, t.scores).over ? last : null;
         } else if (c.metric && drillItemId(row, j + 1, c.players) === itemId) {
           const def = soloMetric(c.metric);
           const key = soloKey(c.metric, c.soloRound);

@@ -1,3 +1,4 @@
+import { legIds } from './matchFormat';
 import type { MatchId, PlayerId, Schedule, Score } from './types';
 
 /** Celé číslo ≥ 0, jinak null (prázdné, záporné, text, desetinné). */
@@ -49,8 +50,9 @@ export function computeStandings(
   let legsDone = 0;
   const sim = { teamA: 0, teamB: 0, played: 0 };
 
-  for (const m of schedule.matches) {
-    const s = scores[m.id];
+  // BO formát: každý odehraný leg se počítá zvlášť (legy, výhry, góly), jako dřív jeden leg na zápas.
+  for (const m of schedule.matches) for (const id of legIds(m)) {
+    const s = scores[id];
     if (!s) continue;
     const ga = parseScoreValue(s.ga);
     const gb = parseScoreValue(s.gb);

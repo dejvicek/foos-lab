@@ -1,4 +1,4 @@
-import { LEG_CAP, LEG_TO, MAX_LOSSES, maxLosses, setLosses, winnerFor } from '../../domain/legState';
+import { LEG_CAP, legCap, legTarget, MAX_LOSSES, maxLosses, setLosses, winnerFor } from '../../domain/legState';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 interface Props {
@@ -51,7 +51,8 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
   };
 
   const goals = (side: Side) => {
-    const values = sim ? range(0, 2) : fiveFive ? range(5, LEG_CAP) : range(0, LEG_TO);
+    // BO formát: do legTo, rozhodující leg o 2 až do stropu.
+    const values = sim ? range(0, 2) : fiveFive ? range(5, LEG_CAP) : range(0, m.winBy2 ? legCap(m) : legTarget(m));
     const shown = side === 'A' ? values : [...values].reverse();
     const cur = table(side);
     return (

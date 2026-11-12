@@ -44,11 +44,16 @@ export const DRILL_AREAS: readonly { id: DrillArea; name: string }[] = [
   { id: 'threeBar', name: 'Trojka' },
 ];
 
-/** Cvičení po sekcích: bez sekce (Rozcvička) nahoře, pak Obrana / Pětka / Trojka; uvnitř pořadí seznamu. Prázdné sekce chybí. */
-export function drillSections(list: DisciplineDef[]): { area: DrillArea | null; name: string | null; drills: DisciplineDef[] }[] {
+/**
+ * Po sekcích: cvičení bez sekce (Rozcvička) nahoře, pak Obrana / Pětka / Trojka, nakonec Zápasy
+ * (vlastní trénink ve dvou); uvnitř pořadí seznamu. Prázdné sekce chybí.
+ */
+export function drillSections(list: DisciplineDef[]): { area: DrillArea | 'match' | null; name: string | null; drills: DisciplineDef[] }[] {
+  const drills = list.filter((d) => d.kind !== 'match');
   const out = [
-    { area: null, name: null, drills: list.filter((d) => !d.area) },
-    ...DRILL_AREAS.map((a) => ({ area: a.id, name: a.name, drills: list.filter((d) => d.area === a.id) })),
+    { area: null, name: null, drills: drills.filter((d) => !d.area) },
+    ...DRILL_AREAS.map((a) => ({ area: a.id, name: a.name, drills: drills.filter((d) => d.area === a.id) })),
+    { area: 'match' as const, name: 'Zápasy', drills: list.filter((d) => d.kind === 'match') },
   ];
   return out.filter((x) => x.drills.length);
 }

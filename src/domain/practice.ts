@@ -9,7 +9,8 @@ import { drillCount } from './drillTap';
 import { CHANGEOVER_MIN } from './plan';
 import { TRAINING_ITEM } from './queue';
 import { parseSoloKey, soloKey, soloMetric } from './solo';
-import type { DisciplineId, PlayerId, SoloKey, SoloMetric, Training } from './types';
+import { cleanFormats, formatOf, matchState, withFormat, type MatchFormats } from './matchFormat';
+import type { DisciplineId, Match, PlayerId, SoloKey, SoloMetric, Training } from './types';
 
 export const PRACTICE_MAX_PLAYERS = 2;
 /** Neukončený vlastní trénink zahájený před víc než 12 h se bere jako skončený (zapomenuté „Ukončit“). */
@@ -31,15 +32,32 @@ export function practicesFor(ts: Training[], playerId: PlayerId | null, all = fa
     .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : a.startTime < b.startTime ? 1 : a.startTime > b.startTime ? -1 : 0));
 }
 
-/** Kolik kol má cvičení v plánu: na dvě varianty dvě kola (každá varianta jedno), jinak jedno. */
-export const roundsOf = (d: DisciplineDef): number => d.variants?.length ?? 1;
+/**
+ * Kolik kol má disciplína v plánu: cvičení na dvě varianty dvě kola (každá varianta jedno), párový
+ * zápas (Zeď, Start 0:3, 4:5) dvě kola s prohozenými rolemi, jinak jedno.
+ */
+export const roundsOf = (d: DisciplineDef): number => (d.kind === 'match' ? (d.paired ? 2 : 1) : (d.variants?.length ?? 1));
+
+/** Délka kola v plánu: zápas s BO = délka legu × nejvyšší počet legů. */
+const planMin = (d: DisciplineDef, formats?: MatchFormats | null) => d.min * (d.kind === 'match' ? formatOf(formats, d.id).bestOf : 1);
 
 /**
  * Nový vlastní trénink s plánem: vybraná cvičení v pořadí `drills`, kola podle roundsOf, délky kol
  * z aktuálního katalogu (trénink si je nese, pozdější změna katalogu jeho časy nehne).
  */
-export function newPractice(id: string, date: string, startTime: string, me: PlayerId, partner: PlayerId | null = null, drills: DisciplineId[] = []): Training {
-  const list = drills.filter((d, i) => drills.indexOf(d) === i && DISCIPLINES.some((x) => x.id === d));
+export function newPractice(
+  id: string,
+  date: string,
+  startTime: string,
+  me: PlayerId,
+  partner: PlayerId | null = null,
+  drills: DisciplineId[] = [],
+  formats: MatchFormats | null = null,
+): Training {
+  const pair = !!partner && partner !== me;
+  // Zápasy jen ve dvou (12. 11. 2026).
+  const list = drills.filter((d, i) => drills.indexOf(d) === i && DISCIPLINES.some((x) => x.id === d && (x.kind === 'drill' || (pair && x.kind === 'match'))));
+  const matchFormats = cleanFormats(Object.fromEntries(Object.entries(formats ?? {}).filter(([d]) => list.includes(d as DisciplineId))));
   return {
     id,
     date,
@@ -52,24 +70,30 @@ export function newPractice(id: string, date: string, startTime: string, me: Pla
     simSplit: 'performance',
     simTeams: null,
     format: 'practice',
-    durationMin: practicePlanMinutes(list),
+    durationMin: practicePlanMinutes(list, matchFormats),
     plan: Object.fromEntries(list.map((d) => [d, roundsOf(discipline(d))])),
     disciplineOrder: list,
     disciplineMin: Object.fromEntries(list.map((d) => [d, discipline(d).min])),
     lockedRounds: [],
     createdBy: me,
+    ...(matchFormats ? { matchFormats } : {}),
   };
 }
 
 /** Naplánovaná délka (min): kola cvičení podle katalogu a mezi koly přechod jako v klubovém tréninku. */
-export function practicePlanMinutes(drills: DisciplineId[]): number {
-  const rounds = drills.flatMap((id) => Array.from({ length: roundsOf(discipline(id)) }, () => discipline(id).min));
+export function practicePlanMinutes(drills: DisciplineId[], formats: MatchFormats | null = null): number {
+  const rounds = drills.flatMap((id) => Array.from({ length: roundsOf(discipline(id)) }, () => planMin(discipline(id), formats)));
   return rounds.reduce((a, b) => a + b, 0) + Math.max(0, rounds.length - 1) * CHANGEOVER_MIN;
 }
 
-/** Nabídka cvičení: nevyřazená cvičení s metrikou a Rozcvička; sám jen ta bez bránícího soupeře. */
+/**
+ * Nabídka: nevyřazená cvičení s metrikou a Rozcvička; sám jen ta bez bránícího soupeře. Ve dvou i zápasy
+ * a scénáře (12. 11. 2026, bez simulace).
+ */
 export function practiceDrills(players: number): DisciplineDef[] {
-  return DISCIPLINES.filter((d) => d.kind === 'drill' && !d.retired && (d.metric || d.individual) && (players >= 2 || !d.needsPartner));
+  return DISCIPLINES.filter(
+    (d) => !d.retired && ((d.kind === 'drill' && (d.metric || d.individual) && (players >= 2 || !d.needsPartner)) || (d.kind === 'match' && players >= 2)),
+  );
 }
 
 /** Metrika cvičení ve vlastním tréninku (Udržení míče na pětce sám → fiveBarSolo); Rozcvička žádnou nemá. */
@@ -131,6 +155,8 @@ export interface PracticeRound {
   metric?: SoloMetric;
   /** Varianta kola u cvičení na dvě varianty. */
   variant?: string;
+  /** Zápas kola (zápasy a scénáře ve dvou); skóre jako v klubovém tréninku, legy `ID#n`. */
+  match?: Match;
   min: number;
   /** Klíč časů kola (zahájení / konec). */
   item: string;
@@ -146,10 +172,28 @@ export function practiceRounds(t: Training): PracticeRound[] {
     if (!d) continue; // cvičení z novější verze appky
     for (let v = 0; v < (t.plan[id] ?? 0); v++) {
       const n = out.length + 1;
+      if (d.kind === 'match') {
+        if (t.attendees.length < 2) continue;
+        const f = formatOf(t.matchFormats, id);
+        out.push({ n, drill: id, match: practiceMatch(t, d, n, v), min: roundMin(id, t.disciplineMin) * f.bestOf, item: roundItem(n) });
+        continue;
+      }
       out.push({ n, drill: id, metric: practiceMetric(d, t.attendees.length), variant: d.variants?.[v], min: roundMin(id, t.disciplineMin), item: roundItem(n) });
     }
   }
   return out;
+}
+
+/**
+ * Zápas kola vlastního tréninku: zakladatel vlevo, spoluhráč vpravo; ve druhém kole párového zápasu
+ * (Zeď, Start 0:3, 4:5) si strany prohodí role.
+ */
+function practiceMatch(t: Training, d: DisciplineDef, n: number, k: number): Match {
+  const [a, b] = k % 2 ? [t.attendees[1], t.attendees[0]] : [t.attendees[0], t.attendees[1]];
+  const m: Match = { id: `practice|${n}|${a}v${b}`, block: 'league', round: n, table: 1, kind: 'singles', sideA: [a], sideB: [b], discipline: d.id, lossTax: !!d.lossTax, trackLosses: true };
+  if (d.wall) m.wall = 'A';
+  if (d.start) m.start = d.start;
+  return withFormat(m, formatOf(t.matchFormats, d.id));
 }
 
 /** Klíč výsledku kola; Rozcvička nic nezapisuje. */
@@ -162,6 +206,7 @@ export function currentRound(t: Training): PracticeRound | null {
 
 /** Všichni hráči mají v kole odehrané všechny pokusy (u Čisté desítky: všichni sérii splnili). */
 export function roundAttemptsDone(t: Training, r: PracticeRound): boolean {
+  if (r.match) return matchState(r.match, t.scores).over; // zápas: rozhodnutý / odehrané legy
   const key = roundKey(r);
   if (!key) return false;
   const def = soloMetric(r.metric!);
@@ -219,4 +264,89 @@ export function practiceMinutes(t: Training): number | null {
   const s = startOf(t);
   const e = endOf(t);
   return s !== undefined && e !== undefined ? Math.max(0, Math.round((e - s) / 60_000)) : null;
+}
+
+/** Zápasy vlastního tréninku: kolo, zápas a stav po legech (jen kola, kde je něco zapsané). */
+export function practiceMatches(t: Training): { round: PracticeRound; match: Match; state: ReturnType<typeof matchState> }[] {
+  return practiceRounds(t).flatMap((round) => {
+    if (!round.match) return [];
+    const state = matchState(round.match, t.scores);
+    const any = state.legs.some((l) => l.score?.ga !== undefined && l.score?.gb !== undefined);
+    return any ? [{ round, match: round.match, state }] : [];
+  });
+}
+
+export interface PracticeMatchRow {
+  playerId: PlayerId;
+  /** Vlastní tréninky se zápasem této disciplíny. */
+  trainings: number;
+  /** Dohrané zápasy (rozhodnuté nebo všechny legy). */
+  matches: number;
+  wins: number;
+  draws: number;
+  legs: number;
+  legWins: number;
+  gf: number;
+  gc: number;
+  /** (výhry + ½ remízy) / zápasy */
+  rate: number;
+}
+
+export interface PracticeMatchTable {
+  discipline: DisciplineId;
+  ranked: PracticeMatchRow[];
+  lowData: PracticeMatchRow[];
+}
+
+/**
+ * Žebříček Vlastní – zápasy (12. 11. 2026): pro každou zápasovou disciplínu vyhrané zápasy (BO2 remíza
+ * = půl), legy a skóre. Řazení: podíl vyhraných zápasů → rozdíl skóre na leg → tréninky; pod 3
+ * vlastními tréninky „málo dat“ jako jinde.
+ */
+export function computePracticeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number): PracticeMatchTable[] {
+  const acc = new Map<DisciplineId, Map<PlayerId, PracticeMatchRow & { seen: Set<string> }>>();
+  for (const t of trainings) {
+    if (!isPractice(t) || (from && t.date < from) || (to && t.date > to)) continue;
+    for (const { match, state } of practiceMatches(t)) {
+      const id = match.discipline!;
+      const table = acc.get(id) ?? new Map();
+      acc.set(id, table);
+      const sides: [PlayerId[], 'A' | 'B'][] = [
+        [match.sideA, 'A'],
+        [match.sideB, 'B'],
+      ];
+      for (const [players, side] of sides)
+        for (const p of players) {
+          const r = table.get(p) ?? { playerId: p, trainings: 0, matches: 0, wins: 0, draws: 0, legs: 0, legWins: 0, gf: 0, gc: 0, rate: 0, seen: new Set<string>() };
+          if (!r.seen.has(t.id)) {
+            r.seen.add(t.id);
+            r.trainings++;
+          }
+          for (const l of state.legs) {
+            if (!l.over) continue;
+            const ga = l.score?.ga ?? 0;
+            const gb = l.score?.gb ?? 0;
+            r.legs++;
+            if (l.winner === side) r.legWins++;
+            r.gf += side === 'A' ? ga : gb;
+            r.gc += side === 'A' ? gb : ga;
+          }
+          if (state.over) {
+            r.matches++;
+            if (state.winner === side) r.wins++;
+            else if (state.winner === null) r.draws++;
+          }
+          table.set(p, r);
+        }
+    }
+  }
+  const order = DISCIPLINES.map((d) => d.id);
+  return [...acc.entries()]
+    .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
+    .map(([discipline, table]) => {
+      const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? (r.wins + r.draws / 2) / r.matches : 0 }));
+      const perLeg = (r: PracticeMatchRow) => (r.legs ? (r.gf - r.gc) / r.legs : 0);
+      rows.sort((a, b) => b.rate - a.rate || perLeg(b) - perLeg(a) || b.trainings - a.trainings || (a.playerId < b.playerId ? -1 : 1));
+      return { discipline, ranked: rows.filter((r) => r.trainings >= minTrainings), lowData: rows.filter((r) => r.trainings < minTrainings) };
+    });
 }

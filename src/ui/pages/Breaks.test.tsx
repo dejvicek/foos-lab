@@ -175,6 +175,7 @@ describe('pauzy a pořadí v tabulce disciplín (průvodce, 10. 11. 2026)', () =
     await user.click(screen.getByRole('button', { name: 'Dřív: Start 4:4' }));
     const order = within(screen.getByRole('list', { name: 'Pořadí: Zápasy a scénáře' }))
       .getAllByRole('checkbox')
+      .filter((c) => !c.closest('.mf')) // bez voleb BO formátu
       .map((c) => c.closest('label')!.textContent);
     expect(order).toEqual(['Start 4:4', 'Normální leg']);
     const pause = screen.getByRole('listitem', { name: /^Pauza po:/ });

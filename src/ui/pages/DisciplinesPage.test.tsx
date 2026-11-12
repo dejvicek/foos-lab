@@ -189,7 +189,7 @@ describe('stránka Disciplíny', () => {
     expect(within(form).getByRole('status', { name: 'Počet kol: Normální leg' })).toHaveTextContent('2×');
     expect(status()).toMatch(/^Naplánováno 1:03 z 1:00/);
     // pořadí uvnitř sekce
-    const order = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('checkbox').map((c) => c.closest('label')!.textContent);
+    const order = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('checkbox').filter((c) => !c.closest('.mf')).map((c) => c.closest('label')!.textContent);
     expect(order('Zápasy a scénáře')).toEqual(['Normální leg', 'Daň za ztrátu', 'Start 4:4']);
     await user.click(within(form).getByRole('button', { name: 'Dřív: Start 4:4' }));
     await user.click(within(form).getByRole('button', { name: 'Dřív: Start 4:4' }));

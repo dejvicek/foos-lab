@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { matchState } from '../domain/matchFormat';
 import { todayIso } from './dates';
 import { TIMES } from '../domain/content';
 import { soloKey } from '../domain/solo';
@@ -44,6 +45,10 @@ export function firstIncomplete(s: Schedule, t: Training): RowRef | null {
     for (const c of row.cells) {
       if (!c) continue;
       if (c.type === 'match') {
+        if ((c.match.bestOf ?? 1) > 1) {
+          if (!matchState(c.match, t.scores).over) return ref;
+          continue;
+        }
         const sc = t.scores[c.match.id];
         if (sc?.ga === undefined || sc?.ga === null || sc?.gb === undefined || sc?.gb === null) return ref;
       } else if (c.metric && c.players.some((p) => t.soloResults[p]?.[soloKey(c.metric!, c.soloRound)] === undefined)) return ref;

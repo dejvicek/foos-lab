@@ -4,7 +4,8 @@ import { explanationsFor, explanationTitle } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric, type SoloMetricDef } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
-import { legOver } from '../../domain/legState';
+import { tableScore } from '../../domain/legState';
+import { legIds, matchState } from '../../domain/matchFormat';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
@@ -143,6 +144,72 @@ export function HelpItem({ title, item }: { title?: string; item: ExplanationIte
   );
 }
 
+/** Leg BO zápasu: „Leg 2 6:4“ (stav na stole). */
+const legText = (m: Match, s: Score | undefined) => {
+  const [a, b] = tableScore(m, s);
+  return `${a}:${b}`;
+};
+
+/**
+ * Skóre utkání: ťukání (telefon) nebo výběr (notebook). Zápas s BO (12. 11. 2026) má legy po sobě –
+ * zapisuje se do hraného legu, předchozí jde otevřít a opravit; nahoře stav v legech.
+ */
+export function MatchScore({ m, training, names, label, tap, disabled, note, onScore, timelineOpen }: {
+  m: Match;
+  training: Training;
+  names: Record<PlayerId, string>;
+  label: string;
+  tap?: TapEntry;
+  disabled: boolean;
+  note?: string;
+  onScore(id: MatchId, s: Score): void;
+  timelineOpen: boolean;
+}) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const st = matchState(m, training.scores);
+  const multi = (m.bestOf ?? 1) > 1;
+  const lastLeg = st.legs[st.legs.length - 1].leg;
+  const leg = st.legs.find((l) => l.leg.legNo === picked)?.leg ?? st.current ?? lastLeg;
+  const evs = (training.events ?? []).filter((e) => e.itemId === leg.id);
+  const pt = training.playTimes?.[m.id];
+  const first = evs.length ? Math.min(...evs.map((e) => e.at)) : 0;
+  const last = evs.length ? Math.max(...evs.map((e) => e.at)) : 0;
+  // Konec osy: potvrzený konec, u rozehrané hry „teď“, jinak poslední ťuknutí.
+  const to = pt?.endedAt ?? (pt?.startedAt !== undefined ? Date.now() : last);
+  return (
+    <>
+      {multi && (
+        <div className="legs" role="group" aria-label={`Legy: ${label}`}>
+          <span className="legs-score">
+            BO{m.bestOf} · {st.legsA}:{st.legsB}
+            {st.over ? ' · konec' : ''}
+          </span>
+          {st.legs.map((l) => (
+            <button
+              key={l.leg.id}
+              type="button"
+              className="pill"
+              aria-pressed={l.leg.id === leg.id}
+              onClick={() => setPicked(l.leg.legNo ?? 1)}
+            >
+              Leg {l.leg.legNo}
+              {l.over ? ` ${legText(l.leg, l.score)}` : ''}
+            </button>
+          ))}
+        </div>
+      )}
+      {tap ? (
+        <ScoreMirror key={leg.id} match={leg} score={training.scores[leg.id]} names={names} me={tap.me} disabled={disabled} note={note} onBump={(f, d) => tap.onBumpScore(leg, f, d)} />
+      ) : (
+        <ScorePicker label={multi ? `${label}, leg ${leg.legNo}` : label} match={leg} score={training.scores[leg.id]} names={names} disabled={disabled} onChange={(sc) => onScore(leg.id, sc)} />
+      )}
+      <TimelineBox count={evs.length} open={timelineOpen}>
+        <MatchTimeline match={leg} events={evs} from={(leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first)} to={to} names={names} />
+      </TimelineBox>
+    </>
+  );
+}
+
 export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false }: Props) {
   /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
@@ -193,7 +260,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           const label = `${row.label}, stůl ${j + 1}`;
           if (c.type === 'match') {
             const m = c.match;
-            const tmr = timer(m.id, [...m.sideA, ...m.sideB], !isEmptyScore(training.scores[m.id]), legOver(m, training.scores[m.id]).over, m);
+            const st = matchState(m, training.scores);
+            const tmr = timer(m.id, [...m.sideA, ...m.sideB], legIds(m).some((id) => !isEmptyScore(training.scores[id])), st.over, m);
             const can = canMatch(m) && tmr.open;
             return (
               <div key={j} className="entry-card" role="group" aria-label={label}>
@@ -205,40 +273,17 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   {nm(m.sideA)} vs {nm(m.sideB)}
                 </span>
                 {tmr.bar}
-                {tap ? (
-                  <ScoreMirror
-                    key={m.id}
-                    match={m}
-                    score={training.scores[m.id]}
-                    names={names}
-                    me={tap.me}
-                    disabled={!can}
-                    note={canMatch(m) && !tmr.open ? 'Skóre jde zapsat po zahájení utkání.' : undefined}
-                    onBump={(f, d) => tap.onBumpScore(m, f, d)}
-                  />
-                ) : (
-                  <ScorePicker
-                    label={label}
-                    match={m}
-                    score={training.scores[m.id]}
-                    names={names}
-                    disabled={!can}
-                    onChange={(s) => onScore(m.id, s)}
-                  />
-                )}
-                {(() => {
-                  const evs = (training.events ?? []).filter((e) => e.itemId === m.id);
-                  const pt = training.playTimes?.[m.id];
-                  const first = evs.length ? Math.min(...evs.map((e) => e.at)) : 0;
-                  const last = evs.length ? Math.max(...evs.map((e) => e.at)) : 0;
-                  // Konec osy: potvrzený konec, u rozehrané hry „teď“, jinak poslední ťuknutí.
-                  const to = pt?.endedAt ?? (pt?.startedAt !== undefined ? Date.now() : last);
-                  return (
-                    <TimelineBox count={evs.length} open={timelineOpen}>
-                      <MatchTimeline match={m} events={evs} from={pt?.startedAt ?? first} to={to} names={names} />
-                    </TimelineBox>
-                  );
-                })()}
+                <MatchScore
+                  m={m}
+                  training={training}
+                  names={names}
+                  label={label}
+                  tap={tap}
+                  disabled={!can}
+                  note={canMatch(m) && !tmr.open ? 'Skóre jde zapsat po zahájení utkání.' : undefined}
+                  onScore={onScore}
+                  timelineOpen={timelineOpen}
+                />
                 {m.block === 'league' && (
                   <p className="entry-ref">
                     {m.lossTax ? 'Daň za ztrátu: ztráta se hned počítá jako gól soupeře. ' : ''}

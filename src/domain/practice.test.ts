@@ -18,7 +18,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes } from './practice';
+  roundTimes, computePracticeMatchLadder } from './practice';
 import { drillSections } from './disciplines';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
@@ -65,7 +65,10 @@ describe('nabídka cvičení', () => {
     expect(ids).toContain('chain');
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
-    expect(ids.every((id) => discipline(id).kind === 'drill')).toBe(true);
+    // zápasy a scénáře ve dvou (12. 11. 2026), simulace ne
+    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6']);
+    expect(ids).not.toContain('sim');
+    expect(practiceDrills(1).some((d) => d.kind === 'match')).toBe(false);
   });
 
   it('sekce Obrana / Pětka / Trojka (12. 11. 2026): Rozcvička bez sekce nahoře, uvnitř pořadí katalogu', () => {
@@ -194,6 +197,37 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   });
 });
 
+describe('zápasy ve dvou (12. 11. 2026)', () => {
+  const T0 = Date.UTC(2026, 10, 12, 16, 0);
+  const MIN = 60_000;
+  it('zápas = kolo s BO; párový scénář 2 kola s prohozenými stranami; sám zápasy nejdou', () => {
+    const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltySolo'], { goalieWar: { bestOf: 3, legTo: 5 } });
+    const rs = practiceRounds(p);
+    expect(rs.map((r) => [r.drill, r.min, r.match?.sideA.join(), r.match?.bestOf ?? null])).toEqual([
+      ['goalieWar', 24, 'A', 3],
+      ['wall', 8, 'A', null],
+      ['wall', 8, 'B', null],
+      ['penaltySolo', 8, undefined, null],
+      ['penaltySolo', 8, undefined, null],
+    ]);
+    expect(rs[0].match).toMatchObject({ id: 'practice|1|AvB', legTo: 5, kind: 'singles' });
+    expect(rs[1].match?.wall).toBe('A');
+    expect(p.durationMin).toBe(24 + 8 + 8 + 8 + 8 + 4);
+    expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5 } });
+    expect(newPractice('q', TODAY, '18:00', 'A', null, ['goalieWar', 'penaltySolo']).disciplineOrder).toEqual(['penaltySolo']);
+  });
+
+  it('dál až po rozhodnutém zápase (nebo po čase)', () => {
+    const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar'], { goalieWar: { bestOf: 3, legTo: 6 } });
+    const t = { ...p, playTimes: { 'round|1': { startedAt: T0 } } };
+    const r = practiceRounds(t)[0];
+    const id = r.match!.id;
+    expect(canAdvance({ ...t, scores: { [id]: { ga: 6, gb: 2 } } }, r, T0 + MIN)).toBe(false);
+    expect(canAdvance({ ...t, scores: { [id]: { ga: 6, gb: 2 }, [`${id}#2`]: { ga: 6, gb: 4 } } }, r, T0 + MIN)).toBe(true);
+    expect(canAdvance(t, r, T0 + 24 * MIN)).toBe(true);
+  });
+});
+
 describe('běží / skončil', () => {
   const start = Date.UTC(2026, 10, 11, 16, 30);
   const started = { ...practice('p', TODAY, ['A']), playTimes: { training: { startedAt: start } } };
@@ -268,5 +302,25 @@ describe('seznam vlastních tréninků', () => {
 
   it('klubové tréninky bez vlastních', () => {
     expect(clubTrainings(ts).map((t) => t.id)).toEqual(['club']);
+  });
+});
+
+describe('žebříček Vlastní – zápasy (12. 11. 2026)', () => {
+  const game = (id: string, a: string, b: string, legs: [number, number][], date = '2026-11-10') => {
+    const p = newPractice(id, date, '18:00', a, b, ['goalieWar'], { goalieWar: { bestOf: 3, legTo: 6 } });
+    const m = practiceRounds(p)[0].match!;
+    return { ...p, scores: Object.fromEntries(legs.map(([x, y], i) => [i ? `${m.id}#${i + 1}` : m.id, { ga: x, gb: y }])) };
+  };
+
+  it('podíl vyhraných zápasů, legy a skóre; málo dat pod 3 tréninky', () => {
+    const ts = [game('g1', 'A', 'B', [[6, 2], [6, 4]]), game('g2', 'B', 'A', [[6, 5], [2, 6], [3, 6]]), game('g3', 'A', 'B', [[1, 6], [6, 3], [6, 0]]), game('g4', 'A', 'C', [[6, 1]])];
+    const [gw] = computePracticeMatchLadder(ts, null, null, 3);
+    expect(gw.discipline).toBe('goalieWar');
+    expect(gw.ranked.map((r) => r.playerId)).toEqual(['A', 'B']);
+    expect(gw.ranked[0]).toMatchObject({ trainings: 4, matches: 3, wins: 3, legs: 9, legWins: 7, gf: 48, gc: 27 });
+    expect(gw.ranked[1]).toMatchObject({ trainings: 3, matches: 3, wins: 0, legs: 8 });
+    // nedohraný zápas (g4, jen 1 leg) se počítá do legů, ne do zápasů
+    expect(gw.lowData).toEqual([expect.objectContaining({ playerId: 'C', matches: 0, legs: 1, gf: 1, gc: 6 })]);
+    expect(computePracticeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
   });
 });

@@ -1770,3 +1770,14 @@ button, a, summary, label, input, select { touch-action: manipulation; }
   button { min-height: 44px; }
   button.back { min-height: 44px; }
 }
+
+/* ── BO formát zápasu (12. 11. 2026) ─────────────────── */
+.mf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 2px 0 4px 26px; font-size: 13px; color: var(--muted); }
+.mf select { min-height: 28px; min-width: 58px; padding: 0 22px 0 6px; font-size: 13px; }
+.mf label { display: inline-flex; align-items: center; gap: 4px; font-weight: 400; }
+.mf-check input { width: 16px; height: 16px; accent-color: var(--ink); }
+.mf-note { font-size: 12px; }
+.legs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; }
+.legs-score { font-weight: 800; font-size: 14px; margin-right: 4px; }
+.legs .pill[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.practice-order .mf { margin: 4px 0 0; font-weight: 400; }

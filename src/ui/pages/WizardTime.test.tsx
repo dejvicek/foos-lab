@@ -12,7 +12,7 @@ const shownRest = () =>
   screen
     .getAllByRole('list')
     .filter((l) => l.getAttribute('aria-label')?.startsWith('Další:'))
-    .flatMap((l) => within(l).getAllByRole('checkbox').map((c) => c.closest('label')!.textContent!));
+    .flatMap((l) => within(l).getAllByRole('checkbox').filter((c) => !c.closest('.mf')).map((c) => c.closest('label')!.textContent!));
 const rowOf = (name: string) => screen.getByRole('checkbox', { name }).closest('li')!;
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
