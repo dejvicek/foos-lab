@@ -1,5 +1,5 @@
 import { clubOffered, DISCIPLINES, discipline } from './disciplines';
-import { autoPlan, manualPlan, plannedMinutes, SOLO_SELECTION } from './plan';
+import { autoPlan, clubSoloSelection, manualPlan, plannedMinutes } from './plan';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { SOLO_METRICS, soloMetric } from './solo';
 import { newTraining, replan, selectedDisciplines } from './training';
@@ -61,13 +61,14 @@ describe('trénink pro 1 hráče', () => {
     const t = custom(1, 1, { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1, penaltyKeeper: 2, warmupPasses: 1, normal: 2, sim: 1 });
     expect(canBuildSchedule(t)).toBe(true);
     const r = play(t);
-    expect(r.map((x) => x.discipline)).toEqual(['passWallLane', 'passWallLane', 'fiveBarControl', 'penaltySolo', 'penaltySolo']);
+    // „bez brankáře“ je od 12. 11. 2026 jen ve vlastním tréninku sám
+    expect(r.map((x) => x.discipline)).toEqual(['passWallLane', 'passWallLane', 'fiveBarControl']);
     for (const x of r) expect(groupsOf(x)).toEqual([['H1']]);
     // Udržení míče na pětce sólo se zapisuje do vlastní tabulky
     expect(r[2].cells[0]).toMatchObject({ type: 'group', metric: 'fiveBarSolo' });
     expect(r[0].cells[0]).toMatchObject({ type: 'group', metric: 'passWallLane' });
     // čas počítá jen to, co se hraje
-    expect(plannedMinutes(t.plan, 1, [])).toBe(29); // 4 kola po 4+1, Udržení 8+1
+    expect(plannedMinutes(t.plan, 1, [])).toBe(19); // 2 kola po 4+1, Udržení 8+1 (bez snímku délek – starší délky)
   });
 
   it('se 2 a víc hráči je Udržení míče na pětce s bránícím (původní metrika)', () => {
@@ -79,7 +80,8 @@ describe('trénink pro 1 hráče', () => {
   it('přechod na 1 hráče vybere sólová cvičení', () => {
     const before = custom(2, 1, autoPlan(DEFAULT_SELECTION, 120, 2, 1));
     const after = replan(before, { ...before, attendees: H(1) });
-    for (const id of SOLO_SELECTION) expect(after.plan[id] ?? 0).toBeGreaterThan(0);
+    for (const id of clubSoloSelection()) expect(after.plan[id] ?? 0).toBeGreaterThan(0);
+    expect(after.plan.penaltySolo ?? 0).toBe(0); // bez brankáře jen ve vlastním tréninku
     expect(play(after).every((x) => x.kind === 'groups')).toBe(true);
     expect(plannedMinutes(after.plan, 1, [])).toBeLessThanOrEqual(120);
   });

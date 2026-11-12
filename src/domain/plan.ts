@@ -12,8 +12,11 @@ export const DEFAULT_DURATION = 180;
 /** Simulace ligového kola potřebuje aspoň 4 hráče (dvojice). */
 export const SIM_MIN_PLAYERS = 4;
 
-/** Výchozí výběr tréninku pro 1 hráče: cvičení, která jde hrát sám. */
+/** Výchozí výběr vlastního tréninku sám: cvičení pro jednoho. */
 export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo'];
+
+/** Výchozí výběr klubového tréninku pro 1 hráče: z nich jen ta, která klub nabízí („bez brankáře“ ne). */
+export const clubSoloSelection = (): DisciplineId[] => SOLO_SELECTION.filter((id) => !discipline(id).practiceOnly);
 
 /**
  * Hraje se disciplína při daném počtu hráčů? Zápasy aspoň 2, simulace aspoň 4, cvičení s bránícím
@@ -21,7 +24,7 @@ export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl',
  */
 export function playable(id: DisciplineId, players?: number): boolean {
   const d = discipline(id);
-  if (d.practiceOnly) return false; // Čistá desítka jen ve vlastním tréninku (ten má vlastní plán)
+  if (d.practiceOnly) return false; // Čistá desítka a „bez brankáře“ jen ve vlastním tréninku (ten má vlastní plán)
   if (players === undefined) return true;
   if (d.kind === 'sim') return players >= SIM_MIN_PLAYERS;
   if (d.kind === 'match' || d.needsPartner) return players >= 2;

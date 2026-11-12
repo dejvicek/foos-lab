@@ -34,12 +34,33 @@ export interface DisciplineDef {
   individual?: boolean;
   /** Sekce cvičení (Obrana / Pětka / Trojka); Rozcvička žádnou nemá. */
   area?: DrillArea;
-  /** Jen vlastní trénink (Čistá desítka, 12. 11. 2026) – klubový trénink ani šablona ji nenabízí. */
+  /** Jen vlastní trénink (Čistá desítka, „bez brankáře“; 12. 11. 2026) – klubový trénink ani šablona ji nenabízí. */
   practiceOnly?: boolean;
+  /** Ve vlastním tréninku jen sám („bez brankáře“), ve dvou ne. */
+  soloOnly?: boolean;
+  /** Jen klubový trénink (Jedničky – ve vlastním tréninku ve dvou je to Normální leg). */
+  clubOnly?: boolean;
 }
 
-/** Disciplína pro klubový trénink (šablony, průvodce, rozpis): nevyřazená a ne jen pro vlastní trénink. */
-export const clubOffered = (d: DisciplineDef): boolean => !d.retired && !d.practiceOnly;
+/** Kde se disciplína hraje (12. 11. 2026): klubový trénink, vlastní trénink sám, vlastní trénink ve dvou. */
+export interface Places {
+  club: boolean;
+  solo: boolean;
+  duo: boolean;
+}
+
+/**
+ * Místa disciplíny. Klub: nevyřazená, ne jen pro vlastní. Vlastní trénink: cvičení s metrikou a Rozcvička,
+ * zápasy (ne simulace), ne „jen klub“; sám jen cvičení bez bránícího soupeře, ve dvou ne „jen sám“.
+ */
+export function placesOf(d: DisciplineDef): Places {
+  const club = !d.retired && !d.practiceOnly;
+  const practice = !d.retired && !d.clubOnly && (d.kind === 'match' || (d.kind === 'drill' && (!!d.metric || !!d.individual)));
+  return { club, solo: practice && d.kind === 'drill' && !d.needsPartner, duo: practice && !d.soloOnly };
+}
+
+/** Disciplína pro klubový trénink (šablony, průvodce, rozpis). */
+export const clubOffered = (d: DisciplineDef): boolean => placesOf(d).club;
 
 /** Sekce cvičení (12. 11. 2026): kde na stole se trénuje. Obrana = branka a dvojka. */
 export type DrillArea = 'defense' | 'fiveBar' | 'threeBar';
@@ -71,9 +92,9 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 16, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['control', 'pass5'], area: 'fiveBar' },
   { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper', area: 'threeBar' },
   { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 8, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot3', 'defense', 'reading'], area: 'threeBar' },
-  { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 8, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot3'], area: 'threeBar' },
+  { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 8, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot3'], area: 'threeBar', practiceOnly: true, soloOnly: true },
   { id: 'backShotKeeper', kind: 'drill', name: 'Střela z dvojky proti brankáři', min: 8, explain: 'Střela z dvojky proti brankáři', metric: 'backShotKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot2', 'defense'], area: 'defense' },
-  { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 8, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot2'], area: 'defense' },
+  { id: 'backShotSolo', kind: 'drill', name: 'Střela z dvojky bez brankáře', min: 8, explain: 'Střela z dvojky bez brankáře', metric: 'backShotSolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot2'], area: 'defense', practiceOnly: true, soloOnly: true },
   { id: 'clearing', kind: 'drill', name: 'Clearing', min: 8, explain: 'Clearing', metric: 'clearing', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['clearing'], area: 'defense' },
   { id: 'looseBall', kind: 'drill', name: 'Zachycení volného míče', min: 8, explain: 'Zachycení volného míče', metric: 'looseBall', variants: ['po zdi', 'středem'], needsPartner: true, skills: ['looseBall', 'control'], area: 'defense' },
   { id: 'backRodsBuildUp', kind: 'drill', name: 'Rozehrávka ze zadních tyčí', min: 8, explain: 'Rozehrávka ze zadních tyčí', metric: 'backRodsBuildUp', retired: true, area: 'defense' },
@@ -92,7 +113,7 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'start44', kind: 'match', name: 'Start 4:4', min: 5, explain: 'Start 4:4', start: [4, 4], skills: ['clutch'] },
   { id: 'start45', kind: 'match', name: 'Start 4:5', min: 5, explain: 'Start 4:5', start: [4, 5], paired: true, skills: ['clutch'] },
   { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5], skills: ['clutch'] },
-  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['matchPlay', 'buildUp2', 'defense'] },
+  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['matchPlay', 'buildUp2', 'defense'], clubOnly: true },
   // 12. 11. 2026: singly do 6 jako Jedničky, skóre do souhrnu i žebříčku Zápasy.
   { id: 'goalieWar', kind: 'match', name: 'Goalie war', min: 8, explain: 'Goalie war', singlesOnly: true, skills: ['shot2', 'defense'] },
   { id: 'penalty6', kind: 'match', name: 'Penalty', min: 8, explain: 'Penalty', singlesOnly: true, skills: ['shot3', 'defense'] },

@@ -1,5 +1,5 @@
 import { DISCIPLINES } from './disciplines';
-import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, disciplineScope } from './disciplineInfo';
+import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, disciplinePlaces } from './disciplineInfo';
 
 describe('stránka Disciplíny – obsah', () => {
   it('nabízí jen nevyřazené disciplíny v pořadí rozpisu', () => {
@@ -22,27 +22,34 @@ describe('stránka Disciplíny – obsah', () => {
     expect(disciplineDuration('warmupPasses')).toEqual({ rounds: 1, min: 8 });
     expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 8 });
     expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 8 });
-    expect(disciplineWho('warmupPasses')).toEqual({ icon: 'pair', label: 's bránícím soupeřem' });
-    expect(disciplineWho('fiveBarControl')?.icon).toBe('solo');
+    // kdo hraje říkají panáčci (disciplinePlaces); ikona v řádku už jen u párového zápasu
+    expect(disciplineWho('warmupPasses')).toBeNull();
     expect(disciplineWho('wall')?.icon).toBe('swap');
     expect(disciplineWho('normal')).toBeNull();
-    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'jde i sám']);
-    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem']);
-    expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role']);
+    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: klubový trénink, vlastní trénink sám, vlastní trénink ve dvou']);
+    expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
+    expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
     expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
-    expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem']);
+    expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem', 'hraje se: klubový trénink, vlastní trénink ve dvou']);
     expect(disciplineHelp('chain').map((i) => i.name)).toEqual(['Řetězec']);
-    expect(disciplineFacts('singles')).toEqual(['jen singly']);
-    expect(disciplineFacts('sim')).toEqual(['od 4 hráčů']);
+    expect(disciplineFacts('singles')).toEqual(['jen singly', 'hraje se: klubový trénink']);
+    expect(disciplineFacts('sim')).toEqual(['od 4 hráčů', 'hraje se: klubový trénink']);
   });
 
   it('obecná pravidla zápasů', () => {
     expect(MATCH_GENERAL_HELP.map((i) => i.name)).toEqual(['Každý gól se počítá', 'Role rozhodčího']);
   });
 
-  it('kde se hraje (12. 11. 2026): Čistá desítka jen vlastní, simulace jen klubový, ostatní obojí', () => {
-    expect(disciplineScope('streakShot3')).toBe('practice');
-    expect(disciplineScope('sim')).toBe('club');
-    for (const id of ['warmup', 'penaltySolo', 'warmupPasses', 'normal', 'goalieWar', 'wall'] as const) expect(disciplineScope(id)).toBeNull();
+  it('kde se hraje (12. 11. 2026): klub / vlastní sám / vlastní ve dvou', () => {
+    const p = (id: Parameters<typeof disciplinePlaces>[0]) => Object.entries(disciplinePlaces(id)).filter(([, v]) => v).map(([k]) => k);
+    expect(p('warmup')).toEqual(['club', 'solo', 'duo']);
+    expect(p('passWallLane')).toEqual(['club', 'solo', 'duo']);
+    expect(p('penaltyKeeper')).toEqual(['club', 'duo']);
+    expect(p('penaltySolo')).toEqual(['solo']); // bez brankáře jen vlastní sám
+    expect(p('backShotSolo')).toEqual(['solo']);
+    expect(p('streakShot3')).toEqual(['solo', 'duo']);
+    expect(p('normal')).toEqual(['club', 'duo']);
+    expect(p('singles')).toEqual(['club']); // ve vlastním tréninku je to Normální leg
+    expect(p('sim')).toEqual(['club']);
   });
 });

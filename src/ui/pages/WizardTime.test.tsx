@@ -87,7 +87,7 @@ it('filtrování disciplín podle štítků: sekce v legendě i konkrétní št�
   expect(screen.getByText(/zobrazeno 1 z \d+/)).toBeInTheDocument();
   // + sekce Útok (sčítá se)
   await user.click(within(screen.getByRole('list', { name: 'Sekce dovedností' })).getByRole('button', { name: 'Útok' }));
-  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Penalta z místa bez brankáře', 'Přihrávky ke zdi a po lajně']));
+  expect(shown()).toEqual(expect.arrayContaining(['Clearing', 'Střela z dvojky proti brankáři', 'Přihrávky ke zdi a po lajně']));
   expect(shown()).not.toContain('Zachycení volného míče');
   await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
   expect(shown()).toHaveLength(all);

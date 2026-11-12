@@ -3,7 +3,7 @@ import { catalogMins, DISCIPLINES } from './disciplines';
 import { currentTemplates, templateBreaks, type TrainingTemplate } from './catalog';
 import { sortedRoster } from './roster';
 import { DEFAULT_START, parseSoloKey, soloSlots, type SoloSlot } from './solo';
-import { DEFAULT_DURATION, manualPlan, orderedDisciplines, SOLO_SELECTION } from './plan';
+import { clubSoloSelection, DEFAULT_DURATION, manualPlan, orderedDisciplines } from './plan';
 import { anchorBreaks, breaksOf } from './breaks';
 import { roundSequence } from './customSchedule';
 import { buildSchedule, canBuildSchedule } from './schedule';
@@ -227,11 +227,11 @@ export function replan(before: Training, after: Training): Training {
   const fromSolo = before.attendees.length === 1 && after.attendees.length > 1;
   const played = lockedCounts(after);
   let selection = selectedDisciplines(after.plan);
-  if (toSolo) selection = [...new Set([...selection, ...SOLO_SELECTION])];
+  if (toSolo) selection = [...new Set([...selection, ...clubSoloSelection()])];
   // Vrátí se výběr šablony (disciplineOrder); sólová cvičení mimo ni (a u tréninku bez pořadí všechna) se odeberou.
   const order = after.disciplineOrder ?? [];
   const added = (id: DisciplineId) => !order.includes(id);
-  if (fromSolo) selection = selection.filter((id) => !(SOLO_SELECTION.includes(id) && added(id) && !played[id]));
+  if (fromSolo) selection = selection.filter((id) => !(clubSoloSelection().includes(id) && added(id) && !played[id]));
   return {
     ...after,
     // Bez doplňování (9. 11. 2026): cvičení podle přítomných, zápasy s počtem kol, jak jsou.

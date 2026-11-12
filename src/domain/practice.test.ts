@@ -66,7 +66,10 @@ describe('nabídka cvičení', () => {
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
     // zápasy a scénáře ve dvou (12. 11. 2026), simulace ne
-    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6']);
+    // Jedničky jen v klubu (ve dvou je to Normální leg); „bez brankáře“ jen sám
+    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'goalieWar', 'penalty6']);
+    expect(ids).not.toContain('penaltySolo');
+    expect(ids).not.toContain('backShotSolo');
     expect(ids).not.toContain('sim');
     expect(practiceDrills(1).some((d) => d.kind === 'match')).toBe(false);
   });
@@ -80,7 +83,7 @@ describe('nabídka cvičení', () => {
       ['Trojka', ['penaltySolo', 'streakShot3']],
     ]);
     const pair = drillSections(practiceDrills(2));
-    expect(pair.find((x) => x.area === 'defense')!.drills.map((d) => d.id)).toEqual(['backShotKeeper', 'backShotSolo', 'clearing', 'looseBall', 'streakShot2', 'streakPass2']);
+    expect(pair.find((x) => x.area === 'defense')!.drills.map((d) => d.id)).toEqual(['backShotKeeper', 'clearing', 'looseBall', 'streakShot2', 'streakPass2']);
     expect(pair.find((x) => x.area === 'threeBar')!.drills.map((d) => d.id)).toContain('chain');
     expect(drillSections([discipline('penaltySolo')]).map((x) => x.name)).toEqual(['Trojka']);
   });

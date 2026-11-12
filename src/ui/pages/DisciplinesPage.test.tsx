@@ -29,7 +29,8 @@ describe('stránka Disciplíny', () => {
 
     const r = row('Penalta z místa proti brankáři');
     expect(r).toHaveTextContent('2× 8 min');
-    expect(within(r).getByRole('img', { name: 's bránícím soupeřem' })).toBeInTheDocument();
+    // panáčci: kde se hraje (klub a vlastní ve dvou)
+    expect(within(r).getByRole('img', { name: 'Hraje se: klubový trénink, vlastní trénink ve dvou' })).toBeInTheDocument();
     expect(within(within(r).getByRole('list', { name: 'Trénuje' })).getAllByRole('button').map((b) => b.textContent)).toEqual([
       'Střela z trojky', 'Obrana', 'Čtení soupeře',
     ]);
@@ -52,10 +53,18 @@ describe('stránka Disciplíny', () => {
 
     expect(rows()).toHaveLength(26);
     // kde se hraje: Čistá desítka jen vlastní trénink, simulace jen klubový
-    expect(within(row('Čistá desítka – střela z trojky')).getByRole('img', { name: 'jen vlastní trénink' })).toBeInTheDocument();
-    expect(within(row('Simulace ligového kola')).getByRole('img', { name: 'jen klubový trénink' })).toBeInTheDocument();
-    expect(within(row('Goalie war')).queryByRole('img', { name: /^jen (vlastní|klubový)/ })).toBeNull();
-    expect(screen.getByLabelText('Vysvětlivky ikon')).toHaveTextContent(/jen vlastní trénink.*jen klubový trénink/);
+    expect(within(row('Čistá desítka – střela z trojky')).getByRole('img', { name: 'Hraje se: vlastní trénink sám, vlastní trénink ve dvou' })).toBeInTheDocument();
+    expect(within(row('Penalta z místa bez brankáře')).getByRole('img', { name: 'Hraje se: vlastní trénink sám' })).toBeInTheDocument();
+    expect(within(row('Jedničky')).getByRole('img', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Vysvětlivky ikon')).toHaveTextContent(/klubový trénink.*vlastní trénink sám.*vlastní trénink ve dvou/);
+    // filtr Hraje se: vlastní trénink sám
+    await user.click(within(screen.getByRole('list', { name: 'Kde se hraje' })).getByRole('button', { name: /vlastní trénink sám/ }));
+    expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
+      'Rozcvička', 'Střela z dvojky bez brankáře', 'Čistá desítka – střela z dvojky', 'Čistá desítka – přihrávka z dvojky',
+      'Přihrávky ke zdi a po lajně', 'Udržení míče na pětce', 'Čistá desítka – přihrávka na pětce',
+      'Penalta z místa bez brankáře', 'Čistá desítka – střela z trojky',
+    ]);
+    await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));
     // cvičení po sekcích (12. 11. 2026): Rozcvička bez sekce, pak Obrana, Pětka, Trojka
     const drills = screen.getByRole('region', { name: /^Cvičení/ });
     expect(within(drills).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);

@@ -1221,7 +1221,7 @@ button.dp-chip.small { font-size: 12px; min-height: 26px; padding: 1px 9px 1px 7
 .dp-area-head { margin: 16px 0 2px; font-size: 15px; font-weight: 800; color: var(--ink); }
 .dp-area:first-of-type .dp-area-head { margin-top: 10px; }
 .dp-row { border-bottom: 1px solid var(--line); }
-.dp-head { display: grid; grid-template-columns: minmax(200px, 1.1fr) 76px 26px 26px minmax(0, 1.5fr) 74px; align-items: center; gap: 4px 10px;
+.dp-head { display: grid; grid-template-columns: minmax(200px, 1.1fr) 76px 66px 22px minmax(0, 1.5fr) 74px; align-items: center; gap: 4px 10px;
   padding: 6px 8px 6px 0; border-radius: 6px; cursor: pointer; }
 .dp-head:hover { background: var(--row-hover); }
 button.dp-toggle { background: none; border: 0; color: var(--ink); padding: 4px 0; min-height: 32px; display: flex; align-items: center; gap: 6px; text-align: left; justify-content: flex-start; }
@@ -1282,7 +1282,7 @@ button.dp-edit { margin-top: 12px; min-height: 30px; font-size: 13px; }
 .dp-legend svg { width: 16px; height: 16px; }
 
 @media (max-width: 767px) {
-  .dp-head { grid-template-columns: minmax(0, 1fr) auto 22px 22px; padding-right: 2px; }
+  .dp-head { grid-template-columns: minmax(0, 1fr) auto 62px 20px; padding-right: 2px; }
   .dp-head .dp-tags { grid-column: 1 / -1; grid-row: 2; padding-left: 20px; }
   .dp-head > .dp-opt { display: none; }
   .dp-opt-inline { display: inline-block; }
@@ -1790,3 +1790,10 @@ button, a, summary, label, input, select { touch-action: manipulation; }
 .legs .pill[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .practice-order .mf { margin: 4px 0 0; font-weight: 400; }
 .tpl-all { display: flex; justify-content: flex-end; margin: 10px 0 -4px; }
+.dp-places { display: inline-flex; gap: 2px; color: var(--ink); }
+.dp-places svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.dp-places .off { color: var(--muted); opacity: .3; }
+.dp-place-chip { display: inline-flex; align-items: center; gap: 6px; }
+.dp-place-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dp-place-filter { margin-top: 8px; }
+button.dp-place-chip::before { display: none; }

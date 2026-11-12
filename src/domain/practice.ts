@@ -4,7 +4,7 @@
  * v klubovém tréninku). Výsledky jsou výsledky sólové části s klíčem `metrika@n` (n = číslo kola),
  * zahájení a konec tréninku a kol jsou časy utkání `training` a `round|n`.
  */
-import { DISCIPLINES, discipline, roundMin, type DisciplineDef } from './disciplines';
+import { DISCIPLINES, discipline, placesOf, roundMin, type DisciplineDef } from './disciplines';
 import { drillCount } from './drillTap';
 import { CHANGEOVER_MIN } from './plan';
 import { TRAINING_ITEM } from './queue';
@@ -91,9 +91,7 @@ export function practicePlanMinutes(drills: DisciplineId[], formats: MatchFormat
  * a scénáře (12. 11. 2026, bez simulace).
  */
 export function practiceDrills(players: number): DisciplineDef[] {
-  return DISCIPLINES.filter(
-    (d) => !d.retired && ((d.kind === 'drill' && (d.metric || d.individual) && (players >= 2 || !d.needsPartner)) || (d.kind === 'match' && players >= 2)),
-  );
+  return DISCIPLINES.filter((d) => (players >= 2 ? placesOf(d).duo : placesOf(d).solo));
 }
 
 /** Metrika cvičení ve vlastním tréninku (Udržení míče na pětce sám → fiveBarSolo); Rozcvička žádnou nemá. */

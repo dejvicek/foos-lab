@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
-import { disciplineDuration, disciplineFacts, disciplineHelp, disciplineScope, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, SCOPE_LABEL } from '../../domain/disciplineInfo';
+import { disciplineDuration, disciplineFacts, disciplineHelp, disciplinePlaces, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, PLACE_KEYS, PLACE_LABEL, placesText } from '../../domain/disciplineInfo';
+import type { Places } from '../../domain/disciplines';
 import { discipline, DISCIPLINES, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGroup, skillName, SKILLS, skillsIn, type Skill, type SkillDef, type SkillFilter, type SkillGroupId } from '../../domain/skills';
 import type { DisciplineId } from '../../domain/types';
@@ -10,12 +11,14 @@ import { MinStepper } from '../components/MinStepper';
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
 const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
 
-const ICON: Record<'pair' | 'solo' | 'swap' | 'practice' | 'club', ReactNode> = {
-  pair: (
+/** Ikony: kde se hraje (panáčci – 12. 11. 2026: skupina = klub, jeden = sám, dva = ve dvou) a párový zápas. */
+const ICON: Record<'club' | 'solo' | 'duo' | 'swap', ReactNode> = {
+  club: (
     <>
-      <circle cx="8" cy="8" r="3" />
-      <circle cx="16" cy="8" r="3" />
-      <path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M13 14.5c.9-.3 1.9-.5 3-.5 3 0 5.5 2 5.5 5" />
+      <circle cx="12" cy="6.8" r="2.5" />
+      <circle cx="5.3" cy="9.3" r="2.1" />
+      <circle cx="18.7" cy="9.3" r="2.1" />
+      <path d="M7.6 18.8c0-2.8 1.9-4.6 4.4-4.6s4.4 1.8 4.4 4.6M2 17.6c0-2.2 1.4-3.7 3.3-3.7M22 17.6c0-2.2-1.4-3.7-3.3-3.7" />
     </>
   ),
   solo: (
@@ -24,21 +27,14 @@ const ICON: Record<'pair' | 'solo' | 'swap' | 'practice' | 'club', ReactNode> = 
       <path d="M5.5 19.5c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
     </>
   ),
+  duo: (
+    <>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M13 14.5c.9-.3 1.9-.5 3-.5 3 0 5.5 2 5.5 5" />
+    </>
+  ),
   swap: <path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5" />,
-  // Kde se hraje (12. 11. 2026): domeček = jen vlastní trénink, štít = jen klubový trénink.
-  practice: (
-    <>
-      <path d="M4 11.5L12 5l8 6.5" />
-      <path d="M6.5 10v9h11v-9" />
-      <path d="M10.5 19v-4.5h3V19" />
-    </>
-  ),
-  club: (
-    <>
-      <path d="M12 3.5l7 2.5v5.5c0 4.3-2.9 7.6-7 9-4.1-1.4-7-4.7-7-9V6z" />
-      <path d="M9 12l2 2 4-4" />
-    </>
-  ),
 };
 const Icon = ({ name }: { name: keyof typeof ICON }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -54,9 +50,11 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
   const [editing, setEditing] = useState<DisciplineId | null>(null);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [general, setGeneral] = useState(false);
+  // Filtr „Hraje se“ (12. 11. 2026): klubový / vlastní sám / vlastní ve dvou.
+  const [place, setPlace] = useState<keyof Places | null>(null);
   const offered = offeredDisciplines();
-  const visible = offered.filter((d) => matchesSkillFilter(d.skills, filter));
-  const filtering = filter.skills.length + filter.groups.length > 0;
+  const visible = offered.filter((d) => matchesSkillFilter(d.skills, filter) && (!place || disciplinePlaces(d.id)[place]));
+  const filtering = filter.skills.length + filter.groups.length > 0 || place !== null;
   const hit = (s: Skill) => filtering && (filter.skills.includes(s) || filter.groups.includes(skillGroup(s).id));
   const toggleOpen = (id: DisciplineId) =>
     setOpen((o) => {
@@ -97,29 +95,43 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
         )}
         {filtering && (
           <p className="dp-filter-status">
-            Filtr: <b>{[...filter.groups.map((g) => SKILL_GROUPS.find((x) => x.id === g)!.name), ...filter.skills.map(skillName)].join(', ')}</b> · {visible.length} z {offered.length}
-            <button type="button" className="link" onClick={() => setFilter({ skills: [], groups: [] })}>
+            Filtr:{' '}
+            <b>
+              {[...(place ? [PLACE_LABEL[place]] : []), ...filter.groups.map((g) => SKILL_GROUPS.find((x) => x.id === g)!.name), ...filter.skills.map(skillName)].join(', ')}
+            </b>{' '}
+            · {visible.length} z {offered.length}
+            <button type="button" className="link" onClick={() => (setFilter({ skills: [], groups: [] }), setPlace(null))}>
               Zrušit filtr
             </button>
           </p>
         )}
       </div>
       {admin && tagsOpen && <SkillsEditor catalog={catalog} newId={store.newId} onSave={(c) => (save(c), setTagsOpen(false))} onCancel={() => setTagsOpen(false)} />}
+      <div className="dp-filter dp-place-filter">
+        <span className="dp-filter-label">Hraje se:</span>
+        <ul className="dp-chips" aria-label="Kde se hraje">
+          {PLACE_KEYS.map((k) => (
+            <li key={k}>
+              <button type="button" className="dp-chip dp-place-chip" aria-pressed={place === k} onClick={() => setPlace(place === k ? null : k)}>
+                <Icon name={k} /> {PLACE_LABEL[k]}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
       <p className="dp-legend" aria-label="Vysvětlivky ikon">
         <span>
-          <Icon name="pair" /> s bránícím soupeřem
+          <Icon name="club" /> klubový trénink
         </span>
         <span>
-          <Icon name="solo" /> jde i sám
+          <Icon name="solo" /> vlastní trénink sám
         </span>
+        <span>
+          <Icon name="duo" /> vlastní trénink ve dvou
+        </span>
+        <span>šedě: tam se nehraje</span>
         <span>
           <Icon name="swap" /> 2 kola, strany si prohodí role
-        </span>
-        <span>
-          <Icon name="practice" /> {SCOPE_LABEL.practice}
-        </span>
-        <span>
-          <Icon name="club" /> {SCOPE_LABEL.club}
         </span>
       </p>
       {!visible.length && <p className="muted">Žádná disciplína neodpovídá filtru.</p>}
@@ -214,7 +226,7 @@ function DisciplineRow({
 }) {
   const dur = disciplineDuration(d.id);
   const who = disciplineWho(d.id);
-  const scope = disciplineScope(d.id);
+  const places = disciplinePlaces(d.id);
   return (
     <li className={`dp-row${open ? ' open' : ''}`} aria-label={d.name}>
       {/* Kliknutí kamkoli do řádku rozbalí; pro klávesnici je přepínač u názvu. */}
@@ -229,11 +241,15 @@ function DisciplineRow({
           {dur.rounds === 2 && '2× '}
           <b>{dur.min}</b> min
         </span>
+        <span className="dp-places" role="img" aria-label={`Hraje se: ${placesText(places)}`} title={`Hraje se: ${placesText(places)}`}>
+          {PLACE_KEYS.map((k) => (
+            <span key={k} className={places[k] ? 'on' : 'off'}>
+              <Icon name={k} />
+            </span>
+          ))}
+        </span>
         <span className="dp-who" title={who?.label} aria-label={who?.label} role={who ? 'img' : undefined}>
           {who && <Icon name={who.icon} />}
-        </span>
-        <span className="dp-who dp-where" title={scope ? SCOPE_LABEL[scope] : undefined} aria-label={scope ? SCOPE_LABEL[scope] : undefined} role={scope ? 'img' : undefined}>
-          {scope && <Icon name={scope} />}
         </span>
         <ul className="dp-tags" aria-label="Trénuje">
           {bySkillGroup(d.skills).map((s) => (
