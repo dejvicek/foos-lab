@@ -1790,10 +1790,11 @@ button, a, summary, label, input, select { touch-action: manipulation; }
 .legs .pill[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .practice-order .mf { margin: 4px 0 0; font-weight: 400; }
 .tpl-all { display: flex; justify-content: flex-end; margin: 10px 0 -4px; }
-.dp-places { display: inline-flex; gap: 2px; color: var(--ink); }
+.dp-places { display: inline-flex; gap: 0; color: var(--ink); }
+.dp-place { display: inline-grid; place-items: center; width: 22px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: none; color: inherit; min-height: 0; }
 .dp-places svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
 .dp-places .off { color: var(--muted); opacity: .3; }
-.dp-place-chip { display: inline-flex; align-items: center; gap: 6px; }
-.dp-place-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.dp-place-filter { margin-top: 8px; }
-button.dp-place-chip::before { display: none; }
+button.dp-place { cursor: pointer; }
+button.dp-place:hover { background: var(--row-hover); color: var(--felt); }
+button.dp-place.hit { background: var(--felt); color: var(--surface); }
+button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 1px; }

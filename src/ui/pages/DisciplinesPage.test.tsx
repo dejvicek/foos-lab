@@ -30,7 +30,7 @@ describe('stránka Disciplíny', () => {
     const r = row('Penalta z místa proti brankáři');
     expect(r).toHaveTextContent('2× 8 min');
     // panáčci: kde se hraje (klub a vlastní ve dvou)
-    expect(within(r).getByRole('img', { name: 'Hraje se: klubový trénink, duo' })).toBeInTheDocument();
+    expect(within(r).getByRole('group', { name: 'Hraje se: klubový trénink, duo' })).toBeInTheDocument();
     expect(within(within(r).getByRole('list', { name: 'Trénuje' })).getAllByRole('button').map((b) => b.textContent)).toEqual([
       'Střela z trojky', 'Obrana', 'Čtení soupeře',
     ]);
@@ -53,12 +53,16 @@ describe('stránka Disciplíny', () => {
 
     expect(rows()).toHaveLength(26);
     // kde se hraje: Čistá desítka jen vlastní trénink, simulace jen klubový
-    expect(within(row('Čistá desítka – střela z trojky')).getByRole('img', { name: 'Hraje se: solo, duo' })).toBeInTheDocument();
-    expect(within(row('Penalta z místa bez brankáře')).getByRole('img', { name: 'Hraje se: solo' })).toBeInTheDocument();
-    expect(within(row('Jedničky')).getByRole('img', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
+    expect(within(row('Čistá desítka – střela z trojky')).getByRole('group', { name: 'Hraje se: solo, duo' })).toBeInTheDocument();
+    expect(within(row('Penalta z místa bez brankáře')).getByRole('group', { name: 'Hraje se: solo' })).toBeInTheDocument();
+    expect(within(row('Jedničky')).getByRole('group', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
     expect(screen.getByLabelText('Vysvětlivky ikon')).toHaveTextContent(/klubový trénink.*solo.*duo/);
     // filtr Hraje se: solo
-    await user.click(within(screen.getByRole('list', { name: 'Kde se hraje' })).getByRole('button', { name: /solo/ }));
+    // filtr kliknutím na panáčka (solo) v řádku; zvýrazní se ve všech řádcích, druhé kliknutí ho zruší
+    expect(screen.queryByRole('list', { name: 'Kde se hraje' })).toBeNull();
+    await user.click(within(row('Přihrávky ke zdi a po lajně')).getByRole('button', { name: 'Filtrovat: solo' }));
+    expect(within(row('Rozcvička')).getByRole('button', { name: 'Filtrovat: solo' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Filtr:/)).toHaveTextContent('solo');
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
       'Rozcvička', 'Střela z dvojky bez brankáře', 'Čistá desítka – střela z dvojky', 'Čistá desítka – přihrávka z dvojky',
       'Přihrávky ke zdi a po lajně', 'Čistá desítka – přihrávka na pětce',

@@ -68,7 +68,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
   return (
     <section className="disciplines-page">
       <h1>Disciplíny</h1>
-      <p className="lead">Co se na tréninku hraje a co která disciplína trénuje. Klikni na řádek pro popis.</p>
+      <p className="lead">Co se na tréninku hraje a co která disciplína trénuje. Klikni na řádek pro popis, na štítek nebo panáčka pro filtr.</p>
       <div className="dp-filter">
         <span className="dp-filter-label">Trénuje:</span>
         <ul className="dp-chips" aria-label="Sekce dovedností">
@@ -107,18 +107,6 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
         )}
       </div>
       {admin && tagsOpen && <SkillsEditor catalog={catalog} newId={store.newId} onSave={(c) => (save(c), setTagsOpen(false))} onCancel={() => setTagsOpen(false)} />}
-      <div className="dp-filter dp-place-filter">
-        <span className="dp-filter-label">Hraje se:</span>
-        <ul className="dp-chips" aria-label="Kde se hraje">
-          {PLACE_KEYS.map((k) => (
-            <li key={k}>
-              <button type="button" className="dp-chip dp-place-chip" aria-pressed={place === k} onClick={() => setPlace(place === k ? null : k)}>
-                <Icon name={k} /> {PLACE_LABEL[k]}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
       <p className="dp-legend" aria-label="Vysvětlivky ikon">
         <span>
           <Icon name="club" /> klubový trénink
@@ -173,6 +161,8 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                         onToggle={() => toggleOpen(d.id)}
                         hit={hit}
                         onTag={(s) => setFilter((f) => ({ ...f, skills: toggle(f.skills, s) }))}
+                        place={place}
+                        onPlace={(k) => setPlace(place === k ? null : k)}
                       >
                         {editing === d.id ? (
                           <DisciplineEditor
@@ -214,6 +204,8 @@ function DisciplineRow({
   onToggle,
   hit,
   onTag,
+  place,
+  onPlace,
   children,
 }: {
   d: DisciplineDef;
@@ -221,6 +213,9 @@ function DisciplineRow({
   onToggle(): void;
   hit(s: Skill): boolean;
   onTag(s: Skill): void;
+  /** Filtr „kde se hraje“ – kliknutí na panáčka (12. 11. 2026). */
+  place: keyof Places | null;
+  onPlace(k: keyof Places): void;
   children: ReactNode;
 }) {
   const dur = disciplineDuration(d.id);
@@ -240,12 +235,26 @@ function DisciplineRow({
           {dur.rounds === 2 && '2× '}
           <b>{dur.min}</b> min
         </span>
-        <span className="dp-places" role="img" aria-label={`Hraje se: ${placesText(places)}`} title={`Hraje se: ${placesText(places)}`}>
-          {PLACE_KEYS.map((k) => (
-            <span key={k} className={places[k] ? 'on' : 'off'}>
-              <Icon name={k} />
-            </span>
-          ))}
+        <span className="dp-places" role="group" aria-label={`Hraje se: ${placesText(places)}`}>
+          {PLACE_KEYS.map((k) =>
+            places[k] ? (
+              <button
+                key={k}
+                type="button"
+                className={`dp-place on${place === k ? ' hit' : ''}`}
+                aria-pressed={place === k}
+                aria-label={`Filtrovat: ${PLACE_LABEL[k]}`}
+                title={`${PLACE_LABEL[k]} – filtrovat`}
+                onClick={(e) => (e.stopPropagation(), onPlace(k))}
+              >
+                <Icon name={k} />
+              </button>
+            ) : (
+              <span key={k} className="dp-place off" aria-hidden="true">
+                <Icon name={k} />
+              </span>
+            ),
+          )}
         </span>
         <span className="dp-who" title={who?.label} aria-label={who?.label} role={who ? 'img' : undefined}>
           {who && <Icon name={who.icon} />}
