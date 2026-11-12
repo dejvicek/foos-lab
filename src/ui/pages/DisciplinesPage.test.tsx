@@ -7,7 +7,7 @@ import { applyCatalog } from '../../domain/catalog';
 import type { Player } from '../../domain/types';
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
-const roster: Player[] = ['Dejv', 'Milan'].map((name, order) => ({ id: `id${order + 1}`, name, order, archived: false }));
+const roster: Player[] = ['Dejv', 'Milan', 'Lavi', 'Luky'].map((name, order) => ({ id: `id${order + 1}`, name, order, archived: false }));
 const authPlayers = roster.map((p) => ({ id: p.id, name: p.name, isAdmin: p.name === 'Dejv' }));
 const rows = () => screen.getAllByRole('listitem').filter((li) => li.classList.contains('dp-row'));
 const row = (name: string) => screen.getByRole('listitem', { name });
@@ -250,7 +250,7 @@ describe('stránka Disciplíny', () => {
     // nový trénink: první šablona (1:00), přesně její kola
     window.location.hash = '#/trainings/new';
     await screen.findByRole('heading', { name: 'Přítomní' });
-    await user.click(screen.getAllByRole('checkbox')[0]);
+    for (const n of ['Dejv', 'Milan', 'Lavi', 'Luky']) await user.click(screen.getByRole('checkbox', { name: n })); // aspoň 4 hráči
     await user.click(screen.getByRole('button', { name: /^Další:/ }));
     expect(screen.getByRole('slider', { name: 'Délka tréninku' })).toHaveValue('60');
   });

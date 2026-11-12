@@ -38,7 +38,7 @@ describe('čas plánu v průvodci', () => {
   });
 
   it('zbývá čas: v kroku Kdy, kde a disciplíny nabídne doplnit kola, po doplnění se plán prodlouží', async () => {
-    const user = await wizard(['Ada'], 90); // trénink pro 1 hráče: sólová cvičení (1:11), zbývá čas
+    const user = await wizard(['Ada', 'Bára', 'Cyril', 'Dan'], 240); // klubový trénink aspoň pro 4; zbývá čas
     const status = () => screen.getByRole('status', { name: 'Naplánováno' }).textContent;
     const before = status();
     expect(before).toMatch(/zbývá \d+ min/);
@@ -193,7 +193,7 @@ describe('uložit nastavení disciplín jako šablonu (admin, 10. 11. 2026)', ()
     const roster = players.map((p) => (p.id === 'p1' ? { ...p, organizer: true } : p));
     render(<App repo={memoryRepository({ players: roster, trainings: [], catalog: DEFAULT_CATALOG })} auth={auth} />);
     await screen.findByRole('heading', { name: 'Přítomní' });
-    for (const n of ['Ada', 'Bára']) await user.click(screen.getByRole('checkbox', { name: n }));
+    for (const n of ['Ada', 'Bára', 'Cyril', 'Dan']) await user.click(screen.getByRole('checkbox', { name: n }));
     await next(user);
     expect(screen.getByRole('tablist', { name: 'Šablona' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Uložit jako šablonu' })).toBeNull();

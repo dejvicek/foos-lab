@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { RosterError } from '../../domain/roster';
-import { canBuildSchedule } from '../../domain/schedule';
+import { canSaveClubTraining } from '../../domain/schedule';
 import { toggleAttendee } from '../../domain/training';
 import type { Player, PlayerId, Training } from '../../domain/types';
 import { prepareEdit } from '../trainingEdit';
@@ -41,7 +41,8 @@ export function TrainingWizard({ initial, mode, running, players, trainings, onA
   const [stepId, setStepId] = useState<StepId>(mode === 'new' ? steps[0] : draft.format === 'custom' ? 'plan' : 'when');
   const [reached, setReached] = useState(mode === 'edit' ? steps.length - 1 : 0);
   const step = Math.max(0, steps.indexOf(stepId));
-  const ready = canBuildSchedule(draft);
+  // Klubový trénink aspoň pro 4 hráče (12. 11. 2026).
+  const ready = canSaveClubTraining(draft);
   // Za krok Přítomní se jde jen s dost hráči.
   const canGo = (i: number) => i <= steps.indexOf('who') || ready;
   const go = (i: number) => {
