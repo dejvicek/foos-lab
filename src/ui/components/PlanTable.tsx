@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { BREAK_OPTIONS } from '../../domain/plan';
+import { BREAK_OPTIONS, type TimelineItem } from '../../domain/plan';
+import { discipline } from '../../domain/disciplines';
 
 /**
  * Společné kousky tabulky plánu (9. / 10. 11. 2026): stránka Šablony a krok Disciplíny v průvodci.
@@ -195,6 +196,30 @@ export function GapButton({ name, onClick }: { name: string; onClick(): void }) 
       <button type="button" onClick={onClick} aria-label={`Přidat pauzu po: ${name}`}>
         + pauza
       </button>
+    </span>
+  );
+}
+
+/**
+ * Čára „Naplánováno“ (12. 11. 2026): úseky v barvách druhu – cvičení, zápasy a scénáře, simulace, pauzy
+ * šrafovaně. Měřítko je délka tréninku; přetažený plán sahá na celou šířku a značka ukazuje konec tréninku.
+ */
+export function PlanMeter({ items, total, durationMin }: { items: TimelineItem[]; total: number; durationMin: number }) {
+  const scale = Math.max(total, durationMin, 1);
+  const segs: { kind: Kind | 'break'; from: number; to: number }[] = [];
+  items.forEach((it, i) => {
+    const kind: Kind | 'break' = it.kind === 'break' ? 'break' : discipline(it.discipline!).kind;
+    const to = items[i + 1]?.start ?? total; // včetně přechodu do dalšího kola
+    const last = segs.at(-1);
+    if (last && last.kind === kind && last.to === it.start) last.to = to;
+    else segs.push({ kind, from: it.start, to });
+  });
+  return (
+    <span className="tt-meter" aria-hidden="true">
+      {segs.map((x, i) => (
+        <i key={i} className={`k-${x.kind}`} style={{ left: `${(x.from / scale) * 100}%`, width: `${((x.to - x.from) / scale) * 100}%` }} />
+      ))}
+      {total > durationMin && <b className="tt-meter-end" style={{ left: `${(durationMin / scale) * 100}%` }} />}
     </span>
   );
 }

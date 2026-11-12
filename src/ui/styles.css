@@ -1324,9 +1324,14 @@ button.tpl-tab.add { color: var(--felt); }
 .tt-summary { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; font-size: 14px; color: var(--felt); }
 .tt-summary b { font-variant-numeric: tabular-nums; }
 .tt-summary.over { color: var(--warn); }
-.tt-meter { flex: 1; max-width: 260px; height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
-.tt-meter i { display: block; height: 100%; background: var(--gold); }
-.tt-summary.over .tt-meter i { background: var(--warn); }
+.tt-meter { position: relative; flex: 1; max-width: 260px; height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+/* Úseky plánu v barvách druhu (PlanMeter); pauzy šrafovaně, konec tréninku u přetaženého plánu. */
+.tt-meter i { position: absolute; top: 0; bottom: 0; background: var(--muted); }
+.tt-meter i.k-drill { background: var(--k-drill); }
+.tt-meter i.k-match { background: var(--k-match); }
+.tt-meter i.k-sim { background: var(--k-sim); }
+.tt-meter i.k-break { background: repeating-linear-gradient(135deg, var(--line-strong) 0 2px, transparent 2px 4px); }
+.tt-meter-end { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: var(--warn); }
 .tpl-body { padding: 4px 16px 4px; }
 .tpl-sec { margin-top: 14px; }
 .tpl-sec h3 { margin: 0; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 8px; }

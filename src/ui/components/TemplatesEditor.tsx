@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cleanFormats, formatOf } from '../../domain/matchFormat';
 import { MatchFormatPicker } from './MatchFormatPicker';
-import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
+import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
 import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
 import { catalogMins, DISCIPLINES, type DisciplineMins } from '../../domain/disciplines';
 import { defaultMatchRounds, DURATION_OPTIONS, playable } from '../../domain/plan';
@@ -206,9 +206,7 @@ export function TemplatesEditor({
           <b>
             Naplánováno {hm(total)} z {hm(tpl.durationMin)}
           </b>
-          <span className="tt-meter" aria-hidden="true">
-            <i style={{ width: `${Math.min(100, (total / tpl.durationMin) * 100)}%` }} />
-          </span>
+          <PlanMeter items={tl.items} total={total} durationMin={tpl.durationMin} />
           <span>{over > 0 ? `přes o ${hm(over)}` : over === 0 ? 'přesně' : `zbývá ${-over} min`}</span>
         </p>
       </div>

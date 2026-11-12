@@ -16,7 +16,7 @@ import { plural } from '../format';
 import { hm } from './DisciplinePicker';
 import { FairnessReport } from './FairnessPanel';
 import { PlanPreview, type Highlight } from './PlanPreview';
-import { CountStepper, endLiner, FreeRow, GapButton, KIND_TITLE, KINDS, MoveButtons, PauseRow, rowHeight, SectionHead, TimeCell, type Kind, type Span } from './PlanTable';
+import { CountStepper, endLiner, FreeRow, GapButton, KIND_TITLE, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, type Kind, type Span } from './PlanTable';
 import { SkillLegend, SkillTags } from './SkillTags';
 
 type View = 'plan' | 'rounds' | 'who';
@@ -132,9 +132,7 @@ export function DisciplineStep({
             <b>
               Naplánováno {hm(tl.total)} z {hm(t.durationMin)}
             </b>
-            <span className="tt-meter" aria-hidden="true">
-              <i style={{ width: `${Math.min(100, (tl.total / t.durationMin) * 100)}%` }} />
-            </span>
+            <PlanMeter items={tl.items} total={tl.total} durationMin={t.durationMin} />
             <span>{over > 0 ? `přes o ${hm(over)}` : over === 0 ? 'přesně' : `zbývá ${-over} min`}</span>
             <span className="disc-end">konec {fmt(tl.total)}</span>
           </p>
