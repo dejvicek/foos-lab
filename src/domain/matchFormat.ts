@@ -26,11 +26,24 @@ export type MatchFormats = Partial<Record<DisciplineId, MatchFormat>>;
 export const DEFAULT_LEG_TO = 6;
 export const DEFAULT_CAP = 10;
 export const MAX_BEST_OF = 5;
-export const MAX_LEG_TO = 15;
+/** Gólů na leg nejvýš 10 (12. 11. 2026); strop rozhodujícího legu nad tím. */
+export const MAX_LEG_TO = 10;
+export const MAX_CAP = 15;
 /** Povolené počty legů (12. 11. 2026 jen BO1, BO2, BO3 a BO5). */
 export const BEST_OF_OPTIONS = [1, 2, 3, 5] as const;
 
 export const DEFAULT_FORMAT: MatchFormat = { bestOf: 1, legTo: DEFAULT_LEG_TO };
+
+/** Výchozí pravidla podle počtu legů (12. 11. 2026, *rozhodnutí uživatele*) – nastaví se při volbě BO. */
+const BO_DEFAULTS: Record<number, Omit<MatchFormat, 'bestOf'>> = {
+  1: { legTo: 6 },
+  2: { legTo: 6 },
+  3: { legTo: 6, finalWinBy2: true, cap: 10 },
+  5: { legTo: 5, finalWinBy2: true, cap: 8 },
+};
+
+/** Formát po volbě BO: výchozí pravidla pro daný počet legů (u scénáře v jeho mezích). */
+export const defaultFormat = (id: DisciplineId, bestOf: number): MatchFormat => normalizeFormat(id, { bestOf, ...(BO_DEFAULTS[bestOf] ?? BO_DEFAULTS[1]) });
 
 /** Scénář 5:5 má vlastní pravidlo (o 2 góly, strop 10) – nastavit jde jen počet legů. */
 export const fixedLegRule = (id: DisciplineId): boolean => {
@@ -54,7 +67,7 @@ export function normalizeFormat(id: DisciplineId, f: Partial<MatchFormat> | unde
   const legTo = clamp(f?.legTo, minLegTo(id), MAX_LEG_TO, Math.max(DEFAULT_LEG_TO, minLegTo(id)));
   // BO2 hraje oba legy a nerozhodný stav je platný výsledek – rozhodující leg nemá.
   if (!f?.finalWinBy2 || bestOf === 2) return { bestOf, legTo };
-  return { bestOf, legTo, finalWinBy2: true, cap: clamp(f.cap, legTo + 1, MAX_LEG_TO + 5, Math.max(DEFAULT_CAP, legTo + 1)) };
+  return { bestOf, legTo, finalWinBy2: true, cap: clamp(f.cap, legTo + 1, MAX_CAP, Math.max(DEFAULT_CAP, legTo + 1)) };
 }
 
 /** Formát disciplíny v tréninku / šabloně; bez nastavení BO1 do 6. */

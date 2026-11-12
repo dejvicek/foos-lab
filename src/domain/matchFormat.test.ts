@@ -1,4 +1,4 @@
-import { cleanFormats, formatLabel, formatMins, formatOf, legId, legOf, matchState, normalizeFormat, baseMatchId } from './matchFormat';
+import { cleanFormats, defaultFormat, formatLabel, formatMins, formatOf, legId, legOf, matchState, normalizeFormat, baseMatchId } from './matchFormat';
 import { bumpLimit, legOver, winnerFor } from './legState';
 import { buildSchedule } from './schedule';
 import { computeStandings } from './standings';
@@ -12,9 +12,18 @@ const bo = (bestOf: number, extra: Partial<Match> = {}): Match => ({ ...base, be
 describe('BO formát – nastavení', () => {
   it('výchozí BO1 do 6; meze; 5:5 má pevné pravidlo; start musí jít vyhrát', () => {
     expect(formatOf(undefined, 'normal')).toEqual({ bestOf: 1, legTo: 6 });
-    expect(normalizeFormat('normal', { bestOf: 0, legTo: 99 })).toEqual({ bestOf: 1, legTo: 15 });
+    expect(normalizeFormat('normal', { bestOf: 0, legTo: 99 })).toEqual({ bestOf: 1, legTo: 10 }); // do nejvýš 10
     // jen BO1, BO2, BO3, BO5: jiný počet → nejbližší nižší povolený
     expect([4, 5, 7, 15].map((n) => normalizeFormat('normal', { bestOf: n, legTo: 6 }).bestOf)).toEqual([3, 5, 5, 5]);
+    // výchozí pravidla při volbě BO
+    expect([1, 2, 3, 5].map((n) => defaultFormat('goalieWar', n))).toEqual([
+      { bestOf: 1, legTo: 6 },
+      { bestOf: 2, legTo: 6 },
+      { bestOf: 3, legTo: 6, finalWinBy2: true, cap: 10 },
+      { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 },
+    ]);
+    expect(defaultFormat('start45', 5)).toEqual({ bestOf: 5, legTo: 6, finalWinBy2: true, cap: 8 }); // start 4:5 → aspoň do 6
+    expect(defaultFormat('start55', 3)).toEqual({ bestOf: 3, legTo: 6 });
     // BO2 rozhodující leg nemá (oba legy se hrají, remíza platí)
     expect(normalizeFormat('normal', { bestOf: 2, legTo: 6, finalWinBy2: true, cap: 9 })).toEqual({ bestOf: 2, legTo: 6 });
     expect(normalizeFormat('start55', { bestOf: 3, legTo: 4, finalWinBy2: true, cap: 8 })).toEqual({ bestOf: 3, legTo: 6 });

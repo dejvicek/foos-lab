@@ -1,4 +1,4 @@
-import { BEST_OF_OPTIONS, fixedLegRule, MAX_LEG_TO, minLegTo, normalizeFormat, type MatchFormat } from '../../domain/matchFormat';
+import { BEST_OF_OPTIONS, defaultFormat, fixedLegRule, MAX_CAP, MAX_LEG_TO, minLegTo, normalizeFormat, type MatchFormat } from '../../domain/matchFormat';
 import type { DisciplineId } from '../../domain/types';
 
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
@@ -13,7 +13,7 @@ export function MatchFormatPicker({ id, name, value, onChange }: { id: Disciplin
   const fixed = fixedLegRule(id);
   return (
     <span className="mf" role="group" aria-label={`Formát: ${name}`}>
-      <select aria-label={`Počet legů: ${name}`} value={f.bestOf} onChange={(e) => set({ bestOf: Number(e.target.value) })}>
+      <select aria-label={`Počet legů: ${name}`} value={f.bestOf} onChange={(e) => onChange(defaultFormat(id, Number(e.target.value)))}>
         {BEST_OF_OPTIONS.map((n) => (
           <option key={n} value={n}>
             BO{n}
@@ -44,7 +44,7 @@ export function MatchFormatPicker({ id, name, value, onChange }: { id: Disciplin
             <label>
               strop{' '}
               <select aria-label={`Strop: ${name}`} value={f.cap} onChange={(e) => set({ cap: Number(e.target.value) })}>
-                {range(f.legTo + 1, MAX_LEG_TO + 5).map((n) => (
+                {range(f.legTo + 1, MAX_CAP).map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>

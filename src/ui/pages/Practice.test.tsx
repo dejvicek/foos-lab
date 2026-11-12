@@ -197,7 +197,9 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '2');
     expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).queryByRole('checkbox')).toBeNull();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '3');
-    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeInTheDocument();
+    // výchozí BO3: do 6, rozhodující leg o 2, strop 10
+    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Strop: Goalie war do 6' })).toHaveValue('10');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Gólů na leg: Goalie war do 6' }), '5');
     expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:24');
     await user.click(screen.getByRole('button', { name: 'Začít vlastní trénink' }));
@@ -212,10 +214,10 @@ describe('vlastní trénink (PRD 5.11)', () => {
     for (let i = 0; i < 5; i++) await goal('vlevo');
     expect(legs()).toHaveTextContent('BO3 · 2:0 · konec');
     await user.click(screen.getByRole('button', { name: 'Dokončit trénink' }));
-    expect(screen.getByRole('region', { name: 'Výsledky' })).toHaveTextContent('Goalie war do 6 BO3 do 5H1 2:0 H2 (5:0, 5:1)');
+    expect(screen.getByRole('region', { name: 'Výsledky' })).toHaveTextContent('Goalie war do 6 BO3 do 5 rozhodující leg o 2 (strop 10)H1 2:0 H2 (5:0, 5:1)');
     await vi.waitFor(() => {
       const p = practiceOf(repo);
-      expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5 } });
+      expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5, finalWinBy2: true, cap: 10 } });
       expect(p.scores).toEqual({ 'practice|1|id1vid2': expect.objectContaining({ ga: 5, gb: 0 }), 'practice|1|id1vid2#2': expect.objectContaining({ ga: 5, gb: 1 }) });
     });
   });
