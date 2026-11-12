@@ -207,14 +207,22 @@ describe('stránka Disciplíny', () => {
     await user.click(within(form).getByRole('button', { name: 'Pauzu o disciplínu později' }));
     expect(within(form).getByRole('listitem', { name: 'Pauza po: Start 4:4' })).toBeInTheDocument();
 
+    // nová šablona je prázdná; Označit vše / Odznačit vše
     await user.click(within(form).getByRole('button', { name: '+ Šablona' }));
-    expect(within(form).getByRole('tab', { name: /Krátký – kopie/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(form).getByRole('tab', { name: /Nová šablona/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(form).queryByRole('list', { name: /^Pořadí:/ })).toBeNull();
+    await user.click(within(form).getByRole('button', { name: 'Označit vše' }));
+    expect(within(form).queryAllByRole('list', { name: /^Další:/ })).toEqual([]);
+    expect(within(form).getByRole('list', { name: 'Pořadí: Simulace' })).toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Odznačit vše' }));
+    expect(within(form).queryByRole('list', { name: /^Pořadí:/ })).toBeNull();
+    await user.click(within(form).getByRole('checkbox', { name: 'Normální leg' }));
     await user.selectOptions(within(form).getByRole('combobox', { name: 'Délka' }), '180');
     await user.click(within(form).getByRole('button', { name: 'Uložit šablony' }));
     expect(within(form).getByText('Uloženo')).toBeInTheDocument();
     await vi.waitFor(() => {
       const c = repo.snapshot().catalog!;
-      expect(c.templates?.map((t) => [t.name, t.durationMin])).toEqual([['Krátký', 60], ['Krátký – kopie', 180]]);
+      expect(c.templates?.map((t) => [t.name, t.durationMin, t.selection])).toEqual([['Krátký', 60, expect.any(Array)], ['Nová šablona', 180, ['normal']]]);
       expect(c.templates?.[0]).toMatchObject({
         selection: ['warmupPasses', 'fiveBarControl', 'start44', 'normal', 'lossTax'],
         rounds: { normal: 2 },

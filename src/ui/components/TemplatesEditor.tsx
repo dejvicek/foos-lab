@@ -95,6 +95,13 @@ export function TemplatesEditor({
     setChosen(kindOf(id), list);
   };
   const add = (id: DisciplineId) => setChosen(kindOf(id), [...chosenIn(kindOf(id)), id]);
+  // Označit / odznačit vše: vybrané si nechají pořadí, ostatní se přidají za ně v pořadí katalogu.
+  const offered = DISCIPLINES.filter((d) => !d.retired).map((d) => d.id);
+  const allChosen = offered.every((id) => tpl.selection.includes(id));
+  const toggleAll = () =>
+    allChosen
+      ? setTpl({ selection: [], rounds: {}, breaks: [], formats: undefined })
+      : setTpl({ selection: KINDS.flatMap((k) => [...chosenIn(k), ...offered.filter((id) => kindOf(id) === k && !tpl.selection.includes(id))]) });
   const remove = (id: DisciplineId) => {
     const { [id]: _, ...rounds } = tpl.rounds ?? {};
     setTpl({ selection: tpl.selection.filter((x) => x !== id), rounds, breaks: breaks.filter((b) => b.after !== id) });
@@ -161,7 +168,11 @@ export function TemplatesEditor({
           type="button"
           className="tpl-tab add"
           onClick={() => {
-            setDraft((xs) => [...xs, { ...tpl, id: newId(), name: `${tpl.name} – kopie`, selection: [...tpl.selection], rounds: { ...tpl.rounds }, breaks: [...breaks] }]);
+            // Nová šablona začíná prázdná (12. 11. 2026): nic vybraného, výchozí délka.
+            const names = new Set(draft.map((x) => x.name.trim()));
+            let name = 'Nová šablona';
+            for (let k = 2; names.has(name); k++) name = `Nová šablona ${k}`;
+            setDraft((xs) => [...xs, { ...blankTemplate(newId()), name }]);
             setTab(draft.length);
           }}
         >
@@ -224,6 +235,11 @@ export function TemplatesEditor({
             <b>Délka kola</b> (− / +) platí pro všechny šablony a pro nové tréninky.
           </li>
         </ul>
+        <div className="tpl-all">
+          <button type="button" className="ghost" onClick={toggleAll}>
+            {allChosen ? 'Odznačit vše' : 'Označit vše'}
+          </button>
+        </div>
         {KINDS.map((kind) => {
           const chosen = chosenIn(kind);
           const rest = DISCIPLINES.filter((d) => !d.retired && d.kind === kind && !tpl.selection.includes(d.id));

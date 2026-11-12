@@ -1789,3 +1789,4 @@ button, a, summary, label, input, select { touch-action: manipulation; }
 .legs-score { font-weight: 800; font-size: 14px; margin-right: 4px; }
 .legs .pill[aria-pressed='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .practice-order .mf { margin: 4px 0 0; font-weight: 400; }
+.tpl-all { display: flex; justify-content: flex-end; margin: 10px 0 -4px; }
