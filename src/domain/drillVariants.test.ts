@@ -43,11 +43,11 @@ describe('nová cvičení (2. 11. 2026)', () => {
   });
 
   it('cvičení na dvě varianty: vždy po dvou kolech, ve druhém stejné skupiny; varianta v pravidle kola', () => {
-    expect(autoPlan(['passWallLane'], 180, 8, 4).passWallLane).toBe(2);
+    expect(autoPlan(['looseBall'], 180, 8, 4).looseBall).toBe(2);
     expect(autoPlan(['penaltyKeeper'], 180, 13, 2).penaltyKeeper).toBe(8); // 4 kola na vystřídání × 2 varianty
-    const r = play(custom(8, 4, { passWallLane: 2 }));
-    expect(r[0].rule).toMatch(/^Přihrávky ke zdi a po lajně – ke zdi, 4 min/);
-    expect(r[1].rule).toMatch(/^Přihrávky ke zdi a po lajně – po lajně, 4 min/);
+    const r = play(custom(8, 4, { looseBall: 2 }));
+    expect(r[0].rule).toMatch(/^Zachycení volného míče – po zdi, 4 min/);
+    expect(r[1].rule).toMatch(/^Zachycení volného míče – středem, 4 min/);
     expect(groupsOf(r[1])).toEqual(groupsOf(r[0]));
     const p = play(custom(8, 4, { penaltyKeeper: 2 }));
     expect(p.map((x) => x.rule)).toEqual(['Penalta z místa proti brankáři – varianta 1, 4 min', 'Penalta z místa proti brankáři – varianta 2, 4 min']);
@@ -58,15 +58,13 @@ describe('nová cvičení (2. 11. 2026)', () => {
 
 describe('trénink pro 1 hráče', () => {
   it('jde založit; hrají se jen cvičení bez soupeře, skupina o 1 hráči', () => {
-    const t = custom(1, 1, { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1, penaltyKeeper: 2, warmupPasses: 1, normal: 2, sim: 1 });
+    // Od 12. 11. 2026 je klubový trénink aspoň pro 4; sólová cvičení („bez brankáře“, Přihrávky ke zdi
+    // a po lajně) jsou jen ve vlastním tréninku solo. Starší trénink pro 1 hráče má v rozpisu jen Rozcvičku.
+    const t = custom(1, 1, { warmup: 1, passWallLane: 2, penaltySolo: 2, fiveBarControl: 1, penaltyKeeper: 2, warmupPasses: 1, normal: 2, sim: 1 });
     expect(canBuildSchedule(t)).toBe(true);
     const r = play(t);
-    // „bez brankáře“ je od 12. 11. 2026 jen ve vlastním tréninku sám, Udržení míče na pětce jen klub a duo
-    expect(r.map((x) => x.discipline)).toEqual(['passWallLane', 'passWallLane']);
+    expect(r.map((x) => x.discipline)).toEqual(['warmup']);
     for (const x of r) expect(groupsOf(x)).toEqual([['H1']]);
-    expect(r[0].cells[0]).toMatchObject({ type: 'group', metric: 'passWallLane' });
-    // čas počítá jen to, co se hraje
-    expect(plannedMinutes(t.plan, 1, [])).toBe(10); // 2 kola po 4+1 (bez snímku délek – starší délky)
   });
 
   it('se 2 a víc hráči je Udržení míče na pětce s bránícím (původní metrika)', () => {

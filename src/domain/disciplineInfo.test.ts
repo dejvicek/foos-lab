@@ -26,13 +26,13 @@ describe('stránka Disciplíny – obsah', () => {
     expect(disciplineWho('warmupPasses')).toBeNull();
     expect(disciplineWho('wall')?.icon).toBe('swap');
     expect(disciplineWho('normal')).toBeNull();
-    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: klubový trénink, solo, duo']);
+    expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: solo']);
     expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem', 'hraje se: klubový trénink, duo']);
     expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role', 'hraje se: klubový trénink, duo']);
     expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
     expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem', 'hraje se: klubový trénink, duo']);
     expect(disciplineHelp('chain').map((i) => i.name)).toEqual(['Řetězec']);
-    expect(disciplineFacts('singles')).toEqual(['jen singly', 'hraje se: klubový trénink']);
+    expect(disciplineFacts('singles')).toEqual(['jen singly', 'hraje se: klubový trénink, duo']);
     expect(disciplineFacts('sim')).toEqual(['od 4 hráčů', 'hraje se: klubový trénink']);
   });
 
@@ -43,13 +43,13 @@ describe('stránka Disciplíny – obsah', () => {
   it('kde se hraje (12. 11. 2026): klub / vlastní sám / vlastní ve dvou', () => {
     const p = (id: Parameters<typeof disciplinePlaces>[0]) => Object.entries(disciplinePlaces(id)).filter(([, v]) => v).map(([k]) => k);
     expect(p('warmup')).toEqual(['club', 'solo', 'duo']);
-    expect(p('passWallLane')).toEqual(['club', 'solo', 'duo']);
+    expect(p('passWallLane')).toEqual(['solo']); // bez soupeře – jen solo
     expect(p('penaltyKeeper')).toEqual(['club', 'duo']);
     expect(p('penaltySolo')).toEqual(['solo']); // bez brankáře jen vlastní sám
     expect(p('backShotSolo')).toEqual(['solo']);
     expect(p('streakShot3')).toEqual(['solo', 'duo']);
-    expect(p('normal')).toEqual(['club', 'duo']);
-    expect(p('singles')).toEqual(['club']); // ve vlastním tréninku je to Normální leg
+    expect(p('normal')).toEqual(['club']); // v duu je to Jedničky
+    expect(p('singles')).toEqual(['club', 'duo']);
     expect(p('sim')).toEqual(['club']);
   });
 });

@@ -92,14 +92,14 @@ describe('doplnit kola, když zbývá čas (2. 11. 2026)', () => {
     expect(Math.abs(filled.normal! - filled.lossTax!)).toBeLessThanOrEqual(1);
   });
 
-  it('bez zápasů (trénink pro 1 hráče): doplní cvičení, dvouvariantní po dvou kolech', () => {
-    const plan = { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1 };
-    const before = plannedMinutes(plan, 1, []);
-    const filled = fillPlan(plan, 60, 1, []);
-    expect(plannedMinutes(filled, 1, [])).toBeGreaterThan(before);
-    expect(plannedMinutes(filled, 1, [])).toBeLessThanOrEqual(60);
-    expect(filled.passWallLane! % 2).toBe(0);
-    expect(filled.penaltySolo! % 2).toBe(0);
+  it('bez zápasů: doplní cvičení, dvouvariantní po dvou kolech', () => {
+    const plan = { looseBall: 2, penaltyKeeper: 2, fiveBarControl: 1 };
+    const before = plannedMinutes(plan, 4, []);
+    const filled = fillPlan(plan, 90, 4, []);
+    expect(plannedMinutes(filled, 4, [])).toBeGreaterThan(before);
+    expect(plannedMinutes(filled, 4, [])).toBeLessThanOrEqual(90);
+    expect(filled.looseBall! % 2).toBe(0);
+    expect(filled.penaltyKeeper! % 2).toBe(0);
   });
 
   it('párové zápasy po dvou; když se nic nevejde, plán zůstane', () => {

@@ -147,7 +147,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "míč zastavený na pětce, nikdo nebrání. 1. kolo 20 přihrávek ke zdi, 2. kolo 20 přihrávek po lajně. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Každý hráč za sebe, jde i sám."
+            "text": "míč zastavený na pětce, nikdo nebrání. 1. kolo 20 přihrávek ke zdi, 2. kolo 20 přihrávek po lajně. Platí jen přihrávka, kterou trojka přijme pod kontrolou. Sólové cvičení – jen ve vlastním tréninku solo."
           },
           {
             "label": "Počítá se:",
@@ -181,7 +181,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "jako Penalta z místa proti brankáři, jen nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce)."
+            "text": "jako Penalta z místa proti brankáři, jen nikdo nebrání. Sólové cvičení – jen ve vlastním tréninku solo. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám (např. u stahovačky krátká a dlouhá, u snaka nebo pinu k bližší a ke vzdálenější tyčce)."
           },
           {
             "label": "Počítá se:",
@@ -215,7 +215,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "míč nastavený na dvojce, střela na bránu, nikdo nebrání. Pro trénink jednoho hráče, nebo když zbyde hráč bez dvojice. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám."
+            "text": "míč nastavený na dvojce, střela na bránu, nikdo nebrání. Sólové cvičení – jen ve vlastním tréninku solo. Dvě kola po 20 střelách, v každém kole jedna varianta, kterou si hráč určí sám."
           },
           {
             "label": "Počítá se:",

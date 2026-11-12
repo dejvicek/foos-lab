@@ -67,8 +67,8 @@ describe('nabídka cvičení', () => {
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
     // zápasy a scénáře ve dvou (12. 11. 2026), simulace ne
-    // Jedničky jen v klubu (ve dvou je to Normální leg); „bez brankáře“ jen sám
-    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['normal', 'lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'goalieWar', 'penalty6']);
+    // v duu Jedničky (1 na 1), Normální leg jen v klubu; „bez brankáře“ jen solo
+    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6']);
     expect(ids).not.toContain('penaltySolo');
     expect(ids).not.toContain('backShotSolo');
     expect(ids).not.toContain('sim');

@@ -34,11 +34,11 @@ export interface DisciplineDef {
   individual?: boolean;
   /** Sekce cvičení (Obrana / Pětka / Trojka); Rozcvička žádnou nemá. */
   area?: DrillArea;
-  /** Jen vlastní trénink (Čistá desítka, „bez brankáře“; 12. 11. 2026) – klubový trénink ani šablona ji nenabízí. */
+  /** Jen vlastní trénink (Čistá desítka, „bez brankáře“, Přihrávky ke zdi a po lajně; 12. 11. 2026) – klubový trénink ani šablona ji nenabízí. */
   practiceOnly?: boolean;
-  /** Ve vlastním tréninku jen sám („bez brankáře“), ve dvou ne. */
+  /** Ve vlastním tréninku jen solo („bez brankáře“, Přihrávky ke zdi a po lajně – bez soupeře), v duu ne. */
   soloOnly?: boolean;
-  /** Jen klubový trénink (Jedničky – ve vlastním tréninku ve dvou je to Normální leg). */
+  /** Jen klubový trénink (Normální leg – ve vlastním tréninku duo je to Jedničky, 1 na 1). */
   clubOnly?: boolean;
 }
 
@@ -88,7 +88,7 @@ export function drillSections(list: DisciplineDef[]): { area: DrillArea | 'match
 export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, explain: 'Rozcvička', individual: true, skills: ['control', 'pass5'] },
   { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses', needsPartner: true, skills: ['pass5', 'control', 'reading'], area: 'fiveBar' },
-  { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 8, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], skills: ['pass5'], area: 'fiveBar' },
+  { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 8, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], skills: ['pass5'], area: 'fiveBar', practiceOnly: true, soloOnly: true },
     // Jen klub a duo (12. 11. 2026): soupeř brání pětkou; sólová metrika zůstává kvůli historii.
 { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 16, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', needsPartner: true, skills: ['control', 'pass5'], area: 'fiveBar' },
   { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper', area: 'threeBar' },
@@ -107,14 +107,14 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'streakPass5', kind: 'drill', name: 'Čistá desítka – přihrávka na pětce', min: 10, explain: 'Čistá desítka – přihrávka na pětce', metric: 'streakPass5', individual: true, practiceOnly: true, skills: ['pass5'], area: 'fiveBar' },
   { id: 'streakShot2', kind: 'drill', name: 'Čistá desítka – střela z dvojky', min: 10, explain: 'Čistá desítka – střela z dvojky', metric: 'streakShot2', individual: true, practiceOnly: true, skills: ['shot2'], area: 'defense' },
   { id: 'streakPass2', kind: 'drill', name: 'Čistá desítka – přihrávka z dvojky', min: 10, explain: 'Čistá desítka – přihrávka z dvojky', metric: 'streakPass2', individual: true, practiceOnly: true, skills: ['buildUp2'], area: 'defense' },
-  { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'] },
+  { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'], clubOnly: true },
   { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'] },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true, skills: ['tempo', 'reading', 'control'] },
   { id: 'start03', kind: 'match', name: 'Start 0:3 + daň', min: 5, explain: 'Start 0:3', lossTax: true, start: [0, 3], paired: true, skills: ['comeback', 'control'] },
   { id: 'start44', kind: 'match', name: 'Start 4:4', min: 5, explain: 'Start 4:4', start: [4, 4], skills: ['clutch'] },
   { id: 'start45', kind: 'match', name: 'Start 4:5', min: 5, explain: 'Start 4:5', start: [4, 5], paired: true, skills: ['clutch'] },
   { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5], skills: ['clutch'] },
-  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['matchPlay', 'buildUp2', 'defense'], clubOnly: true },
+  { id: 'singles', kind: 'match', name: 'Jedničky', min: 8, explain: 'Normální leg', singlesOnly: true, skills: ['matchPlay', 'buildUp2', 'defense'] },
   // 12. 11. 2026: singly do 6 jako Jedničky, skóre do souhrnu i žebříčku Zápasy.
   { id: 'goalieWar', kind: 'match', name: 'Goalie war', min: 8, explain: 'Goalie war', singlesOnly: true, skills: ['shot2', 'defense'] },
   { id: 'penalty6', kind: 'match', name: 'Penalty', min: 8, explain: 'Penalty', singlesOnly: true, skills: ['shot3', 'defense'] },

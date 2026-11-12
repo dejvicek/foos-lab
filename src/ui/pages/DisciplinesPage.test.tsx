@@ -55,7 +55,9 @@ describe('stránka Disciplíny', () => {
     // kde se hraje: Čistá desítka jen vlastní trénink, simulace jen klubový
     expect(within(row('Čistá desítka – střela z trojky')).getByRole('group', { name: 'Hraje se: solo, duo' })).toBeInTheDocument();
     expect(within(row('Penalta z místa bez brankáře')).getByRole('group', { name: 'Hraje se: solo' })).toBeInTheDocument();
-    expect(within(row('Jedničky')).getByRole('group', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
+    expect(within(row('Jedničky')).getByRole('group', { name: 'Hraje se: klubový trénink, duo' })).toBeInTheDocument();
+    expect(within(row('Normální leg')).getByRole('group', { name: 'Hraje se: klubový trénink' })).toBeInTheDocument();
+    expect(within(row('Přihrávky ke zdi a po lajně')).getByRole('group', { name: 'Hraje se: solo' })).toBeInTheDocument();
     expect(screen.getByLabelText('Vysvětlivky ikon')).toHaveTextContent(/klubový trénink.*solo.*duo/);
     // filtr Hraje se: solo
     // filtr kliknutím na panáčka (solo) v řádku; zvýrazní se ve všech řádcích, druhé kliknutí ho zruší
