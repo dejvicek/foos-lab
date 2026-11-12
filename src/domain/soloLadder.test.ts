@@ -6,7 +6,8 @@ import { H } from '../test/fixtures';
 import type { Training } from './types';
 
 const TODAY = '2026-10-31';
-// Pětka tu má starší výsledky z 10 sérií (po migraci 27 nesou počet pokusů 10).
+// Pětka tu má starší výsledky z 10 sérií (po migraci 27 nesou počet pokusů 10), od 12. 11. 2026 jako góly
+// (migrace 29: góly = série − ztráty; původně ztráty 2, 5, 1 / 4, 5 / 3, 5).
 const t = (id: string, date: string, vals: [string, 'fiveBarControl' | 'setShooting', number][]): Training =>
   vals.reduce((acc, [p, m, v]) => {
     const x = setSolo(acc, p, m, v);
@@ -14,28 +15,28 @@ const t = (id: string, date: string, vals: [string, 'fiveBarControl' | 'setShoot
   }, training(id, date, 'team', H(8), 4));
 
 // A: pětka 2 a 4; B: pětka 5 a 5; C: jen jednou 1
-const t1 = t('t1', '2026-10-20', [['H1', 'fiveBarControl', 2], ['H2', 'fiveBarControl', 5], ['H3', 'fiveBarControl', 1], ['H1', 'setShooting', 10], ['H2', 'setShooting', 15]]);
-const t2 = t('t2', '2026-10-25', [['H1', 'fiveBarControl', 4], ['H2', 'fiveBarControl', 5], ['H1', 'setShooting', 12], ['H2', 'setShooting', 15]]);
+const t1 = t('t1', '2026-10-20', [['H1', 'fiveBarControl', 8], ['H2', 'fiveBarControl', 5], ['H3', 'fiveBarControl', 9], ['H1', 'setShooting', 10], ['H2', 'setShooting', 15]]);
+const t2 = t('t2', '2026-10-25', [['H1', 'fiveBarControl', 6], ['H2', 'fiveBarControl', 5], ['H1', 'setShooting', 12], ['H2', 'setShooting', 15]]);
 // třetí trénink: H1 a H2 mají 3 tréninky → v Průměru se řadí (H3 s 1 tréninkem ne)
-const t3 = t('t3', '2026-10-27', [['H1', 'fiveBarControl', 3], ['H2', 'fiveBarControl', 5], ['H1', 'setShooting', 14], ['H2', 'setShooting', 15]]);
+const t3 = t('t3', '2026-10-27', [['H1', 'fiveBarControl', 7], ['H2', 'fiveBarControl', 5], ['H1', 'setShooting', 14], ['H2', 'setShooting', 15]]);
 const five = (tables: ReturnType<typeof computeSoloLadder>) => tables.find((x) => x.metric === 'fiveBarControl')!;
 
 describe('computeSoloLadder', () => {
-  it('kritérium 16: průměr 3,0 / 10 (od 11. 11. 2026 přepočteno na plnou sérii 20: 6,0 / 20), celkem 6 / 20, méně ztrát je lépe; se 2 tréninky ještě „málo dat“', () => {
+  it('kritérium 16: průměr 3,0 / 10 (od 11. 11. 2026 přepočteno na plnou sérii 20: 6,0 / 20), celkem 6 / 20, víc gólů je lépe (do 12. 11. 2026 ztráty); se 2 tréninky ještě „málo dat“', () => {
     const avg = five(computeSoloLadder([t1, t2], { kind: 'all' }, 'avg', TODAY));
     expect(avg.ranked).toEqual([]);
     expect(avg.lowData.map((r) => r.playerId)).toEqual(['H3', 'H1', 'H2']);
-    expect(avg.lowData[1]).toMatchObject({ trainings: 2, sum: 6, sumMax: 20, avg: 6 });
+    expect(avg.lowData[1]).toMatchObject({ trainings: 2, sum: 14, sumMax: 20, avg: 14 });
     const total = five(computeSoloLadder([t1, t2], { kind: 'all' }, 'total', TODAY));
     expect(total.ranked).toEqual([]);
     expect(total.lowData.map((r) => r.playerId)).toEqual(['H3', 'H1', 'H2']);
-    expect(total.lowData[1]).toMatchObject({ sum: 6, sumMax: 20 });
+    expect(total.lowData[1]).toMatchObject({ sum: 14, sumMax: 20 });
   });
 
   it('s 3 tréninky se v Průměru řadí: 9 / 30 před 15 / 30', () => {
     const avg = five(computeSoloLadder([t1, t2, t3], { kind: 'all' }, 'avg', TODAY));
     expect(avg.ranked.map((r) => r.playerId)).toEqual(['H1', 'H2']);
-    expect(avg.ranked[0]).toMatchObject({ trainings: 3, sum: 9, sumMax: 30, avg: 6 });
+    expect(avg.ranked[0]).toMatchObject({ trainings: 3, sum: 21, sumMax: 30, avg: 14 });
     expect(avg.lowData.map((r) => r.playerId)).toEqual(['H3']);
     const total = five(computeSoloLadder([t1, t2, t3], { kind: 'all' }, 'total', TODAY));
     expect(total.ranked.map((r) => r.playerId)).toEqual(['H1', 'H2']);
@@ -67,7 +68,7 @@ describe('computeSoloLadder', () => {
 describe('playerHistory – sólová část', () => {
   it('vrací i hodnoty ze sólové části', () => {
     const h = playerHistory([t1, t2], 'H1', { kind: 'all' }, TODAY);
-    expect(h[0].solo).toEqual({ fiveBarControl: 4, setShooting: 12 });
+    expect(h[0].solo).toEqual({ fiveBarControl: 6, setShooting: 12 });
   });
 });
 

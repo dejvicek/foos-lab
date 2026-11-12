@@ -37,8 +37,9 @@ export const isStreak = (def: Pick<SoloMetricDef, 'streak'>): boolean => !!def.s
 export const SOLO_METRICS: SoloMetricDef[] = [
   { id: 'warmupPasses', name: 'Přihrávky na pětce', what: 'povedené přihrávky z 20', max: 20, lowerIsBetter: false, ok: 'povedená', fail: 'nepovedená' },
   { id: 'passWallLane', name: 'Přihrávky ke zdi a po lajně', what: 'povedené přihrávky z 20', max: 20, lowerIsBetter: false, ok: 'povedená', fail: 'nepovedená' },
-  { id: 'fiveBarControl', name: 'Udržení míče na pětce', what: 'ztráty z 20 sérií', max: 20, lowerIsBetter: true, ok: 'bez ztráty', fail: 'ztráta' },
-  { id: 'fiveBarSolo', name: 'Udržení míče na pětce – sólo', what: 'ztráty z 20 sérií', max: 20, lowerIsBetter: true, ok: 'bez ztráty', fail: 'ztráta' },
+  // Udržení míče na pětce (12. 11. 2026): počítají se góly, víc je lépe (dřív ztráty; migrace 29 převedla výsledky).
+  { id: 'fiveBarControl', name: 'Udržení míče na pětce', what: 'góly z 20 sérií', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
+  { id: 'fiveBarSolo', name: 'Udržení míče na pětce – sólo', what: 'góly z 20 sérií', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
   { id: 'setShooting', name: 'Penalta z místa (20 střel)', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },
   { id: 'penaltyKeeper', name: 'Penalta z místa proti brankáři', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'bez gólu' },
   { id: 'penaltySolo', name: 'Penalta z místa bez brankáře', what: 'góly z 20 střel', max: 20, lowerIsBetter: false, ok: 'gól', fail: 'vedle' },

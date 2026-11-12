@@ -113,11 +113,11 @@ export const EXPLANATIONS: ExplanationGroup[] = [
           },
           {
             "label": "Provedení:",
-            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 20 sérií, pak výměna. Sám (trénink pro 1 hráče): stejné série bez bránící pětky; výsledky mají v žebříčku vlastní tabulku."
+            "text": "útočník na pětce, soupeř aktivně brání svou pětkou. Útočník míč přijme a úplně zastaví, posune ho po pětce na jiného panáčka a zastaví, ještě jednou totéž. Teprve po třetím zastavení smí přihrát na trojku. Série končí přihrávkou, kterou trojka přijme pod kontrolou, nebo ztrátou. 20 sérií, pak výměna."
           },
           {
             "label": "Počítá se:",
-            "text": "ztráty na 20 sérií."
+            "text": "góly z 20 sérií – víc je lépe."
           }
         ]
       },

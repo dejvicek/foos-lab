@@ -55,7 +55,8 @@ describe('newPractice (PRD 5.11)', () => {
 describe('nabídka cvičení', () => {
   it('sám: jen cvičení bez bránícího soupeře (a Rozcvička), bez vyřazených', () => {
     const ids = practiceDrills(1).map((d) => d.id);
-    expect(ids).toEqual(['warmup', 'passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo', 'streakShot3', 'streakPass5', 'streakShot2', 'streakPass2']);
+    // Udržení míče na pětce od 12. 11. 2026 jen klub a duo
+    expect(ids).toEqual(['warmup', 'passWallLane', 'penaltySolo', 'backShotSolo', 'streakShot3', 'streakPass5', 'streakShot2', 'streakPass2']);
   });
 
   it('ve dvou: i cvičení s bránícím soupeřem; vyřazená ne', () => {
@@ -79,7 +80,7 @@ describe('nabídka cvičení', () => {
     expect(g).toEqual([
       [null, ['warmup']],
       ['Obrana', ['backShotSolo', 'streakShot2', 'streakPass2']],
-      ['Pětka', ['passWallLane', 'fiveBarControl', 'streakPass5']],
+      ['Pětka', ['passWallLane', 'streakPass5']],
       ['Trojka', ['penaltySolo', 'streakShot3']],
     ]);
     const pair = drillSections(practiceDrills(2));
@@ -130,23 +131,25 @@ describe('série', () => {
 });
 
 describe('plán (PRD 5.11, 11. 11. 2026)', () => {
-  const plan = newPractice('p', TODAY, '17:30', 'A', null, ['warmup', 'penaltySolo', 'fiveBarControl']);
+  const plan = newPractice('p', TODAY, '17:30', 'A', null, ['warmup', 'penaltySolo', 'streakShot3']);
   const T0 = Date.UTC(2026, 10, 11, 16, 30);
   const MIN = 60_000;
 
-  it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám → fiveBarSolo', () => {
+  it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám jen co se sám hraje', () => {
     expect(practiceRounds(plan).map((r) => [r.n, r.drill, r.metric, r.variant, r.min, r.item])).toEqual([
       [1, 'warmup', undefined, undefined, 9, 'round|1'],
       [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 8, 'round|2'],
       [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 8, 'round|3'],
-      [4, 'fiveBarControl', 'fiveBarSolo', undefined, 16, 'round|4'],
+      [4, 'streakShot3', 'streakShot3', undefined, 10, 'round|4'],
     ]);
-    expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'fiveBarControl']);
+    expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'streakShot3']);
+    // Udržení míče na pětce sám nejde (jen klub a duo)
+    expect(newPractice('x', TODAY, '17:30', 'A', null, ['fiveBarControl', 'passWallLane']).disciplineOrder).toEqual(['passWallLane']);
   });
 
   it('naplánovaný čas: kola + přechod 1 min mezi koly', () => {
-    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'fiveBarControl'])).toBe(9 + 8 + 8 + 16 + 3);
-    expect(plan.durationMin).toBe(44);
+    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'streakShot3'])).toBe(9 + 8 + 8 + 10 + 3);
+    expect(plan.durationMin).toBe(38);
     expect(practicePlanMinutes([])).toBe(0);
   });
 
@@ -193,7 +196,7 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
       ['done', 0, 9],
       ['playing', 10, 18],
       ['next', 19, 27],
-      ['next', 28, 44],
+      ['next', 28, 38],
     ]);
     // přetažené kolo posune další
     expect((roundTimes(t, T0 + 20 * MIN)[2].start - T0) / MIN).toBe(21);
@@ -204,14 +207,14 @@ describe('zápasy ve dvou (12. 11. 2026)', () => {
   const T0 = Date.UTC(2026, 10, 12, 16, 0);
   const MIN = 60_000;
   it('zápas = kolo s BO; párový scénář 2 kola s prohozenými stranami; sám zápasy nejdou', () => {
-    const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltySolo'], { goalieWar: { bestOf: 3, legTo: 5 } });
+    const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltyKeeper'], { goalieWar: { bestOf: 3, legTo: 5 } });
     const rs = practiceRounds(p);
     expect(rs.map((r) => [r.drill, r.min, r.match?.sideA.join(), r.match?.bestOf ?? null])).toEqual([
       ['goalieWar', 24, 'A', 3],
       ['wall', 8, 'A', null],
       ['wall', 8, 'B', null],
-      ['penaltySolo', 8, undefined, null],
-      ['penaltySolo', 8, undefined, null],
+      ['penaltyKeeper', 8, undefined, null],
+      ['penaltyKeeper', 8, undefined, null],
     ]);
     expect(rs[0].match).toMatchObject({ id: 'practice|1|AvB', legTo: 5, kind: 'singles' });
     expect(rs[1].match?.wall).toBe('A');

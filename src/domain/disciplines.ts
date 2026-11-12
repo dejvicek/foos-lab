@@ -89,7 +89,8 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'warmup', kind: 'drill', name: 'Rozcvička', min: 9, explain: 'Rozcvička', individual: true, skills: ['control', 'pass5'] },
   { id: 'warmupPasses', kind: 'drill', name: 'Přihrávky na pětce', min: 8, explain: 'Přihrávky na pětce', metric: 'warmupPasses', needsPartner: true, skills: ['pass5', 'control', 'reading'], area: 'fiveBar' },
   { id: 'passWallLane', kind: 'drill', name: 'Přihrávky ke zdi a po lajně', min: 8, explain: 'Přihrávky ke zdi a po lajně', metric: 'passWallLane', variants: ['ke zdi', 'po lajně'], skills: ['pass5'], area: 'fiveBar' },
-  { id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 16, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', skills: ['control', 'pass5'], area: 'fiveBar' },
+    // Jen klub a duo (12. 11. 2026): soupeř brání pětkou; sólová metrika zůstává kvůli historii.
+{ id: 'fiveBarControl', kind: 'drill', name: 'Udržení míče na pětce', min: 16, explain: 'Udržení míče na pětce', metric: 'fiveBarControl', soloMetric: 'fiveBarSolo', needsPartner: true, skills: ['control', 'pass5'], area: 'fiveBar' },
   { id: 'setShooting', kind: 'drill', name: 'Penalta z místa (20 střel)', min: 8, explain: 'Penalta z místa', metric: 'setShooting', needsPartner: true, retired: true, successor: 'penaltyKeeper', area: 'threeBar' },
   { id: 'penaltyKeeper', kind: 'drill', name: 'Penalta z místa proti brankáři', min: 8, explain: 'Penalta z místa proti brankáři', metric: 'penaltyKeeper', variants: ['varianta 1', 'varianta 2'], needsPartner: true, skills: ['shot3', 'defense', 'reading'], area: 'threeBar' },
   { id: 'penaltySolo', kind: 'drill', name: 'Penalta z místa bez brankáře', min: 8, explain: 'Penalta z místa bez brankáře', metric: 'penaltySolo', variants: ['varianta 1', 'varianta 2'], skills: ['shot3'], area: 'threeBar', practiceOnly: true, soloOnly: true },

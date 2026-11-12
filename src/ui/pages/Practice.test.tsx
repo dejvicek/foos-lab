@@ -41,17 +41,19 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(list).getByRole('checkbox', { name: /^Penalta z místa bez brankáře/ })).toBeChecked();
     await user.click(within(list).getByRole('checkbox', { name: /^Přihrávky ke zdi/ }));
     await user.click(within(list).getByRole('checkbox', { name: /^Střela z dvojky/ }));
+    expect(within(list).queryByRole('checkbox', { name: /^Udržení míče na pětce/ })).toBeNull(); // jen klub a duo
+    await user.click(within(list).getByRole('checkbox', { name: /^Čistá desítka – přihrávka na pětce/ }));
     await user.click(screen.getByRole('button', { name: 'Posunout Penalta z místa bez brankáře nahoru' }));
     const order = screen.getByRole('list', { name: 'Pořadí cvičení' });
     expect(within(order).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       expect.stringContaining('Penalta z místa bez brankáře2× 8 min'),
-      expect.stringContaining('Udržení míče na pětce16 min'),
+      expect.stringContaining('Čistá desítka – přihrávka na pětce10 min'),
     ]);
-    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:34'); // 8 + 8 + 16 + 2× přechod
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:28'); // 8 + 8 + 10 + 2× přechod
 
     await user.click(screen.getByRole('button', { name: 'Začít vlastní trénink' }));
     expect(window.location.hash).toMatch(/^#\/practice\/[^/]+$/);
-    expect(loadPracticeDrills()).toEqual(['penaltySolo', 'fiveBarControl']); // zařízení si výběr pamatuje
+    expect(loadPracticeDrills()).toEqual(['penaltySolo', 'streakPass5']); // zařízení si výběr pamatuje
     const round = screen.getByRole('region', { name: '1. kolo' });
     expect(round).toHaveTextContent('1. kolo z 3');
     expect(round).toHaveTextContent('Varianta 1');
@@ -72,7 +74,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(results).toHaveTextContent('Penalta z místa bez brankáře – varianta 21 z 1 pokusu');
     await vi.waitFor(() => {
       const p = practiceOf(repo);
-      expect(p).toMatchObject({ attendees: ['id1'], createdBy: 'id1', date: today(), disciplineOrder: ['penaltySolo', 'fiveBarControl'], plan: { penaltySolo: 2, fiveBarControl: 1 } });
+      expect(p).toMatchObject({ attendees: ['id1'], createdBy: 'id1', date: today(), disciplineOrder: ['penaltySolo', 'streakPass5'], plan: { penaltySolo: 2, streakPass5: 1 } });
       expect(p.soloResults.id1).toEqual({ 'penaltySolo@1': 14, 'penaltySolo@2': 1 });
       expect(p.playTimes?.['round|1']?.endedAt).toBeDefined();
       expect(p.playTimes?.['round|2']?.endedAt).toBeDefined();

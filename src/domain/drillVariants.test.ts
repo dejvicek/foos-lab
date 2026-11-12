@@ -26,7 +26,7 @@ describe('nová cvičení (2. 11. 2026)', () => {
       expect(discipline(id).variants).toHaveLength(2);
       expect(soloMetric(discipline(id).metric!).max).toBe(20); // od 11. 11. 2026 2 kola po 20
     }
-    expect(soloMetric('fiveBarSolo')).toMatchObject({ name: 'Udržení míče na pětce – sólo', max: 20, lowerIsBetter: true });
+    expect(soloMetric('fiveBarSolo')).toMatchObject({ name: 'Udržení míče na pětce – sólo', max: 20, lowerIsBetter: false }); // góly (12. 11. 2026)
     // výchozí výběr: penalta proti brankáři místo staré; sólové a nové volitelné
     expect(DEFAULT_SELECTION).toContain('penaltyKeeper');
     expect(DEFAULT_SELECTION).not.toContain('setShooting');
@@ -61,14 +61,12 @@ describe('trénink pro 1 hráče', () => {
     const t = custom(1, 1, { passWallLane: 2, penaltySolo: 2, fiveBarControl: 1, penaltyKeeper: 2, warmupPasses: 1, normal: 2, sim: 1 });
     expect(canBuildSchedule(t)).toBe(true);
     const r = play(t);
-    // „bez brankáře“ je od 12. 11. 2026 jen ve vlastním tréninku sám
-    expect(r.map((x) => x.discipline)).toEqual(['passWallLane', 'passWallLane', 'fiveBarControl']);
+    // „bez brankáře“ je od 12. 11. 2026 jen ve vlastním tréninku sám, Udržení míče na pětce jen klub a duo
+    expect(r.map((x) => x.discipline)).toEqual(['passWallLane', 'passWallLane']);
     for (const x of r) expect(groupsOf(x)).toEqual([['H1']]);
-    // Udržení míče na pětce sólo se zapisuje do vlastní tabulky
-    expect(r[2].cells[0]).toMatchObject({ type: 'group', metric: 'fiveBarSolo' });
     expect(r[0].cells[0]).toMatchObject({ type: 'group', metric: 'passWallLane' });
     // čas počítá jen to, co se hraje
-    expect(plannedMinutes(t.plan, 1, [])).toBe(19); // 2 kola po 4+1, Udržení 8+1 (bez snímku délek – starší délky)
+    expect(plannedMinutes(t.plan, 1, [])).toBe(10); // 2 kola po 4+1 (bez snímku délek – starší délky)
   });
 
   it('se 2 a víc hráči je Udržení míče na pětce s bránícím (původní metrika)', () => {
@@ -99,7 +97,8 @@ describe('trénink pro 1 hráče', () => {
     const selection: DisciplineId[] = ['passWallLane', 'normal', 'wall'];
     const zero = { ...custom(0, 4, manualPlan(selection, 0, 4)), disciplineOrder: selection };
     const one = replan(zero, { ...zero, attendees: H(1) });
-    expect(one.plan.fiveBarControl ?? 0).toBeGreaterThan(0);
+    expect(one.plan.passWallLane ?? 0).toBeGreaterThan(0);
+    expect(one.plan.fiveBarControl ?? 0).toBe(0); // od 12. 11. 2026 jen klub a duo
     const eight = replan(one, { ...one, attendees: H(8) });
     expect(selectedDisciplines(eight.plan).sort()).toEqual([...selection].sort());
   });

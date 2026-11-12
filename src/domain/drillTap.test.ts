@@ -6,14 +6,17 @@ import { buildSchedule } from './schedule';
 import type { Training } from './types';
 
 const passes = soloMetric('warmupPasses'); // povedené z 20
-const control = soloMetric('fiveBarControl'); // ztráty z 10 sérií (méně = lépe)
+const control = soloMetric('fiveBarControl'); // góly z 20 sérií (od 12. 11. 2026, dřív ztráty)
+const streakLike = { ...soloMetric('warmupPasses'), lowerIsBetter: true }; // „méně je lépe“ počítá ✗
 
 describe('cvičení – ťukání pokusů', () => {
-  it('✓ / ✗ přičte pokus; výsledek podle cvičení (povedené, u udržení na pětce ztráty)', () => {
+  it('✓ / ✗ přičte pokus; výsledek podle cvičení (povedené; u „méně je lépe“ nepovedené)', () => {
     expect(tapDrill({}, passes, true, 1)).toEqual({ value: 1, attempts: 1 });
     expect(tapDrill({ value: 1, attempts: 1 }, passes, false, 1)).toEqual({ value: 1, attempts: 2 });
-    expect(tapDrill({}, control, true, 1)).toEqual({ value: 0, attempts: 1 }); // série bez ztráty
-    expect(tapDrill({ value: 0, attempts: 1 }, control, false, 1)).toEqual({ value: 1, attempts: 2 }); // ztráta
+    expect(tapDrill({}, control, true, 1)).toEqual({ value: 1, attempts: 1 }); // gól
+    expect(tapDrill({ value: 1, attempts: 1 }, control, false, 1)).toEqual({ value: 1, attempts: 2 }); // bez gólu
+    expect(tapDrill({}, streakLike, true, 1)).toEqual({ value: 0, attempts: 1 });
+    expect(tapDrill({ value: 0, attempts: 1 }, streakLike, false, 1)).toEqual({ value: 1, attempts: 2 });
   });
 
   it('po posledním pokusu dál nejde; Zpět vrátí pokus daného druhu', () => {
@@ -25,7 +28,8 @@ describe('cvičení – ťukání pokusů', () => {
 
   it('číslem zapsaný výsledek (bez pokusů) je dokončené cvičení', () => {
     expect(drillCount({ value: 12 }, passes)).toEqual({ value: 12, attempts: 20, hits: 12, misses: 8, done: true });
-    expect(drillCount({ value: 2, attempts: 5 }, control)).toEqual({ value: 2, attempts: 5, hits: 3, misses: 2, done: false });
+    expect(drillCount({ value: 2, attempts: 5 }, streakLike)).toEqual({ value: 2, attempts: 5, hits: 3, misses: 2, done: false });
+    expect(drillCount({ value: 2, attempts: 5 }, control)).toEqual({ value: 2, attempts: 5, hits: 2, misses: 3, done: false });
   });
 });
 

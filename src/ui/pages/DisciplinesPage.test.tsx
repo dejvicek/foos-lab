@@ -61,7 +61,7 @@ describe('stránka Disciplíny', () => {
     await user.click(within(screen.getByRole('list', { name: 'Kde se hraje' })).getByRole('button', { name: /solo/ }));
     expect(rows().map((a) => a.getAttribute('aria-label'))).toEqual([
       'Rozcvička', 'Střela z dvojky bez brankáře', 'Čistá desítka – střela z dvojky', 'Čistá desítka – přihrávka z dvojky',
-      'Přihrávky ke zdi a po lajně', 'Udržení míče na pětce', 'Čistá desítka – přihrávka na pětce',
+      'Přihrávky ke zdi a po lajně', 'Čistá desítka – přihrávka na pětce',
       'Penalta z místa bez brankáře', 'Čistá desítka – střela z trojky',
     ]);
     await user.click(screen.getByRole('button', { name: 'Zrušit filtr' }));

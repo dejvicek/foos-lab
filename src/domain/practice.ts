@@ -56,7 +56,8 @@ export function newPractice(
 ): Training {
   const pair = !!partner && partner !== me;
   // Zápasy jen ve dvou (12. 11. 2026).
-  const list = drills.filter((d, i) => drills.indexOf(d) === i && DISCIPLINES.some((x) => x.id === d && (x.kind === 'drill' || (pair && x.kind === 'match'))));
+  // Jen co se sám / ve dvou hraje (placesOf; zápasy jen ve dvou).
+  const list = drills.filter((d, i) => drills.indexOf(d) === i && DISCIPLINES.some((x) => x.id === d && (pair ? placesOf(x).duo : placesOf(x).solo)));
   const matchFormats = cleanFormats(Object.fromEntries(Object.entries(formats ?? {}).filter(([d]) => list.includes(d as DisciplineId))));
   return {
     id,

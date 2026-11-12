@@ -13,7 +13,7 @@ export const DEFAULT_DURATION = 180;
 export const SIM_MIN_PLAYERS = 4;
 
 /** Výchozí výběr vlastního tréninku sám: cvičení pro jednoho. */
-export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'fiveBarControl', 'penaltySolo', 'backShotSolo'];
+export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'penaltySolo', 'backShotSolo'];
 
 /** Výchozí výběr klubového tréninku pro 1 hráče: z nich jen ta, která klub nabízí („bez brankáře“ ne). */
 export const clubSoloSelection = (): DisciplineId[] => SOLO_SELECTION.filter((id) => !discipline(id).practiceOnly);
