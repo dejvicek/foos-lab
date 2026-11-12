@@ -9,6 +9,23 @@
 Když nová verze nesmí běžet vedle starší (jiný rozpis nebo databáze), zvyšuje se navíc `COMPAT` v `src/version.ts`.
 Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z` na `main`; z tagu se appka nasadí a vznikne GitHub Release s tímto záznamem. Postup je v README → Vydání nové verze.
 
+## 1.2.0 – 12. 11. 2026
+
+Zápasy na víc legů, nová cvičení a jasně dané, co se hraje v klubu, sám a ve dvou.
+
+- **Formát zápasu BO1, BO2, BO3, BO5** u každého zápasu a scénáře – v šablonách, v nastavení tréninku i ve vlastním tréninku. Jde nastavit počet gólů na leg a u rozhodujícího legu „o 2 se stropem“. Legy se zapisují po sobě, předchozí jde otevřít a opravit.
+- **Vlastní trénink ve dvou** nabízí i zápasy a scénáře 1 na 1 (Jedničky, Daň za ztrátu, Zeď, Starty, Goalie war, Penalty).
+- **Nové disciplíny**: Goalie war (jen branka a dvojka) a Penalty (střídání po střele).
+- **Čistá desítka**: 10 povedených stejných pokusů po sobě na čas – střela z trojky, přihrávka na pětce, střela z dvojky, přihrávka z dvojky. Nepovedený pokus počítá od nuly, v žebříčku rozhoduje nejlepší čas. Jen ve vlastním tréninku.
+- **Cvičení mají 20 pokusů** místo 10 a delší kola. Starší výsledky si nesou svůj počet pokusů, Průměr je přepočítá na celou sérii.
+- **Udržení míče na pětce** se počítá na góly (víc je lépe) a hraje se v klubu a ve dvou. Starší výsledky jsou převedené.
+- **Kde se co hraje**: na stránce Disciplíny panáčci ukazují klubový trénink, solo a duo; kliknutím na panáčka se seznam vyfiltruje. Cvičení „bez brankáře“ a Přihrávky ke zdi a po lajně jsou jen solo, Normální leg jen v klubu (ve dvou jsou to Jedničky).
+- **Žebříčky napříč**: cvičení, která jsou v klubu i ve dvou, mají jednu tabulku ve Stanovištích. Ve Vlastní zůstanou solo cvičení, Čistá desítka a zápasy 1 na 1 – i singly z klubu.
+- **Vlastní trénink**: výchozí plán zvlášť pro solo (asi 45 min) a duo (asi 63 min), zařízení si pamatuje výběr pro každý zvlášť, tlačítko Výchozí. Cvičení jsou rozdělená do sekcí Obrana, Pětka, Trojka (i na stránce Disciplíny).
+- **Klubový trénink** jde založit až se 4 hráči; méně hráčů si zacvičí ve vlastním tréninku.
+- **Šablony**: nová šablona začíná prázdná, tlačítko Označit vše / Odznačit vše; barevné časové pruhy a barevná čára Naplánováno.
+- Po aktualizaci appku obnov – starší verze novým formátům nerozumí.
+
 ## 1.1.0 – 11. 11. 2026
 
 Vlastní trénink: zacvič si kdykoli sám nebo ve dvou, i bez organizátora.
