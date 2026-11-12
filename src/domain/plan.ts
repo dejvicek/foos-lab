@@ -12,11 +12,16 @@ export const DEFAULT_DURATION = 180;
 /** Simulace ligového kola potřebuje aspoň 4 hráče (dvojice). */
 export const SIM_MIN_PLAYERS = 4;
 
-/** Výchozí výběr vlastního tréninku sám: cvičení pro jednoho. */
-export const SOLO_SELECTION: DisciplineId[] = ['passWallLane', 'penaltySolo', 'backShotSolo'];
+/**
+ * Výchozí výběr vlastního tréninku (12. 11. 2026, doporučení trenérské konzultace): solo asi 45 min –
+ * rozcvička, přihrávka z pětky, zakončení; duo asi 63 min – rozcvička, technika proti obraně, zakončení,
+ * celá akce, zápas s omezením a volná hra na konec.
+ */
+export const SOLO_SELECTION: DisciplineId[] = ['warmup', 'passWallLane', 'penaltySolo'];
+export const DUO_SELECTION: DisciplineId[] = ['warmup', 'warmupPasses', 'penaltyKeeper', 'chain', 'lossTax', 'singles'];
 
-/** Výchozí výběr klubového tréninku pro 1 hráče: z nich jen ta, která klub nabízí („bez brankáře“ ne). */
-export const clubSoloSelection = (): DisciplineId[] => SOLO_SELECTION.filter((id) => !discipline(id).practiceOnly);
+/** Výchozí výběr klubového tréninku pro 1 hráče (jen starší tréninky – klub je od 12. 11. 2026 aspoň pro 4). */
+export const clubSoloSelection = (): DisciplineId[] => ['passWallLane', 'penaltySolo', 'backShotSolo'].filter((id) => !discipline(id as DisciplineId).practiceOnly) as DisciplineId[];
 
 /**
  * Hraje se disciplína při daném počtu hráčů? Zápasy aspoň 2, simulace aspoň 4, cvičení s bránícím

@@ -38,9 +38,11 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Obrana', 'Pětka', 'Trojka']);
     expect(within(screen.getByRole('list', { name: 'Trojka' })).getByRole('checkbox', { name: /^Čistá desítka – střela z trojky/ })).toBeInTheDocument();
     expect(within(list).queryByRole('checkbox', { name: /^Přihrávky na pětce/ })).toBeNull();
-    expect(within(list).getByRole('checkbox', { name: /^Penalta z místa bez brankáře/ })).toBeChecked();
+    // výchozí solo (12. 11. 2026): Rozcvička, Přihrávky ke zdi a po lajně, Penalta z místa bez brankáře
+    const ticked = () => within(list).getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked).map((c) => c.closest('label')!.querySelector('strong')!.textContent);
+    expect(ticked()).toEqual(['Rozcvička', 'Přihrávky ke zdi a po lajně', 'Penalta z místa bez brankáře']);
+    await user.click(within(list).getByRole('checkbox', { name: /^Rozcvička/ }));
     await user.click(within(list).getByRole('checkbox', { name: /^Přihrávky ke zdi/ }));
-    await user.click(within(list).getByRole('checkbox', { name: /^Střela z dvojky/ }));
     expect(within(list).queryByRole('checkbox', { name: /^Udržení míče na pětce/ })).toBeNull(); // jen klub a duo
     await user.click(within(list).getByRole('checkbox', { name: /^Čistá desítka – přihrávka na pětce/ }));
     await user.click(screen.getByRole('button', { name: 'Posunout Penalta z místa bez brankáře nahoru' }));
@@ -240,5 +242,45 @@ describe('vlastní trénink (PRD 5.11)', () => {
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent(/H1.*3.*2 \/ 3.*4 \/ 7/);
     expect(rows[1]).toHaveTextContent(/H2.*3.*1 \/ 3/);
+  });
+
+  it('výchozí výběr zvlášť pro solo a duo, pamatuje se zvlášť; tlačítko Výchozí (12. 11. 2026)', async () => {
+    window.location.hash = '#/practice/new';
+    const repo = memoryRepository({ players, trainings: [] });
+    render(<App repo={repo} auth={asPlayer()} />);
+    const user = userEvent.setup();
+    const ticked = () =>
+      within(screen.getByRole('group', { name: 'Cvičení' }))
+        .getAllByRole('checkbox')
+        .filter((c) => (c as HTMLInputElement).checked)
+        .map((c) => c.closest('label')!.querySelector('strong')!.textContent);
+    await screen.findByRole('group', { name: 'Cvičení' });
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:45');
+    await user.click(screen.getByRole('button', { name: 'Ve dvou' }));
+    expect(ticked()).toEqual(['Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky']);
+    expect(within(screen.getByRole('list', { name: 'Pořadí cvičení' })).getAllByRole('listitem').map((li) => li.querySelector('.po-name')!.firstChild!.textContent)).toEqual([
+      'Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky',
+    ]);
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:03');
+    await user.click(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('checkbox', { name: /^Řetězec/ }));
+    expect(ticked()).not.toContain('Řetězec');
+    await user.click(screen.getByRole('button', { name: 'Výchozí' }));
+    expect(ticked()).toContain('Řetězec');
+    // přepnutí na solo má svůj výběr
+    await user.click(screen.getByRole('button', { name: 'Sám' }));
+    expect(ticked()).toEqual(['Rozcvička', 'Přihrávky ke zdi a po lajně', 'Penalta z místa bez brankáře']);
+  });
+
+  it('uložený výběr bez nabízených cvičení → výchozí; dřívější společný seznam patří solu', async () => {
+    localStorage.setItem('foosball-practice.practice-drills.v1', JSON.stringify(['fiveBarControl'])); // dnes jen klub a duo
+    localStorage.setItem('foosball-practice.practice-drills.duo.v1', JSON.stringify(['clearing', 'goalieWar']));
+    window.location.hash = '#/practice/new';
+    render(<App repo={memoryRepository({ players, trainings: [] })} auth={asPlayer()} />);
+    const user = userEvent.setup();
+    const list = await screen.findByRole('group', { name: 'Cvičení' });
+    expect(within(list).getByRole('checkbox', { name: /^Rozcvička/ })).toBeChecked(); // výchozí solo
+    await user.click(screen.getByRole('button', { name: 'Ve dvou' }));
+    const order = within(screen.getByRole('list', { name: 'Pořadí cvičení' })).getAllByRole('listitem').map((li) => li.querySelector('.po-name')!.firstChild!.textContent);
+    expect(order).toEqual(['Clearing', 'Goalie war']); // uložené duo
   });
 });

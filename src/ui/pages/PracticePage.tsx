@@ -23,7 +23,7 @@ import {
   type PracticeRound,
   type PracticeSeries,
 } from '../../domain/practice';
-import { SOLO_SELECTION } from '../../domain/plan';
+import { DUO_SELECTION, SOLO_SELECTION } from '../../domain/plan';
 import { TRAINING_ITEM } from '../../domain/queue';
 import { soloMetric } from '../../domain/solo';
 import { clubMetric, computeSoloLadder } from '../../domain/soloLadder';
@@ -299,7 +299,16 @@ function RoundView({ store, t, r, now, canWrite, name, me }: { store: AppStore; 
 export function PracticePage({ store, id, navigate, viewer }: { store: AppStore; id: string | null; navigate(r: Route): void; viewer: Viewer }) {
   const [pair, setPair] = useState(false);
   const [partner, setPartner] = useState<PlayerId>('');
-  const [sel, setSel] = useState<DisciplineId[]>(() => loadPracticeDrills() ?? SOLO_SELECTION);
+  // Výběr zvlášť pro solo a duo; uložený, a když z něj nic nabízeného nezbude, výchozí (12. 11. 2026).
+  const initial = (mode: 'solo' | 'duo'): DisciplineId[] => {
+    const offer = new Set(practiceDrills(mode === 'duo' ? 2 : 1).map((d) => d.id));
+    const saved = loadPracticeDrills(mode)?.filter((x) => offer.has(x));
+    return saved?.length ? saved : (mode === 'duo' ? DUO_SELECTION : SOLO_SELECTION).filter((x) => offer.has(x));
+  };
+  const [selSolo, setSelSolo] = useState<DisciplineId[]>(() => initial('solo'));
+  const [selDuo, setSelDuo] = useState<DisciplineId[]>(() => initial('duo'));
+  const sel = pair ? selDuo : selSolo;
+  const setSel = pair ? setSelDuo : setSelSolo;
   // BO formát zápasů ve dvou (12. 11. 2026).
   const [formats, setFormats] = useState<MatchFormats>({});
   const [now, setNow] = useState(() => Date.now());
@@ -338,7 +347,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
     };
     const start = () => {
       const p = newPractice(store.newId(), todayIso(), hhmm(new Date()), me, pair ? partner : null, chosen, pair ? formats : null);
-      savePracticeDrills(sel);
+      savePracticeDrills(sel, pair ? 'duo' : 'solo');
       store.saveTraining(p);
       store.startItem(p.id, TRAINING_ITEM);
       store.startItem(p.id, practiceRounds(p)[0].item);
@@ -410,7 +419,12 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
             </div>
           </div>
           <div>
-            <h2>Plán</h2>
+            <div className="practice-plan-head">
+              <h2>Plán</h2>
+              <button type="button" className="ghost" onClick={() => setSel((pair ? DUO_SELECTION : SOLO_SELECTION).filter((x) => offered.some((d) => d.id === x)))}>
+                Výchozí
+              </button>
+            </div>
             {chosen.length ? (
               <ol className="practice-order" aria-label="Pořadí cvičení">
                 {chosen.map((x, i) => {
