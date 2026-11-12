@@ -34,10 +34,12 @@ export function MatchFormatPicker({ id, name, value, onChange }: { id: Disciplin
               ))}
             </select>
           </label>
-          <label className="mf-check">
-            <input type="checkbox" checked={!!f.finalWinBy2} onChange={(e) => set({ finalWinBy2: e.target.checked })} />
-            {f.bestOf > 1 ? 'rozhodující leg o 2' : 'o 2 góly'}
-          </label>
+          {f.bestOf !== 2 && (
+            <label className="mf-check">
+              <input type="checkbox" checked={!!f.finalWinBy2} onChange={(e) => set({ finalWinBy2: e.target.checked })} />
+              {f.bestOf > 1 ? 'rozhodující leg o 2' : 'o 2 góly'}
+            </label>
+          )}
           {f.finalWinBy2 && (
             <label>
               strop{' '}

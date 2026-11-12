@@ -193,7 +193,11 @@ describe('vlastní trénink (PRD 5.11)', () => {
     for (const cb of within(list).getAllByRole('checkbox')) if ((cb as HTMLInputElement).checked) await user.click(cb);
     expect(within(screen.getByRole('list', { name: 'Zápasy' })).getAllByRole('checkbox').map((c) => c.closest('label')!.querySelector('strong')!.textContent)).toContain('Goalie war do 6');
     await user.click(within(list).getByRole('checkbox', { name: /^Goalie war do 6/ }));
+    // BO2: oba legy, rozhodující leg o 2 se nenabízí
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '2');
+    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).queryByRole('checkbox')).toBeNull();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Počet legů: Goalie war do 6' }), '3');
+    expect(within(screen.getByRole('group', { name: 'Formát: Goalie war do 6' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeInTheDocument();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Gólů na leg: Goalie war do 6' }), '5');
     expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:24');
     await user.click(screen.getByRole('button', { name: 'Začít vlastní trénink' }));

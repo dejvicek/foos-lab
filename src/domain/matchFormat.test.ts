@@ -15,6 +15,8 @@ describe('BO formát – nastavení', () => {
     expect(normalizeFormat('normal', { bestOf: 0, legTo: 99 })).toEqual({ bestOf: 1, legTo: 15 });
     // jen BO1, BO2, BO3, BO5: jiný počet → nejbližší nižší povolený
     expect([4, 5, 7, 15].map((n) => normalizeFormat('normal', { bestOf: n, legTo: 6 }).bestOf)).toEqual([3, 5, 5, 5]);
+    // BO2 rozhodující leg nemá (oba legy se hrají, remíza platí)
+    expect(normalizeFormat('normal', { bestOf: 2, legTo: 6, finalWinBy2: true, cap: 9 })).toEqual({ bestOf: 2, legTo: 6 });
     expect(normalizeFormat('start55', { bestOf: 3, legTo: 4, finalWinBy2: true, cap: 8 })).toEqual({ bestOf: 3, legTo: 6 });
     expect(normalizeFormat('start44', { bestOf: 1, legTo: 3 }).legTo).toBe(5);
     expect(normalizeFormat('goalieWar', { bestOf: 3, legTo: 5, finalWinBy2: true, cap: 4 })).toEqual({ bestOf: 3, legTo: 5, finalWinBy2: true, cap: 6 });

@@ -52,7 +52,8 @@ export function normalizeFormat(id: DisciplineId, f: Partial<MatchFormat> | unde
   const bestOf = [...BEST_OF_OPTIONS].reverse().find((x) => x <= n) ?? 1;
   if (fixedLegRule(id)) return { bestOf, legTo: DEFAULT_LEG_TO };
   const legTo = clamp(f?.legTo, minLegTo(id), MAX_LEG_TO, Math.max(DEFAULT_LEG_TO, minLegTo(id)));
-  if (!f?.finalWinBy2) return { bestOf, legTo };
+  // BO2 hraje oba legy a nerozhodný stav je platný výsledek – rozhodující leg nemá.
+  if (!f?.finalWinBy2 || bestOf === 2) return { bestOf, legTo };
   return { bestOf, legTo, finalWinBy2: true, cap: clamp(f.cap, legTo + 1, MAX_LEG_TO + 5, Math.max(DEFAULT_CAP, legTo + 1)) };
 }
 
