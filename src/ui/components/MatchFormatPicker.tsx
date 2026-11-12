@@ -1,17 +1,16 @@
-import { BEST_OF_OPTIONS, fixedLegRule, MAX_BEST_OF, MAX_LEG_TO, minLegTo, normalizeFormat, type MatchFormat } from '../../domain/matchFormat';
+import { BEST_OF_OPTIONS, fixedLegRule, MAX_LEG_TO, minLegTo, normalizeFormat, type MatchFormat } from '../../domain/matchFormat';
 import type { DisciplineId } from '../../domain/types';
 
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
 
 /**
- * BO formát zápasové disciplíny (12. 11. 2026): BO1 / BO2 / BO3 / BO5 / BO X, gólů na leg a rozhodující
+ * BO formát zápasové disciplíny (12. 11. 2026): BO1 / BO2 / BO3 / BO5, gólů na leg a rozhodující
  * leg o 2 góly se stropem. Výběry místo políček – hodnota je vždy platná.
  */
 export function MatchFormatPicker({ id, name, value, onChange }: { id: DisciplineId; name: string; value: MatchFormat; onChange(f: MatchFormat): void }) {
   const f = normalizeFormat(id, value);
   const set = (p: Partial<MatchFormat>) => onChange(normalizeFormat(id, { ...f, ...p }));
   const fixed = fixedLegRule(id);
-  const other = range(1, MAX_BEST_OF).filter((n) => !(BEST_OF_OPTIONS as readonly number[]).includes(n));
   return (
     <span className="mf" role="group" aria-label={`Formát: ${name}`}>
       <select aria-label={`Počet legů: ${name}`} value={f.bestOf} onChange={(e) => set({ bestOf: Number(e.target.value) })}>
@@ -20,13 +19,6 @@ export function MatchFormatPicker({ id, name, value, onChange }: { id: Disciplin
             BO{n}
           </option>
         ))}
-        <optgroup label="BO X">
-          {other.map((n) => (
-            <option key={n} value={n}>
-              BO{n}
-            </option>
-          ))}
-        </optgroup>
       </select>
       {fixed ? (
         <span className="mf-note">o 2 góly, strop 10</span>

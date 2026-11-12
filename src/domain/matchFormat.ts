@@ -1,6 +1,6 @@
 /**
- * BO formát zápasu (12. 11. 2026): zápasová disciplína se hraje na víc legů – BO1, BO2, BO3, BO5 nebo
- * BO X (Best of X). Nastavuje se pro každou disciplínu zvlášť v šabloně, v průvodci i ve vlastním
+ * BO formát zápasu (12. 11. 2026): zápasová disciplína se hraje na víc legů – BO1, BO2, BO3 nebo BO5
+ * (Best of). Nastavuje se pro každou disciplínu zvlášť v šabloně, v průvodci i ve vlastním
  * tréninku: počet legů, gólů na vyhraný leg a rozhodující (poslední možný) leg volitelně „o 2 góly se
  * stropem“. BO2 hraje oba legy (může skončit nerozhodně). Výchozí BO1 do 6 = dosavadní leg.
  *
@@ -12,7 +12,7 @@ import { legOver } from './legState';
 import type { DisciplineId, Match, MatchId, Score } from './types';
 
 export interface MatchFormat {
-  /** Nejvyšší počet legů (BO1, BO2, BO3, BO5, BO X). */
+  /** Nejvyšší počet legů: BO1, BO2, BO3 nebo BO5. */
   bestOf: number;
   /** Gólů na vyhraný leg. */
   legTo: number;
@@ -25,9 +25,9 @@ export type MatchFormats = Partial<Record<DisciplineId, MatchFormat>>;
 
 export const DEFAULT_LEG_TO = 6;
 export const DEFAULT_CAP = 10;
-export const MAX_BEST_OF = 15;
+export const MAX_BEST_OF = 5;
 export const MAX_LEG_TO = 15;
-/** Nabídka v UI; X = vlastní počet. */
+/** Povolené počty legů (12. 11. 2026 jen BO1, BO2, BO3 a BO5). */
 export const BEST_OF_OPTIONS = [1, 2, 3, 5] as const;
 
 export const DEFAULT_FORMAT: MatchFormat = { bestOf: 1, legTo: DEFAULT_LEG_TO };
@@ -47,7 +47,9 @@ export function normalizeFormat(id: DisciplineId, f: Partial<MatchFormat> | unde
     const n = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : def;
     return Math.min(hi, Math.max(lo, n));
   };
-  const bestOf = clamp(f?.bestOf, 1, MAX_BEST_OF, 1);
+  // Jiný počet (např. BO4) → nejbližší nižší povolený.
+  const n = clamp(f?.bestOf, 1, MAX_BEST_OF, 1);
+  const bestOf = [...BEST_OF_OPTIONS].reverse().find((x) => x <= n) ?? 1;
   if (fixedLegRule(id)) return { bestOf, legTo: DEFAULT_LEG_TO };
   const legTo = clamp(f?.legTo, minLegTo(id), MAX_LEG_TO, Math.max(DEFAULT_LEG_TO, minLegTo(id)));
   if (!f?.finalWinBy2) return { bestOf, legTo };
