@@ -1331,10 +1331,13 @@ button.tpl-tab.add { color: var(--felt); }
 .tpl-sec { margin-top: 14px; }
 .tpl-sec h3 { margin: 0; padding-bottom: 5px; border-bottom: 1px solid var(--line-strong); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .tpl-sec h3 i { width: 9px; height: 9px; border-radius: 2px; }
-/* Druh disciplíny (cvičení / zápasy / simulace) říká nadpis sekce; pruh je neutrální, aby se nepletl s barvami štítků. */
-.tpl-sec h3 i.k-drill, .tt-strip.k-drill,
-.tpl-sec h3 i.k-match, .tt-strip.k-match,
-.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--muted); }
+/* Druh disciplíny v časovém pruhu (12. 11. 2026 znovu barevně): cvičení modře, zápasy zeleně, simulace fialově. */
+:root { --k-drill: #2d5fa8; --k-match: #2f7d57; --k-sim: #8a4fb8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --k-drill: #6f9be0; --k-match: #4fae80; --k-sim: #b98ae6; } }
+:root[data-theme='dark'] { --k-drill: #6f9be0; --k-match: #4fae80; --k-sim: #b98ae6; }
+.tpl-sec h3 i.k-drill, .tt-strip.k-drill { background: var(--k-drill); }
+.tpl-sec h3 i.k-match, .tt-strip.k-match { background: var(--k-match); }
+.tpl-sec h3 i.k-sim, .tt-strip.k-sim { background: var(--k-sim); }
 .tpl-count { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; }
 /* řádek: čas | pruh | ⠿ | disciplína | ↑↓ | kola | délka kola | celkem */
 .tt-rows { list-style: none; margin: 0; padding: 0; }
