@@ -33,4 +33,16 @@ select t.eq('zpět posledního povedeného čas smaže', (select value || '/' ||
 select t.eq('zpět nepovedeného před splněním', (select value || '/' || attempts from public.tap_drill(:T, :A, 'streakShot3', 1::smallint, 500,
   '[{"id":"s5","item":"drill|s","kind":"miss","delta":-1,"dvalue":0,"dattempts":-1}]')), '0/1');
 
+-- Migrace 29: Udržení míče na pětce na góly – převod proběhl při migraci a podruhé se nespustí.
+reset role;
+select t.eq('převod pětky zapsaný', (select count(*) from public.data_fixes where id = 'five_bar_goals'), 1::bigint);
+insert into public.solo_results (training_id, player_id, metric, round, value, attempts) values (:T, :B, 'fiveBarControl', 9, 3, 10);
+do $$
+begin
+  if not exists (select 1 from public.data_fixes where id = 'five_bar_goals') then
+    update public.solo_results set value = greatest(0, coalesce(attempts, 10) - value) where metric in ('fiveBarControl', 'fiveBarSolo');
+  end if;
+end $$;
+select t.eq('opakované spuštění výsledky znovu neotočí', (select value from public.solo_results where player_id = :B and metric = 'fiveBarControl' and round = 9), 3::smallint);
+
 rollback;
