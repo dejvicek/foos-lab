@@ -126,7 +126,7 @@ function SimView({ schedule, scores, attendees, names }: Props) {
             {sh.points[0]} : {sh.points[1]}
           </div>
           <div className="sim-sub">
-            {sh.played === sh.rows.length ? 'dohráno' : `odehráno ${sh.played} z ${sh.rows.length}`} · hry {pair(sh.games)}
+            {sh.played === sh.rows.length ? 'dohráno' : `odehráno ${sh.played} z ${sh.rows.length}`}
           </div>
         </div>
         {side('b', 'Tým B', sh.teamB)}
