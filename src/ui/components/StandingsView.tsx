@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { computeStandings } from '../../domain/standings';
+import { simSheet, type SimSheet, type SimSheetRow } from '../../domain/simSheet';
 import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
 import { dec1, signed } from '../format';
@@ -44,49 +45,115 @@ export function TrainingSummary({ delays, ...props }: Props & { delays: DelayRow
   );
 }
 
-/** Simulace kola (PRD 5.3, 5.5): stav utkání týmů a vyhrané zápasy hráčů. */
+const pair = (x: [number, number] | null) => (x ? `${x[0]}:${x[1]}` : null);
+
+/**
+ * Simulace kola jako ligový zápis (19. 11. 2026, *rozhodnutí uživatele*, návrh B): nahoře skóre týmů se sestavami,
+ * řádek na zápas po vlnách – Domácí : Hosté (vítěz tučně s linkou v barvě týmu), Body, Hry s legy, průběžný Stav.
+ */
 function SimView({ schedule, scores, attendees, names }: Props) {
-  const { rows, sim } = computeStandings(schedule, scores, attendees);
-  const sims = schedule.matches.filter((m) => m.block === 'sim');
-  const team = (side: 'sideA' | 'sideB') => [...new Set(sims.flatMap((m) => m[side]))];
-  const teamA = team('sideA'), teamB = team('sideB');
-  const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(', ');
-  const byTeam = (ids: PlayerId[]) => rows.filter((r) => ids.includes(r.playerId)).sort((a, b) => b.simW - a.simW || a.simM - b.simM);
-  if (!sim || sim.played === 0) return <p className="note">Simulace se zatím nehrála.</p>;
+  const sh = simSheet(schedule, scores, attendees);
+  if (!sh) return null;
+  const nm = (id: PlayerId) => names[id] ?? '?';
+  const codeOf = new Map([...sh.teamA, ...sh.teamB].map((x) => [x.id, x.code]));
+  const side = (cls: 'a' | 'b', label: string, team: SimSheet['teamA']) => (
+    <div className={`sim-side ${cls}`}>
+      <span className="sim-k">{cls === 'a' ? 'domácí' : 'hosté'}</span>
+      <span className="sim-team">
+        <i className={`tl-dot side-${cls}`} />
+        {label}
+      </span>
+      <span className="sim-members">
+        {team.map((x) => (
+          <span key={x.id}>
+            <b>{x.code}</b>
+            {nm(x.id)}
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+  const who = (r: SimSheetRow, s: 'a' | 'b') => {
+    const ids = s === 'a' ? r.sideA : r.sideB;
+    const won = !!r.points && r.points[s === 'a' ? 0 : 1] > r.points[s === 'a' ? 1 : 0];
+    const codes = r.kind === 'doubles' ? <code>{ids.map((p) => codeOf.get(p)).join(',')}</code> : null;
+    return (
+      <span className={won ? `win ${s}` : undefined} data-codes={r.kind === 'doubles' && s === 'b' ? ids.map((p) => codeOf.get(p)).join(',') : undefined}>
+        {s === 'b' && codes}
+        {ids.map(nm).join(', ')}
+        {s === 'a' && codes}
+      </span>
+    );
+  };
+  const rows: ReactNode[] = [];
+  let wave = 0;
+  for (const r of sh.rows) {
+    if (r.wave !== wave) {
+      wave = r.wave;
+      rows.push(
+        <tr key={`w${wave}`} className="sim-wave">
+          <td colSpan={5}>{wave}. vlna</td>
+        </tr>,
+      );
+    }
+    rows.push(
+      <tr key={r.no}>
+        <td className="sim-no">
+          <b>{r.no}</b>
+          <small>{r.kind === 'doubles' ? 'Dvojice' : 'Jednotlivci'}</small>
+        </td>
+        <td>
+          <div className="sim-ppl">
+            {who(r, 'a')}
+            <span className="sim-c">:</span>
+            {who(r, 'b')}
+          </div>
+        </td>
+        <td className="n sim-pts">{r.points ? pair(r.points) : r.state === 'playing' ? <span className="sim-live">hraje se</span> : <span className="muted">–</span>}</td>
+        <td className="n">
+          <b>{pair(r.games) ?? <span className="muted">–</span>}</b>
+          {r.legs.length > 0 && <span className="sim-legs">{r.legs.map((l) => `${l[0]}:${l[1]}`).join(' · ')}</span>}
+        </td>
+        <td className="n sim-run">{pair(r.running)}</td>
+      </tr>,
+    );
+  }
   return (
-    <div className="sim-summary">
-      <p className="teams">
-        Tým A <b>{sim.teamA} : {sim.teamB}</b> tým B
-        <span className="rule">
-          odehráno {sim.played} z {sims.length} zápasů
-        </span>
-      </p>
-      <p className="note">
-        Tým A: {nm(teamA)} · Tým B: {nm(teamB)}
-      </p>
+    <div className="sim-sheet">
+      <div className="sim-head">
+        {side('a', 'Tým A', sh.teamA)}
+        <div className="sim-big">
+          <div className="sim-score">
+            {sh.points[0]} : {sh.points[1]}
+          </div>
+          <div className="sim-sub">
+            {sh.played === sh.rows.length ? 'dohráno' : `odehráno ${sh.played} z ${sh.rows.length}`} · hry {pair(sh.games)}
+          </div>
+        </div>
+        {side('b', 'Tým B', sh.teamB)}
+      </div>
       <div className="wrap">
-        <table aria-label="Simulace">
+        <table aria-label="Simulace" className="sim-table">
           <thead>
             <tr>
-              <th>Hráč</th>
-              <th>Tým</th>
-              <th className="n">Zápasy</th>
-              <th className="n">Výhry</th>
+              <th>Zápas</th>
+              <th className="sim-mid">Domácí : Hosté</th>
+              <th className="n">Body</th>
+              <th className="n">Hry</th>
+              <th className="n">Stav</th>
             </tr>
           </thead>
           <tbody>
-            {[...byTeam(teamA).map((r) => ['A', r] as const), ...byTeam(teamB).map((r) => ['B', r] as const)].map(([t, r]) => (
-              <tr key={r.playerId}>
-                <td>{names[r.playerId] ?? '?'}</td>
-                <td>{t}</td>
-                <td className="n">{r.simM}</td>
-                <td className="n">{r.simW}</td>
-              </tr>
-            ))}
+            {rows}
+            <tr className="sim-total">
+              <td colSpan={2}>Celkově</td>
+              <td className="n">{pair(sh.points)}</td>
+              <td className="n">{pair(sh.games)}</td>
+              <td />
+            </tr>
           </tbody>
         </table>
       </div>
-      <p className="note">Ze simulace se počítají vyhrané zápasy, ne góly. V Pořadí rozhodují výhry v simulaci až při shodě rozdílu, výher a gólů.</p>
     </div>
   );
 }

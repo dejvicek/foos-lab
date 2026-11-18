@@ -28,10 +28,15 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['Pořadí', 'Simulace']);
     expect(within(box).getByRole('table', { name: 'Souhrn tréninku' })).not.toHaveTextContent('Simulace');
     await userEvent.setup().click(within(seg).getByRole('button', { name: 'Simulace' }));
-    expect(box).toHaveTextContent('Tým A 1 : 0 tým B');
-    const rows = within(within(box).getByRole('table', { name: 'Simulace' })).getAllByRole('row');
-    // nahoře tým A, kdo vyhrál, víc výher první
-    expect(sim.sideA.map((p) => `${names[p]}A11`)).toContain(rows[1].textContent);
+    // ligový zápis: skóre týmů nahoře, řádek na zápas s Body a Hrami, vítěz tučně, Celkově
+    expect(within(box).getByText('1 : 0')).toBeInTheDocument();
+    const table = within(box).getByRole('table', { name: 'Simulace' });
+    expect(within(table).getByText('1. vlna')).toBeInTheDocument();
+    const first = within(table).getAllByRole('row')[2];
+    expect(first).toHaveTextContent('1Dvojice');
+    expect(first).toHaveTextContent(`${sim.sideA.join(', ')}A,B:1,2${sim.sideB.join(', ')}1:02:06:1 · 6:11:0`);
+    expect(first.querySelector('.win.a')).toHaveTextContent(sim.sideA.join(', '));
+    expect(within(table).getAllByRole('row').at(-1)).toHaveTextContent('Celkově1:02:0');
   });
 
   it('bez simulace a bez čekání: jen pořadí, bez přepínače', () => {

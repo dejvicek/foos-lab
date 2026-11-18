@@ -1028,8 +1028,63 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 /* Souhrn nahoře nad rozpisem: nadpis s přepínačem Pořadí / Zdržovači. */
 .summary { margin-bottom: 16px; }
 .summary .standings, .summary .delays { margin-top: 4px; }
-.sim-summary .wrap { max-width: 560px; }
-.sim-summary .teams b { font-variant-numeric: tabular-nums; }
+/* Simulace jako ligový zápis (19. 11. 2026, návrh B). */
+.sim-sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; max-width: 900px; }
+.sim-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.sim-side { display: grid; gap: 3px; min-width: 0; }
+.sim-side.b { text-align: right; justify-items: end; }
+.sim-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sim-team { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; }
+.sim-members { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12.5px; color: var(--muted); }
+.sim-side.b .sim-members { justify-content: flex-end; }
+.sim-members b { color: var(--ink); font-size: 11px; font-weight: 700; margin-right: 3px; }
+.sim-big { text-align: center; }
+.sim-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sim-sub { margin-top: 3px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sim-sheet .wrap { border: 0; border-radius: 0; margin: 0; }
+.sim-table { width: 100%; min-width: 560px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sim-sheet .wrap table { border: 0; }
+.sim-table th.sim-mid, .sim-table th.n, .sim-table td.n { text-align: center; }
+.sim-table td { vertical-align: middle; }
+.sim-table tr.sim-wave td { background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 4px; padding-bottom: 4px; }
+.sim-no { width: 84px; }
+.sim-no b { display: block; font-size: 15px; }
+.sim-no small { display: block; font-size: 11px; color: var(--muted); }
+.sim-ppl { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); gap: 6px; align-items: center; }
+.sim-ppl > span:first-child { justify-self: end; text-align: right; }
+.sim-ppl > span:last-child { justify-self: start; }
+.sim-ppl code { font-family: inherit; font-size: 10.5px; color: var(--muted); margin: 0 4px; }
+.sim-c { text-align: center; color: var(--muted); font-weight: 700; }
+.sim-ppl .win { font-weight: 800; }
+.sim-ppl .win.a { box-shadow: inset 0 -2px 0 var(--gold); }
+.sim-ppl .win.b { box-shadow: inset 0 -2px 0 var(--side-b); }
+.sim-pts { font-size: 15px; font-weight: 800; }
+.sim-legs { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.sim-run { color: var(--muted); }
+.sim-live { display: inline-block; font-size: 11px; font-weight: 800; color: var(--felt); background: var(--felt-soft); border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
+.sim-table tr.sim-total td { background: var(--felt-soft); font-weight: 800; font-size: 15px; }
+.sim-table tr.sim-total td:first-child { text-align: right; }
+@media (max-width: 560px) {
+  .sim-head { padding: 12px; gap: 8px; }
+  .sim-members { display: grid; gap: 0; }
+  .sim-score { font-size: 28px; }
+  /* Telefon: domácí a hosté pod sebou, bez sloupce Stav – Body a Hry se vejdou bez posouvání. */
+  .sim-table { min-width: 0; table-layout: fixed; }
+  .sim-table th:nth-child(3) { width: 52px; }
+  .sim-table th:nth-child(4) { width: 72px; }
+  .sim-no { width: 52px; }
+  .sim-no small { font-size: 10px; }
+  .sim-ppl { grid-template-columns: minmax(0, 1fr); gap: 1px; }
+  .sim-ppl > span:first-child, .sim-ppl > span:last-child { justify-self: start; text-align: left; }
+  .sim-ppl .sim-c { display: none; }
+  .sim-ppl > span:last-child code { display: none; }
+  .sim-ppl > span:last-child::after { content: attr(data-codes); font-size: 10.5px; color: var(--muted); margin-left: 4px; }
+  .sim-table th.sim-mid { text-align: left; }
+  .sim-legs { white-space: normal; }
+  .sim-table td { padding-left: 6px; padding-right: 6px; }
+  .sim-table th:last-child, .sim-table td:last-child { display: none; }
+  .sim-table tr.sim-wave td:last-child, .sim-table tr.sim-total td:first-child { display: table-cell; }
+}
 .wizard-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; }
 .wizard-steps li { flex: 1; border-bottom: 3px solid var(--line); }
 .wizard-steps li.done { border-color: var(--felt); }
