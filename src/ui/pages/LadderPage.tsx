@@ -4,7 +4,7 @@ import { computePracticeMatchLadder, type PracticeMatchTable as PracticeMatchTab
 import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
-import type { LadderPart, UiPrefs } from '../../storage/prefs';
+import type { LadderDrills, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
 import { streakTime } from '../../domain/streak';
@@ -216,7 +216,7 @@ function SoloTable({
   );
 }
 
-/** Žebříček Vlastní – zápasy (12. 11. 2026): vyhrané zápasy, legy a rozdíl skóre. */
+/** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
   const rows = [...table.ranked, ...table.lowData];
   const cut = table.ranked.length;
@@ -296,14 +296,12 @@ function SoloLadder({
   source?: SoloSource;
 }) {
   const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today, source);
-  const range = resolveRange(prefs.ladderRange, today);
-  const matchTables = source === 'practice' ? computePracticeMatchLadder(store.data.trainings, range.from ?? null, range.to ?? null, MIN_TRAININGS) : [];
-  if (!tables.length && !matchTables.length)
+  if (!tables.length)
     return (
       <p className="note">
         {source === 'practice'
-          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení, Čisté desítky ani zápasů 1 na 1.'
-          : 'V tomhle období zatím nejsou žádné výsledky ze sólové části.'}
+          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení ani Čisté desítky.'
+          : 'V tomhle období zatím nejsou žádné výsledky týmových cvičení.'}
       </p>
     );
   return (
@@ -320,13 +318,6 @@ function SoloLadder({
           </section>
         );
       })}
-      {matchTables.map((t) => (
-        <section key={t.discipline} className="solo-block">
-          <h3>{discipline(t.discipline).name}</h3>
-          <p className="note">zápasy 1 na 1 (duo i singly v klubu), víc vyhraných je lépe</p>
-          <PracticeMatchTable table={t} name={name} open={open} />
-        </section>
-      ))}
     </div>
   );
 }
@@ -342,6 +333,11 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
   };
   const open = (id: PlayerId) => navigate({ page: 'player', id });
 
+  // Cvičení: Týmové (klub + duo stejných cvičení) / Solo/Duo (jen vlastní tréninky), 18. 11. 2026.
+  const drills: LadderDrills | null = prefs.ladderPart === 'solo' || prefs.ladderPart === 'practice' ? prefs.ladderPart : null;
+  const resolved = resolveRange(range, today);
+  const matchTables = prefs.ladderPart === 'matches' ? computePracticeMatchLadder(store.data.trainings, resolved.from ?? null, resolved.to ?? null, MIN_TRAININGS) : [];
+
   const setRangeKind = (kind: 'form' | 'all' | 'custom') => {
     if (kind === 'custom') {
       const from = range.kind === 'custom' ? range.from : addDays(today, -(FORM_DAYS - 1));
@@ -353,17 +349,27 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
   return (
     <section>
       <h1>Žebříček</h1>
-      <Seg<LadderPart>
+      <Seg<'matches' | 'drills' | 'delays'>
         label="Část"
-        value={prefs.ladderPart}
-        onChange={(v) => setPrefs({ ...prefs, ladderPart: v })}
+        value={drills ? 'drills' : (prefs.ladderPart as 'matches' | 'delays')}
+        onChange={(v) => setPrefs({ ...prefs, ladderPart: v === 'drills' ? (drills ?? prefs.ladderDrills ?? 'solo') : v })}
         options={[
           ['matches', 'Zápasy'],
-          ['solo', 'Týmové cvičení'],
-          ['practice', 'Solo/Duo cvičení'],
+          ['drills', 'Cvičení'],
           ['delays', 'Zdržovači'],
         ]}
       />
+      {drills && (
+        <Seg<LadderDrills>
+          label="Cvičení"
+          value={drills}
+          onChange={(v) => setPrefs({ ...prefs, ladderPart: v, ladderDrills: v })}
+          options={[
+            ['solo', 'Týmové'],
+            ['practice', 'Solo/Duo'],
+          ]}
+        />
+      )}
       <div>
         <Seg
           label="Období"
@@ -392,10 +398,10 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
           </span>
           {prefs.ladderPart === 'practice'
-            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka) a zápasy 1 na 1 – z dua i singly z klubu. Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
             : prefs.ladderPart === 'solo'
               ? `Cvičení z klubových tréninků i z vlastních tréninků duo (stejné podmínky). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
-              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
+              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období (u zápasů 1 na 1 tréninků se zápasem).`}{' '}
           Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}
@@ -409,7 +415,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
       ) : (
         <>
       {ranked.length === 0 && lowData.length === 0 ? (
-        <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
+        !matchTables.length && <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
       ) : (
         <>
           <LadderTable ranked={ranked} lowData={lowData} view={view} label="Žebříček" name={name} open={open} />
@@ -419,6 +425,20 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
               : 'Celkem: pořadí dělá součet rozdílu skóre, pak výhry, góly a výhry v simulaci.'}{' '}
             Počítají se jen zapsané legy ze scénářové ligy a jedniček; simulace kola zvlášť.
           </p>
+        </>
+      )}
+      {matchTables.length > 0 && (
+        <>
+          <h2>Zápasy 1 na 1</h2>
+          <p className="note">Z vlastních tréninků ve dvou i singly z klubu, po disciplínách; víc vyhraných je lépe.</p>
+          <div className="solo-grid">
+            {matchTables.map((t) => (
+              <section key={t.discipline} className="solo-block">
+                <h3>{discipline(t.discipline).name}</h3>
+                <PracticeMatchTable table={t} name={name} open={open} />
+              </section>
+            ))}
+          </div>
         </>
       )}
         </>

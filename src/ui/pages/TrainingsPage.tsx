@@ -30,7 +30,7 @@ function Practices({ store, navigate, viewer, now }: { store: AppStore; navigate
       <section className="practice-card" aria-label="Vlastní trénink">
         <div>
           <strong>Vlastní trénink</strong>
-          <span className="note">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku Solo/Duo cvičení.</span>
+          <span className="note">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku: cvičení do Cvičení, zápasy do Zápasů 1 na 1.</span>
         </div>
         {viewer.playerId &&
           (running ? (

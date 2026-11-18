@@ -141,7 +141,7 @@ function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: Play
                 <span>
                   {seriesDrill(m).name}
                   {pair ? ` · ${name(p)}` : ''}
-                  <small className="muted"> · {clubMetric(m) ? 'Týmové cvičení' : 'Solo/Duo cvičení'}</small>
+                  <small className="muted"> · {clubMetric(m) ? 'Cvičení · Týmové' : 'Cvičení · Solo/Duo'}</small>
                 </span>
                 {at >= 0 ? (
                   <span className="practice-place">
@@ -361,7 +361,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
           Trénink
         </button>
         <h1>Vlastní trénink</h1>
-        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku Solo/Duo cvičení.</p>
+        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku: cvičení do Cvičení, zápasy do Zápasů 1 na 1.</p>
         {mine && (
           <div className="flow-bar practice-resume" role="status">
             <span>Máš rozdělaný vlastní trénink.</span>

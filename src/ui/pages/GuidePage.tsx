@@ -242,7 +242,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={10} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Žebříček má čtyři části: <b>Zápasy</b>, <b>Týmové cvičení</b>, <b>Solo/Duo cvičení</b> (z vlastních tréninků) a <b>Zdržovači</b> (krok 11). Výchozí období je <b>forma</b>: tréninky za posledních
+              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 11). Výchozí období je <b>forma</b>: tréninky za posledních
               28 dní.
             </p>
             <ul className="g-list">
@@ -256,7 +256,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Týmové cvičení</b> a <b>Solo/Duo cvičení</b> mají žebříček pro každé cvičení zvlášť.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. Zápasy 1 na 1 jsou v Zápasech.
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
@@ -871,7 +871,7 @@ function TrainingPhone() {
 type LadderPart = 'matches' | 'solo' | 'delays';
 const LADDER_PARTS: [LadderPart, string][] = [
   ['matches', 'Zápasy'],
-  ['solo', 'Týmové cvičení'],
+  ['solo', 'Cvičení'],
   ['delays', 'Zdržovači'],
 ];
 

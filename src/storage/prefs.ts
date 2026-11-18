@@ -1,13 +1,19 @@
 import type { DisciplineId } from '../domain/types';
 import type { LadderRange, LadderView } from '../domain/ladder';
 
-/** practice = žebříček Vlastní (vlastní tréninky, PRD 5.11). */
+/**
+ * Část žebříčku (18. 11. 2026, *rozhodnutí uživatele*): Zápasy · Cvičení · Zdržovači; Cvičení má podčásti
+ * Týmové (`solo`, dřív Stanoviště) a Solo/Duo (`practice`, dřív Vlastní, PRD 5.11).
+ */
 export type LadderPart = 'matches' | 'solo' | 'practice' | 'delays';
+export type LadderDrills = 'solo' | 'practice';
 
 export interface UiPrefs {
   ladderRange: LadderRange;
   ladderView: LadderView;
   ladderPart: LadderPart;
+  /** Naposledy zvolená podčást Cvičení – kam vede záložka Cvičení. */
+  ladderDrills?: LadderDrills;
 }
 
 const KEY = 'foosball-practice.prefs.v1';
@@ -28,7 +34,12 @@ export function loadPrefs(): UiPrefs {
     const raw = localStorage.getItem(KEY);
     const p = raw ? JSON.parse(raw) : null;
     if (!valid(p)) return defaultPrefs();
-    return { ...p, ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches' };
+    const { ladderDrills, ...rest } = p;
+    return {
+      ...rest,
+      ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches',
+      ...(ladderDrills === 'solo' || ladderDrills === 'practice' ? { ladderDrills } : {}),
+    };
   } catch {
     return defaultPrefs();
   }

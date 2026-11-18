@@ -118,14 +118,15 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(clubList).getAllByRole('listitem')).toHaveLength(1);
   });
 
-  it('žebříček Vlastní: jen vlastní tréninky, sloupec Pokusy', async () => {
+  it('žebříček Cvičení → Solo/Duo: jen vlastní tréninky, sloupec Pokusy', async () => {
     window.location.hash = '#/ladder';
     const d = today();
     const ps = ['a', 'b', 'c'].map((id, i) => setSolo(newPractice(id, d, `1${i}:00`, 'id2', null, ['penaltySolo']), 'id2', 'penaltySolo@1', 6 + i));
     const clubWithSolo = setSolo(club, 'id1', 'warmupPasses@1', 15);
     render(<App repo={memoryRepository({ players, trainings: [clubWithSolo, ...ps] })} auth={asPlayer()} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Solo/Duo cvičení' }));
+    await user.click(await screen.findByRole('button', { name: 'Cvičení' }));
+    await user.click(screen.getByRole('button', { name: 'Solo/Duo' }));
     const table = screen.getByRole('table', { name: 'Penalta z místa bez brankáře' });
     expect(within(table).getByRole('columnheader', { name: 'Pokusy' })).toBeInTheDocument();
     expect(within(table).getByRole('row', { name: /H2/ })).toHaveTextContent('7,0 / 20');
@@ -178,7 +179,8 @@ describe('vlastní trénink (PRD 5.11)', () => {
     const ts = [run('a', 'id1', 95), run('b', 'id1', 0), run('c', 'id1', 140), run('d', 'id2', 80), run('e', 'id2', 300), run('f', 'id2', 0)];
     render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Solo/Duo cvičení' }));
+    await user.click(await screen.findByRole('button', { name: 'Cvičení' }));
+    await user.click(screen.getByRole('button', { name: 'Solo/Duo' }));
     const table = screen.getByRole('table', { name: 'Čistá desítka – střela z trojky' });
     expect(within(table).getByRole('columnheader', { name: 'Nejlepší čas' })).toBeInTheDocument();
     const rows = within(table).getAllByRole('row').slice(1);
@@ -227,7 +229,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     });
   });
 
-  it('žebříček Vlastní: tabulka zápasů (vyhrané zápasy, legy, rozdíl)', async () => {
+  it('žebříček Zápasy: tabulka zápasů 1 na 1 (vyhrané zápasy, legy, rozdíl)', async () => {
     window.location.hash = '#/ladder';
     const d = today();
     const game = (id: string, a: string, b: string, legs: [number, number][]) => {
@@ -237,8 +239,8 @@ describe('vlastní trénink (PRD 5.11)', () => {
     };
     const ts = [game('a', 'id1', 'id2', [[6, 2], [6, 4]]), game('b', 'id1', 'id2', [[2, 6], [6, 3], [6, 5]]), game('c', 'id2', 'id1', [[6, 1], [6, 0]])];
     render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Solo/Duo cvičení' }));
+    // zápasy 1 na 1 jsou od 18. 11. 2026 v části Zápasy (výchozí), ne v Cvičení
+    expect(await screen.findByRole('heading', { name: 'Zápasy 1 na 1' })).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'Goalie war' });
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent(/H1.*3.*2 \/ 3.*4 \/ 7/);

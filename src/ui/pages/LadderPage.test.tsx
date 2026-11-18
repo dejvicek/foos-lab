@@ -144,8 +144,8 @@ describe('žebříček stanovišť', () => {
     const user = userEvent.setup();
     const r = repo2();
     const { unmount } = render(<App repo={r} />);
-    await screen.findByRole('button', { name: 'Týmové cvičení' });
-    await user.click(screen.getByRole('button', { name: 'Týmové cvičení' }));
+    await screen.findByRole('button', { name: 'Cvičení' });
+    await user.click(screen.getByRole('button', { name: 'Cvičení' }));
     // 2 tréninky: oba pod čárou (pořadí od 3 tréninků), hodnota a pořadí se ukazují
     const table = screen.getByRole('table', { name: 'Udržení míče na pětce' });
     const rows = within(table).getAllByRole('row').slice(1);
@@ -162,8 +162,25 @@ describe('žebříček stanovišť', () => {
   it('prázdné období', async () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
-    await screen.findByRole('button', { name: 'Týmové cvičení' });
-    await user.click(screen.getByRole('button', { name: 'Týmové cvičení' }));
-    expect(screen.getByText('V tomhle období zatím nejsou žádné výsledky ze sólové části.')).toBeInTheDocument();
+    await screen.findByRole('button', { name: 'Cvičení' });
+    await user.click(screen.getByRole('button', { name: 'Cvičení' }));
+    expect(screen.getByText('V tomhle období zatím nejsou žádné výsledky týmových cvičení.')).toBeInTheDocument();
+  });
+
+  it('části Zápasy · Cvičení · Zdržovači; Cvičení má Týmové / Solo/Duo a pamatuje si poslední (18. 11. 2026)', async () => {
+    const user = userEvent.setup();
+    render(<App repo={repo()} />);
+    const parts = await screen.findByRole('group', { name: 'Část' });
+    expect(within(parts).getAllByRole('button').map((b) => b.textContent)).toEqual(['Zápasy', 'Cvičení', 'Zdržovači']);
+    expect(screen.queryByRole('group', { name: 'Cvičení' })).toBeNull();
+    await user.click(within(parts).getByRole('button', { name: 'Cvičení' }));
+    const sub = screen.getByRole('group', { name: 'Cvičení' });
+    expect(within(sub).getByRole('button', { name: 'Týmové' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(sub).getByRole('button', { name: 'Solo/Duo' }));
+    expect(screen.getByText('V tomhle období zatím nejsou žádné výsledky solo cvičení ani Čisté desítky.')).toBeInTheDocument();
+    await user.click(within(parts).getByRole('button', { name: 'Zdržovači' }));
+    expect(screen.queryByRole('group', { name: 'Cvičení' })).toBeNull();
+    await user.click(within(parts).getByRole('button', { name: 'Cvičení' }));
+    expect(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('button', { name: 'Solo/Duo' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
