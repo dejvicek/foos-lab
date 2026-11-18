@@ -1,6 +1,6 @@
 import { buildSchedule } from './schedule';
 import { autoPlan, drillRoundsNeeded } from './plan';
-import type { ScheduleRow, TableCount, Training } from './types';
+import type { Match, ScheduleRow, TableCount, Training } from './types';
 import { newTraining } from './training';
 import { discipline as disc } from './disciplines';
 import { DEFAULT_SELECTION, H } from '../test/fixtures';
@@ -82,13 +82,58 @@ function discipline(row: ScheduleRow) {
 }
 
 describe('ztráty v konfigurovatelném tréninku', () => {
-  it('zapisují se u každého zápasu ligových disciplín (i Start 0:3 + daň), ne v simulaci', () => {
+  it('jen v Dani za ztrátu (18. 11. 2026): Start 0:3 bez Daně, ostatní zápasy a simulace bez ztrát', () => {
     const s = buildSchedule(custom(8, 4, { plan: { start03: 1, lossTax: 1, normal: 1, singles: 1, sim: 1 } }));
     const league = s.matches.filter((m) => m.block === 'league');
-    expect(league.length).toBeGreaterThan(0);
-    expect(league.every((m) => m.trackLosses)).toBe(true);
+    const tax = league.filter((m) => m.discipline === 'lossTax');
+    expect(tax.length).toBeGreaterThan(0);
+    expect(tax.every((m) => m.trackLosses && m.lossTax)).toBe(true);
+    expect(league.filter((m) => m.discipline !== 'lossTax').every((m) => !m.trackLosses && !m.lossTax)).toBe(true);
     expect(league.some((m) => m.discipline === 'start03')).toBe(true);
     expect(s.matches.filter((m) => m.block === 'sim').every((m) => !m.trackLosses)).toBe(true);
+  });
+
+  it('Daň vždy s rozhodčím u každého stolu: dvojice + rozhodčí = 5, singl + rozhodčí = 3', () => {
+    const taxRound = (n: number, tables: TableCount) =>
+      buildSchedule(custom(n, tables, { plan: { lossTax: 1 } })).matches.filter((m) => m.discipline === 'lossTax');
+    const shape = (ms: ReturnType<typeof taxRound>) => ms.map((m) => m.kind);
+    // 8 hráčů, 4 stoly: dvojice + singl, 2 rozhodčí (bez pravidla by byly 2 dvojice bez rozhodčího)
+    expect(shape(taxRound(8, 4))).toEqual(['doubles', 'singles']);
+    // 12 hráčů, 4 stoly: 2 dvojice + 2 rozhodčí, 2 čekají
+    expect(shape(taxRound(12, 4))).toEqual(['doubles', 'doubles']);
+    // 13 hráčů: 2 dvojice + singl (5 + 5 + 3)
+    expect(shape(taxRound(13, 4))).toEqual(['doubles', 'doubles', 'singles']);
+    // 4 hráči: singl + rozhodčí, jeden čeká
+    expect(shape(taxRound(4, 2))).toEqual(['singles']);
+    for (const n of [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+      for (const t of [2, 3, 4] as TableCount[]) {
+        const ms = taxRound(n, t);
+        expect(ms.length, `${n}/${t}`).toBeGreaterThan(0);
+        expect(ms.every((m) => m.referee), `${n}/${t}`).toBe(true);
+        const refs = ms.map((m) => m.referee);
+        expect(new Set(refs).size).toBe(refs.length);
+        for (const m of ms) expect([...m.sideA, ...m.sideB]).not.toContain(m.referee);
+      }
+  });
+
+  it('Daň se pro 2 hráče nehraje (chybí rozhodčí); ostatní disciplíny beze změny tvaru', () => {
+    expect(buildSchedule(custom(2, 2, { plan: { lossTax: 1, normal: 1 } })).matches.some((m) => m.discipline === 'lossTax')).toBe(false);
+    expect(buildSchedule(custom(8, 4, { plan: { normal: 1 } })).matches.map((m) => m.kind)).toEqual(['doubles', 'doubles']);
+  });
+
+  it('starší trénink: zamčené kolo Start 0:3 + daň a ztráty u Normálního legu se srovnají (bez Daně, bez ztrát)', () => {
+    const base = buildSchedule(custom(8, 4, { plan: { start03: 1, normal: 1 } }));
+    const old = (m: Match): Match => ({ ...m, trackLosses: true, ...(m.discipline === 'start03' ? { lossTax: true } : {}) });
+    const rows = base.sections.flatMap((s) => s.rows).filter((r) => r.kind === 'matches');
+    const lockedRounds = rows.map((r) => ({
+      discipline: (r.cells.find((c) => c?.type === 'match') as { match: Match }).match.discipline!,
+      rows: [{ ...r, cells: r.cells.map((c) => (c?.type === 'match' ? { ...c, match: old(c.match) } : c)) }],
+    }));
+    const s = buildSchedule(custom(8, 4, { plan: { start03: 1, normal: 1 }, lockedRounds }));
+    expect(s.matches.length).toBeGreaterThan(0);
+    expect(s.matches.every((m) => !m.trackLosses && !m.lossTax)).toBe(true);
+    const cells = s.sections.flatMap((x) => x.rows).flatMap((r) => r.cells).flatMap((c) => (c?.type === 'match' ? [c.match] : []));
+    expect(cells.every((m) => !m.trackLosses && !m.lossTax)).toBe(true);
   });
 });
 

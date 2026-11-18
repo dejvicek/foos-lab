@@ -74,8 +74,9 @@ export function computeStandings(
     const ga = parseScoreValue(s.ga);
     const gb = parseScoreValue(s.gb);
     if (ga === null || gb === null) continue;
-    const la = parseScoreValue(s.la);
-    const lb = parseScoreValue(s.lb);
+    // Ztráty jen u Daně za ztrátu (18. 11. 2026); starší ztráty jinde se nepočítají.
+    const la = m.trackLosses ? parseScoreValue(s.la) : null;
+    const lb = m.trackLosses ? parseScoreValue(s.lb) : null;
 
     const add = (players: PlayerId[], gf: number, gc: number, l: number | null) => {
       for (const p of players) {

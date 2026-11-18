@@ -18,7 +18,7 @@ it('průběh cvičení: srozumitelný souhrn – nejdelší série a poloviny po
 
 it('zápas – sloupec (výchozí): obě strany v jednom pořadí se stavem skóre od scénářového startu', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
-  render(<MatchTimeline match={match({ start: [4, 4] })} events={events} from={0} to={5000} names={names} />);
+  render(<MatchTimeline match={match({ start: [4, 4], trackLosses: true })} events={events} from={0} to={5000} names={names} />);
   expect(screen.getByRole('button', { name: 'Sloupec' })).toHaveAttribute('aria-pressed', 'true');
   const rows = within(screen.getByRole('table', { name: 'Průběh po událostech' })).getAllByRole('row').slice(1);
   expect(rows.map((r) => r.getAttribute('aria-label'))).toEqual([
@@ -29,6 +29,13 @@ it('zápas – sloupec (výchozí): obě strany v jednom pořadí se stavem skó
   ]);
   // podbarvení podle vedoucí strany: 4:5 vede pravá, ztráta to nemění, 5:5 nikdo
   expect(rows.map((r) => r.querySelector('.tl-col-s')!.className)).toEqual(['tl-col-s', 'tl-col-s lead-b', 'tl-col-s lead-b', 'tl-col-s']);
+});
+
+it('ztráty jen u Daně (18. 11. 2026): jinde se starší ťuknuté ztráty nezobrazí', () => {
+  const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
+  render(<MatchTimeline match={match()} events={events} from={0} to={5000} names={names} />);
+  const rows = within(screen.getByRole('table', { name: 'Průběh po událostech' })).getAllByRole('row').slice(1);
+  expect(rows.map((r) => r.getAttribute('aria-label'))).toEqual(['Začátek 0:0', 'Gól: Svoboda + Černý, 0:1 v 0:02', 'Gól: Novák + Dvořák, 1:1 v 0:04']);
 });
 
 it('simulace: místo gólů sety', () => {

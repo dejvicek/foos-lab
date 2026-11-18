@@ -13,8 +13,8 @@ describe('stránka Disciplíny – obsah', () => {
   it('každá nabízená disciplína má vysvětlivku (Cíl / Provedení / …)', () => {
     for (const d of offeredDisciplines()) expect(disciplineHelp(d.id).length, d.id).toBeGreaterThan(0);
     expect(disciplineHelp('fiveBarControl').map((i) => i.name)).toEqual(['Udržení míče na pětce']);
-    // Start 0:3 se hraje s Daní → obě vysvětlivky (stejně jako v nápovědě kola)
-    expect(disciplineHelp('start03').map((i) => i.name)).toEqual(['Start 0:3', 'Daň za ztrátu']);
+    // Start 0:3 bez Daně (18. 11. 2026)
+    expect(disciplineHelp('start03').map((i) => i.name)).toEqual(['Start 0:3']);
     expect(disciplineHelp('singles').map((i) => i.name)).toEqual(['Normální leg']);
   });
 

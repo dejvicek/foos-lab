@@ -14,6 +14,7 @@ export interface DisciplineDef {
   /** Název položky ve vysvětlivkách (content.ts). */
   explain: string;
   metric?: SoloMetric;
+  /** Daň za ztrátu: ztráta = gól soupeře; jediná disciplína, kde se zapisují ztráty, vždy s rozhodčím (18. 11. 2026). */
   lossTax?: boolean;
   wall?: boolean;
   start?: [number, number];
@@ -40,7 +41,7 @@ export interface DisciplineDef {
   practiceOnly?: boolean;
   /** Ve vlastním tréninku jen solo („bez brankáře“, Přihrávky ke zdi a po lajně – bez soupeře), v duu ne. */
   soloOnly?: boolean;
-  /** Jen klubový trénink (Normální leg – ve vlastním tréninku duo je to Jedničky, 1 na 1). */
+  /** Jen klubový trénink (Normální leg – ve vlastním tréninku duo je to Jedničky, 1 na 1; Daň za ztrátu – potřebuje rozhodčího). */
   clubOnly?: boolean;
 }
 
@@ -110,9 +111,11 @@ export const DEFAULT_DISCIPLINES: readonly DisciplineDef[] = [
   { id: 'streakShot2', kind: 'drill', name: 'Čistá desítka – střela z dvojky', min: 10, explain: 'Čistá desítka – střela z dvojky', metric: 'streakShot2', individual: true, practiceOnly: true, skills: ['shot2'], area: 'defense' },
   { id: 'streakPass2', kind: 'drill', name: 'Čistá desítka – přihrávka z dvojky', min: 10, explain: 'Čistá desítka – přihrávka z dvojky', metric: 'streakPass2', individual: true, practiceOnly: true, skills: ['buildUp2'], area: 'defense' },
   { id: 'normal', kind: 'match', name: 'Normální leg', min: 8, explain: 'Normální leg', skills: ['matchPlay'], clubOnly: true },
-  { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'] },
+  // Daň za ztrátu (18. 11. 2026): jediná disciplína se ztrátami, vždy s rozhodčím u každého stolu – jen klubový trénink.
+  { id: 'lossTax', kind: 'match', name: 'Daň za ztrátu', min: 8, explain: 'Daň za ztrátu', lossTax: true, skills: ['control', 'buildUp2', 'clearing'], clubOnly: true },
   { id: 'wall', kind: 'match', name: 'Zeď', min: 8, explain: 'Zeď', wall: true, paired: true, skills: ['tempo', 'reading', 'control'] },
-  { id: 'start03', kind: 'match', name: 'Start 0:3 + daň', min: 5, explain: 'Start 0:3', lossTax: true, start: [0, 3], paired: true, skills: ['comeback', 'control'] },
+  // Start 0:3 bez Daně (18. 11. 2026; dřív „Start 0:3 + daň“).
+  { id: 'start03', kind: 'match', name: 'Start 0:3', min: 5, explain: 'Start 0:3', start: [0, 3], paired: true, skills: ['comeback', 'control'] },
   { id: 'start44', kind: 'match', name: 'Start 4:4', min: 5, explain: 'Start 4:4', start: [4, 4], skills: ['clutch'] },
   { id: 'start45', kind: 'match', name: 'Start 4:5', min: 5, explain: 'Start 4:5', start: [4, 5], paired: true, skills: ['clutch'] },
   { id: 'start55', kind: 'match', name: 'Start 5:5, o 2 góly, strop 10', min: 6, explain: 'Start 5:5, o 2 góly, strop 10', start: [5, 5], skills: ['clutch'] },

@@ -261,12 +261,12 @@ describe('vlastní trénink (PRD 5.11)', () => {
     // solo: Rozcvička 9 + 2 × 7 + 2 × 7 (sólová cvičení 20 s × 20) + 4× přechod
     expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:41');
     await user.click(screen.getByRole('button', { name: 'Ve dvou' }));
-    expect(ticked()).toEqual(['Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky']);
+    expect(ticked()).toEqual(['Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Jedničky']);
     expect(within(screen.getByRole('list', { name: 'Pořadí cvičení' })).getAllByRole('listitem').map((li) => li.querySelector('.po-name')!.firstChild!.textContent)).toEqual([
-      'Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky',
+      'Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Jedničky',
     ]);
-    // duo: Rozcvička 9 + cvičení ve dvojici 14 (20 s × 40) × 3 + Řetězec 20 (30 s × 40) + zápasy 8 (40 s × 11) × 2 + 6× přechod
-    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:33');
+    // duo: Rozcvička 9 + cvičení ve dvojici 14 (20 s × 40) × 3 + Řetězec 20 (30 s × 40) + Jedničky 8 (40 s × 11) + 5× přechod (Daň jen v klubu)
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:24');
     await user.click(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('checkbox', { name: /^Řetězec/ }));
     expect(ticked()).not.toContain('Řetězec');
     await user.click(screen.getByRole('button', { name: 'Výchozí' }));

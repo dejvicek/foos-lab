@@ -9,12 +9,9 @@ import type { DisciplineId } from './types';
 /** Stránka Disciplíny: co se nabízí (vyřazené ne), v pořadí rozpisu. */
 export const offeredDisciplines = (): DisciplineDef[] => DISCIPLINES.filter((d) => !d.retired);
 
-/** Vysvětlivky disciplíny – stejné jako nápověda kola v rozpisu (Start 0:3 navíc Daň za ztrátu). */
+/** Vysvětlivky disciplíny – stejné jako nápověda kola v rozpisu. */
 export function disciplineHelp(id: DisciplineId): ExplanationItem[] {
-  const d = discipline(id);
-  const out = [explanation(d.explain)];
-  if (d.id === 'start03') out.push(explanation('Daň za ztrátu'));
-  return out;
+  return [explanation(discipline(id).explain)];
 }
 
 /** Obecná pravidla všech zápasových kol (v rozpisu sbalená pod nápovědou kola). */

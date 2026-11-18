@@ -18,8 +18,8 @@ describe('vysvětlivky u bloků', () => {
     expect(names(e.main)).toEqual(['Zeď']);
     expect(names(e.general)).toEqual(['Každý gól se počítá', 'Role rozhodčího']);
   });
-  it('kolo 5: Start 0:3 a Daň za ztrátu', () => {
-    expect(names(explanationsFor(rowByLabel(team, '5. kolo')).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
+  it('kolo 5: Start 0:3 (bez Daně od 18. 11. 2026)', () => {
+    expect(names(explanationsFor(rowByLabel(team, '5. kolo')).main)).toEqual(['Start 0:3']);
   });
   it('stanoviště: u každého stolu jeho stanoviště', () => {
     const e = explanationsFor(rowByLabel(team, 'Stanoviště, rotace 1'));
@@ -34,7 +34,7 @@ describe('vysvětlivky u bloků', () => {
     expect(names(explanationsFor(r[0]).main)).toEqual(['Přihrávky na pětce']);
     expect(explanationsFor(r[0]).perTable.every((x) => x === null)).toBe(true);
     expect(names(explanationsFor(r[1]).main)).toEqual(['Řetězec']);
-    expect(names(explanationsFor(r[2]).main)).toEqual(['Start 0:3', 'Daň za ztrátu']);
+    expect(names(explanationsFor(r[2]).main)).toEqual(['Start 0:3']);
     expect(names(explanationsFor(r[3]).main)).toEqual(['Normální leg']);
   });
 

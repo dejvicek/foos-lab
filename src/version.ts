@@ -13,4 +13,6 @@
 //   ukazovala jiné časy a při uložení tréninku doby míčků smazala.
 // 6 (18. 11. 2026): připravenost místo Zahájit (play_times.ready, ready_item, migrace 31) – starší verze by
 //   utkání zahajovala sama a připravenost by neviděla.
-export const COMPAT = 6;
+// 7 (18. 11. 2026): Daň za ztrátu vždy s rozhodčím (méně stolů v kole Daně), ztráty jen v Dani – starší
+//   verze by počítala jiný rozpis a ztráty nabízela i jinde.
+export const COMPAT = 7;

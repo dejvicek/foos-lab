@@ -49,12 +49,19 @@ export interface MatchPlan {
   b: PlayerId[];
 }
 
-/** Tvar kola jako 5.2: nejdřív dvojice, pak singly. */
-function shape(n: number, tables: number, singlesOnly: boolean) {
-  const doubles = singlesOnly ? 0 : Math.min(tables, Math.floor(n / 4));
-  const singles = Math.min(tables - doubles, Math.floor((n - 4 * doubles) / 2));
+/**
+ * Tvar kola jako 5.2: nejdřív dvojice, pak singly. S rozhodčím (Daň za ztrátu, 18. 11. 2026) má každý stůl
+ * navíc rozhodčího z čekajících: dvojice + rozhodčí = 5 hráčů, singl + rozhodčí = 3.
+ */
+export function shape(n: number, tables: number, singlesOnly: boolean, referee = false) {
+  const per = referee ? 1 : 0;
+  const doubles = singlesOnly ? 0 : Math.min(tables, Math.floor(n / (4 + per)));
+  const singles = Math.max(0, Math.min(tables - doubles, Math.floor((n - (4 + per) * doubles) / (2 + per))));
   return { doubles, singles, playing: 4 * doubles + 2 * singles };
 }
+
+/** Disciplína, kde musí být u každého stolu rozhodčí: Daň za ztrátu (18. 11. 2026). */
+export const needsReferee = (def: DisciplineDef): boolean => !!def.lossTax;
 
 type Role = 'wall' | 'start' | null;
 const roleOf = (def: DisciplineDef): Role => (def.wall ? 'wall' : def.start && def.start[0] !== def.start[1] ? 'start' : null);
@@ -161,7 +168,7 @@ export function matchRound(
   c: Counters,
   roundNo: number,
 ): { matches: MatchPlan[]; waiting: PlayerId[] } {
-  const { doubles, singles, playing } = shape(players.length, tables, !!def.singlesOnly);
+  const { doubles, singles, playing } = shape(players.length, tables, !!def.singlesOnly, needsReferee(def));
   const order = new Map(players.map((p, i) => [p, i]));
   // Nehrají ti, kdo nehráli nejméně; při shodě ti, kdo nehráli nejdéle; pak pořadí přítomných.
   const bySit = [...players].sort(

@@ -22,12 +22,21 @@ describe('parseScoreValue', () => {
 });
 
 describe('computeStandings', () => {
-  it('ligový zápas 6:2 se ztrátami 1/3 přičte oběma hráčům strany', () => {
-    const { rows, legsDone } = computeStandings(team8, { [L1]: { ga: 6, gb: 2, la: 1, lb: 3 } }, H(8));
+  it('ligový zápas 6:2 se ztrátami 1/3 přičte oběma hráčům strany (Daň za ztrátu, kolo 2)', () => {
+    const tax = team8.matches.find((m) => m.round === 2 && m.block === 'league')!;
+    expect(tax.lossTax).toBe(true);
+    const [w, x, y] = [tax.sideA[0], tax.sideA[1], tax.sideB[0]];
+    const { rows, legsDone } = computeStandings(team8, { [tax.id]: { ga: 6, gb: 2, la: 1, lb: 3 } }, H(8));
     expect(legsDone).toBe(1);
-    expect(row(rows, 'H1')).toMatchObject({ legs: 1, wins: 1, gf: 6, gc: 2, diff: 4, loss: 1, lossLegs: 1 });
-    expect(row(rows, 'H2')).toMatchObject({ legs: 1, wins: 1, diff: 4 });
-    expect(row(rows, 'H3')).toMatchObject({ legs: 1, wins: 0, diff: -4, loss: 3, lossLegs: 1 });
+    expect(row(rows, w)).toMatchObject({ legs: 1, wins: 1, gf: 6, gc: 2, diff: 4, loss: 1, lossLegs: 1 });
+    expect(row(rows, x)).toMatchObject({ legs: 1, wins: 1, diff: 4 });
+    expect(row(rows, y)).toMatchObject({ legs: 1, wins: 0, diff: -4, loss: 3, lossLegs: 1 });
+  });
+
+  it('ztráty mimo Daň (starší zápis) se nepočítají (18. 11. 2026)', () => {
+    const { rows } = computeStandings(team8, { [L1]: { ga: 6, gb: 2, la: 1, lb: 3 } }, H(8));
+    expect(row(rows, 'H1')).toMatchObject({ legs: 1, wins: 1, gf: 6, gc: 2, diff: 4, loss: 0, lossLegs: 0 });
+    expect(row(rows, 'H3')).toMatchObject({ legs: 1, loss: 0, lossLegs: 0 });
     expect(row(rows, 'H5')).toMatchObject({ legs: 0 });
   });
 

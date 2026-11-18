@@ -129,17 +129,18 @@ describe('tabulka tréninku', () => {
     expect(id).toHaveLength(8);
   });
 
-  it('ztráty u každého stolu, i bez rozhodčího a v Dani', async () => {
+  it('ztráty jen v Dani za ztrátu (18. 11. 2026), jinde ne ani u stolu s rozhodčím', async () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository({ players: players(9), trainings: [training(9, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await user.click(screen.getByRole('button', { name: /^1. kolo$/ }));
     const t1 = screen.getByRole('group', { name: '1. kolo, stůl 1' });
     const t2 = screen.getByRole('group', { name: '1. kolo, stůl 2' });
-    expect(within(t1).getByLabelText('1. kolo, stůl 1: ztráty vlevo')).toBeInTheDocument();
+    expect(within(t1).queryByLabelText('1. kolo, stůl 1: ztráty vlevo')).toBeNull();
     expect(t1).toHaveTextContent('Rozhodčí: H9');
-    expect(within(t2).getByLabelText('1. kolo, stůl 2: ztráty vlevo')).toBeInTheDocument();
-    expect(t2).toHaveTextContent('Bez rozhodčího, ztráty zapisují hráči');
+    expect(t1).not.toHaveTextContent('čárkuje ztráty');
+    expect(within(t2).queryByLabelText('1. kolo, stůl 2: ztráty vlevo')).toBeNull();
+    expect(t2).not.toHaveTextContent('ztráty');
     await user.click(screen.getByRole('button', { name: /^2. kolo$/ }));
     const d = screen.getByRole('group', { name: '2. kolo, stůl 1' });
     expect(within(d).getByLabelText('2. kolo, stůl 1: ztráty vlevo')).toBeInTheDocument();

@@ -22,27 +22,29 @@ describe('pravidla kol na zápasech', () => {
     expect(round(ms, 1)[0].start).toBeUndefined();
   });
 
-  it('Daň: kola 2 a 5', () => {
+  it('Daň: kolo 2 (Start 0:3 v kole 5 už bez Daně, 18. 11. 2026)', () => {
     const ms = league(8, 4);
-    expect([...new Set(ms.filter((m) => m.lossTax).map((m) => m.round))]).toEqual([2, 5]);
+    expect([...new Set(ms.filter((m) => m.lossTax).map((m) => m.round))]).toEqual([2]);
   });
 
-  it('rozhodčí: čekající popořadě ke stolům 1, 2…; ztráty se zapisují u každého stolu, i v Dani', () => {
+  it('rozhodčí: čekající popořadě ke stolům 1, 2…; ztráty jen v Dani (kolo 2)', () => {
     const ms = league(13, 4); // kolo 1 čeká H13, kolo 2 H1
     const r1 = round(ms, 1);
     expect(r1.map((m) => m.referee)).toEqual(['H13', undefined, undefined]);
-    expect(r1.map((m) => m.trackLosses)).toEqual([true, true, true]);
+    expect(r1.map((m) => !!m.trackLosses)).toEqual([false, false, false]);
     expect(round(ms, 2).map((m) => m.trackLosses)).toEqual([true, true, true]); // Daň
     expect(round(ms, 2)[0].referee).toBe('H1');
   });
 
-  it('nikdo nečeká → ztráty se zapisují stejně (hráči si je počítají sami)', () => {
-    expect(league(8, 4).every((m) => m.trackLosses)).toBe(true);
+  it('ztráty jen v kole Daně', () => {
+    const ms = league(8, 4);
+    expect(ms.filter((m) => m.trackLosses).every((m) => m.round === 2)).toBe(true);
+    expect(round(ms, 2).every((m) => m.trackLosses)).toBe(true);
   });
 
-  it('jedničky n=5, t=2: počítá H5 u stolu 1, ztráty u obou stolů', () => {
+  it('jedničky n=5, t=2: počítá H5 u stolu 1, ztráty jen v Dani', () => {
     const r1 = round(league(5, 2, 'single'), 1);
-    expect(r1.map((m) => [m.referee, m.trackLosses])).toEqual([['H5', true], [undefined, true]]);
+    expect(r1.map((m) => [m.referee, !!m.trackLosses])).toEqual([['H5', false], [undefined, false]]);
   });
 
   it('simulace nemá ztráty ani rozhodčí', () => {

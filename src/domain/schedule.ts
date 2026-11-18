@@ -81,7 +81,7 @@ function matchRow(
       const referee = waiting[j];
       if (referee) match.referee = referee;
       match.lossTax = rd.lossTax;
-      match.trackLosses = true; // ztráty u každého ligového zápasu, i v Dani a bez rozhodčího (rozhodnutí 2. 11. 2026)
+      match.trackLosses = rd.lossTax; // ztráty jen v Dani za ztrátu (18. 11. 2026)
       if (rd.wall) match.wall = rd.wall;
       if (rd.start) match.start = rd.start;
     }
@@ -257,6 +257,33 @@ function buildScheduleUncached(t: ScheduleInput): Schedule {
   if (!canBuildSchedule(t)) {
     throw new Error(`Rozpis umí ${minPlayers(t)}–${MAX_PLAYERS} hráčů, přítomno ${t.attendees.length}.`);
   }
-  if (t.format === 'custom') return buildCustomSchedule(t);
-  return t.mode === 'team' ? buildTeam(t) : buildSingles(t.attendees, t.tables);
+  const s = t.format === 'custom' ? buildCustomSchedule(t) : t.mode === 'team' ? buildTeam(t) : buildSingles(t.attendees, t.tables);
+  return withLossRules(s);
+}
+
+/**
+ * Ztráty jen v Dani za ztrátu (18. 11. 2026, *rozhodnutí uživatele*): Start 0:3 už Daň nemá a jinde se ztráty
+ * nezapisují ani nepočítají. Zamčená kola starších tréninků nesou dřívější příznaky – srovnají se tady.
+ */
+export const isLossTaxMatch = (m: Match): boolean =>
+  m.block === 'league' && (m.discipline ? m.discipline === 'lossTax' : !!m.lossTax && !m.start);
+
+function withLossRules(s: Schedule): Schedule {
+  const fix = new Map<string, Match>();
+  for (const m of s.matches) {
+    const tax = isLossTaxMatch(m);
+    if (!!m.lossTax === tax && !!m.trackLosses === tax) continue;
+    const { lossTax: _l, trackLosses: _t, ...rest } = m;
+    fix.set(m.id, { ...rest, ...(tax ? { lossTax: true, trackLosses: true } : {}) });
+  }
+  if (!fix.size) return s;
+  const swap = (m: Match) => fix.get(m.id) ?? m;
+  return {
+    ...s,
+    matches: s.matches.map(swap),
+    sections: s.sections.map((sec) => ({
+      ...sec,
+      rows: sec.rows.map((r) => ({ ...r, cells: r.cells.map((c) => (c?.type === 'match' ? { ...c, match: swap(c.match) } : c)) })),
+    })),
+  };
 }

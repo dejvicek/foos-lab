@@ -18,7 +18,8 @@ export const SIM_MIN_PLAYERS = 4;
  * celá akce, zápas s omezením a volná hra na konec.
  */
 export const SOLO_SELECTION: DisciplineId[] = ['warmup', 'passWallLane', 'penaltySolo'];
-export const DUO_SELECTION: DisciplineId[] = ['warmup', 'warmupPasses', 'penaltyKeeper', 'chain', 'lossTax', 'singles'];
+// Daň za ztrátu z dua odebrána 18. 11. 2026 (jen klub, vždy s rozhodčím).
+export const DUO_SELECTION: DisciplineId[] = ['warmup', 'warmupPasses', 'penaltyKeeper', 'chain', 'singles'];
 
 /** Výchozí výběr klubového tréninku pro 1 hráče (jen starší tréninky – klub je od 12. 11. 2026 aspoň pro 4). */
 export const clubSoloSelection = (): DisciplineId[] => ['passWallLane', 'penaltySolo', 'backShotSolo'].filter((id) => !discipline(id as DisciplineId).practiceOnly) as DisciplineId[];
@@ -32,6 +33,7 @@ export function playable(id: DisciplineId, players?: number): boolean {
   if (d.practiceOnly) return false; // Čistá desítka a „bez brankáře“ jen ve vlastním tréninku (ten má vlastní plán)
   if (players === undefined) return true;
   if (d.kind === 'sim') return players >= SIM_MIN_PLAYERS;
+  if (d.kind === 'match' && d.lossTax) return players >= 3; // Daň: aspoň singl + rozhodčí
   if (d.kind === 'match' || d.needsPartner) return players >= 2;
   return true;
 }

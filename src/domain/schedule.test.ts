@@ -38,7 +38,7 @@ describe('buildSchedule – týmový', () => {
     const s = T(13, 4);
     expect(matchRows(s, 'league').map((r) => r.time)).toEqual([60, 69, 78, 87, 96, 102, 106]);
     expect(section(s, 'league').rows.at(-1)).toMatchObject({ kind: 'break', label: 'Pauza', time: 110 });
-    expect(matchRows(s, 'league')[4].rule).toBe('Start 0:3 + daň (levá strana začíná 0:3), 5 min');
+    expect(matchRows(s, 'league')[4].rule).toBe('Start 0:3 (levá strana začíná 0:3), 5 min');
   });
 
   it('sólová část: rozehrání 0:00, rotace po 8 min, pauza (3 stanoviště)', () => {

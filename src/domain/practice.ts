@@ -192,7 +192,7 @@ export function practiceRounds(t: Training): PracticeRound[] {
  */
 function practiceMatch(t: Training, d: DisciplineDef, n: number, k: number): Match {
   const [a, b] = k % 2 ? [t.attendees[1], t.attendees[0]] : [t.attendees[0], t.attendees[1]];
-  const m: Match = { id: `practice|${n}|${a}v${b}`, block: 'league', round: n, table: 1, kind: 'singles', sideA: [a], sideB: [b], discipline: d.id, lossTax: !!d.lossTax, trackLosses: true };
+  const m: Match = { id: `practice|${n}|${a}v${b}`, block: 'league', round: n, table: 1, kind: 'singles', sideA: [a], sideB: [b], discipline: d.id, lossTax: !!d.lossTax, trackLosses: !!d.lossTax };
   if (d.wall) m.wall = 'A';
   if (d.start) m.start = d.start;
   return withFormat(m, formatOf(t.matchFormats, d.id));

@@ -229,7 +229,8 @@ export function MatchTimeline({ match: m, events, from, to, names }: { match: Ma
   const view = useTimelineView();
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
   const sim = setScores(m);
-  const p = matchProgress(events, from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
+  // Ztráty jen u Daně za ztrátu (18. 11. 2026); starší ťuknuté ztráty jinde se nezobrazují.
+  const p = matchProgress(m.trackLosses ? events : events.filter((e) => e.kind !== 'loss'), from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
   const props = { p, nameA: nm(m.sideA), nameB: nm(m.sideB), unit: sim ? ('set' as const) : ('gól' as const) };
   return (
     <>

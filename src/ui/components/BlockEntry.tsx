@@ -291,10 +291,11 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   onScore={onScore}
                   timelineOpen={timelineOpen}
                 />
-                {m.block === 'league' && (
+                {m.block === 'league' && (m.trackLosses || m.referee) && (
                   <p className="entry-ref">
-                    {m.lossTax ? 'Daň za ztrátu: ztráta se hned počítá jako gól soupeře. ' : ''}
-                    {m.referee ? `Rozhodčí: ${names[m.referee] ?? '?'}, čárkuje ztráty` : 'Bez rozhodčího, ztráty zapisují hráči'}
+                    {m.trackLosses
+                      ? `Daň za ztrátu: ztráta se hned počítá jako gól soupeře. ${m.referee ? `Rozhodčí: ${names[m.referee] ?? '?'}, čárkuje ztráty` : 'Bez rozhodčího, ztráty zapisují hráči'}`
+                      : `Rozhodčí: ${names[m.referee!] ?? '?'}`}
                   </p>
                 )}
               </div>

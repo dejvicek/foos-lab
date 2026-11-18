@@ -313,7 +313,7 @@ describe('stránka Disciplíny', () => {
     await user.type(within(form).getByRole('textbox', { name: 'Název' }), 'Krátký');
     await user.selectOptions(within(form).getByRole('combobox', { name: 'Délka' }), '60');
     expect(status()).toMatch(/Naplánováno \d:\d\d z 1:00.*přes o/);
-    for (const name of ['Penalta z místa proti brankáři', 'Zeď', 'Start 0:3 + daň', 'Start 5:5, o 2 góly, strop 10', 'Jedničky', 'Simulace ligového kola'])
+    for (const name of ['Penalta z místa proti brankáři', 'Zeď', 'Start 0:3', 'Start 5:5, o 2 góly, strop 10', 'Jedničky', 'Simulace ligového kola'])
       await user.click(within(form).getByRole('checkbox', { name }));
     // 8 hráčů / 4 stoly, z doby míčku: Přihrávky 15 + Udržení 15 (20 s × 40) + Normální 9 + Daň 9 (40 s × 11) + 4:4 3 = 51; nic se nedoplňuje
     expect(status()).toBe('Naplánováno 0:51 z 1:00zbývá 9 min');

@@ -40,7 +40,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               <em>Zbytek pohlídá appka.</em>
             </h1>
             <p className="g-lead">
-              Foos Lab ti řekne, u kterého stolu hraješ, s kým a proti komu. Skóre a ztráty zapisuješ ťuknutím přímo u stolu a po tréninku vidíš, jak jsi
+              Foos Lab ti řekne, u kterého stolu hraješ, s kým a proti komu. Skóre zapisuješ ťuknutím přímo u stolu a po tréninku vidíš, jak jsi
               na tom v žebříčku.
             </p>
             <div className="g-facts">
@@ -89,7 +89,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Červená tečka</b> u Moje hry znamená, že jsi na řadě. Volný stůl i hráči jsou připravení.
               </Li>
               <Li i="Z">
-                U kola uvidíš <b>pravidlo</b> (Zeď, Daň za ztrátu, start 0:3 …) a svoji <b>roli</b>: s kým a proti komu hraješ, nebo že jsi rozhodčí u stolu.
+                U kola uvidíš <b>pravidlo</b> (Zeď, Daň za ztrátu, Start 0:3 …) a svoji <b>roli</b>: s kým a proti komu hraješ, nebo že jsi rozhodčí u stolu.
                 Pravidla vysvětluje krok 6.
               </Li>
               <Li i="–">
@@ -113,7 +113,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Připraven</b>Jakmile tvoje strana stojí u stolu. Až jsou připravení oba týmy, rozjedou se stopky.
               </div>
               <div>
-                <b>Ťukat</b>Góly a ztráty, kdo z vás zrovna má ruku volnou.
+                <b>Ťukat</b>Góly (v Dani za ztrátu i ztráty), kdo z vás zrovna má ruku volnou.
               </div>
               <div>
                 <b>Potvrdit konec</b>Hned, nebo samo po 15 s.
@@ -163,7 +163,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="D">
-                <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám.
+                <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám. Jen tady se zapisují ztráty a u stolu je vždy rozhodčí.
               </Li>
               <Li i="Z">
                 <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“, soupeř
@@ -178,8 +178,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 (BO5, pátý o 2 góly, nejvýš do 8). Ťukají se góly v každém legu, ztráty se nezapisují.
               </Li>
               <Li i="R">
-                <b>Rozhodčí</b> je ten, kdo v kole nehraje: čárkuje ztráty, hlídá Zeď a čas a rozhoduje sporné ztráty. Bez rozhodčího si ztráty zapisují
-                hráči sami.
+                <b>Rozhodčí</b> je ten, kdo v kole nehraje: hlídá Zeď a čas. <b>Daň za ztrátu</b> má rozhodčího u každého stolu vždy – čárkuje ztráty
+                a rozhoduje sporné. Ztráty se zapisují jen v Dani.
               </Li>
               <Li i="▤">
                 Celá pravidla kol i cvičení najdeš v záložce <b>Disciplíny</b>.
@@ -469,9 +469,11 @@ function Phone({ time, title, sub, tab, dot, label, fixed, children }: { time: s
 }
 
 /* ── Ukázka: zápis legu (zrcadlo stolu) ── */
-type Scen = 'normal' | 's44' | 's55';
+type Scen = 'normal' | 'tax' | 's44' | 's55';
 const SCEN: Record<Scen, { a: number; b: number; rule: string; label: string }> = {
   normal: { a: 0, b: 0, rule: 'Normální leg · do 6 gólů', label: 'Normální leg' },
+  // Ztráty jen v Dani za ztrátu (18. 11. 2026): ztráta = gól soupeře, u stolu rozhodčí.
+  tax: { a: 0, b: 0, rule: 'Daň za ztrátu · ztráta = gól soupeře', label: 'Daň' },
   s44: { a: 4, b: 4, rule: 'Start 4:4 · do 6 gólů', label: 'Start 4:4' },
   s55: { a: 5, b: 5, rule: 'Start 5:5 · o 2 góly, strop 10', label: 'Start 5:5' },
 };
@@ -501,9 +503,13 @@ function MirrorDemo() {
     return () => clearTimeout(t);
   }, [locked, confirmed, left]);
   const reset = (s: Scen) => (setScen(s), setM(fresh(s)), setHist([]), setLocked(false), setConfirmed(false), setLeft(END_WAIT));
+  const tax = scen === 'tax';
+  // Daň: ztráta strany je hned gól soupeře.
+  const taxed = (k: Key): Key | null => (tax ? (k === 'la' ? 'b' : k === 'lb' ? 'a' : null) : null);
   const tap = (k: Key) => {
     if (locked) return;
-    const next = { ...m, [k]: m[k] + 1 };
+    const g = taxed(k);
+    const next = { ...m, [k]: m[k] + 1, ...(g ? { [g]: m[g] + 1 } : {}) };
     setM(next);
     setHist([...hist, k]);
     if (legDone(scen, next.a, next.b)) setLocked(true);
@@ -511,7 +517,8 @@ function MirrorDemo() {
   const undo = () => {
     const k = hist.at(-1);
     if (!k) return;
-    setM({ ...m, [k]: m[k] - 1 });
+    const g = taxed(k);
+    setM({ ...m, [k]: m[k] - 1, ...(g ? { [g]: m[g] - 1 } : {}) });
     setHist(hist.slice(0, -1));
     setLocked(false);
     setConfirmed(false);
@@ -537,9 +544,11 @@ function MirrorDemo() {
             <b>{m.a}</b>
             <small>+1 gól</small>
           </button>
-          <button type="button" className="g-loss" aria-label="Ztráta vlevo" disabled={locked} onClick={() => tap('la')}>
-            +1 ztráta<b>{m.la}</b>
-          </button>
+          {tax && (
+            <button type="button" className="g-loss" aria-label="Ztráta vlevo" disabled={locked} onClick={() => tap('la')}>
+              +1 ztráta<b>{m.la}</b>
+            </button>
+          )}
         </div>
         <div className="g-side g-r">
           <div className="g-who">
@@ -551,9 +560,11 @@ function MirrorDemo() {
             <b>{m.b}</b>
             <small>+1 gól</small>
           </button>
-          <button type="button" className="g-loss" aria-label="Ztráta vpravo" disabled={locked} onClick={() => tap('lb')}>
-            +1 ztráta<b>{m.lb}</b>
-          </button>
+          {tax && (
+            <button type="button" className="g-loss" aria-label="Ztráta vpravo" disabled={locked} onClick={() => tap('lb')}>
+              +1 ztráta<b>{m.lb}</b>
+            </button>
+          )}
         </div>
       </div>
       {locked && (
@@ -721,10 +732,10 @@ function MyGamesPhone() {
           <span>potom</span>
         </span>
         <span className="g-vs" style={{ fontSize: 13 }}>
-          Rozhodčí: Luky + Ondra <span>proti</span> David K + Lavi
+          Luky + Ondra <span>proti</span> David K + Lavi
         </span>
         <span>
-          <span className="g-pill g-red">rozhodčí</span> čárkuješ ztráty
+          <span className="g-pill g-red">rozhodčí</span> Daň za ztrátu – čárkuješ ztráty
         </span>
       </div>
     </Phone>
@@ -732,25 +743,21 @@ function MyGamesPhone() {
 }
 
 function FinishPhone() {
-  const side = (cls: string, who: string, goals: number, losses: number) => (
+  // 3. kolo je Zeď – ztráty se zapisují jen v Dani (18. 11. 2026).
+  const side = (cls: string, who: string, goals: number) => (
     <div className={`g-side ${cls}`}>
       <div className="g-who">{who}</div>
       <div className="g-goal" style={{ minHeight: 120 }}>
         <b>{goals}</b>
         <small>gólů</small>
       </div>
-      <div className="g-loss" style={{ display: 'grid', placeItems: 'center' }}>
-        <span>
-          ztráty <b>{losses}</b>
-        </span>
-      </div>
     </div>
   );
   return (
     <Phone time="18:51" title="3. kolo · stůl 2" sub="hraje se 7:12">
       <div className="g-mirror" style={{ flex: 'none' }}>
-        {side('g-l', 'Dejv + Milan', 6, 2)}
-        {side('g-r', 'Osky + Denys', 4, 3)}
+        {side('g-l', 'Dejv + Milan', 6)}
+        {side('g-r', 'Osky + Denys', 4)}
       </div>
       <div className="g-done">Leg dohrán 6:4 · skončí samo za 12 s</div>
       <span className="g-bigbtn">Potvrdit konec</span>

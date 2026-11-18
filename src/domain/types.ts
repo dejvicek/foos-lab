@@ -137,7 +137,7 @@ export interface Match {
   sideB: PlayerId[];
   /** Rozhodčí u stolu (čekající hráči popořadě ke stolům 1, 2, …). */
   referee?: PlayerId;
-  /** Zapisují se ztráty: jen mimo Daň a jen u stolu s rozhodčím. */
+  /** Zapisují se ztráty: jen v Dani za ztrátu (18. 11. 2026); starší tréninky se srovnají v buildSchedule. */
   trackLosses?: boolean;
   /** Kolo s Daní za ztrátu. */
   lossTax?: boolean;

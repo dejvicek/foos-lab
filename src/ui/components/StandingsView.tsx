@@ -63,7 +63,7 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
             </table>
           </div>
           <p className="note">
-            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty na leg se počítají jen z legů, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Ze simulace kola se počítají vyhrané zápasy, ne góly.
+            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty na leg se počítají jen z legů Daně za ztrátu, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Ze simulace kola se počítají vyhrané zápasy, ne góly.
           </p>
         </>
       )}
