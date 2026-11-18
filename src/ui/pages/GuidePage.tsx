@@ -173,8 +173,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 odehrané góly. Ze 5:5 se hraje o 2 góly, nejvýš do 10.
               </Li>
               <Li i="S">
-                <b>Simulace</b> ligového kola: dva týmy, zápas na dva vítězné sety (do 6, třetí o 2 góly, nejvýš do 10). Ťukají se vyhrané sety, ztráty se
-                nezapisují.
+                <b>Simulace</b> ligového kola: dva týmy, zápas na dva vítězné legy do 6 (BO3, třetí o 2 góly, nejvýš do 10), nebo na tři vítězné do 5
+                (BO5, pátý o 2 góly, nejvýš do 10). Ťukají se góly v každém legu, ztráty se nezapisují.
               </Li>
               <Li i="R">
                 <b>Rozhodčí</b> je ten, kdo v kole nehraje: čárkuje ztráty, hlídá Zeď a čas a rozhoduje sporné ztráty. Bez rozhodčího si ztráty zapisují
@@ -662,7 +662,7 @@ function RulesPhone() {
     ['Start 0:3', 'levá začíná pozadu'],
     ['Start 4:4', 'do 6 gólů'],
     ['Start 5:5', 'o 2 góly, nejvýš 10'],
-    ['Simulace', '2 vítězné sety'],
+    ['Simulace', 'BO3 do 6 / BO5 do 5'],
   ];
   return (
     <Phone time="18:30" title="Disciplíny" sub="zápasy · pravidla kol" tab="disciplines">

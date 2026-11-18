@@ -4,7 +4,7 @@ import { explanationsFor, explanationTitle } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
 import { soloKey, soloMetric, type SoloMetricDef } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
-import { tableScore } from '../../domain/legState';
+import { setScores, tableScore } from '../../domain/legState';
 import { legIds, matchState } from '../../domain/matchFormat';
 import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { ScorePicker } from './ScorePicker';
@@ -267,7 +267,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
               <div key={j} className="entry-card" role="group" aria-label={label}>
                 <div className="entry-head">
                   Stůl {j + 1}, {m.kind === 'doubles' ? 'dvojice' : 'singl'}
-                  {m.block === 'sim' && ', sety'}
+                  {setScores(m) && ', sety'}
                 </div>
                 <span className="visually-hidden">
                   {nm(m.sideA)} vs {nm(m.sideB)}

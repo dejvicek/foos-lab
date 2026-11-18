@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { drillTimeline, leader, matchProgress, type DrillRow, type MatchProgress } from '../../domain/timeline';
+import { setScores } from '../../domain/legState';
 import type { GameEvent, Match, PlayerId } from '../../domain/types';
 import { loadTimelineView, saveTimelineView, subscribeTimelineView, type TimelineView } from '../../storage/prefs';
 import { fmtDur } from '../queue';
@@ -223,11 +224,11 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
   );
 }
 
-/** Zápas (PRD 4.9): přepínač Sloupec / Křivka. U simulace jsou „góly“ sety. */
+/** Zápas (PRD 4.9): přepínač Sloupec / Křivka. U starší simulace jsou „góly“ sety. */
 export function MatchTimeline({ match: m, events, from, to, names }: { match: Match; events: GameEvent[]; from: number; to: number; names: Record<PlayerId, string> }) {
   const view = useTimelineView();
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
-  const sim = m.block === 'sim';
+  const sim = setScores(m);
   const p = matchProgress(events, from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
   const props = { p, nameA: nm(m.sideA), nameB: nm(m.sideB), unit: sim ? ('set' as const) : ('gól' as const) };
   return (

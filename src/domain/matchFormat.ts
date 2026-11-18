@@ -34,6 +34,15 @@ export const BEST_OF_OPTIONS = [1, 2, 3, 5] as const;
 
 export const DEFAULT_FORMAT: MatchFormat = { bestOf: 1, legTo: DEFAULT_LEG_TO };
 
+/**
+ * Formát simulace ligového kola (18. 11. 2026, *rozhodnutí uživatele*): zápas simulace se zapisuje po
+ * legech. BO3 do 6 (výchozí, jako ligový zápas) nebo BO5 do 5; rozhodující leg vždy o 2 se stropem 10.
+ */
+export const SIM_FORMATS: readonly MatchFormat[] = [
+  { bestOf: 3, legTo: 6, finalWinBy2: true, cap: 10 },
+  { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 10 },
+];
+
 /** Výchozí pravidla podle počtu legů (12. 11. 2026, *rozhodnutí uživatele*) – nastaví se při volbě BO. */
 const BO_DEFAULTS: Record<number, Omit<MatchFormat, 'bestOf'>> = {
   1: { legTo: 6 },
@@ -56,6 +65,7 @@ export const minLegTo = (id: DisciplineId): number => Math.max(1, ...(discipline
 
 /** Platný formát (meze, celá čísla); nesmyslné hodnoty → nejbližší platné. */
 export function normalizeFormat(id: DisciplineId, f: Partial<MatchFormat> | undefined): MatchFormat {
+  if (discipline(id)?.kind === 'sim') return { ...(SIM_FORMATS.find((x) => x.bestOf === f?.bestOf) ?? SIM_FORMATS[0]) };
   const clamp = (v: unknown, lo: number, hi: number, def: number) => {
     const n = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : def;
     return Math.min(hi, Math.max(lo, n));
@@ -70,18 +80,19 @@ export function normalizeFormat(id: DisciplineId, f: Partial<MatchFormat> | unde
   return { bestOf, legTo, finalWinBy2: true, cap: clamp(f.cap, legTo + 1, MAX_CAP, Math.max(DEFAULT_CAP, legTo + 1)) };
 }
 
-/** Formát disciplíny v tréninku / šabloně; bez nastavení BO1 do 6. */
+/** Formát disciplíny v tréninku / šabloně; bez nastavení BO1 do 6 (simulace BO3 do 6). */
 export const formatOf = (formats: MatchFormats | null | undefined, id: DisciplineId): MatchFormat => normalizeFormat(id, formats?.[id]);
 
 export const isDefaultFormat = (f: MatchFormat): boolean => f.bestOf === 1 && f.legTo === DEFAULT_LEG_TO && !f.finalWinBy2;
 
-/** Jen nevýchozí formáty zápasových disciplín (co se ukládá). */
+/** Jen nevýchozí formáty zápasových disciplín a simulace (co se ukládá). */
 export function cleanFormats(formats: MatchFormats | null | undefined): MatchFormats | undefined {
   const out: MatchFormats = {};
   for (const [id, f] of Object.entries(formats ?? {}) as [DisciplineId, MatchFormat][]) {
-    if (discipline(id)?.kind !== 'match') continue;
+    const kind = discipline(id)?.kind;
+    if (kind !== 'match' && kind !== 'sim') continue;
     const n = normalizeFormat(id, f);
-    if (!isDefaultFormat(n)) out[id] = n;
+    if (kind === 'sim' ? n.bestOf !== SIM_FORMATS[0].bestOf : !isDefaultFormat(n)) out[id] = n;
   }
   return Object.keys(out).length ? out : undefined;
 }
@@ -96,8 +107,8 @@ export function formatLabel(f: MatchFormat): string {
 }
 
 /**
- * Délky kol pro časy: zápas s BO trvá délka legu × nejvyšší počet legů. Ostatní disciplíny beze
- * změny (chybějící délka zůstává chybějící, ať platí výchozí z kódu).
+ * Délky kol pro časy: zápas s BO trvá délka legu × nejvyšší počet legů. Ostatní disciplíny (i simulace,
+ * ta má pevné vlny) beze změny (chybějící délka zůstává chybějící, ať platí výchozí z kódu).
  */
 export function formatMins(mins: DisciplineMins | null | undefined, formats: MatchFormats | null | undefined): DisciplineMins | null | undefined {
   const scaled = Object.entries(formats ?? {}).filter(([id]) => discipline(id as DisciplineId)?.kind === 'match');

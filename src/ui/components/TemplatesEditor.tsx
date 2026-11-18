@@ -284,7 +284,7 @@ export function TemplatesEditor({
                             <input type="checkbox" checked onChange={() => remove(id)} />
                             <span>{d.name}</span>
                           </label>
-                          {d.kind === 'match' && (
+                          {(d.kind === 'match' || d.kind === 'sim') && (
                             <MatchFormatPicker id={id} name={d.name} value={formatOf(tpl.formats, id)} onChange={(f) => setTpl({ formats: cleanFormats({ ...tpl.formats, [id]: f }) })} />
                           )}
                         </span>
@@ -295,7 +295,7 @@ export function TemplatesEditor({
                         {roundsCell(id)}
                         <MinStepper value={mins[id] ?? d.min} label={d.name} onChange={(v) => setMins((x) => ({ ...x, [id]: v }))} />
                         <span className="tpl-total">
-                          {playable(id, players) ? `${n * ((mins[id] ?? d.min) * formatOf(tpl.formats, id).bestOf + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}
+                          {playable(id, players) ? `${n * ((mins[id] ?? d.min) * (d.kind === 'match' ? formatOf(tpl.formats, id).bestOf : 1) + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}
                         </span>
                         {!brk && span && id !== lastPlayed && <GapButton name={d.name} onClick={() => setBreaks([...breaks, { after: id, min: 10 }])} />}
                         {span && endLine(span)}

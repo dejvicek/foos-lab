@@ -332,10 +332,12 @@ function DisciplineTable({
           <span>{d.name}</span>
         </label>
         {note}
-        {checked && d.kind === 'match' && (
+        {checked && (d.kind === 'match' || d.kind === 'sim') && (
           <MatchFormatPicker
             id={id}
             name={d.name}
+            // Zahájená simulace si formát nese v zamčeném kole – změna by se už neprojevila.
+            disabled={d.kind === 'sim' && (locked[id] ?? 0) > 0}
             value={formatOf(t.matchFormats, id)}
             onChange={(f) => onChange({ ...t, matchFormats: cleanFormats({ ...t.matchFormats, [id]: f }) ?? null })}
           />

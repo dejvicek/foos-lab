@@ -48,7 +48,7 @@ export const leader = ([a, b]: [number, number]): 'A' | 'B' | null => (a > b ? '
 
 /**
  * Zápas (PRD 4.9, Sloupec / Křivka): góly a ztráty obou stran v jednom pořadí se stavem skóre po každé události.
- * U simulace jsou „góly“ vyhrané sety.
+ * U starší simulace (v setech) jsou „góly“ vyhrané sety.
  */
 export function matchProgress(events: GameEvent[], from: number, to: number, initial: [number, number] = [0, 0]): MatchProgress {
   const list = effectiveEvents(events).filter((e) => (e.kind === 'goal' || e.kind === 'loss') && (e.side === 'A' || e.side === 'B'));

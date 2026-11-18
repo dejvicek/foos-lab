@@ -7,4 +7,6 @@
 // 2 (11. 11. 2026): vlastní trénink (format 'practice', migrace 26) – starší verze by ho brala jako klasický trénink.
 // 3 (11. 11. 2026): 20 pokusů místo 10 a Čistá desítka (migrace 27) – starší verze by s plným počtem 10
 //   zapisovaly jinak a výsledky na čas by ukazovala jako počty.
-export const COMPAT = 3;
+// 4 (18. 11. 2026): simulace ligového kola po legech (BO3 do 6 / BO5 do 5) – starší verze by do legu 1
+//   zapisovala sety a formát BO5 by při uložení tréninku smazala.
+export const COMPAT = 4;

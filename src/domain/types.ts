@@ -12,7 +12,7 @@ export interface Player {
   organizer?: boolean;
 }
 
-/** Skóre zápasu: ga/gb góly (u simulace sety 0..2), la/lb ztráty. */
+/** Skóre zápasu: ga/gb góly (u starší simulace bez BO formátu sety 0..2), la/lb ztráty. */
 export interface Score {
   ga?: number | null;
   gb?: number | null;

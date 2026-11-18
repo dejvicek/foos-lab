@@ -143,26 +143,31 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         const sim = simulateTeams(teams.A, teams.B, t.tables);
         simDoubles = sim.wave1.doubles + sim.wave2.doubles;
         simSingles = sim.wave1.singles + sim.wave2.singles;
+        // Zápasy simulace po legech ve formátu tréninku (18. 11. 2026); zamčené kolo si nese svůj (starší v setech).
+        const fmt = formatOf(t.matchFormats, 'sim');
         simRows = [sim.wave1, sim.wave2].map((w, wi) => ({
           roundNo,
           discipline: 'sim' as const,
           time: item.start + wi * SIM_WAVE_MIN,
           label: `${wi + 1}. vlna`,
-          rule: `${SIM_WAVE_MIN} min, ligový formát`,
+          rule: `${SIM_WAVE_MIN} min, ${formatLabel(fmt)}`,
           kind: 'matches' as const,
           cells: cellsOf(
             w.matches.map((p, j) => ({
               type: 'match' as const,
-              match: {
-                id: matchId('sim', wi + 1, j + 1, p.a, p.b),
-                block: 'sim' as const,
-                round: wi + 1,
-                table: j + 1,
-                kind: p.kind,
-                sideA: p.a,
-                sideB: p.b,
-                discipline: 'sim' as const,
-              },
+              match: withFormat(
+                {
+                  id: matchId('sim', wi + 1, j + 1, p.a, p.b),
+                  block: 'sim' as const,
+                  round: wi + 1,
+                  table: j + 1,
+                  kind: p.kind,
+                  sideA: p.a,
+                  sideB: p.b,
+                  discipline: 'sim' as const,
+                },
+                fmt,
+              ),
             })),
             tables,
           ),

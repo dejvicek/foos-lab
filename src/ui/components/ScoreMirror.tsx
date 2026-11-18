@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { bumpLimit, legOver, tableScore, taxGoal } from '../../domain/legState';
+import { bumpLimit, legOver, setScores, tableScore, taxGoal } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
 import { drillCount, type DrillValue } from '../../domain/drillTap';
 import { streakTime, streakTimeUp, type StreakState } from '../../domain/streak';
@@ -23,14 +23,14 @@ interface Props {
 
 /**
  * PRD 7.1 „Zrcadlo stolu“: levá a pravá polovina jako u stolu.
- * Ťuknutí do velkého pole = +1 gól (v simulaci set), červené pole = +1 ztráta.
+ * Ťuknutí do velkého pole = +1 gól (ve starší simulaci set), červené pole = +1 ztráta.
  */
 export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note }: Props) {
   // Jedno ťuknutí může změnit víc polí (Daň: ztráta + gól soupeře); Zpět vrací celé ťuknutí.
   const [undo, setUndo] = useState<(keyof Score)[][]>([]);
   const [editing, setEditing] = useState(false);
   const s = score ?? {};
-  const sim = m.block === 'sim';
+  const sim = setScores(m); // starší simulace v setech
   const shown = sim ? [s.ga ?? 0, s.gb ?? 0] : tableScore(m, s);
   const { over } = legOver(m, s);
   const locked = disabled || (over && !editing);
