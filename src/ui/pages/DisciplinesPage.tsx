@@ -564,7 +564,7 @@ function GoalField({ id, name, value, real, onChange }: { id: DisciplineId; name
           ) : (
             `Doba gólu musí být ${MIN_GOAL_SEC}–${MAX_GOAL_SEC} s.`
           )}{' '}
-          Prázdné = výchozí {DEFAULT_GOAL_SEC} s (celkový průměr všech disciplín). Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš.
+          Prázdné = výchozí {DEFAULT_GOAL_SEC} s (stejná pro všechny disciplíny). Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš.
         </p>
         <p className="note" aria-label="Reálná doba gólu">
           Reálně (od prvního gólu do ukončení utkání / góly):{' '}

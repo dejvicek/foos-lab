@@ -205,8 +205,8 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(screen.getByRole('group', { name: 'Formát: Goalie war' })).getByRole('checkbox', { name: 'rozhodující leg o 2' })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'Strop: Goalie war' })).toHaveValue('10');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Gólů na leg: Goalie war' }), '5');
-    // doba gólu 37 s × nejvíc 9 + 9 + 19 gólů = 23 min
-    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:23');
+    // doba gólu 40 s × nejvíc 9 + 9 + 19 gólů = 25 min
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('0:25');
     await user.click(screen.getByRole('button', { name: 'Začít vlastní trénink' }));
 
     const round = screen.getByRole('region', { name: '1. kolo' });
@@ -262,7 +262,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(screen.getByRole('list', { name: 'Pořadí cvičení' })).getAllByRole('listitem').map((li) => li.querySelector('.po-name')!.firstChild!.textContent)).toEqual([
       'Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky',
     ]);
-    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:01'); // zápasy z doby gólu (7 min)
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:03'); // zápasy z doby gólu (8 min)
     await user.click(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('checkbox', { name: /^Řetězec/ }));
     expect(ticked()).not.toContain('Řetězec');
     await user.click(screen.getByRole('button', { name: 'Výchozí' }));

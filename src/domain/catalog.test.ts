@@ -131,15 +131,15 @@ describe('šablony tréninku (9. 11. 2026)', () => {
 
   it('šablona přesně: cvičení podle hráčů a stolů, zápasy podle počtu kol v šabloně, nic se nedoplňuje', () => {
     const t = (selection: DisciplineId[], rounds = {}) => ({ id: 'x', name: 'X', durationMin: 60, selection, rounds });
-    // 8 hráčů / 4 stoly: cvičení 1 vystřídání; Penalta (2 varianty) = 2 kola; Normální leg z doby gólu 37 s × 11 = 7 min
-    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(9 + 2 * 9 + 8);
+    // 8 hráčů / 4 stoly: cvičení 1 vystřídání; Penalta (2 varianty) = 2 kola; Normální leg z doby gólu 40 s × 11 = 8 min
+    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(9 + 2 * 9 + 9);
     expect(templateTimeline(t(['warmupPasses']), 12, 4).total).toBe(2 * 9);
-    expect(templateTimeline(t(['normal'], { normal: 3 }), 8, 4).total).toBe(3 * 8);
+    expect(templateTimeline(t(['normal'], { normal: 3 }), 8, 4).total).toBe(3 * 9);
     expect(templateTimeline(t(['warmupPasses']), 8, 4, { warmupPasses: 10 }).total).toBe(11);
     // délka zápasu se z délek kol nebere (doba gólu)
-    expect(templateTimeline(t(['normal']), 8, 4, { normal: 10 }).total).toBe(8);
+    expect(templateTimeline(t(['normal']), 8, 4, { normal: 10 }).total).toBe(9);
     // simulace pod 4 hráči se nehraje
-    expect(templateTimeline(t(['sim', 'normal']), 3, 2).total).toBe(8);
+    expect(templateTimeline(t(['sim', 'normal']), 3, 2).total).toBe(9);
     expect(templatePlan(t(['wall', 'normal', 'sim'], { normal: 2 }), 8, 4)).toEqual({ normal: 2, wall: 2, sim: 1 });
   });
 
@@ -196,7 +196,7 @@ describe('pauzy v šabloně (9. 11. 2026): po disciplíně', () => {
 
   it('šablona s pauzou: odhad ji započítá, nový trénink i použití šablony ji převezmou; víc hráčů = pauza dál za cvičeními', () => {
     const tpl = { id: 'k', name: 'Krátký', durationMin: 60, selection: ['warmupPasses', 'normal'] as DisciplineId[], breaks: [{ after: 'warmupPasses' as DisciplineId, min: 10 }] };
-    expect(templateTimeline(tpl, 8, 4).total).toBe(9 + 10 + 8);
+    expect(templateTimeline(tpl, 8, 4).total).toBe(9 + 10 + 9);
     const t = newTraining('t', '2026-11-09', null, null, tpl);
     expect(t.breaks).toEqual({ afterDisciplines: [{ after: 'warmupPasses', min: 10 }] });
     expect(breaksOf({ ...t, attendees: ['a', 'b', 'c', 'd'] })).toEqual([{ after: 1, min: 10 }]);

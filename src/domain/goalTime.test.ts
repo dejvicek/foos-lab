@@ -46,19 +46,19 @@ describe('délka kola z doby gólu', () => {
   });
 
   it('výchozí doba gólu stejná pro všechny zápasy a simulaci; v katalogu jen zápasy a simulace', () => {
-    expect(DEFAULT_GOAL_SEC).toBe(37);
+    expect(DEFAULT_GOAL_SEC).toBe(40);
     const snap = catalogGoalSec();
-    expect(snap.normal).toBe(37);
-    expect(snap.sim).toBe(37);
+    expect(snap.normal).toBe(40);
+    expect(snap.sim).toBe(40);
     expect(snap.warmupPasses).toBeUndefined();
     expect(catalogRoundMin('start44')).toBe(2);
     expect(catalogRoundMin('warmupPasses')).toBe(8); // cvičení dál z délky kola
   });
 
   it('katalog (stránka Disciplíny) počítá vždy jako BO1 do 6, i simulaci; trénink podle svého formátu', () => {
-    expect(catalogRoundMin('normal')).toBe(7);
-    expect(catalogRoundMin('start55')).toBe(6); // ze 5:5 o 2, strop 10: 9 gólů
-    expect(catalogRoundMin('sim')).toBe(2 * 7); // 2 vlny, zápas BO1 do 6 = 11 gólů
+    expect(catalogRoundMin('normal')).toBe(8); // 11 × 40 s = 440 s
+    expect(catalogRoundMin('start55')).toBe(6); // ze 5:5 o 2, strop 10: 9 gólů = 360 s
+    expect(catalogRoundMin('sim')).toBe(2 * 8); // 2 vlny, zápas BO1 do 6 = 11 gólů
     expect(roundMinutes({}, { normal: { bestOf: 3, legTo: 6 } }, { normal: 37, sim: 37 })).toMatchObject({ normal: 21, sim: 52 });
   });
 
@@ -123,7 +123,7 @@ describe('doba gólu v katalogu (admin)', () => {
   it('dřívější ruční délka kola zápasu se ignoruje a při uložení zmizí', () => {
     const data = { disciplines: { lossTax: { min: 5 } } };
     applyCatalog(data);
-    expect(catalogRoundMin('lossTax')).toBe(7);
+    expect(catalogRoundMin('lossTax')).toBe(8);
     expect(saveDiscipline(data, 'lossTax', catalogForm('lossTax', data))).toEqual({});
   });
 });

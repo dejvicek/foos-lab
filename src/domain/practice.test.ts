@@ -211,16 +211,16 @@ describe('zápasy ve dvou (12. 11. 2026)', () => {
     const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltyKeeper'], { goalieWar: { bestOf: 3, legTo: 5 } });
     const rs = practiceRounds(p);
     expect(rs.map((r) => [r.drill, r.min, r.match?.sideA.join(), r.match?.bestOf ?? null])).toEqual([
-      // doba gólu 37 s: BO3 do 5 = 3 × 9 gólů → 17 min; Zeď do 6 = 11 gólů → 7 min
-      ['goalieWar', 17, 'A', 3],
-      ['wall', 7, 'A', null],
-      ['wall', 7, 'B', null],
+      // doba gólu 40 s: BO3 do 5 = 3 × 9 gólů → 18 min; Zeď do 6 = 11 gólů → 8 min
+      ['goalieWar', 18, 'A', 3],
+      ['wall', 8, 'A', null],
+      ['wall', 8, 'B', null],
       ['penaltyKeeper', 8, undefined, null],
       ['penaltyKeeper', 8, undefined, null],
     ]);
     expect(rs[0].match).toMatchObject({ id: 'practice|1|AvB', legTo: 5, kind: 'singles' });
     expect(rs[1].match?.wall).toBe('A');
-    expect(p.durationMin).toBe(17 + 7 + 7 + 8 + 8 + 4);
+    expect(p.durationMin).toBe(18 + 8 + 8 + 8 + 8 + 4);
     expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5 } });
     expect(newPractice('q', TODAY, '18:00', 'A', null, ['goalieWar', 'penaltySolo']).disciplineOrder).toEqual(['penaltySolo']);
   });

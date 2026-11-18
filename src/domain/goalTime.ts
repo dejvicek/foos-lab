@@ -13,10 +13,10 @@ import { DEFAULT_FORMAT, formatMins, formatOf, legOf, withFormat, type MatchForm
 import type { DisciplineId, Match } from './types';
 
 /**
- * Výchozí doba gólu v sekundách: celkový průměr ze všech zápasů s průběhem (trénink 17. 11. 2026,
- * 21 zápasů, 36,8 s), bez ohledu na disciplínu.
+ * Výchozí doba gólu v sekundách, stejná pro všechny disciplíny: 40 s (18. 11. 2026, *rozhodnutí uživatele*;
+ * celkový průměr změřených zápasů z 17. 11. 2026 byl 36,8 s).
  */
-export const DEFAULT_GOAL_SEC = 37;
+export const DEFAULT_GOAL_SEC = 40;
 export const MIN_GOAL_SEC = 5;
 export const MAX_GOAL_SEC = 300;
 
