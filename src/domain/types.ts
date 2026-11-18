@@ -113,10 +113,10 @@ export interface Training {
    */
   version?: number;
   /**
-   * Doba gólu v sekundách pro zápasy a simulaci (snímek katalogu při založení / úpravě, goalTime.ts, 18. 11. 2026):
-   * délka kola = doba gólu × nejvíc gólů ve formátu. Chybí = délka kola z `disciplineMin` jako dřív.
+   * Doba míčku v sekundách pro zápasy a simulaci (snímek katalogu při založení / úpravě, goalTime.ts, 18. 11. 2026):
+   * délka kola = doba míčku × nejvíc gólů ve formátu. Chybí = délka kola z `disciplineMin` jako dřív.
    */
-  goalSec?: Partial<Record<DisciplineId, number>> | null;
+  ballSec?: Partial<Record<DisciplineId, number>> | null;
   /** BO formát zápasových disciplín (matchFormat.ts); chybí = BO1 do 6. */
   matchFormats?: Partial<Record<DisciplineId, { bestOf: number; legTo: number; finalWinBy2?: boolean; cap?: number }>> | null;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */

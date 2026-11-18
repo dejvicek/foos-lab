@@ -1,15 +1,17 @@
-import { catalogGoalSec, catalogRoundMin, catalogSimMins, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, maxGoals, roundMinutes } from './goalTime';
-import { goalAverages, goalSamples } from './goalStats';
+import { catalogBallSec, catalogRoundMin, catalogSimMins, DEFAULT_DRILL_BALL_SEC, drillBalls, drillRoundMin, DEFAULT_BALL_SEC, goalRoundMin, ballSecOf, maxGoals, roundMinutes } from './ballTime';
+import { ballAverages, ballSamples } from './ballStats';
 import { applyCatalog, catalogForm, saveDiscipline, validateDisciplineForm } from './catalog';
 import { formatOf, legId, SIM_FORMATS } from './matchFormat';
 import { buildSchedule } from './schedule';
 import { newTraining } from './training';
+import { newPractice } from './practice';
+import { drillItemId } from './queue';
 import type { DisciplineId, Training } from './types';
 import { H } from '../test/fixtures';
 
 /**
- * Délka kola z doby gólu (18. 11. 2026, *rozhodnutí uživatele*): doba gólu × nejvíc možných gólů ve
- * formátu, nahoru na celé minuty. Výchozí doba gólu stejná pro všechny disciplíny, admin ji přepíše.
+ * Délka kola z doby míčku (18. 11. 2026, *rozhodnutí uživatele*): doba míčku × nejvíc možných gólů ve
+ * formátu, nahoru na celé minuty. Výchozí doba míčku stejná pro všechny disciplíny, admin ji přepíše.
  */
 describe('nejvíc možných gólů', () => {
   const one = (id: DisciplineId) => maxGoals(id, formatOf(null, id));
@@ -35,7 +37,7 @@ describe('nejvíc možných gólů', () => {
   });
 });
 
-describe('délka kola z doby gólu', () => {
+describe('délka kola z doby míčku', () => {
   it('nahoru na celé minuty, aspoň 1; simulace = 2 vlny', () => {
     expect(goalRoundMin('normal', formatOf(null, 'normal'), 37)).toBe(7); // 407 s
     expect(goalRoundMin('start45', formatOf(null, 'start45'), 30)).toBe(1); // 60 s
@@ -45,14 +47,32 @@ describe('délka kola z doby gólu', () => {
     expect(goalRoundMin('sim', SIM_FORMATS[1], 37)).toBe(2 * 32); // 1887 s na vlnu
   });
 
-  it('výchozí doba gólu stejná pro všechny zápasy a simulaci; v katalogu jen zápasy a simulace', () => {
-    expect(DEFAULT_GOAL_SEC).toBe(40);
-    const snap = catalogGoalSec();
+  it('výchozí doba míčku: zápasy a simulace 40 s, cvičení s pokusy 20 s; Rozcvička a Čistá desítka bez ní', () => {
+    expect(DEFAULT_BALL_SEC).toBe(40);
+    expect(DEFAULT_DRILL_BALL_SEC).toBe(20);
+    const snap = catalogBallSec();
     expect(snap.normal).toBe(40);
     expect(snap.sim).toBe(40);
-    expect(snap.warmupPasses).toBeUndefined();
+    expect(snap.warmupPasses).toBe(20);
+    expect(snap.penaltySolo).toBe(20);
+    expect(snap.warmup).toBeUndefined();
+    expect(snap.streakShot3).toBeUndefined();
     expect(catalogRoundMin('start44')).toBe(2);
-    expect(catalogRoundMin('warmupPasses')).toBe(8); // cvičení dál z délky kola
+    expect(catalogRoundMin('warmup')).toBe(9);
+    expect(catalogRoundMin('streakShot3')).toBe(10);
+  });
+
+  it('cvičení: míčky v kole = pokusy hráče, ve dvojici (s bránícím soupeřem) každý svůj počet', () => {
+    expect(drillBalls('warmupPasses')).toBe(40);
+    expect(drillBalls('fiveBarControl')).toBe(40); // 2 × 20 sérií
+    expect(drillBalls('chain')).toBe(40);
+    expect(drillBalls('penaltySolo')).toBe(20);
+    expect(drillBalls('passWallLane')).toBe(20);
+    expect(drillBalls('warmup')).toBe(0);
+    expect(drillBalls('streakShot3')).toBe(0);
+    expect(drillRoundMin('warmupPasses', 20)).toBe(14); // 800 s
+    expect(drillRoundMin('penaltySolo', 20)).toBe(7); // 400 s
+    expect(roundMinutes({ warmupPasses: 8, warmup: 9 }, null, { warmupPasses: 15 })).toEqual({ warmupPasses: 10, warmup: 9 });
   });
 
   it('katalog (stránka Disciplíny) počítá zápasy jako BO1 do 6, simulaci v obou jejích formátech; trénink podle svého formátu', () => {
@@ -67,17 +87,17 @@ describe('délka kola z doby gólu', () => {
     expect(roundMinutes({}, { normal: { bestOf: 3, legTo: 6 } }, { normal: 37, sim: 37 })).toMatchObject({ normal: 21, sim: 52 });
   });
 
-  it('roundMinutes: s dobou gólu z gólů; bez ní jako dřív (délka legu × legy, simulace beze změny)', () => {
+  it('roundMinutes: s dobou míčku z gólů; bez ní jako dřív (délka legu × legy, simulace beze změny)', () => {
     const mins = { normal: 8, sim: 40, warmupPasses: 8 };
     const formats = { normal: { bestOf: 2, legTo: 6 } };
     expect(roundMinutes(mins, formats, null)).toEqual({ normal: 16, sim: 40, warmupPasses: 8 });
     expect(roundMinutes(mins, formats, { normal: 37, sim: 37 })).toEqual({ normal: 14, sim: 52, warmupPasses: 8 });
-    // neplatná doba gólu se ignoruje
+    // neplatná doba míčku se ignoruje
     expect(roundMinutes(mins, null, { normal: 0 })).toEqual(mins);
   });
 });
 
-describe('trénink s dobou gólu', () => {
+describe('trénink s dobou míčku', () => {
   const base = (over: Partial<Training> = {}): Training => ({
     id: 't', date: '2026-11-18', startTime: '18:00', mode: 'team', tables: 4, attendees: H(8), scores: {}, soloResults: {},
     simSplit: 'order', simTeams: null, format: 'custom', durationMin: 180, plan: { normal: 1, start44: 1, sim: 1 }, lockedRounds: [], breaks: [],
@@ -85,44 +105,46 @@ describe('trénink s dobou gólu', () => {
   });
   const rows = (t: Training) => buildSchedule(t).sections.flatMap((s) => s.rows).filter((r) => r.kind !== 'break');
 
-  it('nový trénink si uloží doby gólů z katalogu', () => {
-    expect(newTraining('t', '2026-11-18', null).goalSec).toEqual(catalogGoalSec());
+  it('nový trénink si uloží doby míčků z katalogu', () => {
+    expect(newTraining('t', '2026-11-18', null).ballSec).toEqual(catalogBallSec());
   });
 
   it('časy kol z gólů; vlny simulace po polovině kola', () => {
-    const r = rows(base({ goalSec: { normal: 37, start44: 37, sim: 37 } }));
+    const r = rows(base({ ballSec: { normal: 37, start44: 37, sim: 37 } }));
     expect(r.map((x) => [x.label, x.time])).toEqual([['1. kolo', 0], ['2. kolo', 8], ['1. vlna', 11], ['2. vlna', 37]]);
     expect(r[0].rule).toBe('Normální leg, 7 min');
     expect(r[1].rule).toBe('Start 4:4, 2 min');
     expect(r[2].rule).toMatch(/^26 min, BO3/);
   });
 
-  it('starší trénink bez doby gólu má časy jako dřív', () => {
+  it('starší trénink bez doby míčku má časy jako dřív', () => {
     const r = rows(base());
     expect(r.map((x) => [x.label, x.time])).toEqual([['1. kolo', 0], ['2. kolo', 9], ['1. vlna', 15], ['2. vlna', 35]]);
     expect(r[2].rule).toMatch(/^20 min, BO3/);
   });
 });
 
-describe('doba gólu v katalogu (admin)', () => {
-  it('admin zadá dobu gólu u zápasu; délka kola se z ní spočítá; prázdná = výchozí', () => {
+describe('doba míčku v katalogu (admin)', () => {
+  it('admin zadá dobu míčku u zápasu; délka kola se z ní spočítá; prázdná = výchozí', () => {
     const f = catalogForm('start55');
-    expect(f.goalSec).toBeNull();
-    const data = saveDiscipline({}, 'start55', { ...f, goalSec: 30 });
-    expect(data).toEqual({ disciplines: { start55: { goalSec: 30 } } });
+    expect(f.ballSec).toBeNull();
+    const data = saveDiscipline({}, 'start55', { ...f, ballSec: 30 });
+    expect(data).toEqual({ disciplines: { start55: { ballSec: 30 } } });
     applyCatalog(data);
-    expect(goalSecOf('start55')).toBe(30);
-    expect(goalSecOf('normal')).toBe(DEFAULT_GOAL_SEC);
+    expect(ballSecOf('start55')).toBe(30);
+    expect(ballSecOf('normal')).toBe(DEFAULT_BALL_SEC);
     expect(catalogRoundMin('start55')).toBe(5); // 9 × 30 s = 270 s
-    expect(catalogForm('start55', data).goalSec).toBe(30);
-    expect(saveDiscipline(data, 'start55', { ...catalogForm('start55', data), goalSec: null })).toEqual({});
+    expect(catalogForm('start55', data).ballSec).toBe(30);
+    expect(saveDiscipline(data, 'start55', { ...catalogForm('start55', data), ballSec: null })).toEqual({});
   });
 
-  it('kontrola: 5–300 celých sekund; u cvičení se doba gólu neukládá', () => {
-    expect(validateDisciplineForm({ ...catalogForm('normal'), goalSec: 4 })).toBe('Doba gólu musí být 5–300 s (celé sekundy).');
-    expect(validateDisciplineForm({ ...catalogForm('normal'), goalSec: 30.5 })).toBe('Doba gólu musí být 5–300 s (celé sekundy).');
-    expect(validateDisciplineForm({ ...catalogForm('normal'), goalSec: 300 })).toBeNull();
-    expect(saveDiscipline({}, 'warmupPasses', { ...catalogForm('warmupPasses'), goalSec: 30 })).toEqual({});
+  it('kontrola: 5–300 celých sekund; u Rozcvičky a Čisté desítky se doba míčku neukládá', () => {
+    expect(validateDisciplineForm({ ...catalogForm('normal'), ballSec: 4 })).toBe('Doba míčku musí být 5–300 s (celé sekundy).');
+    expect(validateDisciplineForm({ ...catalogForm('normal'), ballSec: 30.5 })).toBe('Doba míčku musí být 5–300 s (celé sekundy).');
+    expect(validateDisciplineForm({ ...catalogForm('normal'), ballSec: 300 })).toBeNull();
+    expect(saveDiscipline({}, 'warmup', { ...catalogForm('warmup'), ballSec: 30 })).toEqual({});
+    expect(saveDiscipline({}, 'streakShot3', { ...catalogForm('streakShot3'), ballSec: 30 })).toEqual({});
+    expect(saveDiscipline({}, 'warmupPasses', { ...catalogForm('warmupPasses'), ballSec: 30 })).toEqual({ disciplines: { warmupPasses: { ballSec: 30 } } });
   });
 
   it('dřívější ruční délka kola zápasu se ignoruje a při uložení zmizí', () => {
@@ -133,7 +155,7 @@ describe('doba gólu v katalogu (admin)', () => {
   });
 });
 
-describe('reálná doba gólu z průběhu her', () => {
+describe('reálná doba míčku z průběhu her', () => {
   const T0 = Date.UTC(2026, 10, 17, 17, 0);
   const s = (sec: number) => T0 + sec * 1000;
   const t = (): Training => {
@@ -162,17 +184,58 @@ describe('reálná doba gólu z průběhu her', () => {
   };
 
   it('od prvního gólu (kterýkoli leg) do ukončení utkání, děleno všemi odehranými góly', () => {
-    expect(goalSamples([t()])).toEqual([
-      { discipline: 'normal', secPerGoal: 40 },
-      { discipline: 'start44', secPerGoal: 30 },
+    expect(ballSamples([t()])).toEqual([
+      { discipline: 'normal', sec: 40 },
+      { discipline: 'start44', sec: 30 },
     ]);
   });
 
   it('průměr celkově a po disciplínách; jiné než klubové tréninky a tréninky bez průběhu se nepočítají', () => {
-    expect(goalAverages([t(), { ...t(), id: 'p', format: 'practice' }, { ...t(), id: 'x', events: [] }])).toEqual({
-      all: { sec: 35, matches: 2 },
-      by: { normal: { sec: 40, matches: 1 }, start44: { sec: 30, matches: 1 } },
+    expect(ballAverages([t(), { ...t(), id: 'x', events: [] }])).toEqual({
+      matches: { sec: 35, n: 2 },
+      drills: null,
+      by: { normal: { sec: 40, n: 1 }, start44: { sec: 30, n: 1 } },
     });
-    expect(goalAverages([])).toEqual({ all: null, by: {} });
+    expect(ballAverages([])).toEqual({ matches: null, drills: null, by: {} });
+  });
+});
+
+describe('reálná doba míčku cvičení a celkový čas Čisté desítky', () => {
+  const T0 = Date.UTC(2026, 10, 17, 17, 0);
+  const s = (sec: number) => T0 + sec * 1000;
+
+  it('klubové cvičení: od prvního pokusu do ukončení kola u stolu, děleno ťuknutými pokusy (Zpět se nepočítá)', () => {
+    const base: Training = {
+      id: 'd', date: '2026-11-17', startTime: '18:00', mode: 'team', tables: 2, attendees: H(4), scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'custom', durationMin: 60, plan: { warmupPasses: 1 }, lockedRounds: [], breaks: [],
+    };
+    const row = buildSchedule(base).sections.flatMap((x) => x.rows).find((r) => r.kind === 'groups')!;
+    const cell = row.cells[0]!;
+    const item = drillItemId(row, 1, cell.type === 'group' ? cell.players : []);
+    const tap = (id: string, at: number, kind: 'hit' | 'miss', delta: 1 | -1 = 1) => ({ id, itemId: item, at: s(at), kind, playerId: 'H1', delta });
+    const t: Training = {
+      ...base,
+      events: [tap('a', 10, 'hit'), tap('b', 30, 'miss'), tap('c', 50, 'hit'), tap('d', 60, 'hit'), tap('e', 61, 'hit', -1)],
+      playTimes: { [item]: { startedAt: s(0), endedAt: s(70) } }, // 60 s / 3 pokusy = 20 s
+    };
+    expect(ballSamples([t])).toEqual([{ discipline: 'warmupPasses', sec: 20 }]);
+    expect(ballAverages([t])).toMatchObject({ matches: null, drills: { sec: 20, n: 1 } });
+  });
+
+  it('vlastní trénink: kolo cvičení podle ukončení kola; Čistá desítka = průměr časů splnění (nesplněné ne)', () => {
+    const p = newPractice('p', '2026-11-12', '18:00', 'A', null, ['penaltySolo', 'streakShot3']);
+    const t: Training = {
+      ...p,
+      events: [
+        { id: 'a', itemId: 'round|1', at: s(5), kind: 'hit', playerId: 'A', delta: 1 },
+        { id: 'b', itemId: 'round|1', at: s(25), kind: 'miss', playerId: 'A', delta: 1 },
+      ],
+      playTimes: { 'round|1': { startedAt: s(0), endedAt: s(45) } }, // 40 s / 2 pokusy
+      soloResults: { A: { 'streakShot3@3': 180, 'streakShot3@4': 0 }, B: { 'streakShot3@3': 240 } },
+    };
+    const r = ballAverages([t]);
+    expect(r.by.penaltySolo).toEqual({ sec: 20, n: 1 });
+    expect(r.by.streakShot3).toEqual({ sec: 210, n: 2 });
+    expect(r.drills).toEqual({ sec: 20, n: 1 }); // Čistá desítka do průměru cvičení nepatří
   });
 });

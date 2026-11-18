@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cleanFormats, formatOf } from '../../domain/matchFormat';
-import { goalRoundMin, goalSecOf, usesGoals } from '../../domain/goalTime';
+import { ballRoundMin, ballSecOf, usesBalls } from '../../domain/ballTime';
 import { MatchFormatPicker } from './MatchFormatPicker';
 import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
 import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
@@ -63,11 +63,11 @@ export function TemplatesEditor({
     else onChange?.();
   }, [draft, mins]);
   const error = validateTemplates(draft, mins);
-  /** Délka kola: zápas a simulace z doby gólu × nejvíc gólů ve formátu šablony (18. 11. 2026), cvičení z délky kola. */
-  const roundLen = (id: DisciplineId) => (usesGoals(id) ? goalRoundMin(id, formatOf(tpl.formats, id), goalSecOf(id)) : (mins[id] ?? def(id).min));
+  /** Délka kola: zápas a simulace z doby míčku × nejvíc gólů ve formátu šablony (18. 11. 2026), cvičení z délky kola. */
+  const roundLen = (id: DisciplineId) => (usesBalls(id) ? ballRoundMin(id, formatOf(tpl.formats, id), ballSecOf(id)) : (mins[id] ?? def(id).min));
   const lenCell = (id: DisciplineId) =>
-    usesGoals(id) ? (
-      <span className="tt-len" title={`Z doby gólu ${goalSecOf(id)} s × nejvíc gólů ve formátu; dobu gólu mění admin na stránce Disciplíny.`}>
+    usesBalls(id) ? (
+      <span className="tt-len" title={`Z doby míčku ${ballSecOf(id)} s × nejvíc míčků v kole; dobu míčku mění admin na stránce Disciplíny.`}>
         {roundLen(id)} min
       </span>
     ) : (
@@ -243,7 +243,7 @@ export function TemplatesEditor({
             <b>Kola:</b> zápasy − / + (párové po dvou), cvičení mají tolik kol, aby se vystřídali všichni přítomní. Trénink dostane přesně kola ze šablony, nic se nedoplňuje.
           </li>
           <li>
-            <b>Délka kola</b> cvičení (− / +) platí pro všechny šablony a pro nové tréninky. Zápasy a simulace mají délku z doby gólu × nejvíc gólů ve formátu; dobu gólu mění admin na stránce Disciplíny.
+            <b>Délka kola</b> (− / +) Rozcvičky a Čisté desítky platí pro všechny šablony a pro nové tréninky. Ostatní disciplíny mají délku z doby míčku × nejvíc míčků v kole (gólů ve formátu, pokusů ve cvičení); dobu míčku mění admin na stránce Disciplíny.
           </li>
         </ul>
         <div className="tpl-all">

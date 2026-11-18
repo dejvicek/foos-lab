@@ -1,7 +1,7 @@
 import type { ExplanationItem } from './content';
 import { DISCIPLINES, discipline, placesOf, roundStep, type DisciplineDef, type Places } from './disciplines';
 import { explanation } from './explain';
-import { catalogRoundMin } from './goalTime';
+import { catalogRoundMin } from './ballTime';
 import { SIM_MIN_PLAYERS } from './plan';
 import { soloMetric } from './solo';
 import type { DisciplineId } from './types';
@@ -22,7 +22,7 @@ export const MATCH_GENERAL_HELP: ExplanationItem[] = [explanation('Každý gól 
 
 /**
  * Délka v řádku: kolik kol jde za sebou (párová / na dvě varianty = 2) a délka kola (aktuální katalog;
- * zápas a simulace z doby gólu ve výchozím formátu).
+ * zápas a simulace z doby míčku ve výchozím formátu).
  */
 export function disciplineDuration(id: DisciplineId): { rounds: 1 | 2; min: number } {
   return { rounds: roundStep(discipline(id)), min: catalogRoundMin(id) };

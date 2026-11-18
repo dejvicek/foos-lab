@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { cleanFormats, formatOf } from '../../domain/matchFormat';
-import { roundMinutes } from '../../domain/goalTime';
+import { roundMinutes } from '../../domain/ballTime';
 import { MatchFormatPicker } from './MatchFormatPicker';
 import { addBreakAt, anchorBreaks, breakMovable, disciplineStepTarget, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { currentTemplates, matchingTemplate, templateRounds } from '../../domain/catalog';
@@ -50,7 +50,7 @@ export function DisciplineStep({
   const t = training;
   const n = t.attendees.length;
   // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
-  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.goalSec);
+  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.ballSec);
   const tl = planTimeline(roundSequence(t), t.breaks, mins);
   const over = tl.total - t.durationMin;
   const fmt = (m: number) => clockAt(t.startTime, m);
@@ -276,7 +276,7 @@ function DisciplineTable({
 
   const n = t.attendees.length;
   // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
-  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.goalSec);
+  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.ballSec);
   const locked = lockedCounts(t);
   const seq = roundSequence(t);
   const free = new Set(freeSlots(t));

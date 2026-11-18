@@ -5,7 +5,7 @@
  */
 import { EXPLANATIONS, type ExplanationPart } from './content';
 import { cleanFormats, type MatchFormats } from './matchFormat';
-import { catalogGoalSec, MAX_GOAL_SEC, MIN_GOAL_SEC, roundMinutes, usesGoals, validGoalSec } from './goalTime';
+import { ballDef, catalogBallSec, MAX_BALL_SEC, MIN_BALL_SEC, roundMinutes, usesBalls, validBallSec } from './ballTime';
 import { catalogMins, DEFAULT_DISCIPLINES, drillInPairs, setDisciplines, type DisciplineDef, type DisciplineMins } from './disciplines';
 import { setHelpOverrides } from './explain';
 import { DEFAULT_SKILLS, setSkills, type Skill, type SkillDef } from './skills';
@@ -15,8 +15,8 @@ import type { Breaks, DisciplineId, TemplateBreak } from './types';
 export interface DisciplineEdit {
   name?: string;
   min?: number;
-  /** Doba gólu v sekundách (zápasy a simulace, 18. 11. 2026); chybí = výchozí. */
-  goalSec?: number;
+  /** Doba míčku v sekundách (zápasy a simulace, 18. 11. 2026); chybí = výchozí. */
+  ballSec?: number;
   skills?: Skill[];
   /** Odstavce nápovědy (stejné štítky Cíl / Provedení / … jako výchozí). U sdílené nápovědy jen u vlastníka. */
   help?: ExplanationPart[];
@@ -72,7 +72,7 @@ export function resolveCatalog(data: CatalogData): { disciplines: DisciplineDef[
       ...d,
       ...(name ? { name } : {}),
       ...(validMin(e.min) ? { min: e.min } : {}),
-      ...((d.kind === 'match' || d.kind === 'sim') && validGoalSec(e.goalSec) ? { goalSec: e.goalSec } : {}),
+      ...(ballDef(d) && validBallSec(e.ballSec) ? { ballSec: e.ballSec } : {}),
       ...(d.skills || e.skills ? { skills: (e.skills ?? d.skills ?? []).filter((s) => known.has(s)) } : {}),
     };
   });
@@ -107,7 +107,7 @@ export const templateBreaks = (t: TrainingTemplate): Breaks => (t.breaks?.length
 /** Časová osa šablony (kola v pořadí šablony, pauzy) pro daný počet hráčů a stolů. */
 export function templateTimeline(t: TrainingTemplate, players: number, tables: number, mins: DisciplineMins = catalogMins()): { items: TimelineItem[]; total: number } {
   const plan = playablePlan(templatePlan(t, players, tables), players);
-  return planTimeline(planSequence(plan, t.selection), templateBreaks(t), roundMinutes(mins, t.formats, catalogGoalSec()));
+  return planTimeline(planSequence(plan, t.selection), templateBreaks(t), roundMinutes(mins, t.formats, catalogBallSec()));
 }
 
 /** Kolik kol disciplína v šabloně má: cvičení podle hráčů a stolů (× 2 varianty), zápas podle šablony, simulace 1. */
@@ -135,7 +135,7 @@ export function saveTemplates(data: CatalogData, templates: TrainingTemplate[], 
   };
   for (const d of DEFAULT_DISCIPLINES) {
     const m = mins[d.id];
-    if (m === undefined || usesGoals(d.id)) continue; // zápasy a simulace: délka z doby gólu
+    if (m === undefined || usesBalls(d.id)) continue; // zápasy, simulace a cvičení s pokusy: délka z doby míčku
     const { min: _, ...rest } = out.disciplines?.[d.id] ?? {};
     out = withEntry(out, d.id, m === d.min ? rest : { ...rest, min: m });
   }
@@ -176,10 +176,10 @@ export function validateTemplates(templates: TrainingTemplate[], mins: Disciplin
 /** Formulář úpravy disciplíny – co admin edituje. */
 export interface DisciplineForm {
   name: string;
-  /** Délka kola (cvičení); u zápasů a simulace se nepoužívá – počítá se z doby gólu. */
+  /** Délka kola (cvičení); u zápasů a simulace se nepoužívá – počítá se z doby míčku. */
   min: number;
-  /** Doba gólu v sekundách (zápasy a simulace); null = výchozí. */
-  goalSec: number | null;
+  /** Doba míčku v sekundách (zápasy a simulace); null = výchozí. */
+  ballSec: number | null;
   skills: Skill[];
   help: ExplanationPart[];
 }
@@ -191,7 +191,7 @@ export function catalogForm(id: DisciplineId, data: CatalogData = {}): Disciplin
   return {
     name: d.name,
     min: d.min,
-    goalSec: d.goalSec ?? null,
+    ballSec: d.ballSec ?? null,
     skills: [...(d.skills ?? [])],
     help: (c.help[d.explain] ?? defaultHelp(d.explain)).map((p) => ({ ...p })),
   };
@@ -200,7 +200,7 @@ export function catalogForm(id: DisciplineId, data: CatalogData = {}): Disciplin
 export function validateDisciplineForm(f: DisciplineForm): string | null {
   if (!f.name.trim()) return 'Název nesmí být prázdný.';
   if (!validMin(f.min)) return `Délka kola musí být ${MIN_ROUND}–${MAX_ROUND} minut.`;
-  if (f.goalSec !== null && !validGoalSec(f.goalSec)) return `Doba gólu musí být ${MIN_GOAL_SEC}–${MAX_GOAL_SEC} s (celé sekundy).`;
+  if (f.ballSec !== null && !validBallSec(f.ballSec)) return `Doba míčku musí být ${MIN_BALL_SEC}–${MAX_BALL_SEC} s (celé sekundy).`;
   return null;
 }
 
@@ -219,9 +219,9 @@ export function saveDiscipline(data: CatalogData, id: DisciplineId, f: Disciplin
   const d = def0(id);
   const e: DisciplineEdit = {};
   if (f.name.trim() !== d.name) e.name = f.name.trim();
-  // Zápasy a simulace (18. 11. 2026): délka kola se počítá z doby gólu, ruční délka se už neukládá.
-  if (usesGoals(id)) {
-    if (f.goalSec !== null) e.goalSec = f.goalSec;
+  // Zápasy a simulace (18. 11. 2026): délka kola se počítá z doby míčku, ruční délka se už neukládá.
+  if (usesBalls(id)) {
+    if (f.ballSec !== null) e.ballSec = f.ballSec;
   } else if (f.min !== d.min) e.min = f.min;
   if (!same(f.skills, d.skills ?? [])) e.skills = [...f.skills];
   const owner = helpOwner(id);

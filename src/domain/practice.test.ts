@@ -139,8 +139,8 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám jen co se sám hraje', () => {
     expect(practiceRounds(plan).map((r) => [r.n, r.drill, r.metric, r.variant, r.min, r.item])).toEqual([
       [1, 'warmup', undefined, undefined, 9, 'round|1'],
-      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 8, 'round|2'],
-      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 8, 'round|3'],
+      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 7, 'round|2'],
+      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 7, 'round|3'],
       [4, 'streakShot3', 'streakShot3', undefined, 10, 'round|4'],
     ]);
     expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'streakShot3']);
@@ -149,15 +149,16 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   });
 
   it('naplánovaný čas: kola + přechod 1 min mezi koly', () => {
-    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'streakShot3'])).toBe(9 + 8 + 8 + 10 + 3);
-    expect(plan.durationMin).toBe(38);
+    // sólové cvičení: 20 s × 20 pokusů = 7 min
+    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'streakShot3'])).toBe(9 + 7 + 7 + 10 + 3);
+    expect(plan.durationMin).toBe(36);
     expect(practicePlanMinutes([])).toBe(0);
   });
 
   it('délky kol jsou v tréninku – změna katalogu je nehne', () => {
-    applyCatalog({ disciplines: { penaltySolo: { min: 6 } } });
-    expect(practiceRounds(plan)[1].min).toBe(8);
-    expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(13);
+    applyCatalog({ disciplines: { penaltySolo: { ballSec: 15 } } });
+    expect(practiceRounds(plan)[1].min).toBe(7);
+    expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(2 * 5 + 1); // 15 s × 20 = 5 min
   });
 
   it('aktuální kolo = první neukončené; dohraný plán null', () => {
@@ -171,9 +172,9 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('pevný plán: dál až po čase kola, nebo když jsou odehrané všechny pokusy', () => {
     const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
     const r2 = practiceRounds(t)[1];
-    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(420);
+    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(360); // kolo 7 min (20 s × 20 pokusů)
     expect(canAdvance(t, r2, T0 + 11 * MIN)).toBe(false);
-    expect(canAdvance(t, r2, T0 + 18 * MIN)).toBe(true);
+    expect(canAdvance(t, r2, T0 + 17 * MIN)).toBe(true);
     const done = setAttempts(setSolo(t, 'A', 'penaltySolo@2', 6), 'A', 'penaltySolo@2', 20);
     expect(canAdvance(done, r2, T0 + 11 * MIN)).toBe(true);
     // Rozcvička nic nezapisuje – jen po čase
@@ -195,9 +196,9 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
     const times = roundTimes(t, T0 + 11 * MIN).map((x) => [x.state, (x.start - T0) / MIN, (x.end - T0) / MIN]);
     expect(times).toEqual([
       ['done', 0, 9],
-      ['playing', 10, 18],
-      ['next', 19, 27],
-      ['next', 28, 38],
+      ['playing', 10, 17],
+      ['next', 18, 25],
+      ['next', 26, 36],
     ]);
     // přetažené kolo posune další
     expect((roundTimes(t, T0 + 20 * MIN)[2].start - T0) / MIN).toBe(21);
@@ -211,16 +212,16 @@ describe('zápasy ve dvou (12. 11. 2026)', () => {
     const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltyKeeper'], { goalieWar: { bestOf: 3, legTo: 5 } });
     const rs = practiceRounds(p);
     expect(rs.map((r) => [r.drill, r.min, r.match?.sideA.join(), r.match?.bestOf ?? null])).toEqual([
-      // doba gólu 40 s: BO3 do 5 = 3 × 9 gólů → 18 min; Zeď do 6 = 11 gólů → 8 min
+      // doba míčku 40 s: BO3 do 5 = 3 × 9 gólů → 18 min; Zeď do 6 = 11 gólů → 8 min
       ['goalieWar', 18, 'A', 3],
       ['wall', 8, 'A', null],
       ['wall', 8, 'B', null],
-      ['penaltyKeeper', 8, undefined, null],
-      ['penaltyKeeper', 8, undefined, null],
+      ['penaltyKeeper', 14, undefined, null], // ve dvojici 20 s × 40 pokusů
+      ['penaltyKeeper', 14, undefined, null],
     ]);
     expect(rs[0].match).toMatchObject({ id: 'practice|1|AvB', legTo: 5, kind: 'singles' });
     expect(rs[1].match?.wall).toBe('A');
-    expect(p.durationMin).toBe(18 + 8 + 8 + 8 + 8 + 4);
+    expect(p.durationMin).toBe(18 + 8 + 8 + 14 + 14 + 4);
     expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5 } });
     expect(newPractice('q', TODAY, '18:00', 'A', null, ['goalieWar', 'penaltySolo']).disciplineOrder).toEqual(['penaltySolo']);
   });

@@ -32,8 +32,8 @@ export interface TrainingRow {
   /** Délky kol (snímek katalogu, migrace 18); null = výchozí z kódu. */
   discipline_min?: Training['disciplineMin'];
   match_formats?: Training['matchFormats'];
-  /** Doby gólů zápasů a simulace (snímek katalogu, migrace 30); null = délky kol z discipline_min. */
-  goal_sec?: Training['goalSec'];
+  /** Doby míčků zápasů a simulace (snímek katalogu, migrace 30); null = délky kol z discipline_min. */
+  ball_sec?: Training['ballSec'];
   /** Pořadí disciplín ze šablony (migrace 19); null = pořadí katalogu. */
   discipline_order?: Training['disciplineOrder'];
   created_by: string | null;
@@ -95,7 +95,7 @@ export const trainingToRow = (t: Training): TrainingRow => ({
   discipline_min: t.disciplineMin ?? null,
   discipline_order: t.disciplineOrder ?? null,
   match_formats: t.matchFormats ?? null,
-  goal_sec: t.goalSec ?? null,
+  ball_sec: t.ballSec ?? null,
   created_by: t.createdBy ?? null,
   mode: t.mode,
   tables: t.tables,
@@ -144,7 +144,7 @@ export function trainingFromRow(r: TrainingRow, scores: ScoreRow[], solo: SoloRo
     ...(r.breaks ? { breaks: r.breaks } : {}),
     ...(r.discipline_min ? { disciplineMin: r.discipline_min } : {}),
     ...(r.match_formats ? { matchFormats: r.match_formats } : {}),
-    ...(r.goal_sec ? { goalSec: r.goal_sec } : {}),
+    ...(r.ball_sec ? { ballSec: r.ball_sec } : {}),
     ...(r.discipline_order ? { disciplineOrder: r.discipline_order.filter((id) => KNOWN.has(id)) } : {}),
     ...(Object.keys(soloAttempts).length ? { soloAttempts } : {}),
     ...(() => {

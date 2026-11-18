@@ -19,9 +19,13 @@ describe('stránka Disciplíny – obsah', () => {
   });
 
   it('délka, kdo hraje a podrobnosti jen z definice disciplíny', () => {
-    expect(disciplineDuration('warmupPasses')).toEqual({ rounds: 1, min: 8 });
-    expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 8 });
-    expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 8 }); // doba gólu 40 s × 11 gólů
+    // cvičení ve dvojici: 20 s × 2 × 20 pokusů = 14 min; sólo 20 s × 20 = 7 min; Rozcvička a Čistá desítka pevně
+    expect(disciplineDuration('warmupPasses')).toEqual({ rounds: 1, min: 14 });
+    expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 14 });
+    expect(disciplineDuration('penaltySolo')).toEqual({ rounds: 2, min: 7 });
+    expect(disciplineDuration('warmup')).toEqual({ rounds: 1, min: 9 });
+    expect(disciplineDuration('streakShot3')).toEqual({ rounds: 1, min: 10 });
+    expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 8 }); // doba míčku 40 s × 11 gólů
     // kdo hraje říkají panáčci (disciplinePlaces); ikona v řádku už jen u párového zápasu
     expect(disciplineWho('warmupPasses')).toBeNull();
     expect(disciplineWho('wall')?.icon).toBe('swap');
@@ -29,7 +33,7 @@ describe('stránka Disciplíny – obsah', () => {
     expect(disciplineFacts('passWallLane')).toEqual(['2 kola po 20: ke zdi / po lajně', 'hraje se: solo']);
     expect(disciplineFacts('penaltyKeeper')).toEqual(['2 kola po 20 pokusech, variantu si určí hráč', 's bránícím soupeřem', 'hraje se: klubový trénink, duo']);
     expect(disciplineFacts('start45')).toEqual(['2 kola, strany si prohodí role', 'hraje se: klubový trénink, duo']);
-    expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 8 });
+    expect(disciplineDuration('chain')).toEqual({ rounds: 1, min: 14 });
     expect(disciplineFacts('chain')).toEqual(['s bránícím soupeřem', 'hraje se: klubový trénink, duo']);
     expect(disciplineHelp('chain').map((i) => i.name)).toEqual(['Řetězec']);
     expect(disciplineFacts('singles')).toEqual(['jen singly', 'hraje se: klubový trénink, duo']);

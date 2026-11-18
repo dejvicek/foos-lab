@@ -1,5 +1,5 @@
 import { cleanFormats, legIds } from './matchFormat';
-import { catalogGoalSec } from './goalTime';
+import { catalogBallSec } from './ballTime';
 import { catalogMins, DISCIPLINES } from './disciplines';
 import { currentTemplates, templateBreaks, type TrainingTemplate } from './catalog';
 import { sortedRoster } from './roster';
@@ -29,8 +29,8 @@ export function newTraining(
   const durationMin = template?.durationMin ?? DEFAULT_DURATION;
   // Délky kol podle aktuálního katalogu – trénink si je nese, pozdější změna katalogu jeho časy nehne.
   const disciplineMin = catalogMins();
-  // Doby gólů (zápasy, simulace) – délka jejich kol z gólů ve formátu (18. 11. 2026).
-  const goalSec = catalogGoalSec();
+  // Doby míčků (zápasy, simulace) – délka jejich kol z gólů ve formátu (18. 11. 2026).
+  const ballSec = catalogBallSec();
   const breaks = template ? templateBreaks(template) : [];
   return {
     id,
@@ -50,7 +50,7 @@ export function newTraining(
     lockedRounds: [],
     createdBy,
     disciplineMin,
-    goalSec,
+    ballSec,
     // Pořadí disciplín ze šablony.
     disciplineOrder: selection,
     // Pauzy po sekcích podle šablony, jinak žádné (9. 11. 2026); další jde přidat v náhledu plánu.

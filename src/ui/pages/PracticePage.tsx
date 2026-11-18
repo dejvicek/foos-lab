@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { catalogRoundMin, goalRoundMin, goalSecOf } from '../../domain/goalTime';
+import { ballRoundMin, ballSecOf, catalogRoundMin, usesBalls } from '../../domain/ballTime';
 import { DISCIPLINES, discipline, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { activePlayers, alphabetical } from '../../domain/roster';
 import {
@@ -56,9 +56,9 @@ const namedVariants = (v: readonly string[]) => !v.every((x) => /^varianta /.tes
 /** „Varianta 1“ / „Varianta: ke zdi“. */
 const variantText = (v: string) => (/^varianta /.test(v) ? `V${v.slice(1)}` : `Varianta: ${v}`);
 
-/** Délka v plánu: „8 min“, u dvou variant / párového zápasu „2× 4 min“; zápas z doby gólu × nejvíc gólů ve formátu. */
+/** Délka v plánu: „8 min“, u dvou variant / párového zápasu „2× 4 min“; zápas z doby míčku × nejvíc gólů ve formátu. */
 const lengthText = (d: DisciplineDef, formats?: MatchFormats | null) => {
-  const min = d.kind === 'match' ? goalRoundMin(d.id, formatOf(formats, d.id), goalSecOf(d.id)) : d.min;
+  const min = usesBalls(d.id) ? ballRoundMin(d.id, formatOf(formats, d.id), ballSecOf(d.id)) : d.min;
   return roundsOf(d) > 1 ? `${roundsOf(d)}× ${min} min` : `${min} min`;
 };
 

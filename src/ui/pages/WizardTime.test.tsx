@@ -18,7 +18,7 @@ import { DEFAULT_CATALOG } from '../../test/fixtures';
 
 const players: Player[] = ['Ada', 'Bára', 'Cyril', 'Dan'].map((name, order) => ({ id: `p${order + 1}`, name, order, archived: false }));
 
-async function wizard(names: string[], minutes: number) {
+async function wizard(names: string[], minutes: number, tables = '1 stůl') {
   const user = userEvent.setup();
   window.location.hash = '#/trainings/new';
   render(<App repo={memoryRepository({ players, trainings: [], catalog: DEFAULT_CATALOG })} />);
@@ -26,7 +26,7 @@ async function wizard(names: string[], minutes: number) {
   for (const n of names) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user);
   fireEvent.change(screen.getByRole('slider', { name: 'Délka tréninku' }), { target: { value: String(minutes) } });
-  await user.click(screen.getByRole('radio', { name: '1 stůl' }));
+  await user.click(screen.getByRole('radio', { name: tables }));
   return user;
 }
 
@@ -38,7 +38,7 @@ describe('čas plánu v průvodci', () => {
   });
 
   it('zbývá čas: v kroku Kdy, kde a disciplíny nabídne doplnit kola, po doplnění se plán prodlouží', async () => {
-    const user = await wizard(['Ada', 'Bára', 'Cyril', 'Dan'], 240); // klubový trénink aspoň pro 4; zbývá čas
+    const user = await wizard(['Ada', 'Bára', 'Cyril', 'Dan'], 240, '2 stoly'); // klubový trénink aspoň pro 4; zbývá čas (cvičení po 14 min)
     const status = () => screen.getByRole('status', { name: 'Naplánováno' }).textContent;
     const before = status();
     expect(before).toMatch(/zbývá \d+ min/);

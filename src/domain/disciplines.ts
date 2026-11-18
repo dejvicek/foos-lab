@@ -7,10 +7,10 @@ export interface DisciplineDef {
   id: DisciplineId;
   kind: 'drill' | 'match' | 'sim';
   name: string;
-  /** Délka kola v minutách (bez přechodu). U zápasů a simulace jen pro tréninky bez doby gólu (goalTime.ts). */
+  /** Délka kola v minutách (bez přechodu). U zápasů a simulace jen pro tréninky bez doby míčku (goalTime.ts). */
   min: number;
-  /** Doba gólu v sekundách zadaná adminem (zápasy a simulace); chybí = výchozí (goalTime.ts). */
-  goalSec?: number;
+  /** Doba míčku v sekundách zadaná adminem (zápasy a simulace); chybí = výchozí (goalTime.ts). */
+  ballSec?: number;
   /** Název položky ve vysvětlivkách (content.ts). */
   explain: string;
   metric?: SoloMetric;
