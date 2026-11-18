@@ -1,4 +1,4 @@
-import { defaultPrefs, loadPrefs, loadTimelineView, savePrefs, saveTimelineView, subscribeTimelineView } from './prefs';
+import { defaultPrefs, loadPrefs, savePrefs } from './prefs';
 
 describe('prefs', () => {
   beforeEach(() => localStorage.clear());
@@ -18,17 +18,5 @@ describe('prefs', () => {
   it('nečitelná data → výchozí', () => {
     localStorage.setItem('foosball-practice.prefs.v1', '{rozbité');
     expect(loadPrefs()).toEqual(defaultPrefs());
-  });
-  it('zobrazení Průběhu: výchozí sloupec, volba se pamatuje a ohlásí', () => {
-    expect(loadTimelineView()).toBe('column');
-    const seen: string[] = [];
-    const off = subscribeTimelineView(() => seen.push(loadTimelineView()));
-    saveTimelineView('curve');
-    expect(loadTimelineView()).toBe('curve');
-    off();
-    saveTimelineView('column');
-    expect(seen).toEqual(['curve']);
-    localStorage.setItem('foosball-practice.timeline-view.v1', 'nesmysl');
-    expect(loadTimelineView()).toBe('column');
   });
 });

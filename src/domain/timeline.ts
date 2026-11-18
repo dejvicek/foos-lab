@@ -47,7 +47,7 @@ export interface MatchProgress {
 export const leader = ([a, b]: [number, number]): 'A' | 'B' | null => (a > b ? 'A' : b > a ? 'B' : null);
 
 /**
- * Zápas (PRD 4.9, Sloupec / Křivka): góly a ztráty obou stran v jednom pořadí se stavem skóre po každé události.
+ * Zápas (PRD 4.9, křivka vedení): góly a ztráty obou stran v jednom pořadí se stavem skóre po každé události.
  * U starší simulace (v setech) jsou „góly“ vyhrané sety.
  */
 export function matchProgress(events: GameEvent[], from: number, to: number, initial: [number, number] = [0, 0]): MatchProgress {
@@ -78,7 +78,7 @@ export interface DrillRow {
   halves: [number, number];
 }
 
-/** Cvičení – pokusy po hráčích (PRD 4.9, Sloupec / Křivky). */
+/** Cvičení – pokusy po hráčích (PRD 4.9, křivky povedených). */
 export function drillTimeline(events: GameEvent[], players: PlayerId[]): Record<PlayerId, DrillRow> {
   const list = effectiveEvents(events).filter((e) => e.kind === 'hit' || e.kind === 'miss');
   const out: Record<PlayerId, DrillRow> = {};

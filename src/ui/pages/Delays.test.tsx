@@ -414,7 +414,9 @@ describe('průběh hry', () => {
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: /Zpět/ }));
     const lanes = within(mine).getByRole('group', { name: 'Průběh' });
-    expect(within(lanes).getAllByRole('row', { name: /^Gól/ }).map((r) => r.getAttribute('aria-label')?.split(' v ')[0])).toEqual(['Gól: H2 + H3, 1:0', 'Gól: H4 + H1, 1:1']);
+    // křivka: góly v pořadí (zrušený třetí gól tam není)
+    expect([...lanes.querySelectorAll('.tl-pt title')].map((x) => x.textContent?.replace(/ v \d+:\d+/, ''))).toEqual(['Gól: H2 + H3 → 1:0', 'Gól: H4 + H1 → 1:1']);
+    expect(within(lanes).getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].events?.map((e) => [e.kind, e.side, e.delta])).toEqual([
       ['goal', 'A', 1], ['goal', 'B', 1], ['goal', 'A', 1], ['goal', 'A', -1],
     ]));

@@ -1,5 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { DrillTimeline, MatchTimeline } from './GameTimeline';
 import type { GameEvent, Match } from '../../domain/types';
 
@@ -16,57 +15,34 @@ it('průběh cvičení: srozumitelný souhrn – nejdelší série a poloviny po
   expect(screen.getByText('4/8 · nejdelší série 3 · 1. půlka 3, 2. půlka 1')).toBeInTheDocument();
 });
 
-it('zápas – sloupec (výchozí): obě strany v jednom pořadí se stavem skóre od scénářového startu', () => {
+it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
-  render(<MatchTimeline match={match({ start: [4, 4], trackLosses: true })} events={events} from={0} to={5000} names={names} />);
-  expect(screen.getByRole('button', { name: 'Sloupec' })).toHaveAttribute('aria-pressed', 'true');
-  const rows = within(screen.getByRole('table', { name: 'Průběh po událostech' })).getAllByRole('row').slice(1);
-  expect(rows.map((r) => r.getAttribute('aria-label'))).toEqual([
-    'Start 4:4',
-    'Gól: Svoboda + Černý, 4:5 v 0:02',
-    'Ztráta: Novák + Dvořák v 0:03',
-    'Gól: Novák + Dvořák, 5:5 v 0:04',
-  ]);
-  // podbarvení podle vedoucí strany: 4:5 vede pravá, ztráta to nemění, 5:5 nikdo
-  expect(rows.map((r) => r.querySelector('.tl-col-s')!.className)).toEqual(['tl-col-s', 'tl-col-s lead-b', 'tl-col-s lead-b', 'tl-col-s']);
+  const { container } = render(<MatchTimeline match={match({ start: [4, 4], trackLosses: true })} events={events} from={0} to={5000} names={names} />);
+  expect(screen.getByRole('img', { name: 'Křivka vedení, konečný stav 5:5' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Sloupec|Křivka/ })).toBeNull();
+  expect(screen.queryByRole('table')).toBeNull();
+  expect(container.querySelectorAll('.tl-pt')).toHaveLength(2);
+  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1); // Daň: ztráta v řadě pod grafem
+  expect([...container.querySelectorAll('.tl-pt title')].map((t) => t.textContent)).toEqual(['Gól: Svoboda + Černý v 0:02 → 4:5', 'Gól: Novák + Dvořák v 0:04 → 5:5']);
 });
 
 it('ztráty jen u Daně (18. 11. 2026): jinde se starší ťuknuté ztráty nezobrazí', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
-  render(<MatchTimeline match={match()} events={events} from={0} to={5000} names={names} />);
-  const rows = within(screen.getByRole('table', { name: 'Průběh po událostech' })).getAllByRole('row').slice(1);
-  expect(rows.map((r) => r.getAttribute('aria-label'))).toEqual(['Začátek 0:0', 'Gól: Svoboda + Černý, 0:1 v 0:02', 'Gól: Novák + Dvořák, 1:1 v 0:04']);
+  const { container } = render(<MatchTimeline match={match()} events={events} from={0} to={5000} names={names} />);
+  expect(screen.getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
+  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(0);
 });
 
 it('simulace: místo gólů sety', () => {
-  render(<MatchTimeline match={match({ block: 'sim' })} events={[ev(1, 'goal', { side: 'A' })]} from={0} to={3000} names={names} />);
-  expect(screen.getByRole('row', { name: 'Set: Novák + Dvořák, 1:0 v 0:02' })).toBeInTheDocument();
+  const { container } = render(<MatchTimeline match={match({ block: 'sim' })} events={[ev(1, 'goal', { side: 'A' })]} from={0} to={3000} names={names} />);
+  expect(container.querySelector('.tl-pt title')).toHaveTextContent('Set: Novák + Dvořák v 0:02 → 1:0');
 });
 
-it('přepínač Křivka platí pro zápasy i cvičení a zařízení si ho pamatuje', async () => {
-  const user = userEvent.setup();
+it('cvičení: křivky povedených pokusů hráčů, nepovedené jako tečky; bez přepínače', () => {
   const drill = [ev(1, 'hit', { playerId: 'a1' }), ev(2, 'miss', { playerId: 'b1' })];
-  render(
-    <>
-      <MatchTimeline match={match()} events={[ev(1, 'goal', { side: 'A' })]} from={0} to={3000} names={names} />
-      <DrillTimeline players={['a1', 'b1']} events={drill} names={names} />
-    </>,
-  );
-  await user.click(screen.getAllByRole('button', { name: 'Křivka' })[0]);
-  expect(screen.getByRole('img', { name: 'Křivka vedení, konečný stav 1:0' })).toBeInTheDocument();
+  const { container } = render(<DrillTimeline players={['a1', 'b1']} events={drill} names={names} />);
   expect(screen.getByRole('img', { name: 'Povedené pokusy po pokusech' })).toBeInTheDocument();
-  expect(screen.queryByRole('table')).toBeNull();
-  expect(localStorage.getItem('foosball-practice.timeline-view.v1')).toBe('curve');
-  await act(async () => user.click(screen.getAllByRole('button', { name: 'Sloupec' })[1]));
-  expect(screen.getAllByRole('table')).toHaveLength(2);
-});
-
-it('cvičení – sloupec: řádek = pokus, sloupec = hráč; nad 10 pokusů dvě půlky s počtem povedených', () => {
-  const seq = '++-+++++--+++-++-+++';
-  const events = [...seq].map((c, i) => ev(i, c === '+' ? 'hit' : 'miss', { playerId: 'a1' }));
-  render(<DrillTimeline players={['a1']} events={events} names={names} />);
-  const first = screen.getByRole('table', { name: 'Pokusy 1–10' });
-  expect(within(first).getByRole('cell', { name: 'Novák, 3. pokus nepovedený' })).toHaveTextContent('✗');
-  expect(within(first).getByRole('cell', { name: 'Novák, 4. pokus povedený' })).toHaveTextContent('3');
-  expect(within(screen.getByRole('table', { name: 'Pokusy 11–20' })).getByText('8/10')).toBeInTheDocument();
+  expect(screen.queryByRole('button')).toBeNull();
+  expect(container.querySelectorAll('.tl-pline')).toHaveLength(2);
+  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1);
 });

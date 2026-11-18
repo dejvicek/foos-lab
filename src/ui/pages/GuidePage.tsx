@@ -224,20 +224,15 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={9} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
             <p>
-              Každá ťuknutá hra má <b>Průběh</b>. V Moje hry je rozbalený rovnou. Nahoře přepínáš <b>Sloupec</b> a{' '}
-              <b>Křivku</b>, telefon si volbu pamatuje.
+              Každá ťuknutá hra má <b>Průběh</b> jako křivku. V Moje hry je rozbalený rovnou.
             </p>
             <ul className="g-list">
-              <Li i="≡">
-                <b>Sloupec:</b> řádek na každý gól a ztrátu s časem. Góly levé strany vlevo, pravé vpravo, uprostřed stav po gólu. Podbarvení ukazuje, kdo
-                zrovna vede.
-              </Li>
               <Li i="↗">
-                <b>Křivka:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Nad nulou vede levá, pod nulou pravá, takže obrat poznáš na
+                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Nad nulou vede levá, pod nulou pravá, takže obrat poznáš na
                 první pohled.
               </Li>
               <Li i="✓">
-                <b>Cvičení</b> ukáže ve sloupci pokusy každého hráče (číslo = kolikátý povedený, ✗ nepovedený), v křivce porovná hráče u stolu.
+                <b>Cvičení</b> porovná hráče u stolu: čára roste s každým povedeným pokusem, nepovedený je tečka.
               </Li>
             </ul>
           </Step>
@@ -644,7 +639,7 @@ function DrillDemo() {
   );
 }
 
-/* ── Ukázka: průběh legu (skutečná komponenta, přepínač Sloupec / Křivka) ── */
+/* ── Ukázka: průběh legu (skutečná komponenta – křivka) ── */
 const DEMO_NAMES = { dejv: 'Dejv', milan: 'Milan', osky: 'Osky', denys: 'Denys' };
 const DEMO_MATCH = { id: 'guide', kind: 'doubles', block: 'league', sideA: ['dejv', 'milan'], sideB: ['osky', 'denys'] } as unknown as Match;
 // Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení, l = ztráta).
@@ -655,13 +650,11 @@ const DEMO_EVENTS: GameEvent[] = (
 function ProgressPhone() {
   return (
     <Phone time="19:06" title="Stůl 2 · Normální leg" sub="Dejv + Milan vs Osky + Denys · 6:4" tab="my" label="Ukázka: průběh legu" fixed>
-      {/* Telefon má pevnou výšku, delší sloupec se posouvá uvnitř karty. */}
       <div className="g-card g-progress">
         <TimelineBox count={DEMO_EVENTS.length} open>
           <MatchTimeline match={DEMO_MATCH} events={DEMO_EVENTS} from={0} to={470_000} names={DEMO_NAMES} />
         </TimelineBox>
       </div>
-      <p className="g-hint">Sloupcem posouvej prstem, pak přepni na Křivku.</p>
     </Phone>
   );
 }
