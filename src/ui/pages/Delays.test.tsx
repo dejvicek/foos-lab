@@ -76,12 +76,13 @@ describe('Zdržovači', () => {
     const row = within(table).getAllByRole('row')[1];
     expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2
-    // první tři Zdržovači: červený kroužek a šnek, první „Brzda“; čtvrtý bez
+    // jen první Zdržovač: červený kroužek, šnek a „Brzda“; druhý už bez (18. 11. 2026)
     const rows = within(table).getAllByRole('row');
     expect(rows[1]).toHaveTextContent('Brzda');
-    expect(within(rows[3]).getByTitle('3. nejdelší čekání')).toBeInTheDocument();
-    expect(rows[3]).not.toHaveTextContent('Brzda');
-    expect(within(rows[4]).queryByTitle(/nejdelší čekání/)).not.toBeInTheDocument();
+    expect(within(rows[1]).getByTitle('1. nejdelší čekání')).toBeInTheDocument();
+    expect(rows[2]).not.toHaveTextContent('Brzda');
+    expect(within(rows[2]).queryByTitle(/nejdelší čekání/)).not.toBeInTheDocument();
+    expect(table.querySelectorAll('tr.shame')).toHaveLength(1);
   });
 
   it('v žebříčku jako třetí část', async () => {

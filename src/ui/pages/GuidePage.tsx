@@ -274,7 +274,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Najdeš je pod souhrnem tréninku a jako třetí část žebříčku. V Průměru se řadí podle čekání na utkání, v Celkem podle součtu čekání.
               </Li>
               <Li i={<Snail />} red>
-                První tři dostanou červený kroužek a šneka, ten úplně první ještě štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
+                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
               </Li>
               <Li i="⏱">
                 Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Připraven</b> v Moje hry.
@@ -950,12 +950,12 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
                 <span className="g-n">
                   <span className="delay-who">
                     {n}
-                    {shamed && <Snail big={i === 0} />}
-                    {shamed && i === 0 && <span className="shame-tag">Brzda</span>}
+                    {shamed && <Snail big />}
+                    {shamed && <span className="shame-tag">Brzda</span>}
                   </span>
                   <small>{sub}</small>
                 </span>
-                <span className={i === 0 ? 'g-v g-bad' : 'g-v'}>{v}</span>
+                <span className={shamed ? 'g-v g-bad' : 'g-v'}>{v}</span>
               </div>
             );
           })}

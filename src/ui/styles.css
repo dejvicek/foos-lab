@@ -728,7 +728,7 @@ td.rank { width: 1%; white-space: nowrap; }
 .ladder-rule { display: flex; align-items: center; gap: 8px; margin: -4px 0 8px; color: var(--muted); font-size: 13px; }
 .ladder-rule > span { flex: none; }
 
-/* Zdržovači: nelichotivě – červený kroužek, světle červený řádek, šnek; první navíc linka a „Brzda“. */
+/* Zdržovači: jen první nelichotivě – červený kroužek, světle červený řádek s linkou, šnek a „Brzda“ (18. 11. 2026). */
 .shame-rank { color: var(--warn-ink); background: var(--warn); }
 .wrap tr.shame td { background: var(--warn-soft); }
 .wrap tr.shame-1 td:first-child { box-shadow: inset 4px 0 0 var(--warn); }

@@ -183,7 +183,7 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
           {rows.map((r, i) => {
             const shamed = isShamed(i + 1, r.waitSum > 0);
             return (
-            <tr key={r.playerId} className={shamed ? (i === 0 ? 'shame shame-1' : 'shame') : undefined}>
+            <tr key={r.playerId} className={shamed ? 'shame shame-1' : undefined}>
               <td className="n rank">
                 <ShameRank place={i + 1} shamed={shamed} />
               </td>
@@ -196,8 +196,8 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
                   ) : (
                     names[r.playerId] ?? '?'
                   )}
-                  {shamed && <Snail big={i === 0} />}
-                  {shamed && i === 0 && <span className="shame-tag">Brzda</span>}
+                  {shamed && <Snail big />}
+                  {shamed && <span className="shame-tag">Brzda</span>}
                 </span>
               </td>
               {showTrainings && <td className="n">{r.trainings}</td>}
