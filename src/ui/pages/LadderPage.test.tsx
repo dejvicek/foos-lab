@@ -144,8 +144,8 @@ describe('žebříček stanovišť', () => {
     const user = userEvent.setup();
     const r = repo2();
     const { unmount } = render(<App repo={r} />);
-    await screen.findByRole('button', { name: 'Stanoviště' });
-    await user.click(screen.getByRole('button', { name: 'Stanoviště' }));
+    await screen.findByRole('button', { name: 'Týmové cvičení' });
+    await user.click(screen.getByRole('button', { name: 'Týmové cvičení' }));
     // 2 tréninky: oba pod čárou (pořadí od 3 tréninků), hodnota a pořadí se ukazují
     const table = screen.getByRole('table', { name: 'Udržení míče na pětce' });
     const rows = within(table).getAllByRole('row').slice(1);
@@ -162,8 +162,8 @@ describe('žebříček stanovišť', () => {
   it('prázdné období', async () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
-    await screen.findByRole('button', { name: 'Stanoviště' });
-    await user.click(screen.getByRole('button', { name: 'Stanoviště' }));
+    await screen.findByRole('button', { name: 'Týmové cvičení' });
+    await user.click(screen.getByRole('button', { name: 'Týmové cvičení' }));
     expect(screen.getByText('V tomhle období zatím nejsou žádné výsledky ze sólové části.')).toBeInTheDocument();
   });
 });

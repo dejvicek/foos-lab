@@ -359,8 +359,8 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
         onChange={(v) => setPrefs({ ...prefs, ladderPart: v })}
         options={[
           ['matches', 'Zápasy'],
-          ['solo', 'Stanoviště'],
-          ['practice', 'Vlastní'],
+          ['solo', 'Týmové cvičení'],
+          ['practice', 'Solo/Duo cvičení'],
           ['delays', 'Zdržovači'],
         ]}
       />

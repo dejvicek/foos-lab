@@ -118,7 +118,7 @@ function seriesResults(t: Training, s: PracticeSeries | undefined, name: (id: Pl
 
 /**
  * PRD 5.11: Pořadí hráčů vlastního tréninku za formu, pro každou metriku tréninku – cvičení, která jsou
- * i v klubu, ve Stanovištích (12. 11. 2026, stejné podmínky napříč), ostatní ve Vlastní.
+ * i v klubu, v Týmovém cvičení (dřív Stanoviště; 12. 11. 2026, stejné podmínky napříč), ostatní v Solo/Duo cvičení (dřív Vlastní).
  */
 function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: PlayerId): string }) {
   const metrics = [...new Set(practiceSeries(t).map((s) => s.metric))];
@@ -141,7 +141,7 @@ function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: Play
                 <span>
                   {seriesDrill(m).name}
                   {pair ? ` · ${name(p)}` : ''}
-                  <small className="muted"> · {clubMetric(m) ? 'Stanoviště' : 'Vlastní'}</small>
+                  <small className="muted"> · {clubMetric(m) ? 'Týmové cvičení' : 'Solo/Duo cvičení'}</small>
                 </span>
                 {at >= 0 ? (
                   <span className="practice-place">
@@ -361,7 +361,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
           Trénink
         </button>
         <h1>Vlastní trénink</h1>
-        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku Vlastní.</p>
+        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku Solo/Duo cvičení.</p>
         {mine && (
           <div className="flow-bar practice-resume" role="status">
             <span>Máš rozdělaný vlastní trénink.</span>
