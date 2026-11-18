@@ -1232,6 +1232,8 @@ button.dp-toggle:focus-visible { outline: 2px solid var(--felt); outline-offset:
 
 .dp-dur { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); text-align: right; white-space: nowrap; }
 .dp-dur b { color: var(--ink); font-weight: 600; }
+.dp-dur { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.dp-goalsec { font-size: 11px; color: var(--muted); }
 .dp-who { display: flex; justify-content: center; color: var(--muted); }
 .dp-who svg, .dp-legend svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .dp-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }

@@ -262,8 +262,16 @@ function DisciplineRow({
           <span className="dp-name">{d.name}</span>
         </button>
         <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
-          {dur.rounds === 2 && '2× '}
-          <b>{dur.min}</b> min
+          <span>
+            {dur.rounds === 2 && '2× '}
+            <b>{dur.min}</b> min
+          </span>
+          {/* Zápas a simulace: délka kola z doby gólu (18. 11. 2026) – doba gólu hned v řádku. */}
+          {usesGoals(d.id) && (
+            <small className="dp-goalsec" aria-label={`Doba gólu ${goalSecOf(d.id)} s`} title="Doba gólu – délka kola = doba gólu × nejvíc možných gólů">
+              {goalSecOf(d.id)} s / gól
+            </small>
+          )}
         </span>
         <span className="dp-places" role="group" aria-label={`Hraje se: ${placesText(places)}`}>
           {PLACE_KEYS.map((k) =>
