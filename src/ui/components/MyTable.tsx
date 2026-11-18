@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { matchState } from '../../domain/matchFormat';
+import { tableScore } from '../../domain/legState';
+import { trainingProgress } from '../../domain/progress';
+import { RoundHeader, roundName } from './RoundHeader';
 import { myAssignments, type Assignment } from '../../domain/my';
-import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, type TapEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
@@ -64,57 +66,114 @@ function summary(a: Assignment, names: Record<PlayerId, string>, me: PlayerId): 
   return '';
 }
 
-/** PRD 4.7 „Můj stůl“: moje aktuální kolo se zápisem, listování mezi koly. */
+/** Výsledek dohraného utkání z pohledu hráče: „6:4 · vyhráli jste“ (BO na legy). */
+function resultOf(a: Assignment, t: Training, me: PlayerId): string {
+  const m = a.match;
+  if (!m) return 'hotovo';
+  const st = matchState(m, t.scores);
+  const flip = a.role === 'play' && m.sideB.includes(me);
+  const multi = (m.bestOf ?? 1) > 1;
+  const [x, y] = multi ? [st.legsA, st.legsB] : tableScore(st.legs[st.legs.length - 1].leg, st.legs[st.legs.length - 1].score);
+  const score = flip ? `${y}:${x}` : `${x}:${y}`;
+  const mine = flip ? 'B' : 'A';
+  const verdict = a.role !== 'play' || !st.winner ? '' : st.winner === mine ? ' · vyhráli jste' : ' · prohráli jste';
+  return `${score}${multi ? ' na legy' : ''}${verdict}`;
+}
+
+/**
+ * PRD 4.7 „Můj stůl“: moje aktuální kolo se zápisem, listování mezi koly. Od 18. 11. 2026 nahoře nadpis
+ * kola s průběhem tréninku a po konci utkání přechod: „4. kolo dohráno“ a karta dalšího kola „Otevřít“ –
+ * Moje hry se z dohraného utkání na další samy nepřepnou (hráči nevěděli, že je jiná disciplína).
+ */
 export function MyTable(props: Props) {
   const { schedule, training, names, playerId, since } = props;
   const list = myAssignments(schedule, playerId);
-  // Rozehraná hra (na řadě / hraje se) má přednost – Moje hry ji otevřou vždy.
+  const segs = trainingProgress(schedule, training.durationMin);
+  // Rozehraná hra (na řadě / hraje se) má přednost – Moje hry ji otevřou.
   const itemOf = (x: Assignment) =>
     x.role === 'wait' ? null : x.match ? x.match.id : x.group && x.table ? drillItemId(x.row, x.table, x.group.players) : null;
+  const ended = (x: Assignment | undefined) => {
+    const id = x ? itemOf(x) : null;
+    return !!id && props.timing?.state(id)?.endedAt !== undefined;
+  };
   const activeIdx = list.findIndex((x) => {
     const id = itemOf(x);
     const st = id ? props.timing?.state(id)?.state : undefined;
     return st === 'ready' || st === 'playing';
   });
   const [idx, setIdx] = useState(() => (activeIdx >= 0 ? activeIdx : initialIndex(list, since, training)));
+  const [fix, setFix] = useState(false);
   const activeId = activeIdx >= 0 ? itemOf(list[activeIdx]) : null;
-  // Když se rozehraná hra změní (další kolo je na řadě), přepnout na ni.
+  // Další hra je na řadě: přepnout na ni – ne však z dohraného utkání (tam čeká přechod s „Otevřít“).
   useEffect(() => {
-    if (activeIdx >= 0) setIdx(activeIdx);
+    if (activeIdx >= 0) setIdx((cur) => (ended(list[cur]) && cur < activeIdx ? cur : activeIdx));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
   if (!list.length) return <p className="note">V tomhle rozpisu nemáš žádné kolo.</p>;
   const i = Math.min(idx, list.length - 1);
   const a = list[i];
-  const next = list[i + 1];
+  const go = (j: number) => {
+    setFix(false);
+    setIdx(j);
+  };
   const sec = schedule.sections.find((s) => s.rows.includes(a.row));
-  // Moje utkání v tomhle kole (zápas, nebo skupina ve cvičení) – „Na další kolo“ po potvrzeném konci.
-  const myItemId = a.match ? a.match.id : a.group && a.table ? drillItemId(a.row, a.table, a.group.players) : null;
+  const myItemId = itemOf(a);
   const myRow = {
     ...a.row,
     cells: a.row.cells.map((c, j) => (a.table !== undefined && j === a.table - 1 ? c : null)),
     waiting: a.role === 'wait' ? a.row.waiting : [],
   };
+  // Kam vede „Otevřít“: na hru, která je na řadě, jinak na další kolo.
+  const target = activeIdx > i ? activeIdx : i + 1 < list.length ? i + 1 : null;
+  const finished = a.role !== 'wait' && !!myItemId && ended(a);
+  const header = (j: number, extra: Partial<Parameters<typeof RoundHeader>[0]> = {}) => (
+    <RoundHeader key={j} segs={segs} current={j} a={list[j]} me={playerId} startTime={training.startTime} flash {...extra} />
+  );
+  const nextCard = target !== null && (
+    <button type="button" className="my-nextcard" onClick={() => go(target)} aria-label={`Otevřít ${list[target].row.label}: ${roundName(list[target])}`}>
+      <span className="k">{activeIdx === target ? 'Další kolo · na řadě' : 'Další kolo'}</span>
+      {header(target, { inline: true })}
+      <span className="vs">{summary(list[target], names, playerId)}</span>
+      <span className="open">Otevřít ›</span>
+    </button>
+  );
+  const done = finished && (
+    <div className="my-finished" role="status">
+      <b>
+        ✓ {a.row.label} dohráno · {resultOf(a, training, playerId)}
+      </b>
+      <span>
+        {roundName(a)}
+        {!fix && (
+          <>
+            {' · '}
+            <button type="button" className="link" onClick={() => setFix(true)}>
+              Opravit výsledek
+            </button>
+          </>
+        )}
+      </span>
+    </div>
+  );
+  // Přechod: dohrané utkání a další kolo jako jedna karta – dál jde až po ťuknutí.
+  if (finished && target !== null && !fix)
+    return (
+      <section className="my-table my-transition" aria-label="Moje kolo">
+        {done}
+        {nextCard}
+      </section>
+    );
   return (
     <section className="my-table" aria-label="Moje kolo">
-      <div className="my-head">
-        <button type="button" className="icon" aria-label="Předchozí kolo" disabled={i === 0} onClick={() => setIdx(i - 1)}>
-          ‹
-        </button>
-        <div className="my-title">
-          <h2>
-            {a.row.label}, {clockAt(training.startTime, a.row.time)}
-          </h2>
-          <span>{a.row.rule}</span>
-        </div>
-        <button type="button" className="icon" aria-label="Další kolo" disabled={i === list.length - 1} onClick={() => setIdx(i + 1)}>
-          ›
-        </button>
-      </div>
+      {header(i, {
+        prev: { disabled: i === 0, onClick: () => go(i - 1) },
+        next: { disabled: i === list.length - 1, onClick: () => go(i + 1) },
+      })}
       <p className="my-role">
         <strong>{names[playerId] ?? ''}</strong>: {summary(a, names, playerId)}
         {a.role === 'wait' && sec?.id === 'drills' && !a.row.waitingLabel && ', počítáš'}
       </p>
+      {done}
       {a.role !== 'wait' && (
         <BlockEntry
           row={myRow}
@@ -131,16 +190,7 @@ export function MyTable(props: Props) {
           timelineOpen
         />
       )}
-      {next && a.role !== 'wait' && myItemId && props.timing?.state(myItemId)?.endedAt !== undefined && (
-        <button type="button" className="my-go-next" onClick={() => setIdx(i + 1)}>
-          Na další kolo ›
-        </button>
-      )}
-      {next && (
-        <p className="my-next">
-          Další: {next.row.label}, {clockAt(training.startTime, next.row.time)}, {next.row.rule?.split(',')[0]}: {summary(next, names, playerId)}
-        </p>
-      )}
+      {finished && nextCard}
     </section>
   );
 }

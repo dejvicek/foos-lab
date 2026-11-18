@@ -10,7 +10,7 @@ import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } 
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
 import { streakLimitSec, trainingStreak } from '../../domain/streak';
-import { TimingBar, type ReadySlot, type ItemTiming } from './Timing';
+import { ReadyLock, TimingBar, waitText, type ReadySlot, type ItemTiming } from './Timing';
 import { DrillTimeline, MatchTimeline, TimelineBox } from './GameTimeline';
 import { drillItemId, readyKeys } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
@@ -154,7 +154,9 @@ const legText = (m: Match, s: Score | undefined) => {
  * Skóre utkání: ťukání (telefon) nebo výběr (notebook). Zápas s BO (12. 11. 2026) má legy po sobě –
  * zapisuje se do hraného legu, předchozí jde otevřít a opravit; nahoře stav v legech.
  */
-export function MatchScore({ m, training, names, label, tap, disabled, note, onScore, timelineOpen }: {
+export function MatchScore({ m, training, names, label, tap, disabled, note, onScore, timelineOpen, lock, done }: {
+  lock?: Parameters<typeof ScoreMirror>[0]['lock'];
+  done?: Parameters<typeof ScoreMirror>[0]['done'];
   m: Match;
   training: Training;
   names: Record<PlayerId, string>;
@@ -199,7 +201,7 @@ export function MatchScore({ m, training, names, label, tap, disabled, note, onS
         </div>
       )}
       {tap ? (
-        <ScoreMirror key={leg.id} match={leg} score={training.scores[leg.id]} names={names} me={tap.me} disabled={disabled} note={note} onBump={(f, d) => tap.onBumpScore(leg, f, d)} />
+        <ScoreMirror key={leg.id} match={leg} score={training.scores[leg.id]} names={names} me={tap.me} disabled={disabled} note={note} lock={lock} done={done} onBump={(f, d) => tap.onBumpScore(leg, f, d)} />
       ) : (
         <ScorePicker label={multi ? `${label}, leg ${leg.legNo}` : label} match={leg} score={training.scores[leg.id]} names={names} disabled={disabled} onChange={(sc) => onScore(leg.id, sc)} />
       )}
@@ -222,7 +224,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     );
   };
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
-  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match, countdown = false) => {
+  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match, countdown = false, inMirror = false) => {
     const st = timing?.state(id);
     // Zapisovat jde po zahájení; organizátor bez zahájení; hotový výsledek jde opravit vždy.
     const open = !timing || !st || st.startedAt !== undefined || hasResult || timing.manage;
@@ -236,6 +238,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         finished={finished}
         countdown={countdown}
         autoEndIn={timing.autoEndIn?.(id)}
+        hideReady={inMirror && !open}
+        hideFinish={inMirror}
         {...(timing.ready && timing.canReady ? { slots: readySlots(players, m), onReady: (key: string, on: boolean) => timing.ready!(id, key, on, readyKeys({ match: m, players })) } : {})}
         onStart={() => timing.start(id)}
         onEnd={() => timing.end(id)}
@@ -268,8 +272,33 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           if (c.type === 'match') {
             const m = c.match;
             const st = matchState(m, training.scores);
-            const tmr = timer(m.id, [...m.sideA, ...m.sideB], legIds(m).some((id) => !isEmptyScore(training.scores[id])), st.over, m);
+            const players = [...m.sideA, ...m.sideB];
+            // Telefon (zrcadlo): Připraven a potvrzení konce přímo v zrcadle (18. 11. 2026).
+            const inMirror = !!tap && !!timing;
+            const tmr = timer(m.id, players, legIds(m).some((id) => !isEmptyScore(training.scores[id])), st.over, m, false, inMirror && canMatch(m));
             const can = canMatch(m) && tmr.open;
+            const ist = timing?.state(m.id);
+            let lock: Parameters<typeof MatchScore>[0]['lock'];
+            if (inMirror && ist && canMatch(m) && !tmr.open && timing!.ready && timing!.canReady) {
+              const slots = readySlots(players, m);
+              const mineTodo = slots.some((x) => x.can && ist.ready?.[x.key] === undefined);
+              lock = {
+                content: <ReadyLock s={ist} slots={slots} onReady={(key, on) => timing!.ready!(m.id, key, on, readyKeys({ match: m, players }))} />,
+                message: ist.state !== 'ready' ? waitText(ist) : mineTodo ? 'Nejdřív ťukni Připraven' : 'Čeká se na soupeře',
+              };
+            }
+            // Dohráno, nepotvrzeno a smím potvrdit (hráč po zahájení, organizátor vždy).
+            const mayEnd =
+              !!ist && ist.endedAt === undefined && timing!.canWrite(m.id, players, m) && (timing!.manage || (timing!.allowStart && ist.startedAt !== undefined));
+            const tsc = st.legs[st.legs.length - 1];
+            const done =
+              inMirror && st.over && mayEnd
+                ? {
+                    text: (m.bestOf ?? 1) > 1 ? `Dohráno ${st.legsA}:${st.legsB} na legy ✓` : `Dohráno ${legText(tsc.leg, tsc.score)} ✓`,
+                    autoEndIn: timing!.autoEndIn?.(m.id) ?? null,
+                    onConfirm: () => timing!.end(m.id),
+                  }
+                : undefined;
             return (
               <div key={j} className="entry-card" role="group" aria-label={label}>
                 <div className="entry-head">
@@ -288,6 +317,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   tap={tap}
                   disabled={!can}
                   note={canMatch(m) && !tmr.open ? 'Skóre jde zapsat po zahájení utkání.' : undefined}
+                  lock={lock}
+                  done={done}
                   onScore={onScore}
                   timelineOpen={timelineOpen}
                 />

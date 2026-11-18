@@ -54,8 +54,66 @@ interface BarProps {
   /** Připravenost (18. 11. 2026): strany / hráči; bez ní tlačítko Zahájit jako dřív. */
   slots?: ReadySlot[];
   onReady?(key: string, on: boolean): void;
+  /** Připraven je přímo v zrcadle (Moje hry na telefonu, 18. 11. 2026) – tady se neopakuje. */
+  hideReady?: boolean;
+  /** Potvrzení konce je přímo v zrcadle (Dohráno 6:4 ✓) – tady se neopakuje. */
+  hideFinish?: boolean;
   onStart(): void;
   onEnd(): void;
+}
+
+/** Proč utkání ještě nezačalo (stejné texty jako stopky). */
+export function waitText(s: ItemState): string {
+  return s.state === 'ready'
+    ? 'Čeká se na připravenost'
+    : s.waitingFor === 'training'
+      ? 'Trénink ještě nezačal'
+      : s.waitingFor === 'pause'
+        ? 'Pauza – další kolo spustí organizátor'
+        : 'Utkání ještě není na řadě';
+}
+
+/**
+ * Zamčené zrcadlo (18. 11. 2026): velké Připraven za strany, za které smím, a kdo je / není připravený.
+ * Před tím, než je utkání na řadě, jen důvod čekání.
+ */
+export function ReadyLock({ s, slots, onReady }: { s: ItemState; slots: ReadySlot[]; onReady(key: string, on: boolean): void }) {
+  if (s.state !== 'ready') return <p className="lock-why">{waitText(s)}.</p>;
+  const mine = slots.filter((x) => x.can);
+  const todo = mine.filter((x) => s.ready?.[x.key] === undefined);
+  const many = mine.length > 1;
+  return (
+    <div className="ready-lock" role="group" aria-label="Připravenost">
+      {todo.map((x) => (
+        <button key={x.key} type="button" className="big" onClick={() => onReady(x.key, true)} aria-label={many ? `Připraven: ${x.label}` : 'Připraven'}>
+          {many ? `Připraven – ${x.label}` : 'Připraven'}
+        </button>
+      ))}
+      <p className="lock-why">
+        {todo.length ? 'Skóre zapíšete, až budou připravené obě strany.' : mine.length ? 'Jste připravení. Skóre půjde zapsat, jakmile bude připravený i soupeř.' : 'Skóre půjde zapsat, až budou připravené obě strany.'}
+      </p>
+      <ul className="ready-list">
+        {slots.map((x) => {
+          const at = s.ready?.[x.key];
+          return (
+            <li key={x.key} className={at !== undefined ? 'ready on' : 'ready'}>
+              <span className="ready-who">{x.label}</span>{' '}
+              {at !== undefined ? (
+                <span className="ready-state">✓ připraven{x.key === 'A' || x.key === 'B' ? 'i' : ''} {clockOf(at)}</span>
+              ) : (
+                <span className="ready-state muted">čeká</span>
+              )}{' '}
+              {x.can && at !== undefined && (
+                <button type="button" className="link" onClick={() => onReady(x.key, false)} aria-label={`Zrušit připravenost: ${x.label}`}>
+                  zrušit
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 /** „Připraveni: Ada + Bára ✓ 18:02 · čeká: Cyril + Dan“ a tlačítka Připraven / Zrušit pro ty, za které smím. */
@@ -96,16 +154,16 @@ function ReadyRow({ s, slots, now, onReady }: { s: ItemState; slots: ReadySlot[]
 }
 
 /** Stopky utkání: Zahájit (jen Moje hry) a Potvrdit konec; časy se ručně neupravují. */
-export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, countdown, autoEndIn, slots, onReady, onStart, onEnd }: BarProps) {
+export function TimingBar({ state: s, now, canWrite, allowStart, manage, finished, countdown, autoEndIn, slots, onReady, hideReady, hideFinish, onStart, onEnd }: BarProps) {
   if (!s) return null;
   const started = s.startedAt;
   const ended = s.endedAt;
   // Připravenost: na řadě, nezahájené; hlásit jde v Moje hry, organizátor kdekoli.
   const readyMode = !!slots && !!onReady;
-  const showReady = readyMode && started === undefined && ended === undefined && s.state === 'ready' && (allowStart || manage);
+  const showReady = readyMode && !hideReady && started === undefined && ended === undefined && s.state === 'ready' && (allowStart || manage);
   const playerStart = !readyMode && allowStart && canWrite && started === undefined && s.state === 'ready';
   // Konec potvrzuje hráč utkání v Moje hry, nebo organizátor kdekoli (i bez zahájení).
-  const confirm = ended === undefined && ((manage && canWrite) || (allowStart && canWrite && started !== undefined));
+  const confirm = !(hideFinish && finished) && ended === undefined && ((manage && canWrite) || (allowStart && canWrite && started !== undefined));
   return (
     <div className={`timing ${s.state}${finished && ended === undefined ? ' finished' : ''}`}>
       <div className="timing-main">
@@ -139,7 +197,7 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
         {ended !== undefined && <span className="timing-label">dohráno</span>}
       </div>
       {showReady && <ReadyRow s={s} slots={slots!} now={now} onReady={onReady!} />}
-      {finished && !countdown && ended === undefined && (
+      {finished && !countdown && !hideFinish && ended === undefined && (
         <p className="timing-hint" role="status">
           {autoEndIn !== null && autoEndIn !== undefined
             ? `Hotovo – zkontroluj výsledek. Utkání skončí samo za ${Math.ceil(autoEndIn / 1000)} s; oprava výsledku odpočet zastaví.`

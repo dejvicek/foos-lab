@@ -39,6 +39,13 @@
   --side-b-ink: #ffffff;
   --side-b-text: #3a3936;
   --side-b-soft: #e3e5e9;
+  /* Typy disciplín (nadpis kola v Moje hry, 18. 11. 2026) – žádná zlatá: zlatá = dá se ťuknout. */
+  --d-normal: #4a5262;
+  --d-scen: #1f6f78;
+  --d-wall: #2f5fa6;
+  --d-tax: #b53a2f;
+  --d-sim: #2f7d4f;
+  --d-drill: #6b5a2e;
   --nav-h: 56px;
   /* Šířka celé appky na notebooku; víc je jen okraj (širokoúhlé monitory appka nepotřebuje). */
   --app-max: 1200px;
@@ -70,6 +77,12 @@
     --side-b-ink: #ffffff;
     --side-b-text: #c9ccd2;
     --side-b-soft: #23252a;
+    --d-normal: #8a93a6;
+    --d-scen: #3aa3ad;
+    --d-wall: #6b9be0;
+    --d-tax: #e36c60;
+    --d-sim: #5cc287;
+    --d-drill: #b8a06a;
     color-scheme: dark;
   }
 }
@@ -97,6 +110,12 @@
   --side-b-ink: #ffffff;
   --side-b-text: #c9ccd2;
   --side-b-soft: #23252a;
+  --d-normal: #8a93a6;
+  --d-scen: #3aa3ad;
+  --d-wall: #6b9be0;
+  --d-tax: #e36c60;
+  --d-sim: #5cc287;
+  --d-drill: #b8a06a;
   color-scheme: dark;
 }
 
@@ -564,15 +583,8 @@ input:disabled { background: var(--bg); color: var(--muted); border-color: var(-
 
 /* Můj stůl */
 .my-table { background: var(--felt-soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-width: 640px; }
-.my-head { display: flex; align-items: center; gap: 10px; }
-.my-head button.icon { min-width: 44px; min-height: 44px; font-size: 22px; }
-.my-title { flex: 1; display: flex; flex-direction: column; text-align: center; }
-.my-title h2 { font-size: 20px; margin: 0; }
-button.my-go-next { width: 100%; min-height: 52px; margin-top: 10px; border-radius: 26px; font-size: 16px; }
-.my-title span { color: var(--muted); font-size: 13px; }
 .my-role { margin: 10px 0 6px; font-size: 16px; }
 .my-table .entry-cards { grid-template-columns: 1fr; }
-.my-next { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 767px) {
   :root { --top-h: 45px; }
@@ -632,6 +644,77 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .mirror-metric { line-height: 1.3; }
 .mirror-metric span { color: var(--muted); font-size: 13px; }
 .my-table .entry-card { padding: 8px; }
+
+/* ── Moje hry: nadpis kola s průběhem tréninku, přechod mezi koly (18. 11. 2026) ── */
+.round-head { --dc: var(--d-normal); display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.round-head.t-scen, .seg.t-scen { --dc: var(--d-scen); }
+.round-head.t-wall, .seg.t-wall { --dc: var(--d-wall); }
+.round-head.t-tax, .seg.t-tax { --dc: var(--d-tax); }
+.round-head.t-sim, .seg.t-sim { --dc: var(--d-sim); }
+.round-head.t-drill, .seg.t-drill { --dc: var(--d-drill); }
+.round-head.flash { animation: rh-glow 1200ms ease-out; border-radius: 8px; }
+@keyframes rh-glow { 0% { background: color-mix(in srgb, var(--dc) 22%, transparent); } 100% { background: transparent; } }
+.prog { display: flex; align-items: flex-end; gap: 2px; height: 20px; padding-top: 9px; }
+.seg { --dc: var(--d-normal); display: block; height: 5px; min-width: 4px; border-radius: 2px; position: relative; background: color-mix(in srgb, var(--dc) 26%, transparent); }
+.seg.done { background: var(--dc); opacity: 0.55; }
+.seg.cur { background: var(--dc); height: 10px; border-radius: 3px; }
+.seg.cur::before {
+  content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
+  border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;
+}
+.pz { display: block; height: 5px; min-width: 10px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--muted) 0 2px, transparent 2px 4px); }
+.rh-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.rh-nav button.icon { min-width: 44px; min-height: 40px; font-size: 22px; }
+.rh-count { font-size: 13px; font-weight: 700; color: var(--ink); }
+.rh-type { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dc); }
+.rh-type::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--dc); flex: none; }
+.round-head .rh-name { display: block; margin: 0; font-size: 26px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; color: var(--ink); text-wrap: balance; }
+.round-head .rh-rule { display: block; margin: 2px 0 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.my-finished { display: grid; gap: 2px; background: var(--surface); border: 2px solid var(--felt); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.my-finished b { font-size: 16px; }
+.my-finished span { font-size: 13px; color: var(--muted); }
+.my-finished button.link, .mirror-over-card button.link, .ready-lock button.link {
+  background: none; border: 0; padding: 0; min-height: 0; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer;
+}
+.my-transition { display: grid; gap: 10px; }
+.my-transition .my-finished { margin: 0; }
+button.my-nextcard {
+  display: grid; gap: 8px; width: 100%; text-align: left; font: inherit; font-weight: 400; color: var(--ink);
+  background: var(--surface); border: 2px solid var(--gold); border-radius: 16px; padding: 12px; margin-top: 10px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 25%, transparent);
+}
+.my-transition button.my-nextcard { margin-top: 0; }
+button.my-nextcard:active { transform: scale(0.98); }
+button.my-nextcard .k { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+button.my-nextcard .rh-nav { min-height: 0; }
+button.my-nextcard .vs { font-size: 15px; font-weight: 700; }
+button.my-nextcard .open {
+  display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 12px;
+  background: var(--action); color: var(--action-ink); font-size: 18px; font-weight: 800;
+}
+
+/* Zamčené / dohrané zrcadlo (18. 11. 2026): proč nejde zapisovat a co udělat. */
+.mirror-stage { position: relative; }
+.mirror-stage.locked .mirror-half { filter: grayscale(1); opacity: 0.4; }
+.mirror-halves.shake { animation: mirror-shake 380ms; }
+@keyframes mirror-shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+.mirror-lock, .mirror-over { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; cursor: pointer; }
+.mirror-over { cursor: default; background: color-mix(in srgb, var(--bg) 55%, transparent); border-radius: 14px; }
+.mirror-lock-card, .mirror-over-card {
+  cursor: default; width: min(100%, 320px); display: grid; gap: 8px; text-align: center;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px; padding: 12px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+.mirror-over-card { border: 2px solid var(--felt); }
+.mirror-over-card b { font-size: 26px; font-weight: 800; color: var(--felt); }
+.mirror-over-card p, .lock-why { margin: 0; font-size: 13.5px; }
+button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight: 800; }
+.ready-lock { display: grid; gap: 8px; }
+.ready-lock .ready-list { text-align: left; }
+.ready-lock .ready-list li { justify-content: space-between; }
+.mirror-nudge { margin: 0; padding: 6px 10px; border-radius: 99px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
+.mirror-lock-card.shake { animation: mirror-shake 380ms; }
+.mirror-from { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; opacity: 0.8; }
+@media (prefers-reduced-motion: reduce) { .round-head.flash, .mirror-halves.shake, .mirror-lock-card.shake { animation: none; } }
 @media (max-width: 767px) {
   .my-table { margin: 0 -8px; padding: 10px 8px; }
   .mirror-halves.cols-3 .mirror-num { font-size: 48px; }

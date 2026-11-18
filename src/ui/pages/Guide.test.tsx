@@ -20,7 +20,7 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     expect(within(demo).getByRole('button', { name: 'Gól vpravo' })).toBeDisabled();
     await user.click(within(demo).getByRole('button', { name: 'Potvrdit konec' }));
     expect(within(demo).getByRole('status')).toHaveTextContent('Konec potvrzen 6:0 · uloženo');
-    expect(within(demo).getByRole('button', { name: 'Na další kolo' })).toBeInTheDocument();
+    expect(within(demo).getByRole('button', { name: 'Otevřít další kolo' })).toBeInTheDocument();
     await user.click(within(demo).getByRole('button', { name: 'Opravit' }));
     expect(within(demo).queryByRole('status')).toBeNull();
     // Start 5:5: o 2 góly

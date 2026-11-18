@@ -147,15 +147,18 @@ describe('přihlášení', () => {
       expect(Object.values(t.scores)).toEqual([{ ga: 2, gb: 0 }]);
       expect(t.lockedRounds.length).toBeGreaterThan(0);
     });
-    // dohraný leg nabídne další kolo
-    expect(within(mine).queryByRole('button', { name: /Na další kolo/ })).toBeNull();
+    // dohraný leg: přes zrcadlo Dohráno a Potvrdit konec; pak přechod s kartou dalšího kola (18. 11. 2026)
+    expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
+    const count = within(mine).getByText(/^Kolo \d+ z/).textContent;
     for (let i = 0; i < 4; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    expect(within(mine).getByText(/Leg dohrán 6 : 0/)).toBeInTheDocument();
-    expect(within(mine).queryByRole('button', { name: /Na další kolo/ })).toBeNull(); // nejdřív potvrdit konec
+    expect(within(mine).getByText('Dohráno 6:0 ✓')).toBeInTheDocument();
+    expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull(); // nejdřív potvrdit konec
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
-    const title = within(mine).getByRole('heading', { level: 2 }).textContent;
-    await user.click(within(mine).getByRole('button', { name: /Na další kolo/ }));
-    expect(within(mine).getByRole('heading', { level: 2 }).textContent).not.toBe(title);
+    // nic se nepřepne samo: dohráno + karta dalšího kola
+    expect(within(mine).getByRole('status')).toHaveTextContent(/dohráno · 6:0 · vyhráli jste/);
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
+    await user.click(within(mine).getByRole('button', { name: /^Otevřít/ }));
+    expect(within(mine).getByText(/^Kolo \d+ z/).textContent).not.toBe(count);
   });
 
   it('admin: resetuje heslo hráče na přezdívku', async () => {

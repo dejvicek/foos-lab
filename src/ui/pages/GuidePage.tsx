@@ -89,8 +89,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Červená tečka</b> u Moje hry znamená, že jsi na řadě. Volný stůl i hráči jsou připravení.
               </Li>
               <Li i="Z">
-                U kola uvidíš <b>pravidlo</b> (Zeď, Daň za ztrátu, Start 0:3 …) a svoji <b>roli</b>: s kým a proti komu hraješ, nebo že jsi rozhodčí u stolu.
-                Pravidla vysvětluje krok 6.
+                Nahoře je velký <b>název disciplíny</b> (Zeď, Daň za ztrátu, Start 4:5 …), pravidlo jednou větou a tvoje <b>role</b>: s kým a proti komu
+                hraješ, nebo že jsi rozhodčí u stolu. Čára nad tím ukazuje průběh tréninku: odehraná kola, kde jsi teď (▼), pauzu a co ještě zbývá. Pravidla
+                vysvětluje krok 6.
               </Li>
               <Li i="–">
                 Když v kole nehraješ, stojí u tebe „nehraješ“. U stolu appka napíše, na co se čeká: „Trénink ještě nezačal“, „Utkání ještě není na řadě“
@@ -110,7 +111,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <div className="g-flow">
               <div>
-                <b>Připraven</b>Jakmile tvoje strana stojí u stolu. Až jsou připravení oba týmy, rozjedou se stopky.
+                <b>Připraven</b>Jakmile tvoje strana stojí u stolu – velké tlačítko uprostřed šedého zrcadla. Až jsou připravení oba týmy, zrcadlo se odemkne.
               </div>
               <div>
                 <b>Ťukat</b>Góly (v Dani za ztrátu i ztráty), kdo z vás zrovna má ruku volnou.
@@ -119,7 +120,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Potvrdit konec</b>Hned, nebo samo po 15 s.
               </div>
               <div>
-                <b>Na další kolo</b>Až po potvrzeném konci.
+                <b>Otevřít</b>Po konci uvidíš výsledek a kartu dalšího kola. Samo se nic nepřepne.
               </div>
             </div>
             <ul className="g-list">
@@ -580,7 +581,7 @@ function MirrorDemo() {
             </button>
             {confirmed ? (
               <button type="button" className="g-go" onClick={() => reset(scen)}>
-                Na další kolo
+                Otevřít další kolo
               </button>
             ) : (
               <button type="button" className="g-go" onClick={() => setConfirmed(true)}>
