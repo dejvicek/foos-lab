@@ -91,17 +91,10 @@ describe('přihlášení', () => {
     expect(within(nav).queryByRole('button', { name: /^(Živě|Moje hry)/ })).toBeNull();
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
 
-    const rowToggles = screen.getAllByRole('button').filter((b) => /^\d+\. kolo$/.test(b.textContent ?? ''));
-    // v zápasovém kole: vlastní zápas zapisovatelný, cizí jen ke čtení
-    const matchRound = rowToggles.find((b) => b.closest('tr')?.textContent?.includes('Normální leg'))!;
-    await userEvent.setup().click(matchRound);
-    const groups = screen.getAllByRole('group').filter((g) => /^\d+\. kolo, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
-    for (const g of groups) {
-      // trénink nezahájil organizátor: hráč nezahájí ani nezapíše nic, ani u svého stolu
-      expect(within(g).queryByRole('button', { name: /^(Zahájit|Připraven)/ })).toBeNull();
-      const chips = within(g).getAllByRole('button', { name: /góly (vlevo|vpravo) \d+$/ });
-      for (const c of chips) expect((c as HTMLButtonElement).disabled).toBe(true);
-    }
+    // rozpis je pro hráče jen ke čtení (18. 11. 2026): žádné rozbalení k zápisu, žádné Zahájit / Připraven
+    expect(screen.queryByRole('button', { name: /^(Zapsat|Opravit|Zavřít): / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /góly (vlevo|vpravo) \d+$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^(Zahájit|Připraven)/ })).toBeNull();
   });
 
   it('notebook: „Moje hry“ zapisuje kliknutím na čísla', async () => {

@@ -343,9 +343,9 @@ describe('hráč hlásí připravenost jen v Moje hry', () => {
     render(<App repo={memoryRepository({ players, trainings: [run] })} auth={auth} />);
     const user = userEvent.setup();
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    const toggle = screen.getByRole('button', { name: /^1\. kolo$/ });
-    if (toggle.getAttribute('aria-expanded') !== 'true') await user.click(toggle);
-    expect(within(screen.getByRole('group', { name: '1. kolo, stůl 1' })).queryByRole('button', { name: /^Připraven/ })).toBeNull();
+    // rozpis je pro hráče jen ke čtení: bez zápisu i bez Připraven
+    expect(screen.queryByRole('button', { name: /^(Zapsat|Opravit|Zavřít): / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Připraven/ })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Živě' }));
     const board = screen.getByRole('region', { name: 'Aktivní utkání' });
     expect(within(board).queryByRole('button', { name: /^Připraven$|^Zahájit$/ })).toBeNull();

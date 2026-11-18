@@ -110,6 +110,13 @@ export function TrainingPage({
     if (commitEdit(store, training, next) && configChanged(training, next)) setExpanded(null); // klíč řádku je pozice
   };
   const manage = canManage(viewer, training);
+  // Trénink běží: odehraná kola se v rozpisu sbalí (po konci tréninku je vidět všechno).
+  const running = !!rounds && training.playTimes?.training?.endedAt === undefined;
+  /** Admin / organizátor zapsal v rozpisu dohraný výsledek → utkání skončí (nezahajuje, nepotvrzuje). */
+  const autoEnd = (id: string) => {
+    const st = itemTiming?.state(id);
+    if (itemTiming && st && st.endedAt === undefined) itemTiming.end(id);
+  };
   const canMatch = (m: Match) => canWriteMatch(viewer, m, training);
   const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
   /**
@@ -384,35 +391,39 @@ export function TrainingPage({
               names={names}
               rounds={rounds}
               pauseSlots={pauseSlots}
-              now={tick}
-              expanded={openKey}
-              onToggle={(key) => setExpanded(openKey === key ? '' : key)}
+              expanded={manage ? expanded : null}
+              onToggle={(key) => setExpanded(expanded === key ? null : key)}
+              onScore={onScore}
+              onSolo={onSolo}
               canMatch={canMatch}
               canSolo={canSolo}
-              tap={tap}
               breaks={breakControls}
-              timing={itemTiming}
               simSetup={simSetup}
+              me={viewer.playerId}
+              manage={manage}
+              running={running}
+              autoEnd={autoEnd}
             />
           ) : (
-          <TrainingTable
-            schedule={schedule}
-            training={training}
-            names={names}
-            rounds={rounds}
+            <TrainingTable
+              schedule={schedule}
+              training={training}
+              names={names}
+              rounds={rounds}
               pauseSlots={pauseSlots}
-              now={tick}
-            expanded={openKey}
-            onToggle={(key) => setExpanded(openKey === key ? '' : key)}
-            onScore={onScore}
-            onSolo={onSolo}
-            canMatch={canMatch}
-            canSolo={canSolo}
-            breaks={breakControls}
-            timing={itemTiming}
-            onTapSolo={onTapSolo}
-            simSetup={simSetup}
-          />
+              expanded={manage ? (expanded ?? openKey) : null}
+              onToggle={(key) => setExpanded((expanded ?? openKey) === key ? '' : key)}
+              onScore={onScore}
+              onSolo={onSolo}
+              canMatch={canMatch}
+              canSolo={canSolo}
+              breaks={breakControls}
+              simSetup={simSetup}
+              me={viewer.playerId}
+              manage={manage}
+              running={running}
+              autoEnd={autoEnd}
+            />
           )}
           <div className="actions-row no-print">
             {breakControls && (

@@ -10,29 +10,26 @@ const t: Training = {
   scores: {}, soloResults: {}, simSplit: 'order', simTeams: null, format: 'custom', durationMin: 60, plan: { warmupPasses: 1 }, lockedRounds: [], breaks: [],
 };
 
-describe('cvičení na notebooku: ✓ / ✗ po pokusech', () => {
-  it('pokusy se počítají, výsledek je počet povedených; ↶ vrátí poslední', async () => {
+describe('cvičení v rozpisu: admin / organizátor zapisuje jen celkový výsledek (18. 11. 2026)', () => {
+  it('bez ✓ / ✗ a bez stopek; zapsáním výsledku všech hráčů stůl skončí', async () => {
     window.location.hash = '#/trainings/t1';
     const repo = memoryRepository({ players, trainings: [t] });
     render(<App repo={repo} />);
     const user = userEvent.setup();
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
-    expect(within(card).queryByRole('button', { name: 'Zahájit' })).toBeNull(); // organizátor nezahajuje, píše rovnou
-    await user.click(within(card).getByRole('button', { name: 'povedená: H2' }));
-    await user.click(within(card).getByRole('button', { name: 'povedená: H2' }));
-    await user.click(within(card).getByRole('button', { name: 'nepovedená: H2' }));
-    expect(card).toHaveTextContent('2 (pokus 3 / 20)');
-    await user.click(within(card).getByRole('button', { name: 'Zpět: H2' }));
-    expect(card).toHaveTextContent('2 (pokus 2 / 20)');
-    // průběh: sloupec pokusů po hráči (1., 2. povedená, ✗ vrácený)
-    const tries = within(card).getByRole('table', { name: 'Pokusy' });
-    expect(within(tries).getAllByRole('cell', { name: /^H2, / }).map((c) => c.textContent)).toEqual(['1', '2']);
+    expect(within(card).queryByRole('button', { name: 'Zahájit' })).toBeNull();
+    expect(within(card).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
+    expect(within(card).queryByRole('button', { name: /povedená/ })).toBeNull();
+    const [a, b] = within(card).getAllByRole('spinbutton');
+    await user.type(a, '14');
+    await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes ?? {}).toEqual({}));
+    await user.type(b, '9');
     await vi.waitFor(() => {
       const s = repo.snapshot().trainings[0];
-      expect(s.soloResults.id2).toEqual({ 'warmupPasses@1': 2 });
-      expect(s.soloAttempts?.id2).toEqual({ 'warmupPasses@1': 2 });
-      expect(s.events?.map((e) => [e.kind, e.playerId, e.delta])).toEqual([['hit', 'id2', 1], ['hit', 'id2', 1], ['miss', 'id2', 1], ['miss', 'id2', -1]]);
+      expect(Object.values(s.soloResults).map((r) => Object.values(r)[0]).sort()).toEqual([14, 9].sort());
+      const ended = Object.values(s.playTimes ?? {}).filter((x) => x.endedAt !== undefined);
+      expect(ended).toHaveLength(1);
     });
   });
 });
@@ -47,7 +44,7 @@ describe('Rozcvička v rozpisu (notebook)', () => {
     const table = await screen.findByRole('table', { name: 'Rozpis tréninku' });
     // výchozí rozbalený blok = první s chybějícím zápisem → zápas (Rozcvička nic nezapisuje)
     expect(screen.getByRole('group', { name: '3. kolo, stůl 1' })).toBeInTheDocument();
-    await user.click(within(table).getByText('1. kolo'));
+    await user.click(within(table).getByRole('button', { name: 'Zapsat: 1. kolo' }));
     const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
     expect(within(card).queryAllByRole('textbox')).toHaveLength(0);
     expect(within(card).queryAllByRole('spinbutton')).toHaveLength(0);

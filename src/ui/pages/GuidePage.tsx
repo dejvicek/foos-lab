@@ -209,11 +209,12 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="✓">
-                <b>Časová osa kol:</b> plná tečka s ✓ je odehrané kolo, kroužek kolo, které se hraje („hraje se 7 min · 1 ze 2 stolů hotovo“), prázdná tečka
-                kolo, které přijde.
+                <b>Časová osa kol:</b> v kolečku je číslo kola, odehrané má ✓, kolo, které se hraje, je v rámečku. Pauza má ❚❚ a šrafovaný pruh. Během
+                tréninku se odehraná kola sbalí do řádku „Odehráno 3 kola“, ťuknutím je zase uvidíš.
               </Li>
               <Li i="▣">
-                <b>Tvůj stůl</b> je podbarvený. Zapisovat můžeš jen u stolu, kde hraješ nebo jsi rozhodčí. U odehrané hry rozbalíš <b>Průběh</b> (krok 9).
+                <b>Kola, kde hraješ nebo rozhoduješ,</b> mají vlevo žlutý pruh a tvoje jméno je tučně zlatě. Rozpis je jen ke čtení, výsledky zapisuješ v Moje
+                hry. Na telefonu dlaždice kola ukazuje jen tvůj stůl (nebo Volno), ťuknutím uvidíš ostatní stoly.
               </Li>
               <Li i="Σ">
                 <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre, pak výhry, góly a výhry v simulaci.
@@ -223,7 +224,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={9} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
             <p>
-              Každá ťuknutá hra má <b>Průběh</b>. V Moje hry je rozbalený rovnou, v rozpisu ho rozbalíš u stolu. Nahoře přepínáš <b>Sloupec</b> a{' '}
+              Každá ťuknutá hra má <b>Průběh</b>. V Moje hry je rozbalený rovnou. Nahoře přepínáš <b>Sloupec</b> a{' '}
               <b>Křivku</b>, telefon si volbu pamatuje.
             </p>
             <ul className="g-list">

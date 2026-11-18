@@ -396,7 +396,24 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan tbody tr:not(.section-row):not(.expand):not(.break):not(.st-playing):hover td { background: var(--bg); }
 .plan tr.st-done td { color: var(--muted); }
 .plan tr.st-done .cell-score { color: var(--muted); }
-.plan tr.st-playing td { background: var(--felt-soft); }
+/* Hraje se: jen rámeček (podklad by se pletl s mými koly). Moje kola: zlatý pruh vlevo. */
+.plan tr.st-playing:not(.break) > td { box-shadow: inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
+.plan tr.st-playing:not(.break) > td:last-child { box-shadow: inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt), inset -2px 0 0 var(--felt); }
+.plan tr.mine-row > td:first-child { box-shadow: inset 5px 0 0 var(--gold); }
+.plan tr.mine-row.st-playing > td:first-child { box-shadow: inset 5px 0 0 var(--gold), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
+.plan tr.st-playing:not(.mine-row):not(.break) > td:first-child { box-shadow: inset 2px 0 0 var(--felt), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
+.me-name { font-weight: 800; color: var(--felt); }
+.row-name { display: block; font-weight: 800; font-size: 14.5px; line-height: 1.25; }
+/* Pauza: výrazný šrafovaný pruh */
+.plan tr.pause-row > td, .round-break.pause {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 10px, var(--surface) 10px 20px);
+  color: var(--ink); font-weight: 800;
+}
+.plan tr.pause-row .row-label { font-weight: 800; }
+/* Odehraná kola sbalená do jednoho řádku (jen během tréninku) */
+button.fold-toggle { background: none; border: 0; padding: 0; min-height: 0; color: var(--ink); font: inherit; font-weight: 800; text-align: left; cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; }
+.plan tr.done-fold > td { padding-top: 12px; padding-bottom: 12px; }
+button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5px; text-decoration: underline; text-underline-offset: 2px; }
 .plan td.cell-done .cell-names::before, button.round-table.cell-done .cell-names::before { content: '✓ '; color: var(--felt); font-weight: 800; }
 .plan td.cell-done { color: var(--muted); }
 .plan td.cell-live .cell-names::before, button.round-table.cell-live .cell-names::before {
@@ -418,15 +435,17 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .has-rail .rail-line.on { --rt: var(--rail-on); --rb: var(--rail-on); }
 .plan.has-rail .rail-first .c-time::before { top: 21px; }
 .plan.has-rail .rail-last .c-time::before { bottom: auto; height: 21px; }
+/* Uzel osy (18. 11. 2026): číslo kola, odehrané ✓, pauza ❚❚ – číslo kola je jen tady. */
 .rail-node {
-  position: absolute; left: 8px; top: 14px; width: 14px; height: 14px; box-sizing: border-box; z-index: 1;
+  position: absolute; left: 4px; top: 10px; width: 22px; height: 22px; box-sizing: border-box; z-index: 1;
   border-radius: 50%; background: var(--surface); border: 2px solid var(--rail-off);
-  display: flex; align-items: center; justify-content: center; color: var(--felt-ink); font-size: 9px; font-weight: 900; line-height: 1;
+  display: flex; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11px; font-weight: 800; line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
+.rail-node.pause i { display: block; width: 3px; height: 9px; border-radius: 1px; background: var(--ink); }
 .st-done > .rail-node, .st-done .rail-node { background: var(--gold); border-color: var(--rail-on); color: var(--gold-ink); }
-.st-done .rail-node::after { content: '✓'; }
-.st-playing .rail-node { border-color: var(--rail-on); box-shadow: 0 0 0 4px var(--felt-soft); }
-.st-playing .rail-node::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--rail-on); }
+.st-done .rail-node.pause i { background: var(--gold-ink); }
+.st-playing .rail-node { border-color: var(--rail-on); color: var(--felt); box-shadow: 0 0 0 4px var(--felt-soft); }
 @media (prefers-reduced-motion: no-preference) {
   .st-playing .rail-node { animation: rail-pulse 2s ease-in-out infinite; }
 }
@@ -434,12 +453,14 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
 .plan tr.break .c-time { font-weight: 500; }
-.row-toggle {
-  background: none; color: inherit; border: 0; padding: 0; min-height: 0;
-  font-weight: 700; text-align: left; cursor: pointer;
+/* Admin / organizátor: rozbalit kolo k zápisu celkového výsledku */
+button.row-toggle {
+  display: inline-block; margin-top: 4px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong);
+  border-radius: 99px; padding: 1px 10px; min-height: 0; font-size: 12px; font-weight: 700; cursor: pointer;
 }
-.row-toggle::after { content: ' ▸'; color: var(--muted); font-weight: 400; }
-.row-toggle[aria-expanded='true']::after { content: ' ▾'; }
+button.row-toggle::before { content: '▸ '; }
+button.row-toggle[aria-expanded='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+button.row-toggle[aria-expanded='true']::before { content: '▾ '; }
 .row-label { font-weight: 600; }
 .cell-sub { display: block; color: var(--muted); font-size: 12px; }
 .cell-names { display: block; }
@@ -724,11 +745,35 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-cards { display: flex; flex-direction: column; gap: 8px; }
 .round-sec { margin: 14px 0 2px; font-size: 15px; }
 .round-sec span { color: var(--muted); font-weight: 500; }
-.round-break { margin: 2px 0; color: var(--muted); font-size: 13px; text-align: center; }
-.round-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.round-card.st-done:not(.open) { background: var(--bg); }
-.round-card.st-done:not(.open) .round-name, .round-card.st-done:not(.open) .round-time { color: var(--muted); }
-.round-card.st-playing { border: 2px solid var(--felt); }
+.round-break { margin: 2px 0; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.round-break.pause { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+.round-break .rb-name { flex: 1; }
+.round-break .rb-time { font-weight: 800; }
+.round-break .rb-edit { display: inline-flex; gap: 6px; align-items: center; }
+.round-break .rb-slot { flex-basis: 100%; }
+.round-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.round-card.st-done .tile-name, .round-card.st-done .tile-time { color: var(--muted); }
+.round-card.st-playing { outline: 2px solid var(--felt); outline-offset: -2px; }
+.round-card.mine-row { box-shadow: inset 5px 0 0 var(--gold); }
+/* Pod dlaždicí vykukují karty: ťuknutím se ukážou ostatní stoly */
+.round-card.stacked { margin-bottom: 8px; box-shadow: 0 4px 0 -1px var(--surface), 0 4px 0 0 color-mix(in srgb, var(--line-strong) 80%, var(--line)), 0 8px 0 -3px var(--surface), 0 8px 0 -2px var(--line); }
+.round-card.stacked.mine-row { box-shadow: inset 5px 0 0 var(--gold), 0 4px 0 -1px var(--surface), 0 4px 0 0 color-mix(in srgb, var(--line-strong) 80%, var(--line)), 0 8px 0 -3px var(--surface), 0 8px 0 -2px var(--line); }
+button.tile-head {
+  width: 100%; display: grid; gap: 3px; padding: 10px 12px; background: none; color: var(--ink); border: 0; border-radius: 12px;
+  text-align: left; font-weight: 400; min-height: 0; cursor: pointer;
+}
+button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.tile-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.tile-name { font-weight: 800; font-size: 16px; }
+.tile-time { font-weight: 800; font-size: 14px; }
+.tile-sub { color: var(--muted); font-size: 12px; }
+.tile-rows { display: grid; gap: 5px; margin-top: 4px; }
+.tile-row { display: grid; grid-template-columns: 52px 1fr; gap: 6px; font-size: 13.5px; }
+.tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
+.tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
+.round-card > button.row-toggle { margin: 0 12px 10px; }
+.tile-entry { border-top: 1px solid var(--line); padding: 8px 10px 10px; }
+.round-cards .done-fold { display: flex; align-items: center; min-height: 34px; }
 /* Telefon: linka vlevo od karet; mezera mezi kartami (8px) je součástí linky nad uzlem */
 .round-cards.has-rail { padding-left: 28px; }
 .round-cards.has-rail > .rail, .round-cards.has-rail > .rail-line { position: relative; overflow: visible; --rail-mid: 26px; }
@@ -736,13 +781,10 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-cards.has-rail > .round-sec.rail-line::before { top: -16px; bottom: -2px; }
 .round-cards.has-rail > .rail-first::before { top: 18px; }
 .round-cards.has-rail > .rail-last::before { bottom: auto; height: 26px; }
-.round-cards.has-rail > .rail > .rail-node { left: -21px; top: 18px; }
-.round-cards.has-rail > .round-break.rail > .rail-node { top: 1px; }
+.round-cards.has-rail > .rail > .rail-node { left: -26px; top: 13px; }
+.round-cards.has-rail > .round-break.rail > .rail-node { top: calc(50% - 11px); }
+.round-cards.has-rail > .done-fold.rail > .rail-node { top: 6px; }
 .round-cards.has-rail > .round-break.rail { --rail-mid: 16px; }
-button.round-head {
-  width: 100%; display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: center;
-  padding: 10px 12px; min-height: 52px; background: none; color: var(--ink); border: 0; border-radius: 0; text-align: left; font-weight: 400;
-}
 .round-time { font-weight: 800; font-size: 16px; }
 .round-name { font-weight: 700; }
 .round-name small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
