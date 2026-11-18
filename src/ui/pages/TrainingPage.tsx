@@ -22,6 +22,7 @@ import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
 import { pauseRows, playingRow, roundStates } from '../roundState';
+import { trainingRunning } from '../liveTag';
 import { StandingsView } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
@@ -110,8 +111,9 @@ export function TrainingPage({
     if (commitEdit(store, training, next) && configChanged(training, next)) setExpanded(null); // klíč řádku je pozice
   };
   const manage = canManage(viewer, training);
-  // Trénink běží: odehraná kola se v rozpisu sbalí (po konci tréninku je vidět všechno).
-  const running = !!rounds && training.playTimes?.training?.endedAt === undefined;
+  // Trénink běží: odehraná kola se v rozpisu sbalí. Proběhlý (vše dohráno nebo zahájený před víc než 12 h)
+  // ukazuje všechna kola rozbalená (19. 11. 2026).
+  const running = !!rounds && !!queueInfo && trainingRunning(training, queueInfo.states, Math.max(tick, Date.now()));
   /** Admin / organizátor zapsal v rozpisu dohraný výsledek → utkání skončí (nezahajuje, nepotvrzuje). */
   const autoEnd = (id: string) => {
     const st = itemTiming?.state(id);

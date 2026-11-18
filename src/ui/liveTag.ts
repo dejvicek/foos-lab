@@ -1,12 +1,25 @@
 import { pauseStates, trainingStarted } from '../domain/queue';
 import { canBuildSchedule, buildSchedule } from '../domain/schedule';
 import type { PlayerId, Training } from '../domain/types';
+import type { ItemState } from '../domain/queue';
 import { todayIso } from './dates';
 import { trainingQueue } from './queue';
 import { playingRow, roundStates } from './roundState';
 
 /** Za jak dlouho po zahájení se nedohraný trénink už nebere jako běžící (zapomenuté potvrzení). */
 const STALE_MS = 12 * 60 * 60_000;
+
+/**
+ * Trénink právě běží: je zahájený, něco zbývá dohrát a od prvního zahájení neuplynulo 12 hodin
+ * (zapomenuté potvrzení). Proběhlý trénink tedy neběží – i bez potvrzeného konce.
+ */
+export function trainingRunning(t: Training, states: Map<string, ItemState>, nowMs: number): boolean {
+  if (!trainingStarted(t)) return false;
+  const all = [...states.values()];
+  if (all.length && all.every((x) => x.state === 'done')) return false;
+  const startedAt = Math.min(...Object.values(t.playTimes ?? {}).flatMap((p) => (p.startedAt !== undefined ? [p.startedAt] : [])));
+  return !(Number.isFinite(startedAt) && nowMs - startedAt > STALE_MS);
+}
 
 /**
  * PRD 7.1: štítek tréninku v seznamu podle skutečnosti (zahájená a potvrzená utkání), ne podle hodin.

@@ -1,5 +1,6 @@
 import { currentRow, defaultOpenRow, firstIncomplete, minutesSinceStart } from './now';
-import { liveTag } from './liveTag';
+import { liveTag, trainingRunning } from './liveTag';
+import { trainingQueue } from './queue';
 import { queueOf } from '../domain/queue';
 import type { Training } from '../domain/types';
 import { buildSchedule } from '../domain/schedule';
@@ -65,5 +66,15 @@ describe('štítek tréninku v seznamu (podle skutečnosti, ne hodin)', () => {
     expect(liveTag(early, 'X', at(17, 45))).toBe('Běží 1. kolo');
     const done = { ...base, playTimes: Object.fromEntries([['training', { startedAt: at(18, 0).getTime() }], ...ids.map((id) => [id, { startedAt: at(18, 1).getTime(), endedAt: at(18, 2).getTime() }])]) };
     expect(liveTag(done, 'H1', at(19, 0))).toBe('Dnes, dohráno');
+  });
+
+  it('běží (odehraná kola se sbalí) jen zahájený, nedohraný a ne starší než 12 h; proběhlý ne (19. 11. 2026)', () => {
+    const run = (t: Training, now: Date) => trainingRunning(t, trainingQueue(t, now.getTime(), buildSchedule(t)).states, now.getTime());
+    expect(run(base, at(19, 0))).toBe(false); // nezahájený
+    const started = { ...base, playTimes: { training: { startedAt: at(18, 5).getTime() }, [ids[0]]: { startedAt: at(18, 6).getTime(), endedAt: at(18, 14).getTime() } } };
+    expect(run(started, at(18, 20))).toBe(true);
+    expect(run(started, new Date(2026, 10, 4, 18, 20))).toBe(false); // proběhl včera, konec nikdo nepotvrdil
+    const done = { ...base, playTimes: Object.fromEntries([['training', { startedAt: at(18, 0).getTime() }], ...ids.map((id) => [id, { startedAt: at(18, 1).getTime(), endedAt: at(18, 2).getTime() }])]) };
+    expect(run(done, at(19, 0))).toBe(false); // vše dohráno
   });
 });
