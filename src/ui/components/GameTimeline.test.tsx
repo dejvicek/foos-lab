@@ -15,15 +15,44 @@ it('průběh cvičení: srozumitelný souhrn – nejdelší série a poloviny po
   expect(screen.getByText('4/8 · nejdelší série 3 · 1. půlka 3, 2. půlka 1')).toBeInTheDocument();
 });
 
-it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače', () => {
-  const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
-  const { container } = render(<MatchTimeline match={match({ start: [4, 4], trackLosses: true })} events={events} from={0} to={5000} names={names} />);
+it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače; krátká legenda stran', () => {
+  const events = [ev(1, 'goal', { side: 'B' }), ev(3, 'goal', { side: 'A' })];
+  const { container } = render(<MatchTimeline match={match({ start: [4, 4] })} events={events} from={0} to={5000} names={names} />);
   expect(screen.getByRole('img', { name: 'Křivka vedení, konečný stav 5:5' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Sloupec|Křivka/ })).toBeNull();
   expect(screen.queryByRole('table')).toBeNull();
-  expect(container.querySelectorAll('.tl-pt')).toHaveLength(2);
-  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1); // Daň: ztráta v řadě pod grafem
+  expect(container.querySelector('.tl-legend')).toHaveTextContent('Novák + DvořákSvoboda + Černý');
+  expect(screen.queryByText(/vede/)).toBeNull();
+  expect([...container.querySelectorAll('.tl-pt')].map((c) => c.getAttribute('class'))).toEqual(['tl-pt side-b', 'tl-pt side-a']);
   expect([...container.querySelectorAll('.tl-pt title')].map((t) => t.textContent)).toEqual(['Gól: Svoboda + Černý v 0:02 → 4:5', 'Gól: Novák + Dvořák v 0:04 → 5:5']);
+  expect(container.querySelector('.tl-tax-step')).toBeNull();
+});
+
+it('zápas: obrat – první gól, po kterém vede strana, která prohrávala', () => {
+  const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'goal', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
+  const { container } = render(<MatchTimeline match={match()} events={events} from={0} to={5000} names={names} />);
+  expect(container.querySelector('.tl-turn')).toHaveTextContent('obrat 2:1');
+});
+
+it('Daň (19. 11. 2026): gól ze ztráty soupeře má čárkovaný schod a kroužek, v legendě vysvětlení', () => {
+  const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'B' }), ev(2.01, 'goal', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
+  const { container } = render(<MatchTimeline match={match({ lossTax: true, trackLosses: true })} events={events} from={0} to={5000} names={names} />);
+  expect(container.querySelectorAll('.tl-tax-step')).toHaveLength(1);
+  expect(container.querySelectorAll('.tl-tax-ring')).toHaveLength(1);
+  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(0); // ztráta je vidět na gólu, ne zvlášť
+  expect(container.querySelector('.tl-legend-tax')).toHaveTextContent('gól ze ztráty soupeře');
+  expect([...container.querySelectorAll('.tl-pt title')].map((t) => t.textContent)).toEqual([
+    'Gól: Svoboda + Černý v 0:02 → 0:1',
+    'Gól ze ztráty soupeře: Novák + Dvořák v 0:03 → 1:1',
+    'Gól: Novák + Dvořák v 0:04 → 2:1',
+  ]);
+});
+
+it('ztráta bez gólu soupeře hned po ní (starší data): značka na ose', () => {
+  const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
+  const { container } = render(<MatchTimeline match={match({ start: [4, 4], trackLosses: true })} events={events} from={0} to={5000} names={names} />);
+  expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1);
+  expect(container.querySelector('.tl-tax-step')).toBeNull();
 });
 
 it('ztráty jen u Daně (18. 11. 2026): jinde se starší ťuknuté ztráty nezobrazí', () => {

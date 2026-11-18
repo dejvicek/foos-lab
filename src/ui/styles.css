@@ -1168,17 +1168,22 @@ button.pr-ic[aria-expanded='true'] { color: var(--felt); }
 .tl-pt.side-a, .tl-fill.side-a { fill: var(--gold); }
 .tl-pt.side-b, .tl-fill.side-b { fill: var(--side-b); }
 .tl-loss-pt { fill: var(--surface); stroke: var(--warn); stroke-width: 2; }
+.tl-tax-step { stroke: var(--warn); stroke-width: 2.6; stroke-dasharray: 3 2; }
+.tl-tax-ring { fill: none; stroke: var(--warn); stroke-width: 1.6; }
+.tl-turn line { stroke: var(--ink); stroke-dasharray: 3 3; opacity: 0.5; }
+.tl-turn text { font-size: 9.5px; font-weight: 800; fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 2px 0 4px; font-size: 12px; font-weight: 700; }
+.tl-legend > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.tl-legend-tax { color: var(--warn); }
+.tl-tax-key { display: inline-block; width: 0; height: 11px; border-left: 2.5px dashed var(--warn); }
 .tl-pline { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
 .tl-pline.pl-0 { stroke: var(--gold); }
 .tl-pline.pl-1 { stroke: var(--side-b); }
 .tl-pline.pl-2 { stroke: var(--ink); stroke-dasharray: 5 3; }
 .tl-curve text { font-family: var(--font); font-variant-numeric: tabular-nums; }
 .tl-time { font-size: 10px; fill: var(--muted); }
-.tl-pt-lbl, .tl-side-lbl { font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
-.tl-pt-lbl { font-weight: 800; fill: var(--ink); }
+.tl-side-lbl { font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
 .tl-side-lbl { font-weight: 700; fill: var(--muted); }
-.tl-side-lbl.side-a { fill: var(--felt); }
-.tl-side-lbl.side-b { fill: var(--side-b-text); }
 .tl-end-lbl { font-size: 13px; font-weight: 800; fill: var(--ink); }
 .tl-end-lbl.pl-0 { fill: var(--felt); }
 .tl-end-lbl.pl-1 { fill: var(--side-b-text); }

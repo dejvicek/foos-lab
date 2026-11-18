@@ -27,6 +27,8 @@ export interface ProgressStep {
   pos: number;
   /** Stav skóre po události včetně scénářového startu; ztráta ho nemění. */
   score: [number, number];
+  /** Daň: gól, který vznikl ze ztráty soupeře (ťuknutí ztráty zapíše ztrátu a hned gól druhé strany). */
+  fromLoss?: true;
 }
 
 export interface MatchProgress {
@@ -56,13 +58,17 @@ export function matchProgress(events: GameEvent[], from: number, to: number, ini
   const end = Math.max(to, ...list.map((e) => e.at), start + 1);
   let [a, b] = initial;
   let maxLead = Math.max(2, Math.abs(a - b));
-  const steps = list.map((e): ProgressStep => {
+  const steps = list.map((e, i): ProgressStep => {
+    const step: ProgressStep = { kind: e.kind as 'goal' | 'loss', side: e.side!, at: e.at, pos: (e.at - start) / (end - start), score: [a, b] };
     if (e.kind === 'goal') {
       if (e.side === 'A') a++;
       else b++;
       maxLead = Math.max(maxLead, Math.abs(a - b));
+      step.score = [a, b];
+      const prev = list[i - 1];
+      if (prev?.kind === 'loss' && prev.side !== e.side) step.fromLoss = true;
     }
-    return { kind: e.kind as 'goal' | 'loss', side: e.side!, at: e.at, pos: (e.at - start) / (end - start), score: [a, b] };
+    return step;
   });
   return { start, end, initial: [...initial], steps, score: [a, b], maxLead };
 }

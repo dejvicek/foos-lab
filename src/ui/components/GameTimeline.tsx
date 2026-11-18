@@ -27,33 +27,80 @@ function useWidth(fallback = 320) {
 
 const sideCls = (s: 'A' | 'B') => (s === 'A' ? 'side-a' : 'side-b');
 
-/** Zápas – křivka vedení (PRD 4.9): rozdíl skóre na časové ose, nad nulou vede levá, pod nulou pravá. */
+/** Obrat: první gól, po kterém vede strana, která předtím prohrávala (i proti scénářovému startu). */
+function turnOf(p: MatchProgress) {
+  let prev = p.initial[0] - p.initial[1];
+  for (const s of p.steps) {
+    if (s.kind !== 'goal') continue;
+    const d = s.score[0] - s.score[1];
+    if (prev !== 0 && d !== 0 && Math.sign(d) !== Math.sign(prev)) return s;
+    if (d !== 0) prev = d;
+  }
+  return null;
+}
+
+/**
+ * Zápas – křivka vedení (PRD 4.9, podoba z 19. 11. 2026): rozdíl skóre v čase, nad nulou vede levá, pod nulou pravá.
+ * Krátká legenda s barvou stran, body v barvě strany, která dala gól, osa +N / 0 / −N, vyznačený obrat.
+ * Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
+ */
 function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
   const [ref, width] = useWidth();
   const W = Math.max(220, width);
-  // Nahoře popisek levé strany, pod grafem popisek pravé, řada ztrát a čas.
-  const H = 222, L = 4, R = 38, T = 26, B = 58;
-  const pw = W - L - R, ph = H - T - B;
+  const L = 28, R = 38, T = 10, PH = 138, B = 22;
+  const H = T + PH + B;
+  const pw = W - L - R, ph = PH;
   const x = (pos: number) => L + pw * pos;
   const mid = T + ph / 2;
-  // Rezerva nad krajním náskokem, aby se popisky stavu vešly do grafu.
-  const y = (d: number) => mid - (d * (ph / 2)) / (p.maxLead + 0.6);
-  const d0 = p.initial[0] - p.initial[1];
-  const goals = p.steps.filter((s) => s.kind === 'goal');
-  const losses = p.steps.filter((s) => s.kind === 'loss');
+  const max = p.maxLead;
+  const y = (d: number) => mid - (d * (ph / 2)) / (max + 0.4);
   const diff = (s: [number, number]) => s[0] - s[1];
-  const steps = goals.map((g) => ` H${x(g.pos).toFixed(1)} V${y(diff(g.score)).toFixed(1)}`).join('') + ` H${x(1)}`;
-  const line = `M${x(0)},${y(d0)}${steps}`;
-  const area = `M${x(0)},${mid} V${y(d0)}${steps} V${mid} Z`;
+  const d0 = diff(p.initial);
+  const goals = p.steps.filter((s) => s.kind === 'goal');
+  // Ztráta bez gólu soupeře hned po ní (starší data): jen značka na spodní ose.
+  const loose = p.steps.filter((s, i) => s.kind === 'loss' && !p.steps[i + 1]?.fromLoss);
+  // Plocha bez přerušení; čára přeruší schody gólů ze ztráty, ty se kreslí zvlášť červeně čárkovaně.
+  let prevD = d0;
+  let line = `M${x(0)},${y(d0)}`;
+  let area = `M${x(0)},${mid} V${y(d0)}`;
+  const tax: { x: number; y1: number; y2: number }[] = [];
+  for (const g of goals) {
+    const gx = x(g.pos).toFixed(1), gy = y(diff(g.score)).toFixed(1);
+    area += ` H${gx} V${gy}`;
+    if (g.fromLoss) {
+      line += ` H${gx} M${gx},${gy}`;
+      tax.push({ x: x(g.pos), y1: y(prevD), y2: y(diff(g.score)) });
+    } else line += ` H${gx} V${gy}`;
+    prevD = diff(g.score);
+  }
+  line += ` H${x(1)}`;
+  area += ` H${x(1)} V${mid} Z`;
   const id = `tl${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const total = p.end - p.start;
   const ticks: number[] = [];
   for (let m = MIN; m < total; m += MIN) ticks.push(m / total);
-  const grid: number[] = [];
-  for (let d = -p.maxLead; d <= p.maxLead; d++) if (d) grid.push(d);
-  const ly = T + ph + 30;
+  const turn = turnOf(p);
+  const tx = turn ? x(turn.pos) : 0;
+  const nameOf = (s: 'A' | 'B') => (s === 'A' ? nameA : nameB);
+  const what = unit === 'gól' ? 'Gól' : 'Set';
   return (
     <div ref={ref} className="tl-curve">
+      <div className="tl-legend">
+        <span>
+          <i className="tl-dot side-a" />
+          {nameA}
+        </span>
+        <span>
+          <i className="tl-dot side-b" />
+          {nameB}
+        </span>
+        {tax.length > 0 && (
+          <span className="tl-legend-tax">
+            <i className="tl-tax-key" />
+            gól ze ztráty soupeře
+          </span>
+        )}
+      </div>
       <svg width={W} height={H} role="img" aria-label={`Křivka vedení, konečný stav ${p.score.join(':')}`}>
         <defs>
           <clipPath id={`${id}u`}>
@@ -63,43 +110,45 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
             <rect x={0} y={mid} width={W} height={H - mid} />
           </clipPath>
         </defs>
-        {grid.map((d) => (
-          <line key={d} className="tl-grid" x1={L} x2={L + pw} y1={y(d)} y2={y(d)} />
+        {[max, 0, -max].map((v) => (
+          <text key={v} className="tl-time" textAnchor="end" x={L - 6} y={y(v) + 3}>
+            {v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0'}
+          </text>
         ))}
         <path className="tl-area-a" d={area} clipPath={`url(#${id}u)`} />
         <path className="tl-area-b" d={area} clipPath={`url(#${id}d)`} />
         <line className="tl-axis-line" x1={L} x2={L + pw} y1={mid} y2={mid} />
-        <text className="tl-side-lbl side-a" x={L} y={12}>
-          ▲ vede {nameA}
-        </text>
-        <text className="tl-side-lbl side-b" x={L} y={T + ph + 14}>
-          ▼ vede {nameB}
-        </text>
+        {turn && (
+          <g className="tl-turn">
+            <line x1={tx} x2={tx} y1={T} y2={T + ph} />
+            <text x={tx > L + pw * 0.72 ? tx - 4 : tx + 4} y={T + 9} textAnchor={tx > L + pw * 0.72 ? 'end' : 'start'}>
+              obrat {turn.score.join(':')}
+            </text>
+          </g>
+        )}
         <path className="tl-step" d={line} />
+        {tax.map((s, i) => (
+          <line key={i} className="tl-tax-step" x1={s.x} x2={s.x} y1={s.y1} y2={s.y2} />
+        ))}
         {goals.map((g, i) => {
-          const up = g.side === 'A';
-          const cy = y(diff(g.score));
+          const cx = x(g.pos), cy = y(diff(g.score));
+          const who = `${nameOf(g.side)} v ${fmtDur(g.at - p.start)} → ${g.score.join(':')}`;
           return (
             <g key={i}>
-              <circle className={`tl-pt ${sideCls(g.side)}`} cx={x(g.pos)} cy={cy} r={5}>
-                <title>{`${unit === 'gól' ? 'Gól' : 'Set'}: ${up ? nameA : nameB} v ${fmtDur(g.at - p.start)} → ${g.score.join(':')}`}</title>
+              {g.fromLoss && <circle className="tl-tax-ring" cx={cx} cy={cy} r={8.5} />}
+              <circle className={`tl-pt ${sideCls(g.side)}`} cx={cx} cy={cy} r={5}>
+                <title>{g.fromLoss ? `${what} ze ztráty soupeře: ${who}` : `${what}: ${who}`}</title>
               </circle>
-              <text className="tl-pt-lbl" textAnchor="middle" x={x(g.pos)} y={up ? cy - 9 : cy + 17}>
-                {g.score.join(':')}
-              </text>
             </g>
           );
         })}
         <text className="tl-end-lbl" x={x(1) + 5} y={y(diff(p.score)) + 5}>
           {p.score.join(':')}
         </text>
-        {losses.map((l, i) => (
-          <g key={i}>
-            <circle className="tl-loss-pt" cx={x(l.pos)} cy={ly} r={5}>
-              <title>{`Ztráta: ${l.side === 'A' ? nameA : nameB} v ${fmtDur(l.at - p.start)}`}</title>
-            </circle>
-            <circle className={`tl-fill ${sideCls(l.side)}`} cx={x(l.pos)} cy={ly} r={2} />
-          </g>
+        {loose.map((l, i) => (
+          <circle key={i} className="tl-loss-pt" cx={x(l.pos)} cy={T + ph + 5} r={3.5}>
+            <title>{`Ztráta: ${nameOf(l.side)} v ${fmtDur(l.at - p.start)}`}</title>
+          </circle>
         ))}
         {ticks.map((t) => (
           <line key={t} className="tl-tick" x1={x(t)} x2={x(t)} y1={H - 14} y2={H - 10} />

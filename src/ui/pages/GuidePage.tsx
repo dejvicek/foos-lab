@@ -228,8 +228,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="↗">
-                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Nad nulou vede levá, pod nulou pravá, takže obrat poznáš na
-                první pohled.
+                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Tečka má barvu strany, která skórovala, a obrat je
+                vyznačený. V Dani je gól ze ztráty soupeře červený čárkovaný schod.
               </Li>
               <Li i="✓">
                 <b>Cvičení</b> porovná hráče u stolu: čára roste s každým povedeným pokusem, nepovedený je tečka.
@@ -642,10 +642,10 @@ function DrillDemo() {
 /* ── Ukázka: průběh legu (skutečná komponenta – křivka) ── */
 const DEMO_NAMES = { dejv: 'Dejv', milan: 'Milan', osky: 'Osky', denys: 'Denys' };
 const DEMO_MATCH = { id: 'guide', kind: 'doubles', block: 'league', sideA: ['dejv', 'milan'], sideB: ['osky', 'denys'] } as unknown as Match;
-// Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení, l = ztráta).
+// Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení).
 const DEMO_EVENTS: GameEvent[] = (
-  [['B', 35], ['B', 80], ['A', 125], ['lB', 150], ['A', 190], ['A', 230], ['B', 270], ['A', 315], ['B', 350], ['lA', 375], ['A', 410], ['A', 455]] as const
-).map(([k, t], i) => ({ id: `g${i}`, itemId: 'guide', at: t * 1000, kind: k.length > 1 ? 'loss' : 'goal', side: k.slice(-1) as 'A' | 'B', delta: 1 }));
+  [['B', 35], ['B', 80], ['A', 125], ['A', 190], ['A', 230], ['B', 270], ['A', 315], ['B', 350], ['A', 410], ['A', 455]] as const
+).map(([k, t], i) => ({ id: `g${i}`, itemId: 'guide', at: t * 1000, kind: 'goal', side: k, delta: 1 }));
 
 function ProgressPhone() {
   return (
