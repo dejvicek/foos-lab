@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { Seg } from '../components/Seg';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
 import { computePracticeMatchLadder, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
 import { discipline } from '../../domain/disciplines';
@@ -29,18 +30,6 @@ interface Props {
 }
 
 const dash = (v: number | null, f: (v: number) => string) => (v === null ? '–' : f(v));
-
-function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange(v: T): void; label: string }) {
-  return (
-    <div className="segmented" role="group" aria-label={label}>
-      {options.map(([v, text]) => (
-        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
-          {text}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function LadderTable({
   ranked,

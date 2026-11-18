@@ -284,7 +284,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                 </th>
               </tr>
               {sec.id === 'sim' && simSetup && (
-                <tr className={['sim-setup-row', 'no-print', railLine(rail, order, firstIdx - 1)].filter(Boolean).join(' ')}>
+                <tr className={['sim-setup-row', railLine(rail, order, firstIdx - 1)].filter(Boolean).join(' ')}>
                   <td colSpan={cols}>{simSetup}</td>
                 </tr>
               )}

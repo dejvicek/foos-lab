@@ -115,6 +115,9 @@ describe('stránka Trénink', () => {
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].scores).toEqual({}));
     expect(repo.snapshot().trainings[0].attendees).not.toContain('p1');
     expect(screen.getByRole('button', { name: 'Upravit nastavení' })).toBeInTheDocument(); // zpět na tréninku
+    // tužka místo textu, tisk rozpisu zrušen (19. 11. 2026)
+    expect(screen.getByRole('button', { name: 'Upravit nastavení' })).not.toHaveTextContent('Upravit');
+    expect(screen.queryByRole('button', { name: /Vytisknout/ })).toBeNull();
   });
 
   it('archivovaný hráč zůstane ve starém tréninku zaškrtnutý', async () => {

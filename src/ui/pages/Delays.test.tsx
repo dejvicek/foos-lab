@@ -69,10 +69,16 @@ describe('Zdržovači', () => {
     },
   };
 
-  it('v tréninku: čekání a hra na hráče', async () => {
+  it('v tréninku: čekání a hra na hráče – v Souhrnu nahoře přepínačem Pořadí / Zdržovači (19. 11. 2026)', async () => {
     window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
-    const table = await screen.findByRole('table', { name: 'Zdržovači' });
+    const summary = await screen.findByRole('region', { name: 'Souhrn' });
+    expect(within(summary).getByRole('button', { name: 'Pořadí' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(summary).queryByRole('table', { name: 'Zdržovači' })).toBeNull();
+    // Souhrn je nad rozpisem
+    expect(summary.compareDocumentPosition(screen.getByRole('table', { name: /rozpis/i })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await userEvent.setup().click(within(summary).getByRole('button', { name: 'Zdržovači' }));
+    const table = screen.getByRole('table', { name: 'Zdržovači' });
     const row = within(table).getAllByRole('row')[1];
     expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2
@@ -99,7 +105,8 @@ describe('Zdržovači', () => {
     window.location.hash = '#/trainings/t1';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const user = userEvent.setup();
-    const table = await screen.findByRole('table', { name: 'Zdržovači' });
+    await user.click(within(await screen.findByRole('region', { name: 'Souhrn' })).getByRole('button', { name: 'Zdržovači' }));
+    const table = screen.getByRole('table', { name: 'Zdržovači' });
     const rows = () => within(table).getAllByRole('row').slice(1);
     const who = (r: HTMLElement) => r.querySelector('.player-link, .delay-who')!.textContent!.replace('Brzda', '');
     const brzda = rows()[0].textContent;

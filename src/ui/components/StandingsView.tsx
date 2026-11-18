@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { computeStandings } from '../../domain/standings';
+import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
 import { dec1, signed } from '../format';
+import { Seg } from './Seg';
+import { DelayTable } from './Timing';
 
 interface Props {
   schedule: Schedule;
@@ -9,15 +13,47 @@ interface Props {
   names: Record<PlayerId, string>;
 }
 
+type Part = 'standings' | 'delays';
+
+/**
+ * Souhrn tréninku nahoře nad rozpisem (19. 11. 2026, *rozhodnutí uživatele*): přepínač Pořadí / Zdržovači.
+ * Dokud není co ukázat (žádné skóre ani čekání), se nezobrazuje.
+ */
+export function TrainingSummary({ delays, ...props }: Props & { delays: DelayRow[] }) {
+  const [part, setPart] = useState<Part>('standings');
+  const { legsDone, sim } = computeStandings(props.schedule, props.scores, props.attendees);
+  const empty = legsDone === 0 && (!sim || sim.played === 0);
+  if (empty && !delays.length) return null;
+  const shown: Part = delays.length ? part : 'standings';
+  return (
+    <section className="summary" aria-label="Souhrn">
+      <div className="summary-head">
+        <h2>Souhrn</h2>
+        {delays.length > 0 && (
+          <Seg<Part> value={shown} label="Souhrn" options={[['standings', 'Pořadí'], ['delays', 'Zdržovači']]} onChange={setPart} />
+        )}
+      </div>
+      {shown === 'standings' ? (
+        <StandingsView {...props} />
+      ) : (
+        <div className="delays">
+          <DelayTable rows={delays} names={props.names} />
+          <p className="note">Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Pořadí v rámci jednoho tréninku (PRD 5.5). */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const hasSim = sim !== null;
   const empty = legsDone === 0 && (!sim || sim.played === 0);
   return (
-    <section className="standings">
-      <h2>Souhrn: kdo si jak vede</h2>
+    <div className="standings">
       {empty ? (
-        <p className="note">Zatím žádné skóre. Zapiš výsledky u zápasů výš a pořadí se objeví tady.</p>
+        <p className="note">Zatím žádné skóre. Pořadí se objeví po prvních zapsaných výsledcích.</p>
       ) : (
         <>
           {sim && (
@@ -67,6 +103,6 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
           </p>
         </>
       )}
-    </section>
+    </div>
   );
 }

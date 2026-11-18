@@ -16,14 +16,14 @@ import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
 import { ActiveMatches } from '../components/ActiveMatches';
 import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
-import { DelayTable, type ItemTiming } from '../components/Timing';
+import type { ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
 import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
 import { pauseRows, playingRow, roundStates } from '../roundState';
 import { trainingRunning } from '../liveTag';
-import { StandingsView } from '../components/StandingsView';
+import { TrainingSummary } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import type { AppStore } from '../useAppState';
@@ -181,7 +181,7 @@ export function TrainingPage({
   // Panel „Týmy pro simulaci“ u sekce simulace (organizátor, dokud simulace nezačala).
   const simSetupNode = (open: boolean) =>
     manage && schedule?.teams && !teamsLocked ? (
-      <details className="sim-setup no-print" open={open}>
+      <details className="sim-setup" open={open}>
         <summary>
           <span>
             <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
@@ -360,21 +360,32 @@ export function TrainingPage({
 
   return (
     <section>
-      <button type="button" className="back no-print" onClick={() => navigate({ page: 'trainings' })}>
+      <button type="button" className="back" onClick={() => navigate({ page: 'trainings' })}>
         Zpět na tréninky
       </button>
-      <h1>{formatDateLong(training.date)}</h1>
+      <div className="title-row">
+        <h1>{formatDateLong(training.date)}</h1>
+        {manage && (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Upravit nastavení"
+            title="Upravit nastavení"
+            onClick={() => navigate({ page: 'training-edit', id: training.id })}
+          >
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M13.5 3.5l3 3L7 16H4v-3z" />
+              <path d="M11.5 5.5l3 3" />
+            </svg>
+          </button>
+        )}
+      </div>
       <div className="training-head">
         <p className="dateline">
           {MODE_LABEL[training.mode]}, {training.attendees.length} {plural(training.attendees.length, 'hráč', 'hráči', 'hráčů')}, {training.tables}{' '}
           {plural(training.tables, 'stůl', 'stoly', 'stolů')}
           {training.format === 'custom' && `, ${Math.floor(training.durationMin / 60)}:${String(training.durationMin % 60).padStart(2, '0')}`}
         </p>
-        {manage && (
-          <button type="button" className="ghost no-print" onClick={() => navigate({ page: 'training-edit', id: training.id })}>
-            Upravit nastavení
-          </button>
-        )}
       </div>
       {!schedule && (
         <p className="note">
@@ -382,6 +393,7 @@ export function TrainingPage({
         </p>
       )}
 
+      {schedule && <TrainingSummary schedule={schedule} scores={training.scores} attendees={training.attendees} names={names} delays={delays} />}
 
       {flowBar(false)}
 
@@ -428,34 +440,18 @@ export function TrainingPage({
               autoEnd={autoEnd}
             />
           )}
-          <div className="actions-row no-print">
-            {breakControls && (
+          {breakControls && (
+            <div className="actions-row">
               <button type="button" className="ghost" disabled={!canAddBreak} onClick={() => apply(addBreak(training))}>
                 + Přidat pauzu
               </button>
-            )}
-            <button type="button" className="ghost" onClick={() => window.print()}>
-              Vytisknout rozpis
-            </button>
-          </div>
-          <StandingsView
-            schedule={schedule}
-            scores={training.scores}
-            attendees={training.attendees}
-            names={names}
-          />
-          {delays.length > 0 && (
-            <section className="delays">
-              <h2>Zdržovači</h2>
-              <p className="note">Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</p>
-              <DelayTable rows={delays} names={names} />
-            </section>
+            </div>
           )}
         </>
       )}
 
       {manage && (
-      <div className="actions-row no-print">
+      <div className="actions-row">
         <button
           type="button"
           className="danger"
