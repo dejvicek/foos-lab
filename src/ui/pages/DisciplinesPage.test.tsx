@@ -4,6 +4,7 @@ import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import { memoryAuth } from '../../storage/auth';
 import { applyCatalog } from '../../domain/catalog';
+import { offeredDisciplines } from '../../domain/disciplineInfo';
 import type { Player, Training } from '../../domain/types';
 import { buildSchedule } from '../../domain/schedule';
 import { DEFAULT_CATALOG } from '../../test/fixtures';
@@ -204,6 +205,44 @@ describe('stránka Disciplíny', () => {
     expect(within(row(streak)).getByLabelText('Celkový čas')).toHaveTextContent('Celkový čas reálně: zatím nic změřeno');
     await user.click(within(row(streak)).getByRole('button', { name: 'Upravit' }));
     expect(within(screen.getByRole('form', { name: `Upravit ${streak}` })).getByRole('button', { name: `Delší kolo: ${streak}` })).toBeInTheDocument();
+  });
+
+  it('admin nastaví délku každé disciplíny zvlášť: dobu míčku, nebo délku kola (Rozcvička, Čistá desítka)', async () => {
+    window.location.hash = '#/disciplines';
+    const repo = memoryRepository({ players: roster, trainings: [] });
+    render(<App repo={repo} />);
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
+    const offered = offeredDisciplines();
+    expect(offered.length).toBe(26);
+    for (const d of offered) {
+      await user.click(screen.getByRole('button', { name: d.name, expanded: false }));
+      await user.click(within(row(d.name)).getByRole('button', { name: 'Upravit' }));
+      const form = screen.getByRole('form', { name: `Upravit ${d.name}` });
+      const ball = within(form).queryByRole('spinbutton', { name: `Doba míčku v sekundách: ${d.name}` });
+      const longer = within(form).queryByRole('button', { name: `Delší kolo: ${d.name}` });
+      // právě jedno: doba míčku, nebo délka kola v minutách
+      expect([d.id, !!ball !== !!longer]).toEqual([d.id, true]);
+      if (ball) {
+        await user.clear(ball);
+        await user.type(ball, '11');
+      } else await user.click(longer!);
+      await user.click(within(form).getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: d.name, expanded: true })); // sbalit
+    }
+    await vi.waitFor(() => {
+      const c = repo.snapshot().catalog!.disciplines!;
+      expect(Object.keys(c).sort()).toEqual(offered.map((d) => d.id).sort());
+      expect(c.warmup).toEqual({ min: 10 });
+      expect(c.streakShot3).toEqual({ min: 11 });
+      expect(c.chain).toEqual({ ballSec: 11 });
+      expect(c.normal).toEqual({ ballSec: 11 });
+      expect(c.sim).toEqual({ ballSec: 11 });
+    });
+    // délky v řádcích se přepočítaly z nové doby míčku: Řetězec 11 s × 40 = 8 min, Normální leg 11 s × 11 = 3 min
+    expect(row('Řetězec')).toHaveTextContent('8 min11 s / míček');
+    expect(row('Normální leg')).toHaveTextContent('3 min11 s / míček');
+    expect(row('Rozcvička')).toHaveTextContent('10 min');
   });
 
   it('hráč dobu míčku ani reálný průměr nevidí', async () => {

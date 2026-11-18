@@ -263,8 +263,8 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(screen.getByRole('list', { name: 'Pořadí cvičení' })).getAllByRole('listitem').map((li) => li.querySelector('.po-name')!.firstChild!.textContent)).toEqual([
       'Rozcvička', 'Přihrávky na pětce', 'Penalta z místa proti brankáři', 'Řetězec', 'Daň za ztrátu', 'Jedničky',
     ]);
-    // duo: Rozcvička 9 + cvičení ve dvojici 14 (20 s × 40) × 4 + zápasy 8 (40 s × 11) × 2 + 6× přechod
-    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:27');
+    // duo: Rozcvička 9 + cvičení ve dvojici 14 (20 s × 40) × 3 + Řetězec 20 (30 s × 40) + zápasy 8 (40 s × 11) × 2 + 6× přechod
+    expect(screen.getByRole('status', { name: 'Naplánováno' })).toHaveTextContent('1:33');
     await user.click(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('checkbox', { name: /^Řetězec/ }));
     expect(ticked()).not.toContain('Řetězec');
     await user.click(screen.getByRole('button', { name: 'Výchozí' }));

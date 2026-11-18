@@ -24,6 +24,8 @@ import type { DisciplineId, Match } from './types';
 export const DEFAULT_BALL_SEC = 40;
 /** Výchozí doba míčku (pokusu) cvičení: 20 s (18. 11. 2026, *rozhodnutí uživatele*). */
 export const DEFAULT_DRILL_BALL_SEC = 20;
+/** Výchozí doba míčku jednotlivých disciplín, kde se liší (18. 11. 2026, *rozhodnutí uživatele*): Řetězec 30 s. */
+const DEFAULT_BALL_SEC_OF: BallSecs = { chain: 30 };
 export const MIN_BALL_SEC = 5;
 export const MAX_BALL_SEC = 300;
 
@@ -42,8 +44,8 @@ export const usesBalls = (id: DisciplineId): boolean => ballDef(discipline(id));
 
 export const validBallSec = (s: unknown): s is number => typeof s === 'number' && Number.isInteger(s) && s >= MIN_BALL_SEC && s <= MAX_BALL_SEC;
 
-/** Výchozí doba míčku disciplíny: cvičení 20 s, zápasy a simulace 40 s. */
-export const defaultBallSec = (id: DisciplineId): number => (discipline(id)?.kind === 'drill' ? DEFAULT_DRILL_BALL_SEC : DEFAULT_BALL_SEC);
+/** Výchozí doba míčku disciplíny: cvičení 20 s (Řetězec 30 s), zápasy a simulace 40 s. */
+export const defaultBallSec = (id: DisciplineId): number => DEFAULT_BALL_SEC_OF[id] ?? (discipline(id)?.kind === 'drill' ? DEFAULT_DRILL_BALL_SEC : DEFAULT_BALL_SEC);
 
 /** Doba míčku disciplíny v aktuálním katalogu: úprava admina, jinak výchozí. */
 export const ballSecOf = (id: DisciplineId): number => discipline(id)?.ballSec ?? defaultBallSec(id);

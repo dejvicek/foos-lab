@@ -55,6 +55,8 @@ describe('délka kola z doby míčku', () => {
     expect(snap.sim).toBe(40);
     expect(snap.warmupPasses).toBe(20);
     expect(snap.penaltySolo).toBe(20);
+    expect(snap.chain).toBe(30); // Řetězec 30 s (18. 11. 2026)
+    expect(catalogRoundMin('chain')).toBe(20); // 30 s × 40 pokusů = 1200 s
     expect(snap.warmup).toBeUndefined();
     expect(snap.streakShot3).toBeUndefined();
     expect(catalogRoundMin('start44')).toBe(2);

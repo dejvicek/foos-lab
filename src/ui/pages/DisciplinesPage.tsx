@@ -619,8 +619,7 @@ function BallField({ id, name, value, real, onChange }: { id: DisciplineId; name
               zvoleného formátu (BO2, BO3…).
             </>
           )}{' '}
-          Prázdné = výchozí {def} s (stejná pro všechn{drill ? 'a cvičení' : 'y zápasy'}). Platí pro nové tréninky a pro nezahájený trénink, když ho
-          upravíš.
+          Prázdné = výchozí {def} s. Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš.
         </p>
         <p className="note" aria-label="Reálná doba míčku">
           Reálně ({drill ? 'od prvního pokusu do ukončení kola / pokusy' : 'od prvního gólu do ukončení utkání / góly'}):{' '}
