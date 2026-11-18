@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
-import { computePracticeMatchLadder, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
+import { computePracticeMatchLadder, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
 import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
@@ -19,6 +19,7 @@ import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
 import { Medal, podiumRow, Progress } from '../components/Rank';
+import { placeAndSort, RankTh, SortTh, useSort, type SortCol, type SortDir } from '../components/SortTable';
 
 interface Props {
   store: AppStore;
@@ -58,65 +59,105 @@ function LadderTable({
 }) {
   const avg = view === 'avg';
   const mobile = useMobile();
-  const rows = [...ranked, ...lowData];
-  const cut = ranked.length;
+  const [sort, setSort] = useSort();
+  // Sloupce (18. 11. 2026: řazení podle libovolného sloupce); hodnoty podle Průměr / Celkem jako v buňkách.
+  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
+    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legs, show: (r) => String(r.legs) },
+    { key: 'diff', label: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    { key: 'wins', label: avg ? 'Výhry %' : 'Výhry', className: 'n', value: (r) => (avg ? r.winRate : r.wins), show: (r) => (avg ? pct(r.winRate) : String(r.wins)) },
+    { key: 'gf', label: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+    { key: 'loss', label: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
+    {
+      key: 'sim',
+      label: avg ? 'Simulace %' : 'Simulace (výhry / zápasy)',
+      className: 'n',
+      value: (r) => (avg ? r.simRate : r.simM ? r.simW : null),
+      show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
+    },
+  ];
+  const items = placeAndSort(ranked, lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
+  const shown = sort && sort.key !== 'diff' && sort.key !== 'name' ? cols.find((c) => c.key === sort.key) : undefined;
   if (mobile)
     return (
-      <ol aria-label={label} className="ladder-list">
-        {rows.map((r, i) => {
-          const d = avg ? r.diffPerLeg : r.diff;
-          const isRanked = i < cut;
-          return (
-            <Fragment key={r.playerId}>
-              {i === cut && (
-                <li role="presentation" aria-hidden="true" className="cutoff" />
-              )}
-              <li className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                <span className="ll-rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
-                <span className="ll-who">
-                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                    {name(r.playerId)}
-                  </button>
-                  <small>
-                    {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
-                  </small>
-                </span>
-                <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
-                  {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
-                  <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
-                </span>
-              </li>
-            </Fragment>
-          );
-        })}
-      </ol>
+      <>
+        <label className="sort-pick">
+          Řadit podle{' '}
+          <select
+            value={sort ? `${sort.key}:${sort.dir}` : ''}
+            onChange={(e) => {
+              const [key, dir] = e.target.value.split(':');
+              setSort(null);
+              if (key) setSort({ key, first: dir as SortDir });
+            }}
+          >
+            <option value="">pořadí</option>
+            {cols.flatMap((c) => [
+              <option key={`${c.key}:${c.first ?? 'desc'}`} value={`${c.key}:${c.first ?? 'desc'}`}>
+                {`${typeof c.label === 'string' ? c.label : c.key} ${(c.first ?? 'desc') === 'desc' ? '↓' : '↑'}`}
+              </option>,
+              <option key={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`} value={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`}>
+                {`${typeof c.label === 'string' ? c.label : c.key} ${(c.first ?? 'desc') === 'desc' ? '↑' : '↓'}`}
+              </option>,
+            ])}
+          </select>
+        </label>
+        <ol aria-label={label} className="ladder-list">
+          {items.map(({ r, place, ranked: isRanked }, i) => {
+            const d = avg ? r.diffPerLeg : r.diff;
+            return (
+              <Fragment key={r.playerId}>
+                {i === firstLow && <li role="presentation" aria-hidden="true" className="cutoff" />}
+                <li className={isRanked ? podiumRow(place) : 'low-data'}>
+                  <span className="ll-rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
+                  <span className="ll-who">
+                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                      {name(r.playerId)}
+                    </button>
+                    <small>
+                      {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
+                    </small>
+                  </span>
+                  {shown ? (
+                    <span className="ll-main">
+                      {shown.show(r)}
+                      <small>{typeof shown.label === 'string' ? shown.label.toLowerCase() : ''}</small>
+                    </span>
+                  ) : (
+                    <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
+                      {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
+                      <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
+                    </span>
+                  )}
+                </li>
+              </Fragment>
+            );
+          })}
+        </ol>
+      </>
     );
   return (
     <div className="wrap">
       <table aria-label={label}>
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            <th className="n">Legy</th>
-            <th className="n">{avg ? 'Rozdíl / leg' : 'Rozdíl'}</th>
-            <th className="n">{avg ? 'Výhry %' : 'Výhry'}</th>
-            <th className="n">{avg ? 'Góly + / leg' : 'Góly +'}</th>
-            <th className="n">{avg ? 'Góly − / leg' : 'Góly −'}</th>
-            <th className="n">Ztráty / leg</th>
-            <th className="n">{avg ? 'Simulace %' : 'Simulace (výhry / zápasy)'}</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {items.map(({ r, place, ranked: isRanked }, i) => {
             const d = avg ? r.diffPerLeg : r.diff;
-            const isRanked = i < cut;
             return (
               <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={10} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                {i === firstLow && <Cutoff cols={10} />}
+                <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                   <td>
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                       {name(r.playerId)}
@@ -140,7 +181,6 @@ function LadderTable({
   );
 }
 
-/** Čára mezi řazenými a neřazenými hráči (méně než MIN_TRAININGS tréninků); vysvětlení je jednou pod obdobím. */
 function Cutoff({ cols }: { cols: number }) {
   return (
     <tr className="cutoff" aria-hidden="true">
@@ -167,49 +207,53 @@ function SoloTable({
   max: number;
   name(id: PlayerId): string;
   open(id: PlayerId): void;
-  /** Sloupec Pokusy (žebříček Vlastní). */
+  /** Sloupec Pokusy (Cvičení → Solo/Duo). */
   attempts?: boolean;
   /** Čistá desítka: splněné série a nejlepší čas místo průměru / celku. */
   streak?: boolean;
 }) {
-  const rows = [...ranked, ...lowData];
-  const cut = ranked.length;
+  const [sort, setSort] = useSort();
   const showAttempts = attempts && !streak;
-  const cols = showAttempts || streak ? 5 : 4;
+  const cols: SortCol<SoloLadderRow>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
+    ...(showAttempts ? [{ key: 'attempts', label: 'Pokusy', className: 'n', value: (r: SoloLadderRow) => r.sumMax }] : []),
+    ...(streak ? [{ key: 'done', label: 'Splněno', className: 'n', value: (r: SoloLadderRow) => r.sum }] : []),
+    streak
+      ? { key: 'best', label: 'Nejlepší čas', className: 'n', value: (r) => r.best || null, first: 'asc' as const }
+      : { key: 'value', label: view === 'avg' ? 'Průměr' : 'Celkem', className: 'n', value: (r) => (view === 'avg' ? r.avg : r.sum) },
+  ];
+  const items = placeAndSort(ranked, lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
       <table aria-label={label} className="solo-table">
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            {showAttempts && <th className="n">Pokusy</th>}
-            {streak && <th className="n">Splněno</th>}
-            <th className="n">{streak ? 'Nejlepší čas' : view === 'avg' ? 'Průměr' : 'Celkem'}</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const isRanked = i < cut;
-            return (
-              <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={cols} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                      {name(r.playerId)}
-                    </button>
-                  </td>
-                  <td className="n">{r.trainings}</td>
-                  {showAttempts && <td className="n">{r.sumMax}</td>}
-                  {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
-                  <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
-                </tr>
-              </Fragment>
-            );
-          })}
+          {items.map(({ r, place, ranked: isRanked }, i) => (
+            <Fragment key={r.playerId}>
+              {i === firstLow && <Cutoff cols={cols.length + 1} />}
+              <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                <td>
+                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    {name(r.playerId)}
+                  </button>
+                </td>
+                <td className="n">{r.trainings}</td>
+                {showAttempts && <td className="n">{r.sumMax}</td>}
+                {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
+                <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+              </tr>
+            </Fragment>
+          ))}
         </tbody>
       </table>
     </div>
@@ -218,42 +262,45 @@ function SoloTable({
 
 /** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
-  const rows = [...table.ranked, ...table.lowData];
-  const cut = table.ranked.length;
+  const [sort, setSort] = useSort();
+  const cols: SortCol<PracticeMatchRow>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
+    { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => r.wins + r.draws / 2 },
+    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legWins },
+    { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.gf - r.gc },
+  ];
+  const items = placeAndSort(table.ranked, table.lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
       <table aria-label={discipline(table.discipline).name} className="solo-table">
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            <th className="n">Zápasy</th>
-            <th className="n">Legy</th>
-            <th className="n">Rozdíl</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const isRanked = i < cut;
-            return (
-              <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={6} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                      {name(r.playerId)}
-                    </button>
-                  </td>
-                  <td className="n">{r.trainings}</td>
-                  <td className="n">{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
-                  <td className="n">{`${r.legWins} / ${r.legs}`}</td>
-                  <td className={r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n'}>{signed(r.gf - r.gc)}</td>
-                </tr>
-              </Fragment>
-            );
-          })}
+          {items.map(({ r, place, ranked: isRanked }, i) => (
+            <Fragment key={r.playerId}>
+              {i === firstLow && <Cutoff cols={6} />}
+              <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                <td>
+                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    {name(r.playerId)}
+                  </button>
+                </td>
+                <td className="n">{r.trainings}</td>
+                <td className="n">{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
+                <td className="n">{`${r.legWins} / ${r.legs}`}</td>
+                <td className={r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n'}>{signed(r.gf - r.gc)}</td>
+              </tr>
+            </Fragment>
+          ))}
         </tbody>
       </table>
     </div>

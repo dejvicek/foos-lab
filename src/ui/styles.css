@@ -468,6 +468,18 @@ table { border-collapse: collapse; }
 .wrap th, .wrap td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); }
 .wrap th { color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
 td.n, th.n { text-align: right; }
+/* Řazení podle sloupce (18. 11. 2026): záhlaví je tlačítko, šipka u zvoleného sloupce. */
+.wrap th .th-sort {
+  background: none; border: 0; padding: 0; min-height: 0; min-width: 0; font: inherit; color: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+}
+th.n .th-sort { flex-direction: row; }
+.wrap th .th-sort:hover { color: var(--ink); }
+.wrap th .th-sort.on { color: var(--ink); }
+.th-arrow { font-size: 9px; opacity: 0.45; }
+.th-sort.on .th-arrow { opacity: 1; }
+.sort-pick { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.sort-pick select { min-height: 34px; }
 td.pos { color: var(--felt); font-weight: 700; }
 td.neg { color: var(--warn); font-weight: 700; }
 tr.clickable { cursor: pointer; }

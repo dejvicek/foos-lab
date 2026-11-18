@@ -94,6 +94,29 @@ describe('Zdržovači', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(5);
     expect(table).toHaveTextContent('H1');
   });
+
+  it('řazení podle sloupce (18. 11. 2026): Brzda zůstává u oficiálního prvního, # vrátí pořadí', async () => {
+    window.location.hash = '#/trainings/t1';
+    render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
+    const user = userEvent.setup();
+    const table = await screen.findByRole('table', { name: 'Zdržovači' });
+    const rows = () => within(table).getAllByRole('row').slice(1);
+    const who = (r: HTMLElement) => r.querySelector('.player-link, .delay-who')!.textContent!.replace('Brzda', '');
+    const brzda = rows()[0].textContent;
+    const brzdaWho = who(rows()[0]);
+    expect(brzda).toContain('Brzda');
+    await user.click(within(table).getByRole('button', { name: 'Hráč' }));
+    expect(within(table).getByRole('columnheader', { name: 'Hráč' })).toHaveAttribute('aria-sort', 'ascending');
+    await user.click(within(table).getByRole('button', { name: 'Hráč' }));
+    expect(within(table).getByRole('columnheader', { name: 'Hráč' })).toHaveAttribute('aria-sort', 'descending');
+    const order = rows().map(who);
+    expect(order).toEqual([...order].sort((x, y) => y.localeCompare(x, 'cs')));
+    // Brzda je pořád u toho, kdo je oficiálně první
+    expect(rows().filter((r) => r.textContent!.includes('Brzda')).map(who)).toEqual([brzdaWho]);
+    await user.click(within(table).getByRole('button', { name: 'Oficiální pořadí' }));
+    const first = () => rows()[0];
+    expect(first().textContent).toBe(brzda);
+  });
 });
 
 describe('Můj stůl: zahájení a konec ťukáním', () => {

@@ -3,6 +3,7 @@ import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
 import { isShamed, ShameRank, Snail } from './Rank';
+import { placeAndSort, RankTh, SortTh, useSort, type SortCol } from './SortTable';
 
 /**
  * Zahájení / konec utkání pro zápis (PRD 4.8). Od 18. 11. 2026 místo Zahájit „Připraven“: každá strana
@@ -163,29 +164,38 @@ interface TableProps {
   open?(id: PlayerId): void;
 }
 
-/** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. */
+/** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. Řadit jde podle sloupce (18. 11. 2026). */
 export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
+  const [sort, setSort] = useSort();
+  type Row = TableProps['rows'][number];
+  const cols: SortCol<Row>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
+    ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
+    { key: 'items', label: 'Utkání', className: 'n', value: (r) => r.items },
+    { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg },
+    { key: 'waitSum', label: 'Čekání celkem', className: 'n', value: (r) => r.waitSum },
+    { key: 'playAvg', label: 'Hra ⌀', className: 'n', value: (r) => r.playAvg },
+  ];
+  // Šnek a Brzda patří oficiálnímu prvnímu místu, i když je seřazeno jinak.
+  const items = placeAndSort(rows, [], cols, sort);
   return (
     <div className="wrap">
       <table aria-label="Zdržovači" className="delay-table">
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            {showTrainings && <th className="n">Tréninky</th>}
-            <th className="n">Utkání</th>
-            <th className="n">Čekání ⌀</th>
-            <th className="n">Čekání celkem</th>
-            <th className="n">Hra ⌀</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const shamed = isShamed(i + 1, r.waitSum > 0);
+          {items.map(({ r, place }) => {
+            const shamed = isShamed(place, r.waitSum > 0);
             return (
             <tr key={r.playerId} className={shamed ? 'shame shame-1' : undefined}>
               <td className="n rank">
-                <ShameRank place={i + 1} shamed={shamed} />
+                <ShameRank place={place} shamed={shamed} />
               </td>
               <td>
                 <span className="delay-who">
@@ -202,7 +212,7 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
               </td>
               {showTrainings && <td className="n">{r.trainings}</td>}
               <td className="n">{r.items}</td>
-              <td className={i === 0 && r.waitAvg > 0 ? 'n neg' : 'n'}>{fmtDur(r.waitAvg)}</td>
+              <td className={place === 1 && r.waitAvg > 0 ? 'n neg' : 'n'}>{fmtDur(r.waitAvg)}</td>
               <td className="n">{fmtDur(r.waitSum)}</td>
               <td className="n">{r.playAvg === null ? '–' : fmtDur(r.playAvg)}</td>
             </tr>

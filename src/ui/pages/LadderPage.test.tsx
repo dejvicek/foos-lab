@@ -129,6 +129,41 @@ describe('stránka Žebříček', () => {
   });
 });
 
+describe('řazení podle sloupce (18. 11. 2026)', () => {
+  it('klik na záhlaví seřadí, další otočí směr, # vrátí oficiální pořadí; nad čarou a pod čarou zvlášť, medaile zůstávají', async () => {
+    const user = userEvent.setup();
+    render(<App repo={repo()} />);
+    const table = await screen.findByRole('table', { name: 'Žebříček' });
+    const names = () => within(table).getAllByRole('row').slice(1).map((r) => r.querySelector('.player-link')?.textContent ?? '—');
+    const official = names();
+    expect(official[0]).toBe('Xaver');
+    await user.click(within(table).getByRole('button', { name: 'Legy' }));
+    expect(within(table).getByRole('columnheader', { name: 'Legy' })).toHaveAttribute('aria-sort', 'descending');
+    const legs = () => within(table).getAllByRole('row').slice(1).filter((r) => r.querySelector('.player-link')).map((r) => Number((r as HTMLTableRowElement).cells[3].textContent));
+    // X je jediný nad čarou → zůstává nahoře s medailí; pod čarou od nejvíc legů
+    expect(names()[0]).toBe('Xaver');
+    expect(within(within(table).getAllByRole('row')[1]).getByTitle('1. místo')).toBeInTheDocument();
+    const low = legs().slice(1);
+    expect(low).toEqual([...low].sort((a, b) => b - a));
+    await user.click(within(table).getByRole('button', { name: 'Legy' }));
+    expect(within(table).getByRole('columnheader', { name: 'Legy' })).toHaveAttribute('aria-sort', 'ascending');
+    const lowAsc = legs().slice(1);
+    expect(lowAsc).toEqual([...lowAsc].sort((a, b) => a - b));
+    await user.click(within(table).getByRole('button', { name: 'Oficiální pořadí' }));
+    expect(names()).toEqual(official);
+    expect(within(table).getByRole('columnheader', { name: 'Legy' })).not.toHaveAttribute('aria-sort');
+  });
+
+  it('Hráč řadí podle jména od A', async () => {
+    const user = userEvent.setup();
+    render(<App repo={repo()} />);
+    const table = await screen.findByRole('table', { name: 'Žebříček' });
+    await user.click(within(table).getByRole('button', { name: 'Hráč' }));
+    const low = within(table).getAllByRole('row').slice(1).filter((r) => r.classList.contains('low-data')).map((r) => r.querySelector('.player-link')!.textContent!);
+    expect(low).toEqual([...low].sort((a, b) => a.localeCompare(b, 'cs')));
+  });
+});
+
 describe('žebříček stanovišť', () => {
   const H8 = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8'];
   const ps: Player[] = H8.map((id, order) => ({ id, name: `Hráč ${id}`, order, archived: false }));
