@@ -5,7 +5,7 @@ import { trainingProgress } from '../../domain/progress';
 import { RoundHeader, roundName } from './RoundHeader';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
-import { BlockEntry, type TapEntry, type TapSolo } from './BlockEntry';
+import { BlockEntry, GameProgress, type TapEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 import { drillItemId } from '../../domain/queue';
 
@@ -103,6 +103,8 @@ export function MyTable(props: Props) {
   });
   const [idx, setIdx] = useState(() => (activeIdx >= 0 ? activeIdx : initialIndex(list, since, training)));
   const [fix, setFix] = useState(false);
+  // Listování šipkami: starší dohrané kolo se ukáže normálně (výsledek a Průběh), ne jako přechod.
+  const [browse, setBrowse] = useState(false);
   const activeId = activeIdx >= 0 ? itemOf(list[activeIdx]) : null;
   // Další hra je na řadě: přepnout na ni – ne však z dohraného utkání (tam čeká přechod s „Otevřít“).
   useEffect(() => {
@@ -112,8 +114,9 @@ export function MyTable(props: Props) {
   if (!list.length) return <p className="note">V tomhle rozpisu nemáš žádné kolo.</p>;
   const i = Math.min(idx, list.length - 1);
   const a = list[i];
-  const go = (j: number) => {
+  const go = (j: number, manual = false) => {
     setFix(false);
+    setBrowse(manual);
     setIdx(j);
   };
   const sec = schedule.sections.find((s) => s.rows.includes(a.row));
@@ -144,7 +147,7 @@ export function MyTable(props: Props) {
       </b>
       <span>
         {roundName(a)}
-        {!fix && (
+        {!fix && !browse && (
           <>
             {' · '}
             <button type="button" className="link" onClick={() => setFix(true)}>
@@ -156,18 +159,19 @@ export function MyTable(props: Props) {
     </div>
   );
   // Přechod: dohrané utkání a další kolo jako jedna karta – dál jde až po ťuknutí.
-  if (finished && target !== null && !fix)
+  if (finished && target !== null && !fix && !browse)
     return (
       <section className="my-table my-transition" aria-label="Moje kolo">
         {done}
+        {a.table !== undefined && <GameProgress row={a.row} table={a.table} training={training} names={names} />}
         {nextCard}
       </section>
     );
   return (
     <section className="my-table" aria-label="Moje kolo">
       {header(i, {
-        prev: { disabled: i === 0, onClick: () => go(i - 1) },
-        next: { disabled: i === list.length - 1, onClick: () => go(i + 1) },
+        prev: { disabled: i === 0, onClick: () => go(i - 1, true) },
+        next: { disabled: i === list.length - 1, onClick: () => go(i + 1, true) },
       })}
       <p className="my-role">
         <strong>{names[playerId] ?? ''}</strong>: {summary(a, names, playerId)}
@@ -190,7 +194,7 @@ export function MyTable(props: Props) {
           timelineOpen
         />
       )}
-      {finished && nextCard}
+      {finished && !browse && nextCard}
     </section>
   );
 }

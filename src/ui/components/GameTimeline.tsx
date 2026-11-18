@@ -223,9 +223,19 @@ export function DrillTimeline({ players, events, names }: { players: PlayerId[];
   );
 }
 
-/** Rozbalitelný „Průběh“ – jen když má hra ťukané události. */
+/**
+ * „Průběh“ – jen když má hra ťukané události. V Moje hry vždy rozbalený bez sbalení (18. 11. 2026),
+ * jinde rozbalitelný.
+ */
 export function TimelineBox({ count, children, open }: { count: number; children: ReactNode; open?: boolean }) {
   if (!count) return null;
+  if (open)
+    return (
+      <section className="tl-box" role="group" aria-label="Průběh">
+        <h4 className="tl-h">Průběh</h4>
+        {children}
+      </section>
+    );
   return (
     <details className="tl-box" open={open} role="group" aria-label="Průběh">
       <summary>Průběh</summary>

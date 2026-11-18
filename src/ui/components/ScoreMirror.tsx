@@ -26,13 +26,15 @@ interface Props {
   lock?: { content: ReactNode; message: string };
   /** Dohrané a nepotvrzené utkání: přes zrcadlo „Dohráno 6:4 ✓“, Potvrdit konec a Opravit výsledek. */
   done?: { text: string; autoEndIn: number | null; onConfirm(): void };
+  /** Utkání už skončilo (konec potvrzený) – jen „dohrán“, bez výzvy k potvrzení. */
+  ended?: boolean;
 }
 
 /**
  * PRD 7.1 „Zrcadlo stolu“: levá a pravá polovina jako u stolu.
  * Ťuknutí do velkého pole = +1 gól (ve starší simulaci set), červené pole = +1 ztráta.
  */
-export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note, lock, done }: Props) {
+export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note, lock, done, ended }: Props) {
   const [nudge, setNudge] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -135,7 +137,8 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
     <div className="mirror">
       {over && !(done && !editing) && (
         <p className="mirror-done" role="status">
-          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]} – zkontroluj a potvrď konec
+          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]}
+          {ended ? ' ✓' : ' – zkontroluj a potvrď konec'}
         </p>
       )}
       <div className={`mirror-stage${lock ? ' locked' : ''}`}>

@@ -224,12 +224,23 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     expect(open).toHaveTextContent('Další kolo · na řadě');
     expect(open).toHaveTextContent('Otevřít ›');
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
+    // Průběh dohrané hry je v přechodu rovnou rozbalený (18. 11. 2026), jen křivka
+    const prog = within(mine).getByRole('group', { name: 'Průběh' });
+    expect(within(prog).getByRole('img', { name: 'Křivka vedení, konečný stav 6:0' })).toBeInTheDocument();
+    expect(prog.tagName).not.toBe('DETAILS');
     await user.click(within(mine).getByRole('button', { name: 'Opravit výsledek' }));
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ })).toBeInTheDocument();
     await user.click(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ }));
     expect(within(mine).getByText('Kolo 2 z 3')).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Připraven' })).toBeInTheDocument();
+    // šipkou zpět: dohrané kolo normálně – výsledek, Průběh, bez přechodu a karty Otevřít
+    await user.click(within(mine).getByRole('button', { name: 'Předchozí kolo' }));
+    expect(within(mine).getByText('Kolo 1 z 3')).toBeInTheDocument();
+    expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
+    expect(within(mine).getByRole('group', { name: 'Průběh' })).toBeInTheDocument();
+    expect(mine).toHaveTextContent('Leg dohrán 6 : 0 ✓');
+    expect(mine).not.toHaveTextContent('zkontroluj a potvrď konec');
   });
 });
 

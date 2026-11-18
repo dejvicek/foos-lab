@@ -1125,6 +1125,8 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 /* ── Průběh hry (PRD 4.9): křivka (Sloupec zrušen 18. 11. 2026) ── */
 .tl-box { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
 .tl-box > summary { cursor: pointer; color: var(--felt); font-weight: 700; font-size: 13px; min-height: 28px; }
+.tl-box > .tl-h { margin: 2px 0 4px; color: var(--felt); font-size: 13px; font-weight: 700; }
+.tl-leg-k { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
 /* Barvy stran a hráčů (tečka, pilulka, výplň v SVG) */
 .tl-dot { flex: none; display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
 .tl-dot.side-a, .tl-dot.pl-0 { background: var(--gold); }
