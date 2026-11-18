@@ -23,7 +23,8 @@ export function tableScore(m: Match, s: Score | undefined): [number, number] {
 /** Góly na vyhraný leg (BO formát, jinak 6). */
 export const legTarget = (m: Match): number => m.legTo ?? LEG_TO;
 /** Leg o 2 góly: scénář 5:5, nebo rozhodující leg s nastavením „o 2“. */
-const byTwo = (m: Match) => isFiveFive(m) || !!m.winBy2;
+export const winsByTwo = (m: Match): boolean => isFiveFive(m) || !!m.winBy2;
+const byTwo = winsByTwo;
 /** Strop legu o 2 góly. */
 export const legCap = (m: Match): number => (isFiveFive(m) ? LEG_CAP : (m.cap ?? LEG_CAP));
 

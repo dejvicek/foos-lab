@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
 import { disciplineDuration, disciplineFacts, disciplineHelp, disciplinePlaces, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, PLACE_KEYS, PLACE_LABEL, placesText } from '../../domain/disciplineInfo';
 import type { Places } from '../../domain/disciplines';
@@ -7,6 +7,19 @@ import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGr
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
 import { MinStepper } from '../components/MinStepper';
+import { DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, MAX_GOAL_SEC, maxGoals, MIN_GOAL_SEC, usesGoals } from '../../domain/goalTime';
+import { goalAverages, type GoalAverage } from '../../domain/goalStats';
+import { fixedLegRule, formatLabel, formatOf } from '../../domain/matchFormat';
+
+/** Reálná doba gólu z průběhu her (jen admin; průběh se stahuje celý jako pro zálohu). */
+type RealGoals = { all: GoalAverage | null; by: Partial<Record<DisciplineId, GoalAverage>> } | 'loading' | 'error';
+
+const sec = (x: number) => `${Math.round(x)} s`;
+const plural = (n: number, one: string, few: string, many: string) => (n === 1 ? one : n >= 2 && n <= 4 ? few : many);
+/** „40 s (2 zápasy)“ / „zatím žádný změřený zápas“. */
+function realText(a: GoalAverage | null | undefined): string {
+  return a ? `${sec(a.sec)} (${a.matches} ${plural(a.matches, 'zápas', 'zápasy', 'zápasů')})` : 'zatím žádný změřený zápas';
+}
 
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
 const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
@@ -64,6 +77,21 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
       return n;
     });
   const save = (c: CatalogData) => store.saveCatalog(c);
+  // Admin: reálná doba gólu ze všech klubových tréninků s průběhem (18. 11. 2026).
+  const [real, setReal] = useState<RealGoals>('loading');
+  const loadBackup = store.loadBackup;
+  useEffect(() => {
+    if (!admin) return;
+    let live = true;
+    setReal('loading');
+    loadBackup().then(
+      (d) => live && setReal(goalAverages(d.trainings)),
+      () => live && setReal('error'),
+    );
+    return () => {
+      live = false;
+    };
+  }, [admin, loadBackup]);
 
   return (
     <section className="disciplines-page">
@@ -168,6 +196,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                           <DisciplineEditor
                             id={d.id}
                             catalog={catalog}
+                            real={real}
                             onSave={(c) => (save(c), setEditing(null))}
                             onCancel={() => setEditing(null)}
                           />
@@ -179,6 +208,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                                 <span key={f}>{f}</span>
                               ))}
                             </div>
+                            {admin && usesGoals(d.id) && <GoalLine id={d.id} real={real} />}
                             {admin && (
                               <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
                                 Upravit
@@ -305,8 +335,19 @@ function HelpList({ id }: { id: DisciplineId }) {
   );
 }
 
-/** Admin: úprava disciplíny (název, délka kola, volitelnost, štítky, nápověda). */
-function DisciplineEditor({ id, catalog, onSave, onCancel }: { id: DisciplineId; catalog: CatalogData; onSave(c: CatalogData): void; onCancel(): void }) {
+/** Admin u zápasu / simulace: doba gólu, z níž se počítá délka kola, a reálná doba gólu z průběhu her. */
+function GoalLine({ id, real }: { id: DisciplineId; real: RealGoals }) {
+  const own = discipline(id).goalSec;
+  return (
+    <p className="dp-goal" aria-label="Doba gólu">
+      Doba gólu <b>{sec(goalSecOf(id))}</b> {own === undefined ? '(výchozí)' : '(zadaná)'} · reálně{' '}
+      {real === 'loading' ? 'počítám…' : real === 'error' ? 'nejde načíst' : <b>{realText(real.by[id])}</b>}
+    </p>
+  );
+}
+
+/** Admin: úprava disciplíny (název, délka kola nebo doba gólu, štítky, nápověda). */
+function DisciplineEditor({ id, catalog, real, onSave, onCancel }: { id: DisciplineId; catalog: CatalogData; real: RealGoals; onSave(c: CatalogData): void; onCancel(): void }) {
   const [form, setForm] = useState<DisciplineForm>(() => catalogForm(id, catalog));
   const error = validateDisciplineForm(form);
   const owner = helpOwner(id);
@@ -324,11 +365,17 @@ function DisciplineEditor({ id, catalog, onSave, onCancel }: { id: DisciplineId;
       <div className="dp-editor-grid">
         <label htmlFor={`dp-name-${id}`}>Název</label>
         <input id={`dp-name-${id}`} type="text" value={form.name} onChange={(e) => set({ name: e.target.value })} />
-        <span className="dp-editor-label">Délka kola</span>
-        <div>
-          <MinStepper value={form.min} label={form.name || discipline(id).name} onChange={(v) => set({ min: v })} />
-          <p className="note">Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš. Běžící a odehrané tréninky si nechají své časy.</p>
-        </div>
+        {usesGoals(id) ? (
+          <GoalField id={id} name={form.name || discipline(id).name} value={form.goalSec} real={real} onChange={(goalSec) => set({ goalSec })} />
+        ) : (
+          <>
+            <span className="dp-editor-label">Délka kola</span>
+            <div>
+              <MinStepper value={form.min} label={form.name || discipline(id).name} onChange={(v) => set({ min: v })} />
+              <p className="note">Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš. Běžící a odehrané tréninky si nechají své časy.</p>
+            </div>
+          </>
+        )}
         <span className="dp-editor-label">Štítky</span>
         <div className="dp-pick" role="group" aria-label="Štítky">
           {SKILL_GROUPS.map((g) => (
@@ -447,5 +494,75 @@ function SkillsEditor({ catalog, newId, onSave, onCancel }: { catalog: CatalogDa
         )}
       </div>
     </form>
+  );
+}
+
+/**
+ * Doba gólu (18. 11. 2026): délka kola = doba gólu × nejvíc možných gólů ve formátu, nahoru na minuty.
+ * Prázdné = výchozí (stejná pro všechny disciplíny). Vedle reálný průměr z průběhu her.
+ */
+function GoalField({ id, name, value, real, onChange }: { id: DisciplineId; name: string; value: number | null; real: RealGoals; onChange(v: number | null): void }) {
+  const f = formatOf(null, id);
+  const goals = maxGoals(id, f);
+  const s = value ?? DEFAULT_GOAL_SEC;
+  const valid = Number.isInteger(s) && s >= MIN_GOAL_SEC && s <= MAX_GOAL_SEC;
+  const mine = typeof real === 'object' ? real.by[id] : undefined;
+  const sim = discipline(id).kind === 'sim';
+  // „leg do 6“, „ze 4:4 do 6“, „ze 5:5 o 2, strop 10“; BO formát (simulace) jeho popiskem.
+  const start = discipline(id).start;
+  const rule = formatLabel(f) || `${start ? `ze ${start.join(':')} ` : 'leg '}${fixedLegRule(id) ? 'o 2, strop 10' : 'do 6'}`;
+  return (
+    <>
+      <label className="dp-editor-label" htmlFor={`dp-goal-${id}`}>
+        Doba gólu
+      </label>
+      <div>
+        <span className="dp-goal-input">
+          <input
+            id={`dp-goal-${id}`}
+            type="number"
+            inputMode="numeric"
+            min={MIN_GOAL_SEC}
+            max={MAX_GOAL_SEC}
+            step={1}
+            aria-label={`Doba gólu v sekundách: ${name}`}
+            placeholder={String(DEFAULT_GOAL_SEC)}
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+          />{' '}
+          s
+        </span>
+        {value !== null && (
+          <button type="button" className="link" onClick={() => onChange(null)}>
+            Výchozí ({DEFAULT_GOAL_SEC} s)
+          </button>
+        )}
+        <p className="note">
+          {valid ? (
+            <>
+              Délka {sim ? 'vlny' : 'kola'}: {s} s × nejvíc {goals} gólů ({rule}) ={' '}
+              <b>{sim ? goalRoundMin(id, f, s) / 2 : goalRoundMin(id, f, s)} min</b>
+              {sim && ` (simulace 2 vlny = ${goalRoundMin(id, f, s)} min)`}. Jiný BO formát v tréninku délku přepočítá.
+            </>
+          ) : (
+            `Doba gólu musí být ${MIN_GOAL_SEC}–${MAX_GOAL_SEC} s.`
+          )}{' '}
+          Prázdné = výchozí {DEFAULT_GOAL_SEC} s (celkový průměr všech disciplín). Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš.
+        </p>
+        <p className="note" aria-label="Reálná doba gólu">
+          Reálně (od prvního gólu do ukončení utkání / góly):{' '}
+          {real === 'loading' ? 'počítám…' : real === 'error' ? 'průběh her nejde načíst' : <b>{realText(mine)}</b>}
+          {typeof real === 'object' && real.all && <> · všechny disciplíny {realText(real.all)}</>}
+          {mine && Math.round(mine.sec) >= MIN_GOAL_SEC && Math.round(mine.sec) <= MAX_GOAL_SEC && Math.round(mine.sec) !== value && (
+            <>
+              {' '}
+              <button type="button" className="link" onClick={() => onChange(Math.round(mine.sec))}>
+                Použít {sec(mine.sec)}
+              </button>
+            </>
+          )}
+        </p>
+      </div>
+    </>
   );
 }

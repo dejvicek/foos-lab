@@ -11,6 +11,7 @@ import { TRAINING_ITEM } from './queue';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { parseSoloKey, soloKey, soloMetric } from './solo';
 import { cleanFormats, formatOf, matchState, withFormat, type MatchFormats } from './matchFormat';
+import { goalRoundMin, goalSecOf, roundMinutes } from './goalTime';
 import type { DisciplineId, Match, PlayerId, SoloKey, SoloMetric, Training } from './types';
 
 export const PRACTICE_MAX_PLAYERS = 2;
@@ -39,8 +40,8 @@ export function practicesFor(ts: Training[], playerId: PlayerId | null, all = fa
  */
 export const roundsOf = (d: DisciplineDef): number => (d.kind === 'match' ? (d.paired ? 2 : 1) : (d.variants?.length ?? 1));
 
-/** Délka kola v plánu: zápas s BO = délka legu × nejvyšší počet legů. */
-const planMin = (d: DisciplineDef, formats?: MatchFormats | null) => d.min * (d.kind === 'match' ? formatOf(formats, d.id).bestOf : 1);
+/** Délka kola v plánu: zápas z doby gólu × nejvíc gólů ve formátu (18. 11. 2026), cvičení z katalogu. */
+const planMin = (d: DisciplineDef, formats?: MatchFormats | null) => (d.kind === 'match' ? goalRoundMin(d.id, formatOf(formats, d.id), goalSecOf(d.id)) : d.min);
 
 /**
  * Nový vlastní trénink s plánem: vybraná cvičení v pořadí `drills`, kola podle roundsOf, délky kol
@@ -76,6 +77,7 @@ export function newPractice(
     plan: Object.fromEntries(list.map((d) => [d, roundsOf(discipline(d))])),
     disciplineOrder: list,
     disciplineMin: Object.fromEntries(list.map((d) => [d, discipline(d).min])),
+    goalSec: Object.fromEntries(list.filter((d) => discipline(d).kind === 'match').map((d) => [d, goalSecOf(d)])),
     lockedRounds: [],
     createdBy: me,
     ...(matchFormats ? { matchFormats } : {}),
@@ -167,6 +169,7 @@ export const roundItem = (n: number): string => `round|${n}`;
 /** Kola plánu vlastního tréninku v pořadí (cvičení podle disciplineOrder, varianty po sobě). */
 export function practiceRounds(t: Training): PracticeRound[] {
   const out: PracticeRound[] = [];
+  const mins = roundMinutes(t.disciplineMin, t.matchFormats, t.goalSec);
   for (const id of t.disciplineOrder ?? []) {
     const d = DISCIPLINES.find((x) => x.id === id);
     if (!d) continue; // cvičení z novější verze appky
@@ -174,8 +177,7 @@ export function practiceRounds(t: Training): PracticeRound[] {
       const n = out.length + 1;
       if (d.kind === 'match') {
         if (t.attendees.length < 2) continue;
-        const f = formatOf(t.matchFormats, id);
-        out.push({ n, drill: id, match: practiceMatch(t, d, n, v), min: roundMin(id, t.disciplineMin) * f.bestOf, item: roundItem(n) });
+        out.push({ n, drill: id, match: practiceMatch(t, d, n, v), min: roundMin(id, mins), item: roundItem(n) });
         continue;
       }
       out.push({ n, drill: id, metric: practiceMetric(d, t.attendees.length), variant: d.variants?.[v], min: roundMin(id, t.disciplineMin), item: roundItem(n) });

@@ -9,4 +9,6 @@
 //   zapisovaly jinak a výsledky na čas by ukazovala jako počty.
 // 4 (18. 11. 2026): simulace ligového kola po legech (BO3 do 6 / BO5 do 5) – starší verze by do legu 1
 //   zapisovala sety a formát BO5 by při uložení tréninku smazala.
-export const COMPAT = 4;
+// 5 (18. 11. 2026): délka kola zápasu z doby gólu (trainings.goal_sec, migrace 30) – starší verze by
+//   ukazovala jiné časy a při uložení tréninku doby gólů smazala.
+export const COMPAT = 5;

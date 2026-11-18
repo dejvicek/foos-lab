@@ -37,7 +37,7 @@ export const MIN_CLUB_PLAYERS = 4;
 export const canSaveClubTraining = (t: ScheduleInput): boolean => canBuildSchedule(t) && t.attendees.length >= MIN_CLUB_PLAYERS;
 
 export type ScheduleInput = Pick<Training, 'mode' | 'tables' | 'attendees'> &
-  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds' | 'breaks' | 'disciplineMin' | 'disciplineOrder' | 'matchFormats'>>;
+  Partial<Pick<Training, 'simSplit' | 'simTeams' | 'scores' | 'format' | 'plan' | 'lockedRounds' | 'breaks' | 'disciplineMin' | 'disciplineOrder' | 'matchFormats' | 'goalSec'>>;
 
 export function canBuildSchedule(t: ScheduleInput): boolean {
   return t.attendees.length >= minPlayers(t) && t.attendees.length <= MAX_PLAYERS;

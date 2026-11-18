@@ -21,7 +21,7 @@ describe('stránka Disciplíny – obsah', () => {
   it('délka, kdo hraje a podrobnosti jen z definice disciplíny', () => {
     expect(disciplineDuration('warmupPasses')).toEqual({ rounds: 1, min: 8 });
     expect(disciplineDuration('penaltyKeeper')).toEqual({ rounds: 2, min: 8 });
-    expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 8 });
+    expect(disciplineDuration('wall')).toEqual({ rounds: 2, min: 7 }); // doba gólu 37 s × 11 gólů
     // kdo hraje říkají panáčci (disciplinePlaces); ikona v řádku už jen u párového zápasu
     expect(disciplineWho('warmupPasses')).toBeNull();
     expect(disciplineWho('wall')?.icon).toBe('swap');

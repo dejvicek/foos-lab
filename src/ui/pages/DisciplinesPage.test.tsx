@@ -4,7 +4,8 @@ import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
 import { memoryAuth } from '../../storage/auth';
 import { applyCatalog } from '../../domain/catalog';
-import type { Player } from '../../domain/types';
+import type { Player, Training } from '../../domain/types';
+import { buildSchedule } from '../../domain/schedule';
 import { DEFAULT_CATALOG } from '../../test/fixtures';
 
 const roster: Player[] = ['Dejv', 'Milan', 'Lavi', 'Luky'].map((name, order) => ({ id: `id${order + 1}`, name, order, archived: false }));
@@ -97,19 +98,22 @@ describe('stránka Disciplíny', () => {
     expect(rows()).toHaveLength(26);
   });
 
-  it('admin upraví disciplínu: název, délka, štítky, nápověda; Obnovit výchozí', async () => {
+  it('admin upraví disciplínu: název, doba gólu, štítky, nápověda; Obnovit výchozí', async () => {
     window.location.hash = '#/disciplines';
     const repo = memoryRepository({ players: roster, trainings: [] });
     render(<App repo={repo} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Zeď' }));
+    // u zápasu doba gólu (výchozí) a reálná z průběhu her
+    expect(within(row('Zeď')).getByLabelText('Doba gólu')).toHaveTextContent('Doba gólu 37 s (výchozí) · reálně zatím žádný změřený zápas');
     await user.click(within(row('Zeď')).getByRole('button', { name: 'Upravit' }));
     const form = screen.getByRole('form', { name: 'Upravit Zeď' });
     await user.clear(within(form).getByLabelText('Název'));
     await user.type(within(form).getByLabelText('Název'), 'Betonová zeď');
-    await user.click(within(form).getByRole('button', { name: 'Delší kolo: Betonová zeď' }));
-    await user.click(within(form).getByRole('button', { name: 'Delší kolo: Betonová zeď' }));
-    expect(within(form).getByRole('status', { name: 'Délka kola: Betonová zeď' })).toHaveTextContent('10 min');
+    expect(within(form).queryByRole('button', { name: 'Delší kolo: Betonová zeď' })).toBeNull(); // délka z doby gólu
+    expect(form).toHaveTextContent('Délka kola: 37 s × nejvíc 11 gólů (leg do 6) = 7 min');
+    await user.type(within(form).getByRole('spinbutton', { name: 'Doba gólu v sekundách: Betonová zeď' }), '50');
+    expect(form).toHaveTextContent('Délka kola: 50 s × nejvíc 11 gólů (leg do 6) = 10 min');
     const tags = within(form).getByRole('group', { name: 'Štítky' });
     await user.click(within(tags).getByRole('button', { name: 'Čtení soupeře' })); // odebrat
     await user.click(within(tags).getByRole('button', { name: 'Dotahování' })); // přidat
@@ -126,14 +130,53 @@ describe('stránka Disciplíny', () => {
     ]);
     await vi.waitFor(() =>
       expect(repo.snapshot().catalog).toEqual({
-        disciplines: { wall: { name: 'Betonová zeď', min: 10, skills: ['tempo', 'control', 'comeback'], help: [{ text: 'Jeden tým drží míč.' }] } },
+        disciplines: { wall: { name: 'Betonová zeď', goalSec: 50, skills: ['tempo', 'control', 'comeback'], help: [{ text: 'Jeden tým drží míč.' }] } },
       }),
     );
 
     await user.click(within(r).getByRole('button', { name: 'Upravit' }));
     await user.click(screen.getByRole('button', { name: 'Obnovit výchozí' }));
-    expect(row('Zeď')).toHaveTextContent('2× 8 min');
+    expect(row('Zeď')).toHaveTextContent('2× 7 min');
     await vi.waitFor(() => expect(repo.snapshot().catalog).toEqual({}));
+  });
+
+  it('admin vidí reálnou dobu gólu z průběhu her a může ji použít; hráč ne (18. 11. 2026)', async () => {
+    const T0 = Date.UTC(2026, 10, 17, 17, 0);
+    const base: Training = {
+      id: 'r', date: '2026-11-17', startTime: '18:00', mode: 'team', tables: 2, attendees: roster.map((p) => p.id), scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'custom', durationMin: 60, plan: { normal: 1 }, lockedRounds: [], breaks: [], disciplineMin: { normal: 8 },
+    };
+    const [m] = buildSchedule(base).matches;
+    const t: Training = {
+      ...base,
+      scores: { [m.id]: { ga: 6, gb: 4 } },
+      events: [{ id: 'e', itemId: m.id, at: T0, kind: 'goal', side: 'A', delta: 1 }],
+      playTimes: { [m.id]: { startedAt: T0 - 5000, endedAt: T0 + 420_000 } }, // 420 s / 10 gólů = 42 s
+    };
+    window.location.hash = '#/disciplines';
+    const repo = memoryRepository({ players: roster, trainings: [t] });
+    render(<App repo={repo} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Normální leg' }));
+    await vi.waitFor(() => expect(within(row('Normální leg')).getByLabelText('Doba gólu')).toHaveTextContent('reálně 42 s (1 zápas)'));
+    await user.click(within(row('Normální leg')).getByRole('button', { name: 'Upravit' }));
+    const form = screen.getByRole('form', { name: 'Upravit Normální leg' });
+    expect(within(form).getByLabelText('Reálná doba gólu')).toHaveTextContent('42 s (1 zápas) · všechny disciplíny 42 s (1 zápas)');
+    await user.click(within(form).getByRole('button', { name: 'Použít 42 s' }));
+    expect(within(form).getByRole('spinbutton', { name: 'Doba gólu v sekundách: Normální leg' })).toHaveValue(42);
+    expect(form).toHaveTextContent('42 s × nejvíc 11 gólů (leg do 6) = 8 min');
+    await user.click(within(form).getByRole('button', { name: 'Uložit' }));
+    await vi.waitFor(() => expect(repo.snapshot().catalog).toEqual({ disciplines: { normal: { goalSec: 42 } } }));
+    expect(within(row('Normální leg')).getByLabelText('Doba gólu')).toHaveTextContent('Doba gólu 42 s (zadaná)');
+  });
+
+  it('hráč dobu gólu ani reálný průměr nevidí', async () => {
+    const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
+    window.location.hash = '#/disciplines';
+    render(<App repo={memoryRepository({ players: roster, trainings: [] })} auth={auth} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Normální leg' }));
+    expect(within(row('Normální leg')).queryByLabelText('Doba gólu')).toBeNull();
   });
 
   it('admin spravuje štítky: přejmenuje, přidá, smaže; disciplíny se přepíšou', async () => {
@@ -197,17 +240,17 @@ describe('stránka Disciplíny', () => {
     expect(status()).toMatch(/Naplánováno 2:\d\d z 1:00.*přes o/);
     for (const name of ['Penalta z místa proti brankáři', 'Zeď', 'Start 0:3 + daň', 'Start 5:5, o 2 góly, strop 10', 'Jedničky', 'Simulace ligového kola'])
       await user.click(within(form).getByRole('checkbox', { name }));
-    // 8 hráčů / 4 stoly: Přihrávky 9 + Udržení 17 + Normální 9 + Daň 9 + 4:4 6 = 50; nic se nedoplňuje
-    expect(status()).toBe('Naplánováno 0:50 z 1:00zbývá 10 min');
+    // 8 hráčů / 4 stoly: Přihrávky 9 + Udržení 17 + Normální 8 + Daň 8 + 4:4 3 = 45 (zápasy z doby gólu 37 s); nic se nedoplňuje
+    expect(status()).toBe('Naplánováno 0:45 z 1:00zbývá 15 min');
+    expect(within(form).queryByRole('button', { name: 'Delší kolo: Normální leg' })).toBeNull();
     const rows = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('listitem');
     expect(rows('Cvičení')[1]).toHaveTextContent(/0:09.*0:26.*Udržení míče na pětce/);
-    await user.click(within(form).getByRole('button', { name: 'Delší kolo: Normální leg' }));
-    await user.click(within(form).getByRole('button', { name: 'Delší kolo: Normální leg' }));
-    expect(status()).toMatch(/^Naplánováno 0:52 z 1:00/);
+    await user.click(within(form).getByRole('button', { name: 'Delší kolo: Přihrávky na pětce' }));
+    expect(status()).toMatch(/^Naplánováno 0:46 z 1:00/);
     // počet kol zápasu
     await user.click(within(form).getByRole('button', { name: 'Víc kol: Normální leg' }));
     expect(within(form).getByRole('status', { name: 'Počet kol: Normální leg' })).toHaveTextContent('2×');
-    expect(status()).toMatch(/^Naplánováno 1:03 z 1:00/);
+    expect(status()).toMatch(/^Naplánováno 0:54 z 1:00/);
     // pořadí uvnitř sekce
     const order = (name: string) => within(within(form).getByRole('list', { name: `Pořadí: ${name}` })).getAllByRole('checkbox').filter((c) => !c.closest('.mf')).map((c) => c.closest('label')!.textContent);
     expect(order('Zápasy a scénáře')).toEqual(['Normální leg', 'Daň za ztrátu', 'Start 4:4']);
@@ -219,11 +262,11 @@ describe('stránka Disciplíny', () => {
     await user.click(within(form).getByRole('checkbox', { name: 'Start 4:5' }));
     // pauza jako řádek v tabulce
     await user.click(within(form).getByRole('button', { name: 'Přidat pauzu po: Udržení míče na pětce' }));
-    expect(status()).toMatch(/^Naplánováno 1:13 z 1:00.*přes o 0:13/);
+    expect(status()).toMatch(/^Naplánováno 1:04 z 1:00.*přes o 0:04/);
     const pause = within(form).getByRole('listitem', { name: 'Pauza po: Udržení míče na pětce' });
-    expect(pause).toHaveTextContent(/0:26.*0:36/);
+    expect(pause).toHaveTextContent(/0:27.*0:37/);
     await user.selectOptions(within(pause).getByRole('combobox', { name: 'Délka pauzy' }), '5');
-    expect(status()).toBe('Naplánováno 1:08 z 1:00přes o 0:08');
+    expect(status()).toBe('Naplánováno 0:59 z 1:00zbývá 1 min');
     await user.click(within(form).getByRole('button', { name: 'Pauzu o disciplínu později' }));
     expect(within(form).getByRole('listitem', { name: 'Pauza po: Start 4:4' })).toBeInTheDocument();
 
@@ -250,7 +293,7 @@ describe('stránka Disciplíny', () => {
         rounds: { normal: 2 },
         breaks: [{ after: 'start44', min: 5 }],
       });
-      expect(c.disciplines).toEqual({ normal: { min: 10 } });
+      expect(c.disciplines).toEqual({ warmupPasses: { min: 9 } });
     });
 
     // nový trénink: první šablona (1:00), přesně její kola
@@ -273,7 +316,7 @@ describe('stránka Disciplíny', () => {
     expect(within(fresh).getByRole('textbox', { name: 'Název' })).toHaveValue('Výchozí');
     await user.click(within(fresh).getByRole('button', { name: 'Uložit šablony' }));
     expect(within(fresh).getByText('Uloženo')).toBeInTheDocument();
-    await user.click(within(fresh).getByRole('button', { name: 'Delší kolo: Normální leg' }));
+    await user.click(within(fresh).getByRole('button', { name: 'Delší kolo: Přihrávky na pětce' }));
     expect(within(fresh).queryByText('Uloženo')).toBeNull();
     expect(repo.snapshot().catalog?.templates?.[0].name).toBe('Výchozí');
   });

@@ -3,7 +3,8 @@ import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters
 import { planSequence, planTimeline, playable, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
-import { baseMatchId, formatLabel, formatMins, formatOf, withFormat, type MatchFormat } from './matchFormat';
+import { baseMatchId, formatLabel, formatOf, withFormat, type MatchFormat } from './matchFormat';
+import { roundMinutes } from './goalTime';
 import type {
   Cell,
   DisciplineId,
@@ -16,7 +17,9 @@ import type {
   TableCount,
 } from './types';
 
-const SIM_WAVE_MIN = 20;
+
+/** Vlna simulace v tréninku bez doby gólu (délka kola simulace na vlny vliv neměla). */
+const OLD_SIM_WAVE_MIN = 20;
 
 function cellsOf(items: Cell[], tables: TableCount): (Cell | null)[] {
   return Array.from({ length: tables }, (_, j) => items[j] ?? null);
@@ -89,7 +92,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);
 
   // Zápas s BO trvá délka legu × nejvyšší počet legů.
-  const timeline = planTimeline(seq, t.breaks, formatMins(t.disciplineMin, t.matchFormats));
+  const timeline = planTimeline(seq, t.breaks, roundMinutes(t.disciplineMin, t.matchFormats, t.goalSec));
   // Sekce jdou chronologicky: při změně druhu kola začne nová (cvičení přidané později je za zápasy).
   const META = {
     drills: { title: 'Cvičení', waitingLabel: 'Počítá' },
@@ -135,9 +138,11 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 
     if (def.kind === 'sim') {
+      // Vlna = polovina kola z doby gólu; starší trénink bez doby gólu pevně 20 min (18. 11. 2026).
+      const waveMin = t.goalSec?.sim !== undefined ? item.min / 2 : OLD_SIM_WAVE_MIN;
       let simRows: ScheduleRow[];
       if (lockedRound)
-        simRows = lockedRound.rows.map((r, w) => ({ ...r, cells: cellsOf(r.cells.filter(Boolean) as Cell[], tables), time: item.start + w * SIM_WAVE_MIN }));
+        simRows = lockedRound.rows.map((r, w) => ({ ...r, cells: cellsOf(r.cells.filter(Boolean) as Cell[], tables), time: item.start + w * waveMin }));
       else {
         teams = simTeamsFor({ ...t, attendees: players }, matches.filter((m) => m.block === 'league'));
         const sim = simulateTeams(teams.A, teams.B, t.tables);
@@ -148,9 +153,9 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
         simRows = [sim.wave1, sim.wave2].map((w, wi) => ({
           roundNo,
           discipline: 'sim' as const,
-          time: item.start + wi * SIM_WAVE_MIN,
+          time: item.start + wi * waveMin,
           label: `${wi + 1}. vlna`,
-          rule: `${SIM_WAVE_MIN} min, ${formatLabel(fmt)}`,
+          rule: `${waveMin} min, ${formatLabel(fmt)}`,
           kind: 'matches' as const,
           cells: cellsOf(
             w.matches.map((p, j) => ({

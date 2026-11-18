@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cleanFormats, formatOf } from '../../domain/matchFormat';
+import { goalRoundMin, goalSecOf, usesGoals } from '../../domain/goalTime';
 import { MatchFormatPicker } from './MatchFormatPicker';
 import { CountStepper, endLiner, FreeRow, GapButton, KINDS, MoveButtons, PauseRow, PlanMeter, rowHeight, SectionHead, TimeCell, KIND_TITLE, type Kind, type Span } from './PlanTable';
 import { blankTemplate, saveTemplates, templatePlan, templateTimeline, trainingTemplates, validateTemplates, type CatalogData, type TrainingTemplate } from '../../domain/catalog';
@@ -62,6 +63,16 @@ export function TemplatesEditor({
     else onChange?.();
   }, [draft, mins]);
   const error = validateTemplates(draft, mins);
+  /** Délka kola: zápas a simulace z doby gólu × nejvíc gólů ve formátu šablony (18. 11. 2026), cvičení z délky kola. */
+  const roundLen = (id: DisciplineId) => (usesGoals(id) ? goalRoundMin(id, formatOf(tpl.formats, id), goalSecOf(id)) : (mins[id] ?? def(id).min));
+  const lenCell = (id: DisciplineId) =>
+    usesGoals(id) ? (
+      <span className="tt-len" title={`Z doby gólu ${goalSecOf(id)} s × nejvíc gólů ve formátu; dobu gólu mění admin na stránce Disciplíny.`}>
+        {roundLen(id)} min
+      </span>
+    ) : (
+      <MinStepper value={roundLen(id)} label={def(id).name} onChange={(v) => setMins((x) => ({ ...x, [id]: v }))} />
+    );
   const setTpl = (patch: Partial<TrainingTemplate>) => setDraft((xs) => xs.map((t) => (t.id === tpl.id ? { ...t, ...patch } : t)));
 
   // Čas: kola šablony v pořadí, pauzy po disciplínách.
@@ -232,7 +243,7 @@ export function TemplatesEditor({
             <b>Kola:</b> zápasy − / + (párové po dvou), cvičení mají tolik kol, aby se vystřídali všichni přítomní. Trénink dostane přesně kola ze šablony, nic se nedoplňuje.
           </li>
           <li>
-            <b>Délka kola</b> (− / +) platí pro všechny šablony a pro nové tréninky.
+            <b>Délka kola</b> cvičení (− / +) platí pro všechny šablony a pro nové tréninky. Zápasy a simulace mají délku z doby gólu × nejvíc gólů ve formátu; dobu gólu mění admin na stránce Disciplíny.
           </li>
         </ul>
         <div className="tpl-all">
@@ -293,9 +304,9 @@ export function TemplatesEditor({
                           down={{ label: `Později: ${d.name}`, disabled: i === chosen.length - 1, onClick: () => move(id, i + 1) }}
                         />
                         {roundsCell(id)}
-                        <MinStepper value={mins[id] ?? d.min} label={d.name} onChange={(v) => setMins((x) => ({ ...x, [id]: v }))} />
+                        {lenCell(id)}
                         <span className="tpl-total">
-                          {playable(id, players) ? `${n * ((mins[id] ?? d.min) * (d.kind === 'match' ? formatOf(tpl.formats, id).bestOf : 1) + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}
+                          {playable(id, players) ? `${n * (roundLen(id) + 1)} min` : <span className="tt-warn">při {players} hráčích se nehraje</span>}
                         </span>
                         {!brk && span && id !== lastPlayed && <GapButton name={d.name} onClick={() => setBreaks([...breaks, { after: id, min: 10 }])} />}
                         {span && endLine(span)}
@@ -338,7 +349,7 @@ export function TemplatesEditor({
                         </label>
                         <span />
                         <span className="tt-rounds" />
-                        <MinStepper value={mins[d.id] ?? d.min} label={d.name} onChange={(v) => setMins((x) => ({ ...x, [d.id]: v }))} />
+                        {lenCell(d.id)}
                         <span className="tpl-total">
                           {ok ? `+${delta} min` : '–'}
                           {ok && total + delta > tpl.durationMin && <span className="tt-warn">nevejde se</span>}
