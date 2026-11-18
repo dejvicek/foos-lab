@@ -19,7 +19,7 @@ import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
 import { Medal, podiumRow, Progress } from '../components/Rank';
-import { placeAndSort, RankTh, SortTh, useSort, type SortCol, type SortDir } from '../components/SortTable';
+import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol, type SortDir } from '../components/SortTable';
 
 interface Props {
   store: AppStore;
@@ -158,19 +158,19 @@ function LadderTable({
                 {i === firstLow && <Cutoff cols={10} />}
                 <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                   <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
+                  <td className={sortedCls(sort, 'name')}>
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                       {name(r.playerId)}
                     </button>
                   </td>
-                  <td className="n">{r.trainings}</td>
-                  <td className="n">{r.legs}</td>
-                  <td className={d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n'}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
-                  <td className="n">{avg ? pct(r.winRate) : r.wins}</td>
-                  <td className="n">{avg ? dec1(r.gfPerLeg) : r.gf}</td>
-                  <td className="n">{avg ? dec1(r.gcPerLeg) : r.gc}</td>
-                  <td className="n">{dash(r.lossPerLeg, (v) => dec1(v))}</td>
-                  <td className="n">{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
+                  <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                  <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>
+                  <td className={sortedCls(sort, 'diff', d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n')}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
+                  <td className={sortedCls(sort, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
+                  <td className={sortedCls(sort, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
+                  <td className={sortedCls(sort, 'gc', 'n')}>{avg ? dec1(r.gcPerLeg) : r.gc}</td>
+                  <td className={sortedCls(sort, 'loss', 'n')}>{dash(r.lossPerLeg, (v) => dec1(v))}</td>
+                  <td className={sortedCls(sort, 'sim', 'n')}>{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
                 </tr>
               </Fragment>
             );
@@ -242,15 +242,15 @@ function SoloTable({
               {i === firstLow && <Cutoff cols={cols.length + 1} />}
               <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                 <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                <td>
+                <td className={sortedCls(sort, 'name')}>
                   <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                     {name(r.playerId)}
                   </button>
                 </td>
-                <td className="n">{r.trainings}</td>
-                {showAttempts && <td className="n">{r.sumMax}</td>}
-                {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
-                <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+                <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                {showAttempts && <td className={sortedCls(sort, 'attempts', 'n')}>{r.sumMax}</td>}
+                {streak && <td className={sortedCls(sort, 'done', 'n')}>{`${r.sum} / ${r.sumMax}`}</td>}
+                <td className={sortedCls(sort, streak ? 'best' : 'value', 'n')}>{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
               </tr>
             </Fragment>
           ))}
@@ -289,15 +289,15 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
               {i === firstLow && <Cutoff cols={6} />}
               <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                 <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                <td>
+                <td className={sortedCls(sort, 'name')}>
                   <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                     {name(r.playerId)}
                   </button>
                 </td>
-                <td className="n">{r.trainings}</td>
-                <td className="n">{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
-                <td className="n">{`${r.legWins} / ${r.legs}`}</td>
-                <td className={r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n'}>{signed(r.gf - r.gc)}</td>
+                <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                <td className={sortedCls(sort, 'matches', 'n')}>{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
+                <td className={sortedCls(sort, 'legs', 'n')}>{`${r.legWins} / ${r.legs}`}</td>
+                <td className={sortedCls(sort, 'diff', r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n')}>{signed(r.gf - r.gc)}</td>
               </tr>
             </Fragment>
           ))}

@@ -139,6 +139,11 @@ describe('řazení podle sloupce (18. 11. 2026)', () => {
     expect(official[0]).toBe('Xaver');
     await user.click(within(table).getByRole('button', { name: 'Legy' }));
     expect(within(table).getByRole('columnheader', { name: 'Legy' })).toHaveAttribute('aria-sort', 'descending');
+    // zvýrazněný sloupec: záhlaví i všechny buňky Legy, nic jiného
+    expect(within(table).getByRole('columnheader', { name: 'Legy' })).toHaveClass('sorted');
+    const dataRows = within(table).getAllByRole('row').slice(1).filter((r) => r.querySelector('.player-link')) as HTMLTableRowElement[];
+    expect(dataRows.every((r) => r.cells[3].classList.contains('sorted'))).toBe(true);
+    expect(table.querySelectorAll('.sorted')).toHaveLength(dataRows.length + 1);
     const legs = () => within(table).getAllByRole('row').slice(1).filter((r) => r.querySelector('.player-link')).map((r) => Number((r as HTMLTableRowElement).cells[3].textContent));
     // X je jediný nad čarou → zůstává nahoře s medailí; pod čarou od nejvíc legů
     expect(names()[0]).toBe('Xaver');
@@ -151,6 +156,7 @@ describe('řazení podle sloupce (18. 11. 2026)', () => {
     expect(lowAsc).toEqual([...lowAsc].sort((a, b) => a - b));
     await user.click(within(table).getByRole('button', { name: 'Oficiální pořadí' }));
     expect(names()).toEqual(official);
+    expect(table.querySelectorAll('.sorted')).toHaveLength(0);
     expect(within(table).getByRole('columnheader', { name: 'Legy' })).not.toHaveAttribute('aria-sort');
   });
 

@@ -3,7 +3,7 @@ import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
 import { isShamed, ShameRank, Snail } from './Rank';
-import { placeAndSort, RankTh, SortTh, useSort, type SortCol } from './SortTable';
+import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol } from './SortTable';
 
 /**
  * Zahájení / konec utkání pro zápis (PRD 4.8). Od 18. 11. 2026 místo Zahájit „Připraven“: každá strana
@@ -197,7 +197,7 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
               <td className="n rank">
                 <ShameRank place={place} shamed={shamed} />
               </td>
-              <td>
+              <td className={sortedCls(sort, 'name')}>
                 <span className="delay-who">
                   {open ? (
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
@@ -210,11 +210,11 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
                   {shamed && <span className="shame-tag">Brzda</span>}
                 </span>
               </td>
-              {showTrainings && <td className="n">{r.trainings}</td>}
-              <td className="n">{r.items}</td>
-              <td className={place === 1 && r.waitAvg > 0 ? 'n neg' : 'n'}>{fmtDur(r.waitAvg)}</td>
-              <td className="n">{fmtDur(r.waitSum)}</td>
-              <td className="n">{r.playAvg === null ? '–' : fmtDur(r.playAvg)}</td>
+              {showTrainings && <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>}
+              <td className={sortedCls(sort, 'items', 'n')}>{r.items}</td>
+              <td className={sortedCls(sort, 'waitAvg', place === 1 && r.waitAvg > 0 ? 'n neg' : 'n')}>{fmtDur(r.waitAvg)}</td>
+              <td className={sortedCls(sort, 'waitSum', 'n')}>{fmtDur(r.waitSum)}</td>
+              <td className={sortedCls(sort, 'playAvg', 'n')}>{r.playAvg === null ? '–' : fmtDur(r.playAvg)}</td>
             </tr>
             );
           })}

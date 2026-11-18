@@ -53,6 +53,10 @@ export function placeAndSort<T>(ranked: T[], lowData: T[], cols: SortCol<T>[], s
   return [...by(placed.filter((x) => x.ranked)), ...by(placed.filter((x) => !x.ranked))];
 }
 
+/** Třída buňky: zvýrazněný sloupec, podle kterého se řadí (18. 11. 2026). */
+export const sortedCls = (sort: Sort | null, key: string, base?: string): string | undefined =>
+  sort?.key === key ? (base ? `${base} sorted` : 'sorted') : base;
+
 const ariaSort = (sort: Sort | null, key: string): 'ascending' | 'descending' | undefined =>
   sort?.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined;
 
@@ -60,7 +64,7 @@ const ariaSort = (sort: Sort | null, key: string): 'ascending' | 'descending' | 
 export function SortTh<T>({ col, sort, onSort }: { col: SortCol<T>; sort: Sort | null; onSort(col: SortCol<T>): void }) {
   const on = sort?.key === col.key;
   return (
-    <th className={col.className} aria-sort={ariaSort(sort, col.key)}>
+    <th className={sortedCls(sort, col.key, col.className)} aria-sort={ariaSort(sort, col.key)}>
       <button type="button" className={on ? 'th-sort on' : 'th-sort'} onClick={() => onSort(col)} title="Seřadit podle sloupce">
         {col.label}
         <span className="th-arrow" aria-hidden="true">
