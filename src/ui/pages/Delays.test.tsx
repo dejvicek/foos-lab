@@ -79,6 +79,8 @@ describe('Zdržovači', () => {
     expect(summary.compareDocumentPosition(screen.getByRole('table', { name: /rozpis/i })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await userEvent.setup().click(within(summary).getByRole('button', { name: 'Zdržovači' }));
     const table = screen.getByRole('table', { name: 'Zdržovači' });
+    // hned za jménem sloupec, podle kterého se řadí (19. 11. 2026)
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕↑↓]/g, '').trim())).toEqual(['#', 'Hráč', 'Čekání ⌀', 'Celkem', 'Hra ⌀', 'Utk.']);
     const row = within(table).getAllByRole('row')[1];
     expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2

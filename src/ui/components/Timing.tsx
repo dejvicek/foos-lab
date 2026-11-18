@@ -222,20 +222,25 @@ interface TableProps {
   open?(id: PlayerId): void;
   /** Souhrn tréninku: kratší popisky a menší šnek, ať se tabulka vejde na telefon (19. 11. 2026). */
   compact?: boolean;
+  /** Podle čeho je oficiální pořadí (žebříček Celkem = součet); ten sloupec je hned za jménem (19. 11. 2026). */
+  rankBy?: 'avg' | 'sum';
 }
 
 /** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. Řadit jde podle sloupce (18. 11. 2026). */
-export function DelayTable({ rows, names, showTrainings, open, compact }: TableProps) {
+export function DelayTable({ rows, names, showTrainings, open, compact, rankBy = 'avg' }: TableProps) {
   const [sort, setSort] = useSort();
   type Row = TableProps['rows'][number];
+  // Pořadí sloupců (19. 11. 2026): hned za jménem to, podle čeho se řadí, pak druhé čekání, hra a počty.
+  const waitAvg: SortCol<Row> = { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg };
+  const waitSum: SortCol<Row> = { key: 'waitSum', label: compact ? 'Celkem' : 'Čekání celkem', className: 'n', value: (r) => r.waitSum };
   const cols: SortCol<Row>[] = [
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
-    ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
-    { key: 'items', label: compact ? 'Utk.' : 'Utkání', className: 'n', value: (r) => r.items },
-    { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg },
-    { key: 'waitSum', label: compact ? 'Celkem' : 'Čekání celkem', className: 'n', value: (r) => r.waitSum },
+    ...(rankBy === 'sum' ? [waitSum, waitAvg] : [waitAvg, waitSum]),
     { key: 'playAvg', label: 'Hra ⌀', className: 'n', value: (r) => r.playAvg },
+    { key: 'items', label: compact ? 'Utk.' : 'Utkání', className: 'n', value: (r) => r.items },
+    ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
   ];
+  const rankKey = rankBy === 'sum' ? 'waitSum' : 'waitAvg';
   // Šnek a Brzda patří oficiálnímu prvnímu místu, i když je seřazeno jinak.
   const items = placeAndSort(rows, [], cols, sort);
   return (
@@ -270,11 +275,19 @@ export function DelayTable({ rows, names, showTrainings, open, compact }: TableP
                   {shamed && <span className="shame-tag">Brzda</span>}
                 </span>
               </td>
-              {showTrainings && <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>}
-              <td className={sortedCls(sort, 'items', 'n')}>{r.items}</td>
-              <td className={sortedCls(sort, 'waitAvg', place === 1 && r.waitAvg > 0 ? 'n neg' : 'n')}>{fmtDur(r.waitAvg)}</td>
-              <td className={sortedCls(sort, 'waitSum', 'n')}>{fmtDur(r.waitSum)}</td>
-              <td className={sortedCls(sort, 'playAvg', 'n')}>{r.playAvg === null ? '–' : fmtDur(r.playAvg)}</td>
+              {cols.slice(1).map((c) => {
+                const text =
+                  c.key === 'waitAvg' ? fmtDur(r.waitAvg)
+                  : c.key === 'waitSum' ? fmtDur(r.waitSum)
+                  : c.key === 'playAvg' ? (r.playAvg === null ? '–' : fmtDur(r.playAvg))
+                  : c.key === 'items' ? r.items
+                  : r.trainings;
+                return (
+                  <td key={c.key} className={sortedCls(sort, c.key, c.key === rankKey && place === 1 && r.waitSum > 0 ? 'n neg' : 'n')}>
+                    {text}
+                  </td>
+                );
+              })}
             </tr>
             );
           })}

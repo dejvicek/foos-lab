@@ -306,7 +306,7 @@ function DelayLadder({ store, prefs, today, open }: { store: AppStore; prefs: Ui
   if (!rows.length) return <p className="note">V tomhle období zatím nejsou změřená žádná utkání.</p>;
   return (
     <>
-      <DelayTable rows={rows} names={names} showTrainings open={open} />
+      <DelayTable rows={rows} names={names} showTrainings open={open} rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'} />
       <p className="note">
         Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání; připisuje se všem hráčům utkání.{' '}
         {prefs.ladderView === 'avg' ? 'Řazeno podle průměrného čekání na utkání.' : 'Řazeno podle čekání celkem.'}
