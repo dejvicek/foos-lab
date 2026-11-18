@@ -220,25 +220,27 @@ interface TableProps {
   names: Record<PlayerId, string>;
   showTrainings?: boolean;
   open?(id: PlayerId): void;
+  /** Souhrn tréninku: kratší popisky a menší šnek, ať se tabulka vejde na telefon (19. 11. 2026). */
+  compact?: boolean;
 }
 
 /** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. Řadit jde podle sloupce (18. 11. 2026). */
-export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
+export function DelayTable({ rows, names, showTrainings, open, compact }: TableProps) {
   const [sort, setSort] = useSort();
   type Row = TableProps['rows'][number];
   const cols: SortCol<Row>[] = [
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
     ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
-    { key: 'items', label: 'Utkání', className: 'n', value: (r) => r.items },
+    { key: 'items', label: compact ? 'Utk.' : 'Utkání', className: 'n', value: (r) => r.items },
     { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg },
-    { key: 'waitSum', label: 'Čekání celkem', className: 'n', value: (r) => r.waitSum },
+    { key: 'waitSum', label: compact ? 'Celkem' : 'Čekání celkem', className: 'n', value: (r) => r.waitSum },
     { key: 'playAvg', label: 'Hra ⌀', className: 'n', value: (r) => r.playAvg },
   ];
   // Šnek a Brzda patří oficiálnímu prvnímu místu, i když je seřazeno jinak.
   const items = placeAndSort(rows, [], cols, sort);
   return (
     <div className="wrap">
-      <table aria-label="Zdržovači" className="delay-table">
+      <table aria-label="Zdržovači" className={compact ? 'delay-table summary-table' : 'delay-table'}>
         <thead>
           <tr>
             <RankTh sort={sort} onReset={() => setSort(null)} />
@@ -264,7 +266,7 @@ export function DelayTable({ rows, names, showTrainings, open }: TableProps) {
                   ) : (
                     names[r.playerId] ?? '?'
                   )}
-                  {shamed && <Snail big />}
+                  {shamed && <Snail big={!compact} />}
                   {shamed && <span className="shame-tag">Brzda</span>}
                 </span>
               </td>

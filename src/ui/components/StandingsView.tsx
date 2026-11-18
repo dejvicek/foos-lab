@@ -36,8 +36,8 @@ export function TrainingSummary({ delays, ...props }: Props & { delays: DelayRow
       {shown === 'standings' && <StandingsView {...props} />}
       {shown === 'delays' && (
         <div className="delays">
-          <DelayTable rows={delays} names={props.names} />
-          <p className="note">Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</p>
+          <DelayTable rows={delays} names={props.names} compact />
+          <How>Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</How>
         </div>
       )}
       {shown === 'sim' && <SimView {...props} />}
@@ -98,9 +98,8 @@ function SimView({ schedule, scores, attendees, names }: Props) {
     }
     rows.push(
       <tr key={r.no}>
-        <td className="sim-no">
-          <b>{r.no}</b>
-          <small>{r.kind === 'doubles' ? 'Dvojice' : 'Jednotlivci'}</small>
+        <td className="sim-no" title={r.kind === 'doubles' ? 'Dvojice' : 'Jednotlivci'}>
+          {r.no}
         </td>
         <td>
           <div className="sim-ppl">
@@ -136,7 +135,7 @@ function SimView({ schedule, scores, attendees, names }: Props) {
         <table aria-label="Simulace" className="sim-table">
           <thead>
             <tr>
-              <th>Zápas</th>
+              <th className="sim-no" title="Zápas">#</th>
               <th className="sim-mid">Domácí : Hosté</th>
               <th className="n">Body</th>
               <th className="n">Hry</th>
@@ -158,10 +157,22 @@ function SimView({ schedule, scores, attendees, names }: Props) {
   );
 }
 
-/** Pořadí v rámci jednoho tréninku (PRD 5.5). */
+/** Vysvětlivka pod tabulkou souhrnu – sbalená, ať tabulka zabírá málo místa (19. 11. 2026). */
+const How = ({ children }: { children: ReactNode }) => (
+  <details className="summary-how">
+    <summary>Jak se počítá</summary>
+    <p>{children}</p>
+  </details>
+);
+
+/**
+ * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně (19. 11. 2026): góly jako „18:3“ v jednom sloupci,
+ * ztráty jen když trénink má Daň se zapsanými ztrátami, vysvětlivka sbalená.
+ */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const empty = legsDone === 0 && (!sim || sim.played === 0);
+  const losses = rows.some((x) => x.lossLegs > 0);
   return (
     <div className="standings">
       {empty ? (
@@ -169,38 +180,43 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
       ) : (
         <>
           <div className="wrap">
-            <table aria-label="Souhrn tréninku">
+            <table aria-label="Souhrn tréninku" className="summary-table">
               <thead>
                 <tr>
-                  <th>Pořadí</th>
+                  <th className="n" title="Pořadí">#</th>
                   <th>Hráč</th>
                   <th className="n">Legy</th>
                   <th className="n">Výhry</th>
-                  <th className="n">Góly +</th>
-                  <th className="n">Góly −</th>
+                  <th className="n" title="Góly vstřelené : obdržené">Góly</th>
                   <th className="n">Rozdíl</th>
-                  <th className="n">Ztráty / leg</th>
+                  {losses && (
+                    <th className="n" title="Ztráty na leg (jen Daň za ztrátu)">
+                      Ztráty
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((x, i) => (
                   <tr key={x.playerId}>
                     <td className="n">{i + 1}.</td>
-                    <td>{names[x.playerId] ?? '?'}</td>
+                    <td className="name">{names[x.playerId] ?? '?'}</td>
                     <td className="n">{x.legs}</td>
                     <td className="n">{x.wins}</td>
-                    <td className="n">{x.gf}</td>
-                    <td className="n">{x.gc}</td>
+                    <td className="n">
+                      {x.gf}:{x.gc}
+                    </td>
                     <td className={x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n'}>{signed(x.diff)}</td>
-                    <td className="n">{x.lossLegs ? dec1(x.loss / x.lossLegs) : '–'}</td>
+                    {losses && <td className="n">{x.lossLegs ? dec1(x.loss / x.lossLegs) : '–'}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="note">
-            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty na leg se počítají jen z legů Daně za ztrátu, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při úplné shodě rozhodují výhry v simulaci.
-          </p>
+          <How>
+            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty jsou na leg a počítají se jen z legů Daně za
+            ztrátu, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při úplné shodě rozhodují výhry v simulaci.
+          </How>
         </>
       )}
     </div>
