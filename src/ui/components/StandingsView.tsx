@@ -166,7 +166,7 @@ const How = ({ children }: { children: ReactNode }) => (
 );
 
 /**
- * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně (19. 11. 2026): góly jako „18:3“ v jednom sloupci,
+ * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně (19. 11. 2026): góly zvlášť G+ / G−,
  * bez ztrát (*rozhodnutí uživatele*), vysvětlivka sbalená.
  */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
@@ -186,7 +186,8 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                   <th>Hráč</th>
                   <th className="n">Legy</th>
                   <th className="n">Výhry</th>
-                  <th className="n" title="Góly vstřelené : obdržené">Góly</th>
+                  <th className="n" title="Góly vstřelené">G+</th>
+                  <th className="n" title="Góly obdržené">G−</th>
                   <th className="n">Rozdíl</th>
                 </tr>
               </thead>
@@ -197,9 +198,8 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                     <td className="name">{names[x.playerId] ?? '?'}</td>
                     <td className="n">{x.legs}</td>
                     <td className="n">{x.wins}</td>
-                    <td className="n">
-                      {x.gf}:{x.gc}
-                    </td>
+                    <td className="n">{x.gf}</td>
+                    <td className="n">{x.gc}</td>
                     <td className={x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n'}>{signed(x.diff)}</td>
                   </tr>
                 ))}
