@@ -461,7 +461,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Simulace ligového kola",
         "parts": [
           {
-            "text": "Dva týmy, pevná nominace předem. Každý zápas na dva vítězné legy do 6, třetí o 2 góly se stropem 10 (BO3), nebo podle nastavení tréninku na tři vítězné legy do 5, pátý o 2 góly se stropem 10 (BO5). Zapisuje se skóre každého legu. Vyhrává tým s více vyhranými zápasy."
+            "text": "Dva týmy, pevná nominace předem. Každý zápas na dva vítězné legy do 6, třetí o 2 góly se stropem 10 (BO3), nebo podle nastavení tréninku na tři vítězné legy do 5, pátý o 2 góly se stropem 8 (BO5). Zapisuje se skóre každého legu. Vyhrává tým s více vyhranými zápasy."
           }
         ]
       },

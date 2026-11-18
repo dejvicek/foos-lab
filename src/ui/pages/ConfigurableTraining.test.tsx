@@ -115,7 +115,7 @@ describe('konfigurovatelný trénink v UI', () => {
     while (screen.queryByRole('button', { name: /^Další:/ })) await next(user);
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    expect(repo.snapshot().trainings[0].matchFormats?.sim).toEqual({ bestOf: 5, legTo: 5, finalWinBy2: true, cap: 10 });
+    expect(repo.snapshot().trainings[0].matchFormats?.sim).toEqual({ bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 });
     await user.click(screen.getByRole('button', { name: '1. vlna' }));
     expect(screen.getByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 5' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 6' })).toBeNull();

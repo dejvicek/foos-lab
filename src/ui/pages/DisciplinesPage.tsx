@@ -7,14 +7,16 @@ import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGr
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
 import { MinStepper } from '../components/MinStepper';
-import { CATALOG_FORMAT, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, MAX_GOAL_SEC, maxGoals, MIN_GOAL_SEC, usesGoals } from '../../domain/goalTime';
+import { CATALOG_FORMAT, catalogSimMins, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, MAX_GOAL_SEC, maxGoals, MIN_GOAL_SEC, usesGoals } from '../../domain/goalTime';
 import { goalAverages, type GoalAverage } from '../../domain/goalStats';
-import { fixedLegRule } from '../../domain/matchFormat';
+import { fixedLegRule, SIM_FORMATS, type MatchFormat } from '../../domain/matchFormat';
 
 /** Reálná doba gólu z průběhu her (jen admin; průběh se stahuje celý jako pro zálohu). */
 type RealGoals = { all: GoalAverage | null; by: Partial<Record<DisciplineId, GoalAverage>> } | 'loading' | 'error';
 
 const sec = (x: number) => `${Math.round(x)} s`;
+/** „BO3 do 6, rozhodující o 2, strop 10“ */
+const simName = (f: MatchFormat) => `BO${f.bestOf} do ${f.legTo}, rozhodující o 2, strop ${f.cap}`;
 const plural = (n: number, one: string, few: string, many: string) => (n === 1 ? one : n >= 2 && n <= 4 ? few : many);
 /** „40 s (2 zápasy)“ / „zatím žádný změřený zápas“. */
 function realText(a: GoalAverage | null | undefined): string {
@@ -169,7 +171,9 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                 <p className="note dp-format-note">
                   {kind === 'match'
                     ? 'Délky kol jsou spočítané, jako by se hrálo BO1 do 6 (scénáře od svého startu): doba gólu × nejvíc možných gólů. V tréninku se přepočítají podle zvoleného formátu (BO2, BO3…).'
-                    : 'Délka je spočítaná, jako by se každý zápas hrál BO1 do 6: 2 vlny po době gólu × nejvíc možných gólů. V tréninku se přepočítá podle formátu simulace (BO3 do 6 / BO5 do 5).'}
+                    : `Délka podle formátu simulace v tréninku: ${catalogSimMins()
+                        .map((x) => `${simName(x.format)} = 2 vlny po ${x.wave} min (${x.min} min)`)
+                        .join('; ')}. Vlna = doba gólu × nejvíc možných gólů jednoho zápasu.`}
                 </p>
               )}
               {kind === 'match' && general && (
@@ -256,6 +260,7 @@ function DisciplineRow({
   children: ReactNode;
 }) {
   const dur = disciplineDuration(d.id);
+  const sim = d.kind === 'sim' ? catalogSimMins() : null;
   const who = disciplineWho(d.id);
   const places = disciplinePlaces(d.id);
   return (
@@ -268,11 +273,20 @@ function DisciplineRow({
           </svg>
           <span className="dp-name">{d.name}</span>
         </button>
-        <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
-          <span>
-            {dur.rounds === 2 && '2× '}
-            <b>{dur.min}</b> min
-          </span>
+        <span className="dp-dur" title={sim ? sim.map((x) => `${simName(x.format)}: 2 vlny po ${x.wave} min = ${x.min} min`).join('\n') : dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
+          {sim ? (
+            // Simulace (18. 11. 2026): čas pro BO3 i BO5.
+            sim.map((x) => (
+              <span key={x.format.bestOf}>
+                BO{x.format.bestOf} <b>{x.min}</b> min
+              </span>
+            ))
+          ) : (
+            <span>
+              {dur.rounds === 2 && '2× '}
+              <b>{dur.min}</b> min
+            </span>
+          )}
           {/* Zápas a simulace: délka kola z doby gólu (18. 11. 2026) – doba gólu hned v řádku. */}
           {usesGoals(d.id) && (
             <small className="dp-goalsec" aria-label={`Doba gólu ${goalSecOf(d.id)} s`} title="Doba gólu – délka kola = doba gólu × nejvíc možných gólů">
@@ -556,10 +570,19 @@ function GoalField({ id, name, value, real, onChange }: { id: DisciplineId; name
         <p className="note">
           {valid ? (
             <>
-              Délka {sim ? 'vlny' : 'kola'}: {s} s × nejvíc {goals} gólů ({rule}) ={' '}
-              <b>{sim ? goalRoundMin(id, f, s) / 2 : goalRoundMin(id, f, s)} min</b>
-              {sim && ` (simulace 2 vlny = ${goalRoundMin(id, f, s)} min)`}. V tréninku se délka přepočítá podle zvoleného formátu
-              {sim ? ' simulace (BO3 do 6 / BO5 do 5)' : ' (BO2, BO3…)'}.
+              {sim ? (
+                SIM_FORMATS.map((sf) => (
+                  <span key={sf.bestOf} className="dp-goal-calc">
+                    {simName(sf)}: vlna {s} s × nejvíc {maxGoals(id, sf)} gólů = <b>{goalRoundMin(id, sf, s) / 2} min</b>, simulace 2 vlny ={' '}
+                    <b>{goalRoundMin(id, sf, s)} min</b>.
+                  </span>
+                ))
+              ) : (
+                <>
+                  Délka kola: {s} s × nejvíc {goals} gólů ({rule}) = <b>{goalRoundMin(id, f, s)} min</b>. V tréninku se délka přepočítá podle
+                  zvoleného formátu (BO2, BO3…).
+                </>
+              )}
             </>
           ) : (
             `Doba gólu musí být ${MIN_GOAL_SEC}–${MAX_GOAL_SEC} s.`

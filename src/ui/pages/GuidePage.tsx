@@ -174,7 +174,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               </Li>
               <Li i="S">
                 <b>Simulace</b> ligového kola: dva týmy, zápas na dva vítězné legy do 6 (BO3, třetí o 2 góly, nejvýš do 10), nebo na tři vítězné do 5
-                (BO5, pátý o 2 góly, nejvýš do 10). Ťukají se góly v každém legu, ztráty se nezapisují.
+                (BO5, pátý o 2 góly, nejvýš do 8). Ťukají se góly v každém legu, ztráty se nezapisují.
               </Li>
               <Li i="R">
                 <b>Rozhodčí</b> je ten, kdo v kole nehraje: čárkuje ztráty, hlídá Zeď a čas a rozhoduje sporné ztráty. Bez rozhodčího si ztráty zapisují

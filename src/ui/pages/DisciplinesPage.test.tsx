@@ -106,8 +106,11 @@ describe('stránka Disciplíny', () => {
     await user.click(await screen.findByRole('button', { name: 'Zeď' }));
     // délky zápasů a simulace pro BO1 do 6 – poznámka u sekce
     expect(screen.getByText(/Délky kol jsou spočítané, jako by se hrálo BO1 do 6/)).toBeInTheDocument();
-    expect(screen.getByText(/Délka je spočítaná, jako by se každý zápas hrál BO1 do 6/)).toBeInTheDocument();
-    expect(row('Simulace ligového kola')).toHaveTextContent('16 min');
+    // simulace: čas pro BO3 do 6 (strop 10) i BO5 do 5 (strop 8) při 40 s na gól
+    expect(screen.getByText(/Délka podle formátu simulace v tréninku/)).toHaveTextContent(
+      'BO3 do 6, rozhodující o 2, strop 10 = 2 vlny po 28 min (56 min); BO5 do 5, rozhodující o 2, strop 8 = 2 vlny po 34 min (68 min)',
+    );
+    expect(row('Simulace ligového kola')).toHaveTextContent('BO3 56 minBO5 68 min');
     // u zápasu doba gólu (výchozí) a reálná z průběhu her
     expect(within(row('Zeď')).getByLabelText('Doba gólu')).toHaveTextContent('Doba gólu 40 s (výchozí) · reálně zatím žádný změřený zápas');
     await user.click(within(row('Zeď')).getByRole('button', { name: 'Upravit' }));

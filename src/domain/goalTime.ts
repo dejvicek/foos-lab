@@ -9,7 +9,7 @@
  */
 import { discipline, DISCIPLINES, type DisciplineMins } from './disciplines';
 import { legCap, legTarget, winsByTwo } from './legState';
-import { DEFAULT_FORMAT, formatMins, formatOf, legOf, withFormat, type MatchFormat, type MatchFormats } from './matchFormat';
+import { DEFAULT_FORMAT, formatMins, formatOf, legOf, SIM_FORMATS, withFormat, type MatchFormat, type MatchFormats } from './matchFormat';
 import type { DisciplineId, Match } from './types';
 
 /**
@@ -63,11 +63,22 @@ export function goalRoundMin(id: DisciplineId, f: MatchFormat, goalSec: number):
 }
 
 /**
- * Délka kola v katalogu (stránka Disciplíny, 18. 11. 2026, *rozhodnutí uživatele*): vždy jako BO1 do 6
- * (scénář od svého startu, 5:5 o 2 se stropem 10), i u simulace; v tréninku platí jeho formát.
+ * Délka kola v katalogu (stránka Disciplíny, 18. 11. 2026, *rozhodnutí uživatele*): zápasy vždy jako BO1 do 6
+ * (scénář od svého startu, 5:5 o 2 se stropem 10); simulace v obou svých formátech (catalogSimMins), délka
+ * kola = výchozí BO3. V tréninku platí jeho formát.
  */
 export const CATALOG_FORMAT: MatchFormat = DEFAULT_FORMAT;
-export const catalogRoundMin = (id: DisciplineId): number => (usesGoals(id) ? goalRoundMin(id, CATALOG_FORMAT, goalSecOf(id)) : discipline(id).min);
+export const catalogRoundMin = (id: DisciplineId): number => {
+  if (!usesGoals(id)) return discipline(id).min;
+  return goalRoundMin(id, discipline(id).kind === 'sim' ? SIM_FORMATS[0] : CATALOG_FORMAT, goalSecOf(id));
+};
+
+/** Simulace na stránce Disciplíny: délka vlny a kola (2 vlny) pro každý její formát. */
+export const catalogSimMins = (): { format: MatchFormat; wave: number; min: number }[] =>
+  SIM_FORMATS.map((format) => {
+    const min = goalRoundMin('sim', format, goalSecOf('sim'));
+    return { format, wave: min / 2, min };
+  });
 
 /**
  * Délky kol pro časovou osu: s dobou gólu z gólů ve formátu, jinak jako dřív (formatMins: délka legu ×

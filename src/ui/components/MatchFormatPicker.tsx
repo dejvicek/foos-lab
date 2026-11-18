@@ -10,7 +10,7 @@ const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a +
  */
 export function MatchFormatPicker({ id, name, value, onChange, disabled }: { id: DisciplineId; name: string; value: MatchFormat; onChange(f: MatchFormat): void; disabled?: boolean }) {
   const f = normalizeFormat(id, value);
-  // Simulace (18. 11. 2026): jen dva ligové formáty, rozhodující leg vždy o 2 se stropem 10.
+  // Simulace (18. 11. 2026): jen dva ligové formáty – BO3 do 6 (rozhodující o 2, strop 10), BO5 do 5 (o 2, strop 8).
   if (discipline(id)?.kind === 'sim')
     return (
       <span className="mf" role="group" aria-label={`Formát: ${name}`}>

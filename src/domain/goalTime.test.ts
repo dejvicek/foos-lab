@@ -1,4 +1,4 @@
-import { catalogGoalSec, catalogRoundMin, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, maxGoals, roundMinutes } from './goalTime';
+import { catalogGoalSec, catalogRoundMin, catalogSimMins, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, maxGoals, roundMinutes } from './goalTime';
 import { goalAverages, goalSamples } from './goalStats';
 import { applyCatalog, catalogForm, saveDiscipline, validateDisciplineForm } from './catalog';
 import { formatOf, legId, SIM_FORMATS } from './matchFormat';
@@ -31,7 +31,7 @@ describe('nejvíc možných gólů', () => {
 
   it('simulace: jeden zápas vlny ve formátu simulace', () => {
     expect(maxGoals('sim', SIM_FORMATS[0])).toBe(41); // BO3 do 6: 11 + 11 + 19
-    expect(maxGoals('sim', SIM_FORMATS[1])).toBe(55); // BO5 do 5: 4 × 9 + 19
+    expect(maxGoals('sim', SIM_FORMATS[1])).toBe(51); // BO5 do 5, strop 8: 4 × 9 + 15
   });
 });
 
@@ -42,7 +42,7 @@ describe('délka kola z doby gólu', () => {
     expect(goalRoundMin('start45', formatOf(null, 'start45'), 31)).toBe(2); // 62 s
     expect(goalRoundMin('start45', formatOf(null, 'start45'), 5)).toBe(1);
     expect(goalRoundMin('sim', SIM_FORMATS[0], 37)).toBe(2 * 26); // 1517 s na vlnu
-    expect(goalRoundMin('sim', SIM_FORMATS[1], 37)).toBe(2 * 34); // 2035 s na vlnu
+    expect(goalRoundMin('sim', SIM_FORMATS[1], 37)).toBe(2 * 32); // 1887 s na vlnu
   });
 
   it('výchozí doba gólu stejná pro všechny zápasy a simulaci; v katalogu jen zápasy a simulace', () => {
@@ -55,10 +55,15 @@ describe('délka kola z doby gólu', () => {
     expect(catalogRoundMin('warmupPasses')).toBe(8); // cvičení dál z délky kola
   });
 
-  it('katalog (stránka Disciplíny) počítá vždy jako BO1 do 6, i simulaci; trénink podle svého formátu', () => {
+  it('katalog (stránka Disciplíny) počítá zápasy jako BO1 do 6, simulaci v obou jejích formátech; trénink podle svého formátu', () => {
     expect(catalogRoundMin('normal')).toBe(8); // 11 × 40 s = 440 s
     expect(catalogRoundMin('start55')).toBe(6); // ze 5:5 o 2, strop 10: 9 gólů = 360 s
-    expect(catalogRoundMin('sim')).toBe(2 * 8); // 2 vlny, zápas BO1 do 6 = 11 gólů
+    // simulace: oba její formáty (18. 11. 2026) – BO3 do 6 strop 10 = 41 gólů, BO5 do 5 strop 8 = 51 gólů
+    expect(catalogRoundMin('sim')).toBe(2 * 28);
+    expect(catalogSimMins()).toEqual([
+      { format: SIM_FORMATS[0], wave: 28, min: 56 },
+      { format: SIM_FORMATS[1], wave: 34, min: 68 },
+    ]);
     expect(roundMinutes({}, { normal: { bestOf: 3, legTo: 6 } }, { normal: 37, sim: 37 })).toMatchObject({ normal: 21, sim: 52 });
   });
 

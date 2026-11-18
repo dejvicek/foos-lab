@@ -36,11 +36,12 @@ export const DEFAULT_FORMAT: MatchFormat = { bestOf: 1, legTo: DEFAULT_LEG_TO };
 
 /**
  * Formát simulace ligového kola (18. 11. 2026, *rozhodnutí uživatele*): zápas simulace se zapisuje po
- * legech. BO3 do 6 (výchozí, jako ligový zápas) nebo BO5 do 5; rozhodující leg vždy o 2 se stropem 10.
+ * legech. BO3 do 6 (výchozí, jako ligový zápas), rozhodující leg o 2 se stropem 10, nebo BO5 do 5, rozhodující
+ * leg o 2 se stropem 8.
  */
 export const SIM_FORMATS: readonly MatchFormat[] = [
   { bestOf: 3, legTo: 6, finalWinBy2: true, cap: 10 },
-  { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 10 },
+  { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 },
 ];
 
 /** Výchozí pravidla podle počtu legů (12. 11. 2026, *rozhodnutí uživatele*) – nastaví se při volbě BO. */

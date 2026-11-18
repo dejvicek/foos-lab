@@ -10,7 +10,7 @@ import { H } from '../test/fixtures';
 /**
  * Simulace ligového kola v legech (18. 11. 2026, *rozhodnutí uživatele*): zápas simulace se zapisuje po
  * legech jako ostatní BO zápasy. Formát týmové simulace: BO3 do 6, rozhodující leg o 2 se stropem 10
- * (výchozí), nebo BO5 do 5, rozhodující leg o 2 se stropem 10. Starší simulace (zamčená kola bez
+ * (výchozí), nebo BO5 do 5, rozhodující leg o 2 se stropem 8 (18. 11. 2026). Starší simulace (zamčená kola bez
  * formátu, klasický trénink) zůstávají v setech.
  */
 const custom = (n: number, tables: TableCount, over: Partial<Training> = {}): Training => ({
@@ -32,10 +32,10 @@ const custom = (n: number, tables: TableCount, over: Partial<Training> = {}): Tr
   ...over,
 });
 const simMatches = (t: Training) => buildSchedule(t).matches.filter((m) => m.block === 'sim');
-const BO5 = { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 10 };
+const BO5 = { bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 };
 
 describe('formát simulace', () => {
-  it('dvě možnosti: BO3 do 6 a BO5 do 5, rozhodující leg o 2 se stropem 10', () => {
+  it('dvě možnosti: BO3 do 6 (rozhodující o 2, strop 10) a BO5 do 5 (rozhodující o 2, strop 8)', () => {
     expect(SIM_FORMATS).toEqual([{ bestOf: 3, legTo: 6, finalWinBy2: true, cap: 10 }, BO5]);
   });
 
@@ -53,7 +53,7 @@ describe('formát simulace', () => {
 
   it('popisek a délka kola: délka simulace se s formátem nemění', () => {
     expect(formatLabel(SIM_FORMATS[0])).toBe('BO3 do 6 rozhodující leg o 2 (strop 10)');
-    expect(formatLabel(BO5)).toBe('BO5 do 5 rozhodující leg o 2 (strop 10)');
+    expect(formatLabel(BO5)).toBe('BO5 do 5 rozhodující leg o 2 (strop 8)');
     expect(formatMins({ sim: 40 }, { sim: BO5 })).toEqual({ sim: 40 });
   });
 });
@@ -71,10 +71,10 @@ describe('simulace v rozpisu konfigurovatelného tréninku', () => {
   it('BO5 do 5 z nastavení tréninku; sestavy a časy vln se nemění', () => {
     const bo3 = buildSchedule(custom(8, 4));
     const bo5 = buildSchedule(custom(8, 4, { matchFormats: { sim: BO5 } }));
-    for (const m of bo5.matches.filter((x) => x.block === 'sim')) expect(m).toMatchObject({ bestOf: 5, legTo: 5, finalWinBy2: true, cap: 10 });
+    for (const m of bo5.matches.filter((x) => x.block === 'sim')) expect(m).toMatchObject({ bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 });
     const waves = (s: typeof bo3) => s.sections.find((x) => x.id === 'sim')!.rows.map((r) => ({ time: r.time, ids: r.cells.map((c) => (c?.type === 'match' ? c.match.id : null)) }));
     expect(waves(bo5)).toEqual(waves(bo3));
-    expect(bo5.sections.find((x) => x.id === 'sim')!.rows[0].rule).toBe('20 min, BO5 do 5 rozhodující leg o 2 (strop 10)');
+    expect(bo5.sections.find((x) => x.id === 'sim')!.rows[0].rule).toBe('20 min, BO5 do 5 rozhodující leg o 2 (strop 8)');
   });
 
   it('zamčená simulace bez formátu (zahájená před změnou) zůstává v setech', () => {
@@ -102,7 +102,7 @@ describe('zápis legů simulace', () => {
   const [bo3] = simMatches(custom(8, 4));
   const [bo5] = simMatches(custom(8, 4, { matchFormats: { sim: BO5 } }));
 
-  it('leg do 6 (BO5 do 5), rozhodující leg o 2 se stropem 10', () => {
+  it('leg do 6 (BO5 do 5), rozhodující leg o 2 se stropem 10 (BO5 se stropem 8)', () => {
     expect(legOver(legOf(bo3, 1), { ga: 6, gb: 4 })).toEqual({ over: true, winner: 'A' });
     expect(legOver(legOf(bo3, 1), { ga: 2, gb: 1 }).over).toBe(false);
     expect(legOver(legOf(bo3, 3), { ga: 6, gb: 5 }).over).toBe(false);
@@ -110,6 +110,8 @@ describe('zápis legů simulace', () => {
     expect(legOver(legOf(bo5, 1), { ga: 5, gb: 3 })).toEqual({ over: true, winner: 'A' });
     expect(legOver(legOf(bo5, 5), { ga: 5, gb: 4 }).over).toBe(false);
     expect(legOver(legOf(bo5, 5), { ga: 7, gb: 5 })).toEqual({ over: true, winner: 'A' });
+    expect(legOver(legOf(bo5, 5), { ga: 7, gb: 6 }).over).toBe(false);
+    expect(legOver(legOf(bo5, 5), { ga: 8, gb: 7 })).toEqual({ over: true, winner: 'A' }); // strop 8
   });
 
   it('strop ťukání a předvyplnění vítěze jako u zápasu', () => {
@@ -117,7 +119,9 @@ describe('zápis legů simulace', () => {
     expect(bumpLimit(legOf(bo3, 3), 'ga')).toBe(10);
     expect(bumpLimit(legOf(bo5, 1), 'gb')).toBe(5);
     expect(winnerFor(legOf(bo3, 1), 3)).toBe(6);
-    expect(winnerFor(legOf(bo5, 5), 7)).toBe(9);
+    expect(bumpLimit(legOf(bo5, 5), 'ga')).toBe(8);
+    expect(winnerFor(legOf(bo5, 5), 6)).toBe(8);
+    expect(winnerFor(legOf(bo5, 5), 7)).toBe(8);
   });
 
   it('starší zápas simulace bez formátu se zapisuje v setech', () => {
