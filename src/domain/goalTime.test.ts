@@ -55,6 +55,13 @@ describe('délka kola z doby gólu', () => {
     expect(catalogRoundMin('warmupPasses')).toBe(8); // cvičení dál z délky kola
   });
 
+  it('katalog (stránka Disciplíny) počítá vždy jako BO1 do 6, i simulaci; trénink podle svého formátu', () => {
+    expect(catalogRoundMin('normal')).toBe(7);
+    expect(catalogRoundMin('start55')).toBe(6); // ze 5:5 o 2, strop 10: 9 gólů
+    expect(catalogRoundMin('sim')).toBe(2 * 7); // 2 vlny, zápas BO1 do 6 = 11 gólů
+    expect(roundMinutes({}, { normal: { bestOf: 3, legTo: 6 } }, { normal: 37, sim: 37 })).toMatchObject({ normal: 21, sim: 52 });
+  });
+
   it('roundMinutes: s dobou gólu z gólů; bez ní jako dřív (délka legu × legy, simulace beze změny)', () => {
     const mins = { normal: 8, sim: 40, warmupPasses: 8 };
     const formats = { normal: { bestOf: 2, legTo: 6 } };

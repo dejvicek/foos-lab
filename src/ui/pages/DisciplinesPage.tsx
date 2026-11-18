@@ -7,9 +7,9 @@ import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGr
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
 import { MinStepper } from '../components/MinStepper';
-import { DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, MAX_GOAL_SEC, maxGoals, MIN_GOAL_SEC, usesGoals } from '../../domain/goalTime';
+import { CATALOG_FORMAT, DEFAULT_GOAL_SEC, goalRoundMin, goalSecOf, MAX_GOAL_SEC, maxGoals, MIN_GOAL_SEC, usesGoals } from '../../domain/goalTime';
 import { goalAverages, type GoalAverage } from '../../domain/goalStats';
-import { fixedLegRule, formatLabel, formatOf } from '../../domain/matchFormat';
+import { fixedLegRule } from '../../domain/matchFormat';
 
 /** Reálná doba gólu z průběhu her (jen admin; průběh se stahuje celý jako pro zálohu). */
 type RealGoals = { all: GoalAverage | null; by: Partial<Record<DisciplineId, GoalAverage>> } | 'loading' | 'error';
@@ -165,6 +165,13 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                   </button>
                 )}
               </div>
+              {kind !== 'drill' && (
+                <p className="note dp-format-note">
+                  {kind === 'match'
+                    ? 'Délky kol jsou spočítané, jako by se hrálo BO1 do 6 (scénáře od svého startu): doba gólu × nejvíc možných gólů. V tréninku se přepočítají podle zvoleného formátu (BO2, BO3…).'
+                    : 'Délka je spočítaná, jako by se každý zápas hrál BO1 do 6: 2 vlny po době gólu × nejvíc možných gólů. V tréninku se přepočítá podle formátu simulace (BO3 do 6 / BO5 do 5).'}
+                </p>
+              )}
               {kind === 'match' && general && (
                 <div className="dp-general">
                   {MATCH_GENERAL_HELP.map((it) => (
@@ -510,15 +517,16 @@ function SkillsEditor({ catalog, newId, onSave, onCancel }: { catalog: CatalogDa
  * Prázdné = výchozí (stejná pro všechny disciplíny). Vedle reálný průměr z průběhu her.
  */
 function GoalField({ id, name, value, real, onChange }: { id: DisciplineId; name: string; value: number | null; real: RealGoals; onChange(v: number | null): void }) {
-  const f = formatOf(null, id);
+  // Délka v katalogu vždy pro BO1 do 6 (18. 11. 2026); v tréninku podle jeho formátu.
+  const f = CATALOG_FORMAT;
   const goals = maxGoals(id, f);
   const s = value ?? DEFAULT_GOAL_SEC;
   const valid = Number.isInteger(s) && s >= MIN_GOAL_SEC && s <= MAX_GOAL_SEC;
   const mine = typeof real === 'object' ? real.by[id] : undefined;
   const sim = discipline(id).kind === 'sim';
-  // „leg do 6“, „ze 4:4 do 6“, „ze 5:5 o 2, strop 10“; BO formát (simulace) jeho popiskem.
+  // „BO1 do 6“, „BO1, ze 4:4 do 6“, „BO1, ze 5:5 o 2, strop 10“.
   const start = discipline(id).start;
-  const rule = formatLabel(f) || `${start ? `ze ${start.join(':')} ` : 'leg '}${fixedLegRule(id) ? 'o 2, strop 10' : 'do 6'}`;
+  const rule = `BO1${start ? `, ze ${start.join(':')}` : ''} ${fixedLegRule(id) ? 'o 2, strop 10' : 'do 6'}`;
   return (
     <>
       <label className="dp-editor-label" htmlFor={`dp-goal-${id}`}>
@@ -550,7 +558,8 @@ function GoalField({ id, name, value, real, onChange }: { id: DisciplineId; name
             <>
               Délka {sim ? 'vlny' : 'kola'}: {s} s × nejvíc {goals} gólů ({rule}) ={' '}
               <b>{sim ? goalRoundMin(id, f, s) / 2 : goalRoundMin(id, f, s)} min</b>
-              {sim && ` (simulace 2 vlny = ${goalRoundMin(id, f, s)} min)`}. Jiný BO formát v tréninku délku přepočítá.
+              {sim && ` (simulace 2 vlny = ${goalRoundMin(id, f, s)} min)`}. V tréninku se délka přepočítá podle zvoleného formátu
+              {sim ? ' simulace (BO3 do 6 / BO5 do 5)' : ' (BO2, BO3…)'}.
             </>
           ) : (
             `Doba gólu musí být ${MIN_GOAL_SEC}–${MAX_GOAL_SEC} s.`

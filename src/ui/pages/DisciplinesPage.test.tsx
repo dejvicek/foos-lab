@@ -104,6 +104,10 @@ describe('stránka Disciplíny', () => {
     render(<App repo={repo} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Zeď' }));
+    // délky zápasů a simulace pro BO1 do 6 – poznámka u sekce
+    expect(screen.getByText(/Délky kol jsou spočítané, jako by se hrálo BO1 do 6/)).toBeInTheDocument();
+    expect(screen.getByText(/Délka je spočítaná, jako by se každý zápas hrál BO1 do 6/)).toBeInTheDocument();
+    expect(row('Simulace ligového kola')).toHaveTextContent('14 min');
     // u zápasu doba gólu (výchozí) a reálná z průběhu her
     expect(within(row('Zeď')).getByLabelText('Doba gólu')).toHaveTextContent('Doba gólu 37 s (výchozí) · reálně zatím žádný změřený zápas');
     await user.click(within(row('Zeď')).getByRole('button', { name: 'Upravit' }));
@@ -111,9 +115,9 @@ describe('stránka Disciplíny', () => {
     await user.clear(within(form).getByLabelText('Název'));
     await user.type(within(form).getByLabelText('Název'), 'Betonová zeď');
     expect(within(form).queryByRole('button', { name: 'Delší kolo: Betonová zeď' })).toBeNull(); // délka z doby gólu
-    expect(form).toHaveTextContent('Délka kola: 37 s × nejvíc 11 gólů (leg do 6) = 7 min');
+    expect(form).toHaveTextContent('Délka kola: 37 s × nejvíc 11 gólů (BO1 do 6) = 7 min');
     await user.type(within(form).getByRole('spinbutton', { name: 'Doba gólu v sekundách: Betonová zeď' }), '50');
-    expect(form).toHaveTextContent('Délka kola: 50 s × nejvíc 11 gólů (leg do 6) = 10 min');
+    expect(form).toHaveTextContent('Délka kola: 50 s × nejvíc 11 gólů (BO1 do 6) = 10 min');
     const tags = within(form).getByRole('group', { name: 'Štítky' });
     await user.click(within(tags).getByRole('button', { name: 'Čtení soupeře' })); // odebrat
     await user.click(within(tags).getByRole('button', { name: 'Dotahování' })); // přidat
@@ -164,7 +168,7 @@ describe('stránka Disciplíny', () => {
     expect(within(form).getByLabelText('Reálná doba gólu')).toHaveTextContent('42 s (1 zápas) · všechny disciplíny 42 s (1 zápas)');
     await user.click(within(form).getByRole('button', { name: 'Použít 42 s' }));
     expect(within(form).getByRole('spinbutton', { name: 'Doba gólu v sekundách: Normální leg' })).toHaveValue(42);
-    expect(form).toHaveTextContent('42 s × nejvíc 11 gólů (leg do 6) = 8 min');
+    expect(form).toHaveTextContent('42 s × nejvíc 11 gólů (BO1 do 6) = 8 min');
     await user.click(within(form).getByRole('button', { name: 'Uložit' }));
     await vi.waitFor(() => expect(repo.snapshot().catalog).toEqual({ disciplines: { normal: { goalSec: 42 } } }));
     expect(within(row('Normální leg')).getByLabelText('Doba gólu')).toHaveTextContent('Doba gólu 42 s (zadaná)');

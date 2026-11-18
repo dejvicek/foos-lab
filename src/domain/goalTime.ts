@@ -9,7 +9,7 @@
  */
 import { discipline, DISCIPLINES, type DisciplineMins } from './disciplines';
 import { legCap, legTarget, winsByTwo } from './legState';
-import { formatMins, formatOf, legOf, withFormat, type MatchFormat, type MatchFormats } from './matchFormat';
+import { DEFAULT_FORMAT, formatMins, formatOf, legOf, withFormat, type MatchFormat, type MatchFormats } from './matchFormat';
 import type { DisciplineId, Match } from './types';
 
 /**
@@ -62,8 +62,12 @@ export function goalRoundMin(id: DisciplineId, f: MatchFormat, goalSec: number):
   return discipline(id).kind === 'sim' ? 2 * one : one;
 }
 
-/** Délka kola v aktuálním katalogu (stránka Disciplíny): výchozí formát, doba gólu z katalogu. */
-export const catalogRoundMin = (id: DisciplineId): number => (usesGoals(id) ? goalRoundMin(id, formatOf(null, id), goalSecOf(id)) : discipline(id).min);
+/**
+ * Délka kola v katalogu (stránka Disciplíny, 18. 11. 2026, *rozhodnutí uživatele*): vždy jako BO1 do 6
+ * (scénář od svého startu, 5:5 o 2 se stropem 10), i u simulace; v tréninku platí jeho formát.
+ */
+export const CATALOG_FORMAT: MatchFormat = DEFAULT_FORMAT;
+export const catalogRoundMin = (id: DisciplineId): number => (usesGoals(id) ? goalRoundMin(id, CATALOG_FORMAT, goalSecOf(id)) : discipline(id).min);
 
 /**
  * Délky kol pro časovou osu: s dobou gólu z gólů ve formátu, jinak jako dřív (formatMins: délka legu ×
