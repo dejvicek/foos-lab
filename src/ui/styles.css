@@ -1874,6 +1874,17 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); }
 .guide .g-tt b { font-size: 13px; }
 .guide .g-tt.g-mine { background: var(--felt-soft); border-color: var(--felt); }
+.guide .g-tl li.g-now .g-dot { color: var(--felt); }
+.guide .g-tl li.g-pz .g-dot { font-size: 8px; letter-spacing: -1px; }
+.guide .g-tl .g-fold { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 2px; }
+.guide .g-tl .g-fold small { text-decoration: underline; }
+.guide .g-tl .g-tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; box-shadow: 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); }
+.guide .g-tl .g-tile.g-mine { box-shadow: inset 4px 0 0 var(--gold), 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); padding-left: 12px; }
+.guide .g-tl li.g-now .g-tile { border: 2px solid var(--felt); background: var(--surface); }
+.guide .g-tl .g-ttop { display: flex; justify-content: space-between; gap: 6px; }
+.guide .g-tl .g-tile .g-tt { border: 0; padding: 0; }
+.guide .g-tl em { font-style: normal; font-weight: 800; color: var(--felt); }
+.guide .g-tl .g-pause { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
 .guide .g-sum { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; font-size: 13px; }
 .guide .g-sum b { color: var(--muted); text-align: right; }
 .guide .g-sum span:last-child { font-weight: 700; }

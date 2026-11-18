@@ -816,41 +816,53 @@ function LivePhone() {
 function TrainingPhone() {
   return (
     <Phone time="18:58" title="Úterý 10. 11." sub="18:00 · 8 hráčů · 4 stoly · kolo 3 z 14" tab="trainings">
+      {/* Rozpis jako v appce (18. 11. 2026): číslo kola na ose, odehraná sbalená, moje kola se žlutým pruhem, jméno zlatě. */}
       <ol className="g-tl">
         <li className="g-past">
           <span className="g-dot">✓</span>
-          <span className="g-rw">
-            <b>1. kolo · Rozcvička</b>
-            <small>18:00</small>
-          </span>
-        </li>
-        <li className="g-past">
-          <span className="g-dot">✓</span>
-          <span className="g-rw">
-            <b>2. kolo · Penalta proti brankáři</b>
-            <small>18:10</small>
+          <span className="g-rw g-fold">
+            <b>Odehráno 2 kola</b>
+            <small>zobrazit</small>
           </span>
         </li>
         <li className="g-now">
-          <span className="g-dot" />
-          <span className="g-rw">
-            <b>3. kolo · Normální leg</b>
-            <small>hraje se 7 min · 1 ze 2 stolů hotovo</small>
-            <span className="g-tt">
-              <span>Stůl 1 · Luky + Ondra vs David K + Lavi</span>
-              <b>3:2</b>
+          <span className="g-dot">3</span>
+          <span className="g-rw g-tile g-mine">
+            <span className="g-ttop">
+              <b>Normální leg</b>
+              <b>18:20</b>
             </span>
-            <span className="g-tt g-mine">
-              <span>Stůl 2 · Dejv + Milan vs Osky + Denys</span>
-              <b>6:4 ✓</b>
+            <small>8 min</small>
+            <span className="g-tt">
+              <span>
+                Stůl 2 · <em>Dejv</em> + Milan vs Osky + Denys
+              </span>
+              <b>6:4</b>
+            </span>
+          </span>
+        </li>
+        <li className="g-pz">
+          <span className="g-dot">❚❚</span>
+          <span className="g-rw g-pause">
+            <span className="g-ttop">
+              <b>Pauza 10 min</b>
+              <b>18:29</b>
             </span>
           </span>
         </li>
         <li>
-          <span className="g-dot" />
-          <span className="g-rw">
-            <b>4. kolo · Daň za ztrátu</b>
-            <small>kolem 19:05</small>
+          <span className="g-dot">4</span>
+          <span className="g-rw g-tile g-mine">
+            <span className="g-ttop">
+              <b>Daň za ztrátu</b>
+              <b>18:39</b>
+            </span>
+            <small>8 min</small>
+            <span className="g-tt">
+              <span>
+                Stůl 1 · Luky + Ondra vs David K + Lavi · rozhodčí <em>Dejv</em>
+              </span>
+            </span>
           </span>
         </li>
       </ol>
