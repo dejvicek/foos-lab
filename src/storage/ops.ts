@@ -33,6 +33,8 @@ export type Op =
   | { kind: 'tapScore'; trainingId: string; matchId: MatchId; taps: ScoreTap[] }
   | { kind: 'tapDrill'; trainingId: string; playerId: PlayerId; key: SoloKey; max: number; taps: DrillTap[] }
   | { kind: 'startItem'; trainingId: string; itemId: string; at: number }
+  /** Připravenost strany / hráče (migrace 31). */
+  | { kind: 'readyItem'; trainingId: string; itemId: string; key: string; ready: boolean; keys: string[]; at: number }
   | { kind: 'endItem'; trainingId: string; itemId: string; startedAt?: number; endedAt: number }
   | { kind: 'savePlayTime'; trainingId: string; itemId: string; time: PlayTime | null };
 
@@ -64,6 +66,7 @@ export function opKey(op: Op): string {
     case 'tapDrill':
       return pendingKey.solo(op.trainingId, op.playerId, op.key);
     case 'startItem':
+    case 'readyItem':
     case 'endItem':
     case 'savePlayTime':
       return pendingKey.time(op.trainingId, op.itemId);
@@ -139,6 +142,8 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
       return { kind: 'solo', trainingId: op.trainingId, playerId: op.playerId, key: op.key, ...(await repo.tapDrill(op.trainingId, op.playerId, op.key, op.max, op.taps)) };
     case 'startItem':
       return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.startItem(op.trainingId, op.itemId, op.at) };
+    case 'readyItem':
+      return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.readyItem(op.trainingId, op.itemId, op.key, op.ready, op.keys, op.at) };
     case 'endItem':
       return { kind: 'playTime', trainingId: op.trainingId, itemId: op.itemId, time: await repo.endItem(op.trainingId, op.itemId, op.startedAt, op.endedAt) };
     case 'savePlayTime':

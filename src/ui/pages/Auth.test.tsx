@@ -20,6 +20,7 @@ const training: Training = {
 /** Trénink, který organizátor zahájil a začíná zápasem (hráč je hned na řadě). */
 const started = (): Training => ({ ...training, plan: { normal: 2, wall: 1 }, playTimes: { training: { startedAt: Date.now() } } });
 
+import { othersReady } from '../../test/ready';
 import { createTraining } from '../../test/wizard';
 
 async function login(nick: string, password: string) {
@@ -97,7 +98,7 @@ describe('přihlášení', () => {
     const groups = screen.getAllByRole('group').filter((g) => /^\d+\. kolo, stůl \d$/.test(g.getAttribute('aria-label') ?? ''));
     for (const g of groups) {
       // trénink nezahájil organizátor: hráč nezahájí ani nezapíše nic, ani u svého stolu
-      expect(within(g).queryByRole('button', { name: 'Zahájit' })).toBeNull();
+      expect(within(g).queryByRole('button', { name: /^(Zahájit|Připraven)/ })).toBeNull();
       const chips = within(g).getAllByRole('button', { name: /góly (vlevo|vpravo) \d+$/ });
       for (const c of chips) expect((c as HTMLButtonElement).disabled).toBe(true);
     }
@@ -114,7 +115,8 @@ describe('přihlášení', () => {
       await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled(); // až po zahájení
-    await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
+    await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    await othersReady(repo);
     await user.click(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]);
     await user.click(within(mine).getAllByRole('button', { name: /góly vpravo 2$/ })[0]);
     await vi.waitFor(() => expect(Object.values(repo.snapshot().trainings[0].scores)).toEqual([{ ga: 6, gb: 2 }]));
@@ -135,7 +137,8 @@ describe('přihlášení', () => {
     expect(within(mine).queryByRole('spinbutton')).toBeNull(); // žádná klávesnice
     while (!within(mine).queryByRole('button', { name: /^Gól vlevo/ }))
       await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
-    await user.click(within(mine).getByRole('button', { name: 'Zahájit' }));
+    await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    await othersReady(repo);
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toHaveTextContent('2');

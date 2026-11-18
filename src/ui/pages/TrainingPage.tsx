@@ -7,7 +7,7 @@ import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
 import { parseSoloKey, soloKey, soloMetric } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
-import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
+import { canManage, canMarkReady, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
 import { TrainingTable, type BreakControls } from '../components/TrainingTable';
 import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from '../../domain/breaks';
@@ -197,6 +197,14 @@ export function TrainingPage({
         manage,
         autoEndIn: (id) => (schedule ? autoEndAfter(training, schedule, id, Math.max(tick, Date.now())) : null),
         start: (id) => store.startItem(training.id, id),
+        // Připravenost (18. 11. 2026): strana zápasu / hráč cvičení; utkání začne, až jsou připravení všichni.
+        canReady: (key, e) => canMarkReady(viewer, training, e, key),
+        ready: (id, key, on, keys) => {
+          // Zápas: zamkne kolo – rozhodčí smí hlásit strany (databáze ho pozná podle zamčeného rozpisu).
+          const next = withLocked(training, roundOfMatch(schedule!, id));
+          if (next !== training) persistLock(next);
+          store.readyItem(training.id, id, key, on, keys);
+        },
         // Konec potvrzuje člověk (dohraný výsledek nejdéle 15 s, pak skončí sám). Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
         end: (id) => {
           const now = Date.now();

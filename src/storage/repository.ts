@@ -129,6 +129,11 @@ export interface Repository {
   savePlayTime(trainingId: string, itemId: string, p: PlayTime | null): Promise<void>;
   /** Zahájení utkání: čas se zapíše, jen když ještě žádný není; konec nemění. Vrací časy po zápisu. */
   startItem(trainingId: string, itemId: string, at: number): Promise<PlayTime>;
+  /**
+   * Připravenost (migrace 31): přihlásí / odhlásí klíč (strana A / B, u cvičení hráč). Jakmile jsou připravení
+   * všichni `keys`, utkání začne v čase posledního; po zahájení se nic nemění. Vrací časy po zápisu.
+   */
+  readyItem(trainingId: string, itemId: string, key: string, ready: boolean, keys: string[], at: number): Promise<PlayTime>;
   /** Konec utkání: konec (a chybějící zahájení) se zapíše, jen když ještě není. Vrací časy po zápisu. */
   endItem(trainingId: string, itemId: string, startedAt: number | undefined, endedAt: number): Promise<PlayTime>;
   /** Hráč zamkne odehraná kola (jen prodloužení) a případně týmy simulace – funkce na serveru. */

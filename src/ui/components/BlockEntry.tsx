@@ -10,9 +10,9 @@ import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } 
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
 import { streakLimitSec, trainingStreak } from '../../domain/streak';
-import { TimingBar, type ItemTiming } from './Timing';
+import { TimingBar, type ReadySlot, type ItemTiming } from './Timing';
 import { DrillTimeline, MatchTimeline, TimelineBox } from './GameTimeline';
-import { drillItemId } from '../../domain/queue';
+import { drillItemId, readyKeys } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
 import { discipline } from '../../domain/disciplines';
 import { SkillTags } from './SkillTags';
@@ -236,6 +236,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
         finished={finished}
         countdown={countdown}
         autoEndIn={timing.autoEndIn?.(id)}
+        {...(timing.ready && timing.canReady ? { slots: readySlots(players, m), onReady: (key: string, on: boolean) => timing.ready!(id, key, on, readyKeys({ match: m, players })) } : {})}
         onStart={() => timing.start(id)}
         onEnd={() => timing.end(id)}
       />
@@ -243,6 +244,12 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     return { open, bar };
   };
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
+  /** Připravenost (18. 11. 2026): strany zápasu (jména), u cvičení každý hráč. */
+  const readySlots = (players: PlayerId[], m?: Match): ReadySlot[] =>
+    (m ? [{ key: 'A', label: nm(m.sideA) }, { key: 'B', label: nm(m.sideB) }] : players.map((p) => ({ key: p, label: names[p] ?? '?' }))).map((x) => ({
+      ...x,
+      can: timing?.canReady?.(x.key, { match: m, players }) ?? false,
+    }));
   const ex = explanationsFor(row);
   // Rozhodčí u stolu se ukazuje v kartě; pod kartami jen ti, kdo nejsou u žádného stolu.
   const refs = new Set(row.cells.flatMap((c) => (c?.type === 'match' && c.match.referee ? [c.match.referee] : [])));

@@ -1,7 +1,7 @@
 import { WarmupTimer } from './WarmupTimer';
 import { matchState } from '../../domain/matchFormat';
 import { useState } from 'react';
-import type { ItemState, QueueEntry } from '../../domain/queue';
+import { readyKeyOf, type ItemState, type QueueEntry } from '../../domain/queue';
 import type { SoloMetricDef } from '../../domain/solo';
 import { parseScoreValue } from '../../domain/standings';
 import type { MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
@@ -90,7 +90,7 @@ function ResultEntry({ e, table, names, entry }: { e: Item; table: number; names
   );
 }
 
-/** PRD 4.8: stoly a co se na nich právě hraje / čeká na zahájení, pod tím fronta. */
+/** PRD 4.8: stoly a co se na nich právě hraje / čeká na připravenost, pod tím fronta. */
 export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame, entry }: Props) {
   // Otevřený zápis výsledku (ID utkání).
   const [open, setOpen] = useState<string | null>(null);
@@ -133,7 +133,7 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                 </span>
                 {s?.state === 'ready' && (
                   <span className="chip wait">
-                    čeká na zahájení{now - (s.activeAt ?? now) >= 1000 ? ` ${fmtDur(now - (s.activeAt ?? now))}` : ''}
+                    čeká na připravenost{now - (s.activeAt ?? now) >= 1000 ? ` ${fmtDur(now - (s.activeAt ?? now))}` : ''}
                   </span>
                 )}
                 {s?.state === 'playing' && !warmup && <span className="chip play">hraje {fmtDur(now - (s.startedAt ?? now))}</span>}
@@ -142,6 +142,15 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
               {e ? (
                 <>
                   <div className="active-names">{itemNames(e, names)}</div>
+                  {s?.state === 'ready' && s.ready && (
+                    // Kdo už je připravený (18. 11. 2026).
+                    <div className="active-ready">
+                      připraven{e.match ? 'i' : ''}:{' '}
+                      {Object.keys(s.ready)
+                        .map((k) => (k === 'A' && e.match ? e.match.sideA : k === 'B' && e.match ? e.match.sideB : [k]).map((p) => names[p] ?? '?').join(' + '))
+                        .join(', ')}
+                    </div>
+                  )}
                   {warmup && s?.state === 'playing' && <WarmupTimer startedAt={s.startedAt} now={now} compact />}
                   {manage && canWrite(e) ? (
                     // Organizátor: nahlášený výsledek zadá a potvrdí konec; rozehrané (z telefonu) jen potvrdí.
@@ -168,9 +177,10 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
                   ) : (
                     mine &&
                     s?.state === 'ready' &&
+                    s.ready?.[readyKeyOf(e, me!)] === undefined &&
                     onMyGame && (
                       <button type="button" onClick={onMyGame}>
-                        Zahájit v Moje hry
+                        Připraven v Moje hry
                       </button>
                     )
                   )}

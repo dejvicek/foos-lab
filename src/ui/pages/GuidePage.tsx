@@ -103,14 +103,14 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </Step>
 
           <h2 className="g-group">U stolu</h2>
-          <Step n={3} label="Hra" title="Zahájit, zapisovat, potvrdit konec" phone={<FinishPhone />}>
+          <Step n={3} label="Hra" title="Připraven, zapisovat, potvrdit konec" phone={<FinishPhone />}>
             <p>
               Každé utkání má stejný průběh. Když je ťukaný výsledek dohraný, máš 15 s na kontrolu: potvrď konec hned, nebo výsledek oprav. Jinak utkání
               skončí samo. Rozcvička a výsledek zadaný číslem na notebooku samy neskončí, tam konec potvrď vždy.
             </p>
             <div className="g-flow">
               <div>
-                <b>Zahájit</b>Jakmile stojíte u stolu. Rozjedou se stopky.
+                <b>Připraven</b>Jakmile tvoje strana stojí u stolu. Až jsou připravení oba týmy, rozjedou se stopky.
               </div>
               <div>
                 <b>Ťukat</b>Góly a ztráty, kdo z vás zrovna má ruku volnou.
@@ -124,14 +124,15 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </div>
             <ul className="g-list">
               <Li i="!" red>
-                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Zahájit</span> se počítá do <b>Zdržovačů</b> (krok 11). Nezdržuj, jdi hrát.
+                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 11). Kdo je
+                připravený dřív, nečeká na úkor sebe. U cvičení se hlásí každý hráč sám za sebe; rozhodčí může ohlásit kteroukoli stranu.
               </Li>
             </ul>
           </Step>
 
           <Step n={4} label="Rozcvička" title="Timer vede rozcvičku za tebe" phone={<WarmupPhone />}>
             <p>
-              Když je Rozcvička v tréninku, bývá prvním kolem. Po Zahájit běží odpočet 8:35 na všech telefonech stejně. Před každou ze sedmi fází máš 5 s
+              Když je Rozcvička v tréninku, bývá prvním kolem. Až jsou všichni u stolu připravení, běží odpočet 8:35 na všech telefonech stejně. Před každou ze sedmi fází máš 5 s
               na přípravu a appka ukáže, co přijde dál. Nic se nezapisuje.
             </p>
             <ul className="g-list">
@@ -195,7 +196,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             <ul className="g-list">
               <Li i="⏱">Plánované časy v rozpisu jsou jen orientační. Další utkání se pustí, jakmile jsou volní hráči i stůl.</Li>
               <Li i="›">
-                Zahájit se v Živě nedá. U svého utkání máš odkaz <b>Zahájit v Moje hry</b>.
+                Připravenost se v Živě nehlásí. U svého utkání máš odkaz <b>Připraven v Moje hry</b>; v Živě je vidět, kdo už je připravený.
               </Li>
             </ul>
           </Step>
@@ -265,8 +266,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={11} label="Zdržovači" title="Kdo nechá ostatní čekat" phone={<LadderPhone start="delays" label="Ukázka: Zdržovači" />}>
             <p>
-              Zdržovači měří, jak dlouho se čeká na zahájení utkání: od chvíle, kdy jsou volní hráči i stůl a utkání je na řadě, do ťuknutí na 
-              <b>Zahájit</b>. Čekání se připíše všem hráčům utkání.
+              Zdržovači měří, jak dlouho kdo nechá ostatní čekat: od chvíle, kdy jsou volní hráči i stůl a utkání je na řadě, do ťuknutí na{' '}
+              <b>Připraven</b>. Každý hráč dostane čekání své strany (u cvičení svoje), takže připravený tým nepyká za soupeře.
             </p>
             <ul className="g-list">
               <Li i="Σ">
@@ -276,7 +277,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 První tři dostanou červený kroužek a šneka, ten úplně první ještě štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
               </Li>
               <Li i="⏱">
-                Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Zahájit</b> v Moje hry.
+                Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Připraven</b> v Moje hry.
               </Li>
             </ul>
           </Step>
@@ -712,7 +713,7 @@ function MyGamesPhone() {
         <span>
           <span className="g-pill g-blue">Zeď</span> drží tvoje strana
         </span>
-        <span className="g-bigbtn">Zahájit</span>
+        <span className="g-bigbtn">Připraven</span>
       </div>
       <div className="g-card">
         <span className="g-k">
@@ -924,7 +925,7 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
     <Phone
       time="21:10"
       title="Žebříček"
-      sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na zahájení' : 'forma · průměr · 14. 10. – 10. 11.'}
+      sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na připravenost' : 'forma · průměr · 14. 10. – 10. 11.'}
       tab="ladder"
       label={label}
     >

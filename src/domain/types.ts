@@ -167,6 +167,11 @@ export type Cell =
 export interface PlayTime {
   startedAt?: number;
   endedAt?: number;
+  /**
+   * Připravenost (18. 11. 2026, PRD 4.8): kdy se kdo přihlásil „Připraven“ – u zápasu strana `A` / `B`,
+   * u cvičení ID hráče. Utkání začne (`startedAt`), až jsou připravení všichni. Chybí = nikdo.
+   */
+  ready?: Record<string, number>;
 }
 /** Klíč: ID zápasu, u cvičení `drill|kolo|stůl|hráči`. */
 export type PlayTimes = Record<string, PlayTime>;

@@ -1,5 +1,5 @@
 import { resolveRange, type LadderRange, type LadderView } from './ladder';
-import type { DisciplineId, Match, PlayerId, PlayTimes, Schedule, ScheduleRow, Training } from './types';
+import type { DisciplineId, Match, PlayerId, PlayTime, PlayTimes, Schedule, ScheduleRow, Training } from './types';
 
 /**
  * Aktivní utkání a Zdržovači (PRD 4.8). Fronta = pořadí z rozpisu; utkání je aktivní, když jsou
@@ -20,6 +20,8 @@ export interface ItemState {
   activeAt: number | null;
   startedAt?: number;
   endedAt?: number;
+  /** Kdo je připravený a odkdy (strana A / B, u cvičení hráč). */
+  ready?: Record<string, number>;
   state: ItemStateKind;
   /** U neaktivního utkání: hráči, kteří ještě hrají / čekají na dřívější utkání. */
   blockedBy?: PlayerId[];
@@ -129,6 +131,7 @@ export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[]
       id: e.id,
       table: activeAt !== null || tm.startedAt !== undefined ? table : null,
       activeAt,
+      ...(tm.ready && Object.keys(tm.ready).length ? { ready: tm.ready } : {}),
       ...(tm.startedAt !== undefined ? { startedAt: tm.startedAt } : {}),
       ...(tm.endedAt !== undefined ? { endedAt: tm.endedAt } : {}),
       state,
@@ -137,6 +140,31 @@ export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[]
     });
   }
   return out;
+}
+
+/**
+ * Připravenost (18. 11. 2026, *rozhodnutí uživatele*): místo Zahájit dá každá strana zápasu „Připraven“
+ * (hráč strany, rozhodčí, organizátor), u cvičení každý hráč za sebe. Utkání začne, až jsou připravení
+ * všichni – zahájení = poslední připravenost; teprve pak jde zapisovat skóre.
+ */
+export const readyKeys = (e: Pick<Extract<QueueEntry, { kind: 'item' }>, 'match' | 'players'>): string[] => (e.match ? ['A', 'B'] : [...e.players]);
+
+/** Klíč připravenosti hráče v utkání: strana zápasu, u cvičení hráč sám. */
+export const readyKeyOf = (e: Pick<Extract<QueueEntry, { kind: 'item' }>, 'match'>, p: PlayerId): string => (e.match ? (e.match.sideA.includes(p) ? 'A' : 'B') : p);
+
+/**
+ * Přihlášení / odhlášení připravenosti (stejně jako funkce ready_item v databázi): po zahájení se nic nemění;
+ * čas první připravenosti zůstává; jakmile jsou připravení všichni (`keys`), utkání začne v čase posledního.
+ */
+export function markReady(pt: PlayTime | undefined, key: string, on: boolean, keys: string[], at: number): PlayTime {
+  const cur = pt ?? {};
+  if (cur.startedAt !== undefined) return cur;
+  const ready = { ...cur.ready };
+  if (on) ready[key] = ready[key] ?? at;
+  else delete ready[key];
+  const all = keys.length > 0 && keys.every((k) => ready[k] !== undefined);
+  const { ready: _r, ...rest } = cur;
+  return { ...rest, ...(Object.keys(ready).length ? { ready } : {}), ...(all ? { startedAt: Math.max(...keys.map((k) => ready[k])) } : {}) };
 }
 
 /** Zahájení tréninku (organizátor); klíč v časech utkání. */
@@ -218,9 +246,11 @@ function accumulate(acc: Map<PlayerId, Acc>, queue: QueueEntry[], states: Map<st
     if (e.kind !== 'item') continue;
     const s = states.get(e.id);
     if (!s || s.startedAt === undefined || s.activeAt === null) continue;
-    const wait = Math.max(0, s.startedAt - s.activeAt);
     const play = s.endedAt !== undefined ? Math.max(0, s.endedAt - s.startedAt) : null;
     for (const p of e.players) {
+      // Čekání do vlastní připravenosti (strana / hráč, 18. 11. 2026); bez ní do zahájení jako dřív.
+      const readyAt = s.ready?.[readyKeyOf(e, p)];
+      const wait = Math.max(0, Math.min(readyAt ?? s.startedAt, s.startedAt) - s.activeAt);
       const a = acc.get(p) ?? { items: 0, waitSum: 0, playN: 0, playSum: 0, trainings: 0 };
       a.items++;
       a.waitSum += wait;

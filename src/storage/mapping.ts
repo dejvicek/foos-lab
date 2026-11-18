@@ -168,6 +168,8 @@ export interface PlayTimeRow {
   item_id: string;
   started_at: string | null;
   ended_at: string | null;
+  /** Připravenost (migrace 31): klíč → čas; null = nikdo. Starší řádek ji nemá. */
+  ready?: Record<string, string> | null;
 }
 
 const iso = (ms: number | undefined) => (ms === undefined ? null : new Date(ms).toISOString());
@@ -177,12 +179,14 @@ export const playTimeToRow = (trainingId: string, itemId: string, p: PlayTime): 
   item_id: itemId,
   started_at: iso(p.startedAt),
   ended_at: iso(p.endedAt),
+  ready: p.ready && Object.keys(p.ready).length ? Object.fromEntries(Object.entries(p.ready).map(([k, v]) => [k, new Date(v).toISOString()])) : null,
 });
 
 export function playTimeFromRow(r: PlayTimeRow): PlayTime {
   const p: PlayTime = {};
   if (r.started_at) p.startedAt = Date.parse(r.started_at);
   if (r.ended_at) p.endedAt = Date.parse(r.ended_at);
+  if (r.ready && Object.keys(r.ready).length) p.ready = Object.fromEntries(Object.entries(r.ready).map(([k, v]) => [k, Date.parse(v)]));
   return p;
 }
 

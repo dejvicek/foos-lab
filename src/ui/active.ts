@@ -1,4 +1,4 @@
-import { TRAINING_ITEM, type ItemState, type QueueEntry } from '../domain/queue';
+import { readyKeyOf, TRAINING_ITEM, type ItemState, type QueueEntry } from '../domain/queue';
 import { isClub } from '../domain/practice';
 import { canBuildSchedule } from '../domain/schedule';
 import type { PlayerId, Training } from '../domain/types';
@@ -13,7 +13,7 @@ export interface Active {
   states: Map<string, ItemState>;
   /** Hraju (jsem mezi přítomnými) – jinak jsem jen organizátor (Živě bez Moje hry). */
   plays: boolean;
-  /** Moje utkání je na řadě a čeká na zahájení (tečka u Moje hry). */
+  /** Moje utkání je na řadě a já (moje strana) ještě nejsem připravený (tečka u Moje hry). */
   myTurn: boolean;
   /** Mám utkání na řadě nebo ho hraju (appka se otevře na Moje hry). */
   myGame: boolean;
@@ -39,13 +39,18 @@ export function activeFor(trainings: Training[], playerId: PlayerId | null, now:
     const { queue, states } = trainingQueue(t, now);
     const items = queue.filter((e): e is Extract<QueueEntry, { kind: 'item' }> => e.kind === 'item');
     if (items.every((e) => states.get(e.id)?.state === 'done')) continue; // dohráno
-    const mine = items.filter((e) => e.players.includes(playerId)).map((e) => states.get(e.id)!);
+    const myItems = items.filter((e) => e.players.includes(playerId));
+    const mine = myItems.map((e) => states.get(e.id)!);
     return {
       training: t,
       queue,
       states,
       plays: t.attendees.includes(playerId),
-      myTurn: mine.some((s) => s.state === 'ready'),
+      // Na řadě a ještě jsem se (moje strana) nepřihlásil jako připravený.
+      myTurn: myItems.some((e) => {
+        const s = states.get(e.id)!;
+        return s.state === 'ready' && s.ready?.[readyKeyOf(e, playerId)] === undefined;
+      }),
       myGame: mine.some((s) => s.state === 'ready' || s.state === 'playing'),
     };
   }

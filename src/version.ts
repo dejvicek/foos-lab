@@ -11,4 +11,6 @@
 //   zapisovala sety a formát BO5 by při uložení tréninku smazala.
 // 5 (18. 11. 2026): délka kola zápasu z doby míčku (trainings.ball_sec, migrace 30) – starší verze by
 //   ukazovala jiné časy a při uložení tréninku doby míčků smazala.
-export const COMPAT = 5;
+// 6 (18. 11. 2026): připravenost místo Zahájit (play_times.ready, ready_item, migrace 31) – starší verze by
+//   utkání zahajovala sama a připravenost by neviděla.
+export const COMPAT = 6;
