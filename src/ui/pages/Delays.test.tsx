@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -428,6 +428,20 @@ describe('průběh hry', () => {
     // křivka: góly v pořadí (zrušený třetí gól tam není)
     expect([...lanes.querySelectorAll('.tl-pt title')].map((x) => x.textContent?.replace(/ v \d+:\d+/, ''))).toEqual(['Gól: H2 + H3 → 1:0', 'Gól: H4 + H1 → 1:1']);
     expect(within(lanes).getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
+    // Živě: skóre stolu a ikonka grafu rozbalí Průběh (18. 11. 2026)
+    await user.click(screen.getByRole('button', { name: 'Živě' }));
+    const t1 = within(screen.getByRole('region', { name: 'Aktivní utkání' })).getByRole('group', { name: 'Stůl 1' });
+    expect(t1).toHaveTextContent('1:1');
+    const icon = within(t1).getByRole('button', { name: 'Průběh hry: stůl 1' });
+    expect(icon).toHaveAttribute('aria-expanded', 'false');
+    await user.click(icon);
+    expect(within(t1).getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
+    // Trénink: ikonka u stolu s ťukanými góly, Průběh pod kolem
+    act(() => {
+      window.location.hash = '#/trainings/t1';
+    });
+    await user.click(await screen.findByRole('button', { name: /^Průběh hry: 1\. kolo, stůl 1$/ }));
+    expect(screen.getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].events?.map((e) => [e.kind, e.side, e.delta])).toEqual([
       ['goal', 'A', 1], ['goal', 'B', 1], ['goal', 'A', 1], ['goal', 'A', -1],
     ]));

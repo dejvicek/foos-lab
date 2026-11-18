@@ -5,7 +5,9 @@ import { flatRows, rowKey } from '../now';
 import { railClass, railLine, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, rowName, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
-import { BlockEntry } from './BlockEntry';
+import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
+import { ProgressToggle } from './ProgressToggle';
+import { drillItemId } from '../../domain/queue';
 import { CompactCell, Names, RailNode, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 
@@ -45,6 +47,8 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
   const numbers = roundNumbers(s);
   const minutes = rowMinutes(s, training.format === 'custom' ? training.durationMin : undefined);
   const [tiles, setTiles] = useState<Record<string, boolean>>({});
+  // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
+  const [prog, setProg] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
   const folded = collapsedDone(s, rounds, running);
   const doneRounds = [...folded].filter((k) => numbers.has(k)).length;
@@ -125,26 +129,47 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
               const place = placeOf(row, me);
               // Řádky stolů a Volno; sbalená dlaždice ukazuje jen ten, kde jsem.
               const lines = [
-                ...row.cells.map((c, j) => ({
-                  mine: (place.kind === 'play' || place.kind === 'ref') && place.table === j + 1,
-                  node: (
-                    <span key={j} className="tile-row">
-                      <b>Stůl {j + 1}</b>
-                      <span>{c ? <CompactCell cell={c} t={training} names={names} me={me} /> : <span className="free">volný</span>}</span>
-                    </span>
-                  ),
-                })),
+                ...row.cells.map((c, j) => {
+                  const id = c ? (c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players)) : '';
+                  const has = !!c && hasProgress(training, id, c.type === 'match' ? c.match : undefined);
+                  const pk = `${key}|${j}`;
+                  return {
+                    mine: (place.kind === 'play' || place.kind === 'ref') && place.table === j + 1,
+                    node: (
+                      <div key={j} className="tile-line">
+                        <span className="tile-row">
+                          <b>Stůl {j + 1}</b>
+                          <span>{c ? <CompactCell cell={c} t={training} names={names} me={me} /> : <span className="free">volný</span>}</span>
+                          {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                        </span>
+                        {has && prog === pk && c && (
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <ItemProgress
+                              itemId={id}
+                              match={c.type === 'match' ? c.match : undefined}
+                              players={c.type === 'match' ? [...c.match.sideA, ...c.match.sideB] : c.players}
+                              training={training}
+                              names={names}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  };
+                }),
                 ...(row.waiting.length
                   ? [
                       {
                         mine: place.kind === 'free',
                         node: (
-                          <span key="free" className="tile-row">
-                            <b>Volno</b>
-                            <span>
-                              <Names ids={row.waiting} names={names} me={me} sep=", " />
+                          <div key="free" className="tile-line">
+                            <span className="tile-row">
+                              <b>Volno</b>
+                              <span>
+                                <Names ids={row.waiting} names={names} me={me} sep=", " />
+                              </span>
                             </span>
-                          </span>
+                          </div>
                         ),
                       },
                     ]
@@ -178,8 +203,11 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         {progress}
                       </span>
                     )}
-                    <span className="tile-rows">{shown.map((x) => x.node)}</span>
                   </button>
+                  {/* Řádky stolů: ťuknutí rozbalí / sbalí dlaždici (klávesnicí přes hlavičku); ikonka grafu otevře Průběh. */}
+                  <div className="tile-rows" onClick={() => setTiles({ ...tiles, [key]: !isOpen })}>
+                    {shown.map((x) => x.node)}
+                  </div>
                   {manage && (
                     <button
                       type="button"

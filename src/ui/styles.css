@@ -759,7 +759,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-card.stacked { margin-bottom: 8px; box-shadow: 0 4px 0 -1px var(--surface), 0 4px 0 0 color-mix(in srgb, var(--line-strong) 80%, var(--line)), 0 8px 0 -3px var(--surface), 0 8px 0 -2px var(--line); }
 .round-card.stacked.mine-row { box-shadow: inset 5px 0 0 var(--gold), 0 4px 0 -1px var(--surface), 0 4px 0 0 color-mix(in srgb, var(--line-strong) 80%, var(--line)), 0 8px 0 -3px var(--surface), 0 8px 0 -2px var(--line); }
 button.tile-head {
-  width: 100%; display: grid; gap: 3px; padding: 10px 12px; background: none; color: var(--ink); border: 0; border-radius: 12px;
+  width: 100%; display: grid; gap: 3px; padding: 10px 12px 6px; background: none; color: var(--ink); border: 0; border-radius: 12px;
   text-align: left; font-weight: 400; min-height: 0; cursor: pointer;
 }
 button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transparent); }
@@ -767,8 +767,12 @@ button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transpar
 .tile-name { font-weight: 800; font-size: 16px; }
 .tile-time { font-weight: 800; font-size: 14px; }
 .tile-sub { color: var(--muted); font-size: 12px; }
-.tile-rows { display: grid; gap: 5px; margin-top: 4px; }
-.tile-row { display: grid; grid-template-columns: 52px 1fr; gap: 6px; font-size: 13.5px; }
+.tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; cursor: pointer; }
+.tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+.tile-line .tl-curve { overflow: hidden; }
+.tile-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 6px; font-size: 13.5px; align-items: start; }
+.tile-row > button.pr-ic { margin-top: -4px; }
+.tile-line .tl-box { cursor: default; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
 .tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
 .round-card > button.row-toggle { margin: 0 12px 10px; }
@@ -1127,6 +1131,21 @@ button.chip-btn.fail { color: var(--warn); border-color: var(--warn); }
 .tl-box > summary { cursor: pointer; color: var(--felt); font-weight: 700; font-size: 13px; min-height: 28px; }
 .tl-box > .tl-h { margin: 2px 0 4px; color: var(--felt); font-size: 13px; font-weight: 700; }
 .tl-leg-k { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+/* Ikonka grafu: rozbalí Průběh (bez rámečku; otevřená zlatá) */
+button.pr-ic {
+  flex: none; width: 28px; height: 28px; min-height: 0; display: inline-grid; place-items: center; border-radius: 6px; cursor: pointer;
+  border: 0; background: none; color: var(--muted); padding: 0;
+}
+button.pr-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+button.pr-ic:hover { color: var(--ink); background: none; }
+button.pr-ic[aria-expanded='true'] { color: var(--felt); }
+.plan td.has-prog { position: relative; padding-right: 34px; }
+.plan td.has-prog > button.pr-ic { position: absolute; top: 4px; right: 4px; }
+.plan tr.prog-row > td { background: var(--surface); padding: 6px 14px 12px; }
+.plan.has-rail tr.prog-row > td { position: relative; padding-left: 34px; }
+.prog-k { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
+.prog-row .tl-box { max-width: 640px; }
+.active-score { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
 /* Barvy stran a hráčů (tečka, pilulka, výplň v SVG) */
 .tl-dot { flex: none; display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
 .tl-dot.side-a, .tl-dot.pl-0 { background: var(--gold); }

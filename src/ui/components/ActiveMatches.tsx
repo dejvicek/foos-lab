@@ -7,6 +7,10 @@ import { parseScoreValue } from '../../domain/standings';
 import type { MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { clockOf, fmtDur, itemNames } from '../queue';
 import { ScorePicker } from './ScorePicker';
+import { hasProgress, ItemProgress } from './BlockEntry';
+import { ProgressToggle } from './ProgressToggle';
+import { tableScore } from '../../domain/legState';
+import type { Match } from '../../domain/types';
 
 type Item = Extract<QueueEntry, { kind: 'item' }>;
 
@@ -25,6 +29,18 @@ interface Props {
   onMyGame?(): void;
   /** Organizátor zadá nahlášený výsledek (hráči nepoužívají telefon). */
   entry?: ResultEntryProps;
+  /** Trénink: skóre rozehraných zápasů a Průběh (ikonka grafu, 18. 11. 2026). */
+  training?: Training;
+}
+
+/** Skóre rozehraného zápasu: stav na stole hraného legu, u BO navíc legy. */
+function liveScore(m: Match, t: Training): string | null {
+  const st = matchState(m, t.scores);
+  const l = st.legs.find((x) => x.leg.id === st.current?.id) ?? st.legs[st.legs.length - 1];
+  const s = t.scores[l.leg.id];
+  if ((m.bestOf ?? 1) <= 1 && !s) return null;
+  const [a, b] = tableScore(l.leg, s);
+  return (m.bestOf ?? 1) > 1 ? `${st.legsA}:${st.legsB} na legy · leg ${l.leg.legNo} ${a}:${b}` : `${a}:${b}`;
 }
 
 /** Zápis výsledku z Živě: skóre zápasu, u cvičení počty hráčů. */
@@ -91,7 +107,9 @@ function ResultEntry({ e, table, names, entry }: { e: Item; table: number; names
 }
 
 /** PRD 4.8: stoly a co se na nich právě hraje / čeká na připravenost, pod tím fronta. */
-export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame, entry }: Props) {
+export function ActiveMatches({ queue, states, tables, names, me, now, canWrite, manage, onEnd, onMyGame, entry, training }: Props) {
+  // Otevřený Průběh (ID utkání).
+  const [prog, setProg] = useState<string | null>(null);
   // Otevřený zápis výsledku (ID utkání).
   const [open, setOpen] = useState<string | null>(null);
   const items = queue.filter((e): e is Item => e.kind === 'item');
@@ -142,6 +160,20 @@ export function ActiveMatches({ queue, states, tables, names, me, now, canWrite,
               {e ? (
                 <>
                   <div className="active-names">{itemNames(e, names)}</div>
+                  {training && (() => {
+                    const sc = e.match ? liveScore(e.match, training) : null;
+                    const has = hasProgress(training, e.id, e.match);
+                    if (!sc && !has) return null;
+                    return (
+                      <>
+                        <div className="active-score">
+                          <span>{sc}</span>
+                          {has && <ProgressToggle open={prog === e.id} onToggle={() => setProg(prog === e.id ? null : e.id)} label={`stůl ${t}`} />}
+                        </div>
+                        {has && prog === e.id && <ItemProgress itemId={e.id} match={e.match} players={e.players} training={training} names={names} />}
+                      </>
+                    );
+                  })()}
                   {s?.state === 'ready' && s.ready && (
                     // Kdo už je připravený (18. 11. 2026).
                     <div className="active-ready">

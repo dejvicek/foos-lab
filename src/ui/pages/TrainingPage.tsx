@@ -324,6 +324,7 @@ export function TrainingPage({
             manage={manage}
             onEnd={(e) => itemTiming?.end(e.id)}
             entry={{ training, onScore, onSolo, drillOf: (e) => drillEntryOf(e.label, e.table, e.players) }}
+            training={training}
             onMyGame={attends ? () => navigate({ page: 'my' }) : undefined}
           />
         )}

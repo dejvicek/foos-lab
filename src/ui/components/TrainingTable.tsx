@@ -9,7 +9,9 @@ import { flatRows, rowKey } from '../now';
 import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, rowName, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
-import { BlockEntry, type TapSolo } from './BlockEntry';
+import { BlockEntry, hasProgress, ItemProgress, type TapSolo } from './BlockEntry';
+import { ProgressToggle } from './ProgressToggle';
+import { drillItemId } from '../../domain/queue';
 import type { ItemTiming } from './Timing';
 
 interface Props {
@@ -212,6 +214,8 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
   const numbers = roundNumbers(s);
   const minutes = rowMinutes(s, training.format === 'custom' ? training.durationMin : undefined);
   const [showDone, setShowDone] = useState(false);
+  // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
+  const [prog, setProg] = useState<string | null>(null);
   const folded = collapsedDone(s, rounds, running);
   const doneRounds = [...folded].filter((k) => numbers.has(k)).length;
   const hidden = (key: string) => !showDone && folded.has(key);
@@ -386,14 +390,38 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                       </td>
                       {visible.map((j) => {
                         const c = row.cells[j];
+                        const id = c ? (c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players)) : '';
+                        const has = !!c && hasProgress(training, id, c.type === 'match' ? c.match : undefined);
+                        const pk = `${key}|${j}`;
                         return (
-                          <td key={j} className={c ? undefined : 'free'}>
+                          <td key={j} className={c ? (has ? 'has-prog' : undefined) : 'free'}>
                             {c ? <CompactCell cell={c} t={training} names={names} me={me} /> : 'volný'}
+                            {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
                           </td>
                         );
                       })}
                       <td className="c-wait">{row.waiting.length ? <Names ids={row.waiting} names={names} me={me} sep=", " /> : '–'}</td>
                     </tr>
+                    {prog?.startsWith(`${key}|`) &&
+                      (() => {
+                        const j = Number(prog.split('|')[1]);
+                        const c = row.cells[j];
+                        if (!c) return null;
+                        return (
+                          <tr className={['prog-row', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
+                            <td colSpan={cols}>
+                              <span className="prog-k">Stůl {j + 1} · Průběh</span>
+                              <ItemProgress
+                                itemId={c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players)}
+                                match={c.type === 'match' ? c.match : undefined}
+                                players={c.type === 'match' ? [...c.match.sideA, ...c.match.sideB] : c.players}
+                                training={training}
+                                names={names}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })()}
                     {open && (
                       <tr className={['expand', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
                         <td colSpan={cols}>

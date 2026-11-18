@@ -213,23 +213,27 @@ export function MatchScore({ m, training, names, label, tap, disabled, note, onS
   );
 }
 
-/**
- * Průběh dohrané hry bez zápisu (přechod v Moje hry, 18. 11. 2026): zápas po legech, cvičení po hráčích;
- * vždy rozbalený. Nic se neukáže, když hra nemá ťukané události.
- */
-export function GameProgress({ row, table, training, names }: { row: ScheduleRow; table: number; training: Training; names: Record<PlayerId, string> }) {
-  const c = row.cells[table - 1];
-  if (!c) return null;
+/** Má hra ťukané události (zápas: kterýkoli leg)? Jen pak má smysl Průběh. */
+export function hasProgress(training: Training, itemId: string, m?: Match): boolean {
   const all = training.events ?? [];
-  if (c.type === 'group') {
-    const evs = all.filter((e) => e.itemId === drillItemId(row, table, c.players));
+  const ids = m ? new Set(legIds(m)) : new Set([itemId]);
+  return all.some((e) => ids.has(e.itemId));
+}
+
+/**
+ * Průběh jedné hry bez zápisu (18. 11. 2026): zápas po legech, cvičení po hráčích; vždy rozbalený.
+ * Nic se neukáže, když hra nemá ťukané události.
+ */
+export function ItemProgress({ itemId, match: m, players, training, names }: { itemId: string; match?: Match; players: PlayerId[]; training: Training; names: Record<PlayerId, string> }) {
+  const all = training.events ?? [];
+  if (!m) {
+    const evs = all.filter((e) => e.itemId === itemId);
     return (
       <TimelineBox count={evs.length} open>
-        <DrillTimeline players={c.players} events={evs} names={names} />
+        <DrillTimeline players={players} events={evs} names={names} />
       </TimelineBox>
     );
   }
-  const m = c.match;
   const st = matchState(m, training.scores);
   const pt = training.playTimes?.[m.id];
   const legs = st.legs.filter((l) => all.some((e) => e.itemId === l.leg.id));
@@ -241,15 +245,24 @@ export function GameProgress({ row, table, training, names }: { row: ScheduleRow
         const first = Math.min(...evs.map((e) => e.at));
         const last = Math.max(...evs.map((e) => e.at));
         const from = (l.leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first);
+        const to = pt?.endedAt ?? (pt?.startedAt !== undefined && !l.over ? Date.now() : last);
         return (
           <div key={l.leg.id} className="tl-leg">
             {legs.length > 1 && <span className="tl-leg-k">Leg {l.leg.legNo} · {legText(l.leg, l.score)}</span>}
-            <MatchTimeline match={l.leg} events={evs} from={from} to={pt?.endedAt ?? last} names={names} />
+            <MatchTimeline match={l.leg} events={evs} from={from} to={to} names={names} />
           </div>
         );
       })}
     </TimelineBox>
   );
+}
+
+/** Průběh dohrané hry v přechodu Moje hry (stůl řádku rozpisu). */
+export function GameProgress({ row, table, training, names }: { row: ScheduleRow; table: number; training: Training; names: Record<PlayerId, string> }) {
+  const c = row.cells[table - 1];
+  if (!c) return null;
+  if (c.type === 'group') return <ItemProgress itemId={drillItemId(row, table, c.players)} players={c.players} training={training} names={names} />;
+  return <ItemProgress itemId={c.match.id} match={c.match} players={[...c.match.sideA, ...c.match.sideB]} training={training} names={names} />;
 }
 
 export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false }: Props) {
