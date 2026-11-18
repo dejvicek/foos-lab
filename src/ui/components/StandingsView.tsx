@@ -3,7 +3,7 @@ import { computeStandings } from '../../domain/standings';
 import { simSheet, type SimSheet, type SimSheetRow } from '../../domain/simSheet';
 import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
-import { dec1, signed } from '../format';
+import { signed } from '../format';
 import { Seg } from './Seg';
 import { DelayTable } from './Timing';
 
@@ -167,12 +167,11 @@ const How = ({ children }: { children: ReactNode }) => (
 
 /**
  * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně (19. 11. 2026): góly jako „18:3“ v jednom sloupci,
- * ztráty jen když trénink má Daň se zapsanými ztrátami, vysvětlivka sbalená.
+ * bez ztrát (*rozhodnutí uživatele*), vysvětlivka sbalená.
  */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const empty = legsDone === 0 && (!sim || sim.played === 0);
-  const losses = rows.some((x) => x.lossLegs > 0);
   return (
     <div className="standings">
       {empty ? (
@@ -189,11 +188,6 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                   <th className="n">Výhry</th>
                   <th className="n" title="Góly vstřelené : obdržené">Góly</th>
                   <th className="n">Rozdíl</th>
-                  {losses && (
-                    <th className="n" title="Ztráty na leg (jen Daň za ztrátu)">
-                      Ztráty
-                    </th>
-                  )}
                 </tr>
               </thead>
               <tbody>
@@ -207,15 +201,13 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                       {x.gf}:{x.gc}
                     </td>
                     <td className={x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n'}>{signed(x.diff)}</td>
-                    {losses && <td className="n">{x.lossLegs ? dec1(x.loss / x.lossLegs) : '–'}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <How>
-            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. Ztráty jsou na leg a počítají se jen z legů Daně za
-            ztrátu, kde byly zapsané. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při úplné shodě rozhodují výhry v simulaci.
+            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při úplné shodě rozhodují výhry v simulaci.
           </How>
         </>
       )}

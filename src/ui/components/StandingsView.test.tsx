@@ -27,6 +27,7 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     const seg = within(box).getByRole('group', { name: 'Souhrn' });
     expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['Pořadí', 'Simulace']);
     expect(within(box).getByRole('table', { name: 'Souhrn tréninku' })).not.toHaveTextContent('Simulace');
+    expect(within(box).getByRole('table', { name: 'Souhrn tréninku' })).not.toHaveTextContent('Ztráty'); // ztráty se v Pořadí neukazují
     await userEvent.setup().click(within(seg).getByRole('button', { name: 'Simulace' }));
     // ligový zápis: skóre týmů nahoře, řádek na zápas s Body a Hrami, vítěz tučně, Celkově
     expect(within(box).getByText('1 : 0')).toBeInTheDocument();
