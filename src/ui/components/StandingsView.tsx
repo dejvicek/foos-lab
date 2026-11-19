@@ -111,7 +111,15 @@ function SimView({ schedule, scores, attendees, names }: Props) {
         <td className="n sim-pts">{r.points ? pair(r.points) : r.state === 'playing' ? <span className="sim-live">hraje se</span> : <span className="muted">–</span>}</td>
         <td className="n">
           <b>{pair(r.games) ?? <span className="muted">–</span>}</b>
-          {r.legs.length > 0 && <span className="sim-legs">{r.legs.map((l) => `${l[0]}:${l[1]}`).join(' · ')}</span>}
+          {r.legs.length > 0 && (
+            <span className="sim-legs" aria-label={`Legy ${r.legs.map((l) => `${l[0]}:${l[1]}`).join(', ')}`}>
+              {r.legs.map((l, i) => (
+                <span key={i}>
+                  {l[0]}:{l[1]}
+                </span>
+              ))}
+            </span>
+          )}
         </td>
         <td className="n sim-run">{pair(r.running)}</td>
       </tr>,

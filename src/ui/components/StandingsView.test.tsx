@@ -35,7 +35,8 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     expect(within(table).getByText('1. vlna')).toBeInTheDocument();
     const first = within(table).getAllByRole('row')[2];
     expect(first.querySelector('.sim-no')).toHaveAttribute('title', 'Dvojice');
-    expect(first).toHaveTextContent(`1${sim.sideA.join(', ')}A,B:1,2${sim.sideB.join(', ')}1:02:06:1 · 6:11:0`);
+    expect(first).toHaveTextContent(`1${sim.sideA.join(', ')}A,B:1,2${sim.sideB.join(', ')}1:02:06:16:11:0`);
+    expect(within(first).getByLabelText('Legy 6:1, 6:1')).toBeInTheDocument();
     expect(first.querySelector('.win.a')).toHaveTextContent(sim.sideA.join(', '));
     expect(within(table).getAllByRole('row').at(-1)).toHaveTextContent('Celkově1:02:0');
   });

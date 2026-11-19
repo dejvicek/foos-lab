@@ -1076,7 +1076,8 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 .sim-ppl .win.a { box-shadow: inset 0 -2px 0 var(--gold); }
 .sim-ppl .win.b { box-shadow: inset 0 -2px 0 var(--side-b); }
 .sim-pts { font-weight: 800; }
-.sim-legs { font-size: 11px; color: var(--muted); white-space: nowrap; margin-left: 6px; font-weight: 400; }
+/* Skóre jednotlivých legů pod hrami – vlastní řádek, čitelně (19. 11. 2026, *rozhodnutí uživatele*). */
+.sim-legs { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 8px; font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.25; }
 .sim-run { color: var(--muted); }
 .sim-live { display: inline-block; font-size: 11px; font-weight: 800; color: var(--felt); background: var(--felt-soft); border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
 .sim-table tr.sim-total td { background: var(--felt-soft); font-weight: 800; }
@@ -1093,7 +1094,7 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
   .sim-ppl > span:last-child code { display: none; }
   .sim-ppl > span:last-child::after { content: attr(data-codes); font-size: 10.5px; color: var(--muted); margin-left: 4px; }
   .sim-table th.sim-mid { text-align: left; }
-  .sim-legs { display: block; margin-left: 0; white-space: normal; line-height: 1.2; }
+  .sim-legs { gap: 0 6px; font-size: 12px; }
   /* Stav skrytý: v pevném rozvržení musí mít nulovou šířku (display: none by místo dál držel). */
   .wrap .sim-table tr:not(.sim-wave) > :last-child { width: 0; padding: 0; font-size: 0; overflow: hidden; }
 }
