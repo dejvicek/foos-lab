@@ -4,7 +4,7 @@ import { streakTime } from '../../domain/streak';
 import type { UiPrefs } from '../../storage/prefs';
 import { rangeText } from '../components/RangeLabel';
 import { formatDate, todayIso } from '../dates';
-import { dec1, MODE_LABEL, signed } from '../format';
+import { dec1, diffCls, MODE_LABEL, signed, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 
@@ -58,7 +58,7 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                   <td>{MODE_LABEL[r.mode]}</td>
                   <td className="n">{r.legs}</td>
                   <td className="n">{r.wins}</td>
-                  <td className={r.diff > 0 ? 'n pos' : r.diff < 0 ? 'n neg' : 'n'}>{signed(r.diff)}</td>
+                  <td className={diffCls(r.diff, r.diff >= STRONG_PER_TRAINING)}>{signed(r.diff)}</td>
                   <td className="n">{r.lossPerLeg === null ? '–' : dec1(r.lossPerLeg)}</td>
                   <td className="n">{r.simM ? `${r.simW} / ${r.simM}` : '–'}</td>
                   {metrics.map((m) => (

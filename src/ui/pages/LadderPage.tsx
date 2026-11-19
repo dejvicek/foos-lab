@@ -11,7 +11,7 @@ import { soloMetric } from '../../domain/solo';
 import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
-import { dec1, pct, plural, signed } from '../format';
+import { dec1, diffTone, pct, plural, signed, STRONG_PER_LEG, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 import { computeDelayLadder } from '../../domain/queue';
@@ -248,15 +248,6 @@ function SoloTable({
     </div>
   );
 }
-
-/**
- * Barva rozdílu skóre v žebříčku (19. 11. 2026, *rozhodnutí uživatele*): zelená = výrazný náskok, zlatá = plus,
- * červená = minus, nula bez barvy. Výrazný: v Průměru aspoň +1,5 na leg, v Celkem aspoň +10 na trénink
- * (trénink má kolem 7 legů, tedy zhruba totéž), v zápasech podle disciplín aspoň +1,5 na leg.
- */
-const STRONG_PER_LEG = 1.5;
-const STRONG_PER_TRAINING = 10;
-const diffTone = (diff: number, strong: boolean) => (diff > 0 ? (strong ? 'great' : 'pos') : diff < 0 ? 'neg' : '');
 
 /** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
 const matchTableName = (id: DisciplineId) => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);

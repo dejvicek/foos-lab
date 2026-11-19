@@ -3,7 +3,7 @@ import { computeStandings } from '../../domain/standings';
 import { simSheet, type SimSheet, type SimSheetRow } from '../../domain/simSheet';
 import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
-import { signed } from '../format';
+import { diffCls, signed, STRONG_PER_TRAINING } from '../format';
 import { Seg } from './Seg';
 import { Medal, podiumRow } from './Rank';
 import { placeAndSort, RankTh, SortTh, sortedCls, useSort, type SortCol } from './SortTable';
@@ -219,7 +219,7 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                       <Medal place={place} ranked={played(x)} />
                     </td>
                     <td className={sortedCls(sort, 'name', 'name')}>{names[x.playerId] ?? '?'}</td>
-                    <td className={sortedCls(sort, 'diff', x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n')}>{signed(x.diff)}</td>
+                    <td className={sortedCls(sort, 'diff', diffCls(x.diff, x.diff >= STRONG_PER_TRAINING))}>{signed(x.diff)}</td>
                     <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
                     <td className={sortedCls(sort, 'gf', 'n')}>{x.gf}</td>
                     <td className={sortedCls(sort, 'gc', 'n')}>{x.gc}</td>

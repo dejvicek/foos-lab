@@ -65,3 +65,21 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     expect(screen.getByRole('table', { name: 'Souhrn tréninku' })).toBeInTheDocument();
   });
 });
+
+describe('barva rozdílu v Pořadí (19. 11. 2026)', () => {
+  it('zelená od +10 za trénink, zlatá jiný plus, červená minus', () => {
+    const t = custom({ normal: 3 });
+    const s = buildSchedule(t);
+    const leg = s.matches.filter((m) => m.block !== 'sim');
+    // všechny zápasy 6:0 pro stranu A → kdo hrál dvakrát vlevo, má +12
+    const scores: Record<string, Score> = Object.fromEntries(leg.map((m) => [m.id, { ga: 6, gb: 0 }]));
+    render(<TrainingSummary schedule={s} scores={scores} attendees={t.attendees} names={names} delays={[]} />);
+    const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
+    const cells = [...table.querySelectorAll('tbody tr')].map((r) => r.querySelectorAll('td')[2]);
+    for (const c of cells) {
+      const v = Number(c.textContent!.replace('−', '-').replace('+', ''));
+      expect(c).toHaveClass(v >= 10 ? 'great' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'n');
+    }
+    expect(cells.some((c) => c.classList.contains('great'))).toBe(true);
+  });
+});
