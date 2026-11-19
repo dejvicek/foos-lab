@@ -363,7 +363,8 @@ export function MyTable(props: Props) {
         segs={segs}
         current={i}
         played={played}
-        active={activeIdx >= 0 ? activeIdx : undefined}
+        // Vyšší dílek: hra na řadě / rozehraná, jinak moje poslední dohrané kolo (19. 11. 2026, *rozhodnutí uživatele*).
+        active={activeIdx >= 0 ? activeIdx : lastEnded >= 0 ? lastEnded : undefined}
         startTime={training.startTime}
         onPick={(j) => go(j)}
         prev={{ disabled: i === 0, onClick: () => go(i - 1) }}

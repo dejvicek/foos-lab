@@ -681,7 +681,6 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .my-tl button.icon { min-width: 40px; min-height: 40px; font-size: 22px; flex: none; }
 .my-tl .prog > button.seg { padding: 0; border: 0; min-height: 0; cursor: pointer; }
 .my-tl .prog > button.seg::after { content: ''; position: absolute; inset: -12px 0 -8px; }
-.my-tl .prog > button.seg:hover:not(.live) { height: 8px; }
 .my-tl .prog > button.seg:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .my-card { margin: 6px 0 8px; }
 .my-head .tile-name { margin: 0; font-size: 18px; }
