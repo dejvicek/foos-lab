@@ -123,10 +123,11 @@ export function CompactCell({ cell, t, names, me = null, roundName }: { cell: Ce
   if (cell.type === 'group') {
     return (
       <>
-        <span className="cell-names">
+        {/* Jména cvičení odsazená jako jména zápasu za tečkou strany (19. 11. 2026). */}
+        <span className="cell-names grp">
           <Names ids={cell.players} names={names} me={me} sep=", " />
         </span>
-        {cell.station && !(roundName === cell.station || roundName?.startsWith(`${cell.station} – `)) && <span className="cell-sub">{cell.station}</span>}
+        {cell.station && !(roundName === cell.station || roundName?.startsWith(`${cell.station} – `)) && <span className="cell-sub grp">{cell.station}</span>}
       </>
     );
   }

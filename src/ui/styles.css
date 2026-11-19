@@ -471,6 +471,8 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .mb-dot { flex: none; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
 .mb-dot.a { background: var(--gold); }
 .mb-dot.b { background: var(--side-b); }
+/* Cvičení: jména začínají tam, kde u zápasu za tečkou strany (7 px + 6 px). */
+.cell-names.grp, .cell-sub.grp { padding-left: 13px; }
 .mb-sc { display: flex; justify-content: flex-end; }
 .mb-sc > span { width: 20px; text-align: center; font-size: 12.5px; color: var(--muted); }
 .mb-sc > span.lw { color: var(--ink); font-weight: 700; }
