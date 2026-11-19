@@ -396,6 +396,20 @@ describe('Moje hry otevře rozehranou hru', () => {
     expect(within(mine).getByRole('group', { name: /^Kolo 2 z/ })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Připraven' })).toBeInTheDocument();
   });
+
+  it('nic není na řadě (pauza) a podle hodin je už po konci: otevře se další moje kolo, ne poslední (19. 11. 2026)', async () => {
+    vi.setSystemTime(new Date(2026, 10, 2, 21, 30)); // plánovaný rozpis dávno skončil, reálně se hraje pozadu
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+    const paused: Training = {
+      ...t,
+      breaks: [{ after: 1, min: 10 }],
+      playTimes: { training: { startedAt: at(21, 0) }, [ids[0]]: { startedAt: at(21, 0), endedAt: at(21, 8) } },
+    };
+    window.location.hash = '#/my-games';
+    render(<App repo={memoryRepository({ players, trainings: [paused] })} auth={auth} />);
+    const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    expect(within(mine).getByRole('group', { name: /^Kolo 2 z 3/ })).toBeInTheDocument();
+  });
 });
 
 describe('průběh hry', () => {

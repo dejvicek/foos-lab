@@ -105,7 +105,17 @@ export function MyTable(props: Props) {
     const st = id ? props.timing?.state(id)?.state : undefined;
     return st === 'ready' || st === 'playing';
   });
-  const [idx, setIdx] = useState(() => (activeIdx >= 0 ? activeIdx : initialIndex(list, since, training)));
+  /**
+   * Bez hry na řadě (pauza, čekání na stůl) podle skutečnosti, ne podle plánovaných časů (19. 11. 2026 – večer
+   * po plánovaném konci se otevíralo poslední kolo): moje první neskončené kolo, jinak poslední dohrané.
+   */
+  const started = !!props.timing && Object.values(training.playTimes ?? {}).some((p) => p.startedAt !== undefined);
+  const realIdx = () => {
+    const own = list.map((x, k) => ({ k, id: itemOf(x) })).filter((x) => x.id && props.timing?.state(x.id));
+    const next = own.find((x) => props.timing!.state(x.id!)!.endedAt === undefined);
+    return next ? next.k : own.length ? own[own.length - 1].k : null;
+  };
+  const [idx, setIdx] = useState(() => (activeIdx >= 0 ? activeIdx : ((started ? realIdx() : null) ?? initialIndex(list, since, training))));
   const [fix, setFix] = useState(false);
   // Listování šipkami: starší dohrané kolo se ukáže normálně (výsledek a Průběh), ne jako přechod.
   const [browse, setBrowse] = useState(false);
