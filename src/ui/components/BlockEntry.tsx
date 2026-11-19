@@ -279,10 +279,11 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     );
   };
   /** Stopky stolu + jestli už jde zapisovat (zahájeno, nebo výsledek už je – oprava). */
-  const timer = (id: string, players: PlayerId[], hasResult: boolean, finished: boolean, m?: Match, countdown = false, inMirror = false) => {
+  const timer = (id: string, players: PlayerId[], _hasResult: boolean, finished: boolean, m?: Match, countdown = false, inMirror = false) => {
     const st = timing?.state(id);
-    // Zapisovat jde po zahájení; organizátor bez zahájení; hotový výsledek jde opravit vždy.
-    const open = !timing || !st || st.startedAt !== undefined || hasResult || timing.manage;
+    // Zapisovat jde až po zahájení (všichni připravení) – nikdo, ani organizátor, dřív (19. 11. 2026, *rozhodnutí
+    // uživatele*). Ukončené utkání jde opravit. Celkový výsledek bez stopek (tužka v rozpisu) timing nemá → bez omezení.
+    const open = !timing || !st || st.startedAt !== undefined || st.endedAt !== undefined;
     const bar = timing && st && (
       <TimingBar
         state={st}

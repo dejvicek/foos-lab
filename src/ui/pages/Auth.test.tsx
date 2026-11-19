@@ -97,6 +97,28 @@ describe('přihlášení', () => {
     expect(screen.queryByRole('button', { name: /^(Zahájit|Připraven)/ })).toBeNull();
   });
 
+  it('ani admin nezapíše skóre, dokud nejsou všichni připravení (19. 11. 2026)', async () => {
+    // hráč id2 je admin (správce každého tréninku)
+    const admins = authPlayers.map((p) => ({ ...p, isAdmin: p.id === 'id2' }));
+    const auth = memoryAuth({ players: admins, signedIn: { playerId: 'id2', isAdmin: true, mustChangePassword: false } });
+    const repo = memoryRepository({ players: roster, trainings: [started()] });
+    render(<App repo={repo} auth={auth} />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
+    const mine = await screen.findByRole('region', { name: 'Moje kolo' });
+    while (!within(mine).queryAllByRole('button', { name: /góly vlevo 6$/ }).length)
+      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    expect(screen.getByRole('button', { name: 'Hráči' })).toBeInTheDocument(); // opravdu admin
+    expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled();
+    // admin smí hlásit připravenost za obě strany; dokud není připravená i druhá, zapsat nejde
+    const ready = within(mine).getAllByRole('button', { name: /^Připraven: / });
+    expect(ready).toHaveLength(2);
+    await user.click(ready[0]);
+    expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled();
+    await user.click(within(mine).getAllByRole('button', { name: /^Připraven: / }).at(-1)!);
+    await vi.waitFor(() => expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeEnabled());
+  });
+
   it('notebook: „Moje hry“ zapisuje kliknutím na čísla', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
     const repo = memoryRepository({ players: roster, trainings: [started()] });
