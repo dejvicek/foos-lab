@@ -36,29 +36,23 @@ function Harness({ me = 'id1', manage = false }: { me?: string | null; manage?: 
   );
 }
 
-/** Dlaždice kola podle jeho názvu (popisek tlačítka „1. kolo, Normální leg, 19:00: …“). */
-const tile = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label.replace('.', '\\.')}, `) });
+/** Dlaždice kola podle jeho názvu („1. kolo, Normální leg, 19:00“). */
+const tile = (label: string) => screen.getByRole('article', { name: new RegExp(`^${label.replace('.', '\\.')}, `) });
 
 describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
-  it('sbalená dlaždice ukazuje jen můj stůl, ťuknutím ostatní; kolo s mou účastí má zlatý pruh, jméno zlatě', async () => {
-    const user = userEvent.setup();
+  it('dlaždice ukazuje vždy všechny stoly, nerozbaluje se (19. 11. 2026); kolo s mou účastí má zlatý pruh, jméno zlatě', () => {
     render(<Harness me="id5" />);
-    const t = tile('1. kolo');
-    const card = t.closest('article')!;
-    expect(t).toHaveAttribute('aria-expanded', 'false');
+    const card = tile('1. kolo');
     expect(card).toHaveClass('mine-row');
-    expect(card).toHaveClass('stacked'); // vykukující karty: je tu víc stolů
-    expect(card).toHaveTextContent('Stůl 2');
-    expect(card).not.toHaveTextContent('Stůl 1');
-    expect(within(card).getByText('H5')).toHaveClass('me-name');
-    await user.click(t);
-    expect(t).toHaveAttribute('aria-expanded', 'true');
+    expect(card).not.toHaveClass('stacked');
+    expect(within(card).queryByRole('button', { name: /zobrazit všechny stoly|skrýt ostatní/ })).toBeNull();
     expect(card).toHaveTextContent('Stůl 1');
+    expect(card).toHaveTextContent('Stůl 2');
+    expect(within(card).getByText('H5')).toHaveClass('me-name');
     expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4' })).toBeInTheDocument();
     // volné stoly se v kolech neukazují (19. 11. 2026)
     expect(card).not.toHaveTextContent('volný');
     expect(card).not.toHaveTextContent('Stůl 3');
-    expect(card).not.toHaveClass('stacked');
   });
 
   it('kolo, kde mám volno: sbalená dlaždice ukazuje řádek Volno', () => {

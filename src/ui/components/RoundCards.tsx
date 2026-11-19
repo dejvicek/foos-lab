@@ -48,7 +48,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
   const rail = rounds ?? upcomingRounds(s);
   const numbers = roundNumbers(s);
   const minutes = rowMinutes(s, training.format === 'custom' ? training.durationMin : undefined);
-  const [tiles, setTiles] = useState<Record<string, boolean>>({});
   // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
   const [prog, setProg] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
@@ -129,7 +128,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                 );
               }
               const place = placeOf(row, me);
-              // Řádky stolů a Volno; sbalená dlaždice ukazuje jen ten, kde jsem. Volné stoly se neukazují (19. 11. 2026).
+              // Řádky stolů a Volno (všechny, 19. 11. 2026). Volné stoly se neukazují.
               const lines = [
                 ...row.cells.flatMap((c, j) => {
                   if (!c) return [];
@@ -137,7 +136,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                   const has = hasProgress(training, id, c.type === 'match' ? c.match : undefined);
                   const pk = `${key}|${j}`;
                   return [{
-                    mine: (place.kind === 'play' || place.kind === 'ref') && place.table === j + 1,
                     node: (
                       <div key={j} className="tile-line">
                         <span className="tile-row">
@@ -153,7 +151,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                           )}
                         </span>
                         {manage && expanded === pk && (
-                          <div className="tile-entry" onClick={(e) => e.stopPropagation()}>
+                          <div className="tile-entry">
                             <BlockEntry
                               row={row}
                               waitingLabel={sec.waitingLabel}
@@ -176,7 +174,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                           </div>
                         )}
                         {has && prog === pk && c && (
-                          <div onClick={(e) => e.stopPropagation()}>
+                          <div>
                             <ItemProgress
                               itemId={id}
                               match={c.type === 'match' ? c.match : undefined}
@@ -193,7 +191,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                 ...(row.waiting.length
                   ? [
                       {
-                        mine: place.kind === 'free',
                         node: (
                           <div key="free" className="tile-line">
                             <span className="tile-row">
@@ -208,22 +205,16 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     ]
                   : []),
               ];
-              // Kdo v tréninku není (admin), vidí stoly hned všechny.
-              const mineLines = lines.filter((x) => x.mine);
-              const isOpen = tiles[key] ?? mineLines.length === 0;
-              const shown = isOpen ? lines : mineLines;
-              const more = lines.length > shown.length;
               const progress = manage ? soloProgress(row, training) : null;
               return (
-                <article key={key} className={['round-card', state, takesPart(place) ? 'mine-row' : '', more ? 'stacked' : ''].filter(Boolean).join(' ')}>
+                // Všechny stoly vždy (19. 11. 2026, *rozhodnutí uživatele*) – dlaždice se nerozbaluje.
+                <article
+                  key={key}
+                  className={['round-card', state, takesPart(place) ? 'mine-row' : ''].filter(Boolean).join(' ')}
+                  aria-label={`${row.label}, ${rowName(row, sec.id)}, ${time}`}
+                >
                   <RailNode st={rs} no={numbers.get(key)} />
-                  <button
-                    type="button"
-                    className="tile-head"
-                    aria-expanded={isOpen}
-                    aria-label={`${row.label}, ${rowName(row, sec.id)}, ${time}: ${isOpen ? 'skrýt ostatní stoly' : 'zobrazit všechny stoly'}`}
-                    onClick={() => setTiles({ ...tiles, [key]: !isOpen })}
-                  >
+                  <div className="tile-head">
                     {/* Čas vlevo, název uprostřed, formát vpravo (19. 11. 2026). */}
                     <span className="tile-top">
                       <span className="tile-time">{time}</span>
@@ -233,11 +224,9 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                       </span>
                     </span>
                     {rowSub(min, row, progress, false) && <span className="tile-sub">{rowSub(min, row, progress, false)}</span>}
-                  </button>
-                  {/* Řádky stolů: ťuknutí rozbalí / sbalí dlaždici (klávesnicí přes hlavičku); ikonka grafu otevře Průběh. */}
-                  <div className="tile-rows" onClick={() => setTiles({ ...tiles, [key]: !isOpen })}>
-                    {shown.map((x) => x.node)}
                   </div>
+                  {/* Řádky stolů a Volno; ikonka grafu otevře Průběh, tužka zápis stolu. */}
+                  <div className="tile-rows">{lines.map((x) => x.node)}</div>
                 </article>
               );
             })}

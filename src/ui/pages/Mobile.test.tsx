@@ -24,10 +24,10 @@ describe('telefon', () => {
     render(<App repo={memoryRepository({ players, trainings: [training] })} />);
     const cards = await screen.findByLabelText('Rozpis tréninku');
     expect(screen.queryByRole('table', { name: 'Rozpis tréninku' })).toBeNull();
-    // admin (bez hráče) vidí stoly hned všechny; dlaždice kola jde sbalit
-    const tile = within(cards).getByRole('button', { name: /^1\. kolo, / });
-    expect(tile.closest('article')).toHaveTextContent('Stůl 1');
-    expect(tile.closest('article')).toHaveTextContent('Stůl 2');
+    // dlaždice kola ukazuje vždy všechny stoly (19. 11. 2026)
+    const tile = within(cards).getByRole('article', { name: /^1\. kolo, / });
+    expect(tile).toHaveTextContent('Stůl 1');
+    expect(tile).toHaveTextContent('Stůl 2');
   });
 });
 
