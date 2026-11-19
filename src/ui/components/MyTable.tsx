@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { matchState } from '../../domain/matchFormat';
 import { rowKind, trainingProgress } from '../../domain/progress';
 import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
@@ -173,7 +173,19 @@ export function MyTable(props: Props) {
     timing.ready(myItemId, key, on, readyKeys({ match: a.match, players }));
   };
   const todo = slots.filter((x) => ist?.ready?.[x.key] === undefined);
-  const mineReady = slots.length > 0 && todo.length === 0;
+  // Kdo ještě není připravený (všechny strany / hráči utkání), když už je někdo připravený (19. 11. 2026).
+  const waitingFor = (() => {
+    if (!myItemId) return null;
+    const players = a.match ? [...a.match.sideA, ...a.match.sideB] : (a.group?.players ?? []);
+    const keys = readyKeys({ match: a.match, players });
+    const left = keys.filter((k) => ist?.ready?.[k] === undefined);
+    if (!left.length || left.length === keys.length) return null;
+    const mySide = a.match ? (a.match.sideA.includes(playerId) ? 'A' : a.match.sideB.includes(playerId) ? 'B' : null) : null;
+    const opp = !!a.match && left.every((k) => k !== mySide);
+    const who = left.map((k) => (a.match ? nm(k === 'A' ? a.match.sideA : a.match.sideB) : (names[k] ?? '?'))).join(', ');
+    return `čeká se na ${opp ? 'soupeře' : 'hráče'} (${who})`;
+  })();
+  const readySlots = slots.filter((x) => ist?.ready?.[x.key] !== undefined);
 
   const isEnded = ist?.endedAt !== undefined;
   const started = ist?.startedAt !== undefined;
@@ -221,14 +233,17 @@ export function MyTable(props: Props) {
     if (isReady)
       return (
         <div className="c-state live" role="status">
-          <span>● Na řadě{mineReady ? ' · čeká se na soupeře' : ''}</span>
-          {mineReady && (
+          <span>● Na řadě{waitingFor ? ` · ${waitingFor}` : ''}</span>
+          {readySlots.length > 0 && (
             <span>
               ✓{' '}
-              {slots.map((x) => (
-                <button key={x.key} type="button" className="link" aria-label={`Zrušit připravenost: ${x.label}`} onClick={() => ready(x.key, false)}>
-                  zrušit
-                </button>
+              {readySlots.map((x, k) => (
+                <Fragment key={x.key}>
+                  {k > 0 && ' '}
+                  <button type="button" className="link" aria-label={`Zrušit připravenost: ${x.label}`} onClick={() => ready(x.key, false)}>
+                    {readySlots.length < slots.length || readySlots.length > 1 ? `zrušit ${x.label}` : 'zrušit'}
+                  </button>
+                </Fragment>
               ))}
             </span>
           )}
