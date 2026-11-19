@@ -750,9 +750,12 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-sec span { color: var(--muted); font-weight: 500; }
 .round-break { margin: 2px 0; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .round-break.pause { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
-.round-break .rb-name { flex: 1; }
-.round-break .rb-time { font-weight: 800; }
+.round-break .rb-top { flex-basis: 100%; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: baseline; }
+.round-break .rb-time { justify-self: start; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.round-break .rb-name { text-align: center; }
+.round-break .rb-min { justify-self: end; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .round-break .rb-edit { display: inline-flex; gap: 6px; align-items: center; }
+.round-break.editable .rb-edit { flex-basis: 100%; justify-content: center; }
 .round-break .rb-slot { flex-basis: 100%; }
 .round-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .round-card.st-done .tile-name, .round-card.st-done .tile-time { color: var(--muted); }

@@ -94,9 +94,11 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                 return (
                   <div key={key} className={['round-break', row.label === 'Pauza' ? 'pause' : '', editable ? 'editable' : '', state].filter(Boolean).join(' ')}>
                     {row.label === 'Pauza' ? <RailNode st={rs} pause /> : <RailNode st={rs} label={row.label} />}
-                    <span className="rb-name">
-                      {row.label}
-                      {!editable && min && row.label === 'Pauza' ? ` ${min} min` : ''}
+                    {/* Čas vlevo, název uprostřed, délka vpravo – jako hlavička ostatních karet (19. 11. 2026). */}
+                    <span className="rb-top">
+                      <span className="rb-time">{time}</span>
+                      <span className="rb-name">{row.label}</span>
+                      <span className="rb-min">{!editable && min && row.label === 'Pauza' ? `${min} min` : ''}</span>
                     </span>
                     {editable && (
                       <span className="rb-edit">
@@ -122,7 +124,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         )}
                       </span>
                     )}
-                    <span className="rb-time">{time}</span>
                     {pauseSlots?.get(key) && <div className="rb-slot">{pauseSlots.get(key)}</div>}
                   </div>
                 );
