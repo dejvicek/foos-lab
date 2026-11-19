@@ -885,6 +885,8 @@ td.rank { width: 1%; white-space: nowrap; }
 
 /* Hranice pořadí (3 tréninky): čárkovaná čára v tabulce, pod ní šedě s tečkami postupu; vysvětlení jednou pod obdobím. */
 .wrap tr.cutoff td { padding: 0; height: 0; border-top: 2px dashed var(--control); border-bottom: 0; }
+/* Nikdo nad čarou (všichni mají málo dat): čára hned pod záhlavím by nic neoddělovala – skrýt. */
+.wrap tr.cutoff:first-child td { border-top: 0; }
 .wrap tr.low-data .player-link { color: var(--muted); }
 /* Rozdíl +/− barevně i pod čarou, jako v souhrnu tréninku (19. 11. 2026, *rozhodnutí uživatele*). */
 .low-data td.pos { color: var(--felt); }
