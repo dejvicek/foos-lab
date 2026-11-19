@@ -1287,6 +1287,9 @@ button.pr-ic[aria-expanded='true'] { color: var(--felt); }
 .tl-pt { stroke: var(--surface); stroke-width: 1.5; }
 .tl-pt.side-a, .tl-fill.side-a { fill: var(--gold); }
 .tl-pt.side-b, .tl-fill.side-b { fill: var(--side-b); }
+.tl-pt.pl-0 { fill: var(--gold); }
+.tl-pt.pl-1 { fill: var(--side-b); }
+.tl-pt.pl-2 { fill: var(--ink); }
 .tl-loss-pt { fill: var(--surface); stroke: var(--warn); stroke-width: 2; }
 .tl-tax-step { stroke: var(--warn); stroke-width: 2.6; stroke-dasharray: 3 2; }
 .tl-tax-ring { fill: none; stroke: var(--warn); stroke-width: 1.6; }

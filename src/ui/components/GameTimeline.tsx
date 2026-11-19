@@ -144,10 +144,8 @@ export function MatchTimeline({ match: m, events, from, to, names }: { match: Ma
   return <MatchCurve {...props} />;
 }
 
-const drillSummary = (r: DrillRow) =>
-  `${r.marks.filter(Boolean).length}/${r.marks.length}` +
-  (r.streak && r.streak.length > 1 ? ` · nejdelší série ${r.streak.length}` : '') +
-  (r.marks.length >= 4 ? ` · 1. půlka ${r.halves[0]}, 2. půlka ${r.halves[1]}` : '');
+/** Legenda cvičení: jen povedené z pokusů (19. 11. 2026, *rozhodnutí uživatele*; bez série a půlek). */
+const drillSummary = (r: DrillRow) => `${r.marks.filter(Boolean).length}/${r.marks.length}`;
 
 /** Barva hráče v cvičení: 1. zlatá, 2. tmavá, další černá (čárkovaně v křivce). */
 const playerCls = (i: number) => `pl-${Math.min(i, 2)}`;
@@ -192,13 +190,12 @@ function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: numb
               className={`tl-pline ${playerCls(i)}`}
               points={[[x(0), y(0)], ...r.running.map((h, a) => [x(a + 1), y(h)])].map((pt) => pt.map((v) => v.toFixed(1)).join(',')).join(' ')}
             />
-            {r.marks.map((ok, a) =>
-              ok ? null : (
-                <circle key={a} className="tl-loss-pt" cx={x(a + 1)} cy={y(r.running[a])} r={3.5}>
-                  <title>{`${names[p] ?? '?'}, ${a + 1}. pokus nepovedený`}</title>
-                </circle>
-              ),
-            )}
+            {/* Povedený pokus = tečka v barvě hráče, nepovedený = červené kolečko (19. 11. 2026). */}
+            {r.marks.map((ok, a) => (
+              <circle key={a} className={ok ? `tl-pt ${playerCls(i)}` : 'tl-loss-pt'} cx={x(a + 1)} cy={y(r.running[a])} r={ok ? 3 : 3.5}>
+                <title>{`${names[p] ?? '?'}, ${a + 1}. pokus ${ok ? 'povedený' : 'nepovedený'}`}</title>
+              </circle>
+            ))}
           </g>
         ))}
         {ends.map((e) => (
