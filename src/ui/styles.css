@@ -762,9 +762,9 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-card.st-playing { outline: 2px solid var(--felt); outline-offset: -2px; }
 .round-card.mine-row { box-shadow: inset 5px 0 0 var(--gold); }
 .tile-head { display: grid; gap: 3px; padding: 10px 12px 6px; color: var(--ink); }
-/* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed, formát (BO) vpravo. */
+/* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed (zlatě), formát (BO) vpravo. Číslo stolu taky zlatě. */
 .tile-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: baseline; }
-.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; }
+.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--felt); }
 .tile-fmt { justify-self: end; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .tile-time { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; justify-self: start; }
 .tile-sub { color: var(--muted); font-size: 12px; }
@@ -775,7 +775,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
 /* Číslo stolu: velká číslice přes oba řádky zápasu, svislá čára k zápasu (19. 11. 2026, bez ikonky stolu). */
 .table-no { display: grid; justify-items: center; align-content: center; gap: 1px; align-self: stretch; padding-right: 6px; border-right: 1px solid var(--line); color: var(--muted); }
-.table-no b { font-size: 24px; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.table-no b { font-size: 24px; font-weight: 800; line-height: 1; color: var(--felt); font-variant-numeric: tabular-nums; }
 .round-card.st-done .table-no b { color: var(--muted); }
 .tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
 .tile-entry { border-top: 1px solid var(--line); padding: 8px 10px 10px; }
