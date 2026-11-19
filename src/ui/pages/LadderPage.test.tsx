@@ -78,6 +78,9 @@ describe('stránka Žebříček', () => {
     const logo = within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('link', { name: 'Foos Lab – úvodní stránka' });
     expect(logo).toHaveAttribute('href', '#/trainings');
     expect(logo).toHaveTextContent(`Foos Lab${APP_VERSION}`); // verze vedle názvu
+    // na telefonu je logo nahoře zvlášť a vede taky na úvod (19. 11. 2026)
+    const mobile = document.querySelector('a.nav-brand-mobile');
+    expect(mobile).toHaveAttribute('href', '#/trainings');
     await user.click(logo);
     expect(window.location.hash).toBe('#/trainings');
     expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();

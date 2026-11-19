@@ -124,11 +124,11 @@ export function MainNav({
       })}
       {onSignOut && (
         <span className="nav-user">
-          {/* Na telefonu je logo dole skryté – verze je tady (jen tam) */}
-          <span className="nav-brand-mobile" aria-hidden="true">
+          {/* Na telefonu je logo dole skryté – tady (jen tam) s verzí; klik vede na úvod jako na notebooku (19. 11. 2026). */}
+          <a className="nav-brand-mobile" href={toHash({ page: 'trainings' })} aria-label="Úvodní stránka">
             <BrandMark />
             <VersionTag />
-          </span>
+          </a>
           {myName && <span className="nav-name">{myName}</span>}
           <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
