@@ -3,7 +3,7 @@ import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
 import { railClass, railLine, type RoundStatus } from '../roundState';
-import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
+import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
@@ -223,7 +223,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     {/* Čas vlevo, název uprostřed, formát vpravo (19. 11. 2026). */}
                     <span className="tile-top">
                       <span className="tile-time">{time}</span>
-                      <span className="tile-name">{rowName(row, sec.id)}</span>
+                      <span className="tile-name">{keepLast(rowName(row, sec.id))}</span>
                       <span className="tile-fmt" title={rowFormat(row) ?? undefined}>
                         {rowFormat(row, true)}
                       </span>

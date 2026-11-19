@@ -33,6 +33,9 @@ export function rowMinutes(s: Schedule, durationMin?: number): Map<string, numbe
 }
 
 /** Název disciplíny řádku: pravidlo bez délky („Normální leg“, „Zeď“); simulace „Simulace · 1. vlna“. */
+/** Krátké poslední slovo („varianta 1“, „Start 0:3“) nezůstane samo na řádku – pevná mezera před ním (19. 11. 2026). */
+export const keepLast = (s: string): string => s.replace(/ (\S{1,3})$/, '\u00a0$1');
+
 export function rowName(row: ScheduleRow, sectionId?: string): string {
   if (row.discipline === 'sim' || sectionId === 'sim') return `Simulace · ${row.label}`;
   // Formát zápasu (BO3 do 5) je vedle délky kola, ne v názvu (19. 11. 2026).

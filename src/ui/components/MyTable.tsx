@@ -6,7 +6,7 @@ import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
 import { CompactCell, Names } from './TrainingTable';
 import { TableNo } from './TableNo';
 import { flatRows, rowKey } from '../now';
-import { rowFormat, rowMinutes, rowName } from '../scheduleView';
+import { keepLast, rowFormat, rowMinutes, rowName } from '../scheduleView';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, GameProgress, hasRoundHelp, RoundHelp, type TapEntry, type TapSolo } from './BlockEntry';
@@ -147,7 +147,7 @@ export function MyTable(props: Props) {
     <RoundTileHead
       key={j}
       a={list[j]}
-      name={rowName(list[j].row, secOf(list[j].row)?.id)}
+      name={keepLast(rowName(list[j].row, secOf(list[j].row)?.id))}
       format={rowFormat(list[j].row, true)}
       min={minutes.get(keyOf(list[j].row))}
       startTime={training.startTime}

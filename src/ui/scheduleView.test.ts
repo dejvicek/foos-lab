@@ -1,7 +1,7 @@
 import { buildSchedule } from '../domain/schedule';
 import type { Training } from '../domain/types';
 import { flatRows, rowKey } from './now';
-import { collapsedDone, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub } from './scheduleView';
+import { collapsedDone, keepLast, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub } from './scheduleView';
 import type { RoundStatus } from './roundState';
 
 const ids = Array.from({ length: 8 }, (_, i) => `p${i + 1}`);
@@ -38,6 +38,12 @@ describe('rozpis očima hráče (18. 11. 2026)', () => {
     expect(rowFormat(sim, true)).toMatch(/^BO\d+( do \d+)?$/); // krátce do hlavičky dlaždice
     expect(rowSub(20, sim, null, false)).toBe('20 min');
     expect(rowFormat(row(1))).toBeNull(); // výchozí formát se nepíše
+  });
+
+  it('krátké poslední slovo zůstane u předchozího (19. 11. 2026)', () => {
+    expect(keepLast('Penalta z místa proti brankáři – varianta 1')).toBe('Penalta z místa proti brankáři – varianta\u00a01');
+    expect(keepLast('Start 0:3')).toBe('Start\u00a00:3');
+    expect(keepLast('Přihrávky na pětce')).toBe('Přihrávky na pětce');
   });
 
   it('kde jsem: hraju u stolu, mám volno, nebo nejsem v tréninku', () => {

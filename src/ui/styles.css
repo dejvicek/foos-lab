@@ -403,7 +403,7 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan tr.mine-row.st-playing > td:first-child { box-shadow: inset 5px 0 0 var(--gold), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
 .plan tr.st-playing:not(.mine-row):not(.break) > td:first-child { box-shadow: inset 2px 0 0 var(--felt), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
 .me-name { font-weight: 800; color: var(--felt); }
-.row-name { display: block; font-weight: 800; font-size: 14.5px; line-height: 1.25; }
+.row-name { display: block; font-weight: 800; font-size: 14.5px; line-height: 1.25; text-wrap: balance; }
 /* Pauza: výrazný šrafovaný pruh */
 .plan tr.pause-row > td, .round-break.pause {
   background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 10px, var(--surface) 10px 20px);
@@ -791,7 +791,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-head { display: grid; gap: 3px; padding: 10px 12px 6px; color: var(--ink); }
 /* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed (zlatě), formát (BO) vpravo. Číslo stolu taky zlatě. */
 .tile-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: baseline; }
-.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--felt); }
+.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--felt); text-wrap: balance; }
 .tile-fmt { justify-self: end; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .tile-time { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; justify-self: start; }
 .tile-sub { color: var(--muted); font-size: 12px; }
