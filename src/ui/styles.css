@@ -718,7 +718,8 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .next-bar .why { font-size: 12.5px; }
 .next-bar.ready { background: var(--gold); color: var(--gold-ink); }
 .next-bar.ready .k, .next-bar.ready .why { opacity: 0.8; }
-.next-bar.wait { background: var(--surface); border: 2px dashed var(--dc, var(--gold)); }
+/* Další kolo čeká = světlý rám jako neodehrané kolo na ose (19. 11. 2026, *rozhodnutí uživatele*). */
+.next-bar.wait { background: var(--surface); border: 2px dashed color-mix(in srgb, var(--dc, var(--gold)) 35%, transparent); }
 /* Druh kola jako v kroku Disciplíny: levý pruh karty v Moje hry a čárkovaný rám dalšího kola (19. 11. 2026). */
 .my-table .rk-drill { --dc: var(--k-drill); }
 .my-table .rk-match { --dc: var(--k-match); }
