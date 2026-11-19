@@ -251,10 +251,12 @@ describe('tabulka tréninku', () => {
     expect(rowOf('1. kolo')).toHaveTextContent('H5');
   });
 
-  it('n=8, t=4: kolo 1 má volné stoly 3 a 4', async () => {
+  it('n=8, t=4: kolo 1 má volné stoly 3 a 4 – prázdné, bez „volný“ (19. 11. 2026)', async () => {
     render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    expect(within(rowOf('1. kolo')).getAllByText('volný')).toHaveLength(2);
+    expect(within(rowOf('1. kolo')).queryByText('volný')).toBeNull();
+    expect(rowOf('1. kolo').querySelectorAll('td.free')).toHaveLength(2);
+    expect([...rowOf('1. kolo').querySelectorAll('td.free')].every((td) => td.textContent === '')).toBe(true);
   });
 });
 

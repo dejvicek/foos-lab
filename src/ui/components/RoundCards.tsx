@@ -128,19 +128,22 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                 );
               }
               const place = placeOf(row, me);
-              // Řádky stolů a Volno; sbalená dlaždice ukazuje jen ten, kde jsem.
+              // Řádky stolů a Volno; sbalená dlaždice ukazuje jen ten, kde jsem. Volné stoly se neukazují (19. 11. 2026).
               const lines = [
-                ...row.cells.map((c, j) => {
-                  const id = c ? (c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players)) : '';
-                  const has = !!c && hasProgress(training, id, c.type === 'match' ? c.match : undefined);
+                ...row.cells.flatMap((c, j) => {
+                  if (!c) return [];
+                  const id = c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players);
+                  const has = hasProgress(training, id, c.type === 'match' ? c.match : undefined);
                   const pk = `${key}|${j}`;
-                  return {
+                  return [{
                     mine: (place.kind === 'play' || place.kind === 'ref') && place.table === j + 1,
                     node: (
                       <div key={j} className="tile-line">
                         <span className="tile-row">
                           <b>Stůl {j + 1}</b>
-                          <span>{c ? <CompactCell cell={c} t={training} names={names} me={me} /> : <span className="free">volný</span>}</span>
+                          <span>
+                            <CompactCell cell={c} t={training} names={names} me={me} />
+                          </span>
                           {c && (has || manage) && (
                             <span className="cell-ics">
                               {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
@@ -184,7 +187,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         )}
                       </div>
                     ),
-                  };
+                  }];
                 }),
                 ...(row.waiting.length
                   ? [

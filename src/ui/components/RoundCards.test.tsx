@@ -55,6 +55,9 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     expect(t).toHaveAttribute('aria-expanded', 'true');
     expect(card).toHaveTextContent('Stůl 1');
     expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4' })).toBeInTheDocument();
+    // volné stoly se v kolech neukazují (19. 11. 2026)
+    expect(card).not.toHaveTextContent('volný');
+    expect(card).not.toHaveTextContent('Stůl 3');
     expect(card).not.toHaveClass('stacked');
   });
 

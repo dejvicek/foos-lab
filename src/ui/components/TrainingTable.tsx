@@ -428,7 +428,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const pk = `${key}|${j}`;
                         return (
                           <td key={j} className={c ? (has || manage ? 'has-prog' : undefined) : 'free'}>
-                            {c ? <CompactCell cell={c} t={training} names={names} me={me} /> : 'volný'}
+                            {c && <CompactCell cell={c} t={training} names={names} me={me} />}
                             {c && (has || manage) && (
                               <span className="cell-ics">
                                 {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
