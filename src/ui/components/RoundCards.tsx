@@ -146,7 +146,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         <span className="tile-row">
                           <TableNo n={j + 1} />
                           <span>
-                            <CompactCell cell={c} t={training} names={names} me={me} />
+                            <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />
                           </span>
                           {c && (has || manage) && (
                             <span className="cell-ics">

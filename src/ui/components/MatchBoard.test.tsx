@@ -47,4 +47,14 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     expect(container.querySelectorAll('.mb-sc span.run')).toHaveLength(2);
     expect(container.querySelector('.mb-nm.win')).toBeNull();
   });
+
+  it('stanoviště se stejným názvem jako kolo (i s variantou) se pod hráči neopakuje; jiné ano (19. 11. 2026)', () => {
+    const g = { type: 'group' as const, players: ['a1', 'b1'], station: 'Clearing' } as never;
+    const { container, rerender } = render(<CompactCell cell={g} t={t()} names={names} roundName="Clearing – varianta 1" />);
+    expect(container).not.toHaveTextContent('Clearing');
+    rerender(<CompactCell cell={g} t={t()} names={names} roundName="Clearing" />);
+    expect(container).not.toHaveTextContent('Clearing');
+    rerender(<CompactCell cell={g} t={t()} names={names} roundName="Stanoviště, rotace 1" />);
+    expect(container).toHaveTextContent('Clearing');
+  });
 });

@@ -118,14 +118,15 @@ export function Names({ ids, names, me, sep = ' + ' }: { ids: PlayerId[]; names:
   );
 }
 
-export function CompactCell({ cell, t, names, me = null }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null }) {
+/** `roundName`: název kola – stanoviště se stejným názvem se pod hráči neopakuje (19. 11. 2026). */
+export function CompactCell({ cell, t, names, me = null, roundName }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null; roundName?: string }) {
   if (cell.type === 'group') {
     return (
       <>
         <span className="cell-names">
           <Names ids={cell.players} names={names} me={me} sep=", " />
         </span>
-        {cell.station && <span className="cell-sub">{cell.station}</span>}
+        {cell.station && !(roundName === cell.station || roundName?.startsWith(`${cell.station} – `)) && <span className="cell-sub">{cell.station}</span>}
       </>
     );
   }
@@ -429,7 +430,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const pk = `${key}|${j}`;
                         return (
                           <td key={j} className={c ? (has || manage ? 'has-prog' : undefined) : 'free'}>
-                            {c && <CompactCell cell={c} t={training} names={names} me={me} />}
+                            {c && <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />}
                             {c && (has || manage) && (
                               <span className="cell-ics">
                                 {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}

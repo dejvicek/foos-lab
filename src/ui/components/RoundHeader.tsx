@@ -2,7 +2,7 @@ import { discipline } from '../../domain/disciplines';
 import { legCap, legTarget, winsByTwo } from '../../domain/legState';
 import { nextBreak, rowType, type ProgressSeg } from '../../domain/progress';
 import type { Assignment } from '../../domain/my';
-import { clockAt, soloMetric } from '../../domain/solo';
+import { clockAt } from '../../domain/solo';
 import type { Match, PlayerId } from '../../domain/types';
 
 /**
@@ -35,7 +35,8 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   if (a.group) {
     const c = a.group;
     if (c.discipline === 'warmup') return 'Rozcvička podle časovače, každý sám.';
-    return c.metric ? `Počítají se ${soloMetric(c.metric).what}.` : (a.row.rule ?? '');
+    // Co se počítá, je v názvu kola – neopakuje se (19. 11. 2026).
+    return c.metric ? '' : (a.row.rule ?? '');
   }
   if (!m) return a.row.rule ?? '';
   if (m.block === 'sim') return a.row.rule ? `Simulace ligového kola, ${a.row.rule}.` : 'Simulace ligového kola.';

@@ -729,6 +729,8 @@ button.my-nextcard .open {
 .my-head .tile-name { margin: 0; font-size: 18px; }
 .my-head .my-rule { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ink); }
 .my-table .entry-head { display: none; }
+/* Název cvičení a co se počítá je v hlavičce kola – nad počítadlem se neopakuje (19. 11. 2026). */
+.my-table .mirror-metric, .my-table .entry-metric { display: none; }
 button.my-nextcard .tile-head { padding: 0; }
 
 /* Zamčené / dohrané zrcadlo (18. 11. 2026): proč nejde zapisovat a co udělat. */
