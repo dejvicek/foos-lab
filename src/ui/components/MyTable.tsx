@@ -133,7 +133,6 @@ export function MyTable(props: Props) {
   // Kam vede „Otevřít“: na hru, která je na řadě, jinak na další kolo.
   const target = activeIdx > i ? activeIdx : i + 1 < list.length ? i + 1 : null;
   const finished = a.role !== 'wait' && !!myItemId && ended(a);
-  const total = segs.filter((x) => x.kind === 'round').length;
   const minutes = rowMinutes(schedule, training.format === 'custom' ? training.durationMin : undefined);
   const keyOf = (row: Assignment['row']) => {
     const ref = flatRows(schedule).find((r) => schedule.sections[r.section].rows[r.row] === row);
@@ -148,8 +147,6 @@ export function MyTable(props: Props) {
       name={rowName(list[j].row, secOf(list[j].row)?.id)}
       format={rowFormat(list[j].row, true)}
       min={minutes.get(keyOf(list[j].row))}
-      current={j}
-      total={total}
       startTime={training.startTime}
       me={playerId}
       inline={inline}

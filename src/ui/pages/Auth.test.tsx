@@ -167,7 +167,7 @@ describe('přihlášení', () => {
     });
     // dohraný leg: přes zrcadlo Dohráno a Potvrdit konec; pak přechod s kartou dalšího kola (18. 11. 2026)
     expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
-    const count = within(mine).getByText(/^Kolo \d+ z/).textContent;
+    const count = within(mine).getByRole('group', { name: /^Kolo \d+ z/ }).getAttribute('aria-label');
     for (let i = 0; i < 4; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     expect(within(mine).getByText('Dohráno 6:0 ✓')).toBeInTheDocument();
     expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull(); // nejdřív potvrdit konec
@@ -176,7 +176,7 @@ describe('přihlášení', () => {
     expect(within(mine).getByRole('status')).toHaveTextContent(/dohráno · 6:0 · vyhráli jste/);
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     await user.click(within(mine).getByRole('button', { name: /^Otevřít/ }));
-    expect(within(mine).getByText(/^Kolo \d+ z/).textContent).not.toBe(count);
+    expect(within(mine).getByRole('group', { name: /^Kolo \d+ z/ }).getAttribute('aria-label')).not.toBe(count);
   });
 
   it('admin: resetuje heslo hráče na přezdívku', async () => {

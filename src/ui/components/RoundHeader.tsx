@@ -116,15 +116,13 @@ export function MyTimeline({
 
 /**
  * Hlavička kola v Moje hry stejně jako dlaždice kola v Rozpisu (19. 11. 2026, *rozhodnutí uživatele*): čas vlevo,
- * název disciplíny uprostřed (zlatě), formát vpravo; pod tím „Kolo 2 ze 14 · 8 min“ a pravidlo jednou větou.
+ * název disciplíny uprostřed (zlatě), formát vpravo; pod tím délka kola a pravidlo jednou větou.
  */
 export function RoundTileHead({
   a,
   name,
   format,
   min,
-  current,
-  total,
   startTime,
   me,
   inline,
@@ -133,8 +131,6 @@ export function RoundTileHead({
   name: string;
   format: string | null;
   min?: number;
-  current: number;
-  total: number;
   startTime: string;
   me: PlayerId;
   inline?: boolean;
@@ -149,10 +145,8 @@ export function RoundTileHead({
         <Name className="tile-name">{name}</Name>
         <span className="tile-fmt">{format}</span>
       </span>
-      <span className="tile-sub">
-        Kolo {current + 1} {zeOf(total)} {total}
-        {min ? ` · ${min} min` : ''}
-      </span>
+      {/* „Kolo 2 ze 14“ ukazuje časová osa nahoře – tady jen délka (19. 11. 2026). */}
+      {min ? <span className="tile-sub">{min} min</span> : null}
       {roundRule(a, me) && <Line className="my-rule">{roundRule(a, me)}</Line>}
     </Box>
   );
