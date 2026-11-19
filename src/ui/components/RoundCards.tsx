@@ -98,30 +98,34 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     <span className="rb-top">
                       <span className="rb-time">{time}</span>
                       <span className="rb-name">{row.label}</span>
-                      <span className="rb-min">{!editable && min && row.label === 'Pauza' ? `${min} min` : ''}</span>
-                    </span>
-                    {editable && (
-                      <span className="rb-edit">
-                        <select aria-label="Délka pauzy" value={breaks!.list[bi!].min} onChange={(e) => breaks!.setMin(bi!, Number(e.target.value))}>
-                          {BREAK_OPTIONS.map((m) => (
-                            <option key={m} value={m}>
-                              {m} min
-                            </option>
-                          ))}
-                        </select>
-                        {breaks!.movable(bi!) && (
-                          <>
-                            <button type="button" className="icon" aria-label="Pauzu o kolo dřív" disabled={!breaks!.canStep(bi!, -1)} onClick={() => breaks!.step(bi!, -1)}>
-                              ↑
-                            </button>
-                            <button type="button" className="icon" aria-label="Pauzu o kolo později" disabled={!breaks!.canStep(bi!, 1)} onClick={() => breaks!.step(bi!, 1)}>
-                              ↓
-                            </button>
-                            <button type="button" className="link" aria-label="Odebrat pauzu" onClick={() => breaks!.remove(bi!)}>
-                              odebrat
-                            </button>
-                          </>
+                      <span className="rb-min">
+                        {editable ? (
+                          // Délka pauzy vpravo – na místě délky u hráče (19. 11. 2026).
+                          <select aria-label="Délka pauzy" value={breaks!.list[bi!].min} onChange={(e) => breaks!.setMin(bi!, Number(e.target.value))}>
+                            {BREAK_OPTIONS.map((m) => (
+                              <option key={m} value={m}>
+                                {m} min
+                              </option>
+                            ))}
+                          </select>
+                        ) : min && row.label === 'Pauza' ? (
+                          `${min} min`
+                        ) : (
+                          ''
                         )}
+                      </span>
+                    </span>
+                    {editable && breaks!.movable(bi!) && (
+                      <span className="rb-edit">
+                        <button type="button" className="icon" aria-label="Pauzu o kolo dřív" disabled={!breaks!.canStep(bi!, -1)} onClick={() => breaks!.step(bi!, -1)}>
+                          ↑
+                        </button>
+                        <button type="button" className="icon" aria-label="Pauzu o kolo později" disabled={!breaks!.canStep(bi!, 1)} onClick={() => breaks!.step(bi!, 1)}>
+                          ↓
+                        </button>
+                        <button type="button" className="link" aria-label="Odebrat pauzu" onClick={() => breaks!.remove(bi!)}>
+                          odebrat
+                        </button>
                       </span>
                     )}
                     {pauseSlots?.get(key) && <div className="rb-slot">{pauseSlots.get(key)}</div>}
