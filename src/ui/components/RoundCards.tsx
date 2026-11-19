@@ -8,6 +8,7 @@ import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
 import { EditToggle } from './EditToggle';
+import { TableNo } from './TableNo';
 import { drillItemId } from '../../domain/queue';
 import { CompactCell, Names, RailNode, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
@@ -140,7 +141,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     node: (
                       <div key={j} className="tile-line">
                         <span className="tile-row">
-                          <b>Stůl {j + 1}</b>
+                          <TableNo n={j + 1} />
                           <span>
                             <CompactCell cell={c} t={training} names={names} me={me} />
                           </span>
