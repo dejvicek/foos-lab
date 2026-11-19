@@ -177,8 +177,8 @@ const How = ({ children }: { children: ReactNode }) => (
 
 /**
  * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně a jednotně se Zdržovači (19. 11. 2026, *rozhodnutí uživatele*):
- * hned za jménem to, podle čeho se řadí (Rozdíl, Výhry, G+), počet odehraného (Legy) na konci; řadit jde
- * klikem na záhlaví, „#“ vrátí oficiální pořadí. Bez ztrát.
+ * hned za jménem to, podle čeho se řadí: Rozdíl, L+ / L− (vyhrané / prohrané legy, od 19. 11. 2026 místo Výher
+ * a Legů), G+ / G−; řadit jde klikem na záhlaví, „#“ vrátí oficiální pořadí. Bez ztrát.
  */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const [sort, setSort] = useSort();
@@ -188,10 +188,10 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
   const cols: SortCol<Row>[] = [
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
     { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.diff },
-    { key: 'wins', label: 'Výhry', className: 'n', value: (r) => r.wins },
+    { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins },
+    { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.wins, first: 'asc' },
     { key: 'gf', label: <span title="Góly vstřelené">G+</span>, className: 'n', value: (r) => r.gf },
     { key: 'gc', label: <span title="Góly obdržené">G−</span>, className: 'n', value: (r) => r.gc, first: 'asc' },
-    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legs },
   ];
   const items = placeAndSort(rows, [], cols, sort);
   const played = (r: Row) => r.legs > 0 || r.simM > 0;
@@ -221,16 +221,17 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                     <td className={sortedCls(sort, 'name', 'name')}>{names[x.playerId] ?? '?'}</td>
                     <td className={sortedCls(sort, 'diff', diffCls(x.diff, x.diff >= STRONG_PER_TRAINING))}>{signed(x.diff)}</td>
                     <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
+                    <td className={sortedCls(sort, 'lost', 'n')}>{x.legs - x.wins}</td>
                     <td className={sortedCls(sort, 'gf', 'n')}>{x.gf}</td>
                     <td className={sortedCls(sort, 'gc', 'n')}>{x.gc}</td>
-                    <td className={sortedCls(sort, 'legs', 'n')}>{x.legs}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <How>
-            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry a vstřelené góly. U scénářových startů jde do skóre jen to, co se v kole
+            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak vyhrané legy (L+) a vstřelené góly (G+).
+            L− jsou prohrané legy. U scénářových startů jde do skóre jen to, co se v kole
             odehrálo. Při úplné shodě rozhodují výhry v simulaci.
           </How>
         </>

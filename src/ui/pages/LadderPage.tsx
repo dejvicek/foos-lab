@@ -53,9 +53,13 @@ function LadderTable({
   const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
-    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legs, show: (r) => String(r.legs) },
+    // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
+    ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
     { key: 'diff', label: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
-    { key: 'wins', label: avg ? 'Výhry %' : 'Výhry', className: 'n', value: (r) => (avg ? r.winRate : r.wins), show: (r) => (avg ? pct(r.winRate) : String(r.wins)) },
+    avg
+      ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
+      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
+    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
     { key: 'gf', label: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
     { key: 'gc', label: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
     { key: 'loss', label: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
@@ -153,9 +157,10 @@ function LadderTable({
                     </button>
                   </td>
                   <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
-                  <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>
+                  {avg && <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>}
                   <td className={sortedCls(sort, 'diff', ['n', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
                   <td className={sortedCls(sort, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
+                  {!avg && <td className={sortedCls(sort, 'lost', 'n')}>{r.legs - r.wins}</td>}
                   <td className={sortedCls(sort, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
                   <td className={sortedCls(sort, 'gc', 'n')}>{avg ? dec1(r.gcPerLeg) : r.gc}</td>
                   <td className={sortedCls(sort, 'loss', 'n')}>{dash(r.lossPerLeg, (v) => dec1(v))}</td>
@@ -260,7 +265,9 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
     // Jen výhry z odehraných zápasů; remízy (BO2 1:1) se neukazují ani nepočítají (19. 11. 2026, *rozhodnutí uživatele*).
     { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => r.wins },
-    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legWins },
+    // Legy jako L+ / L− (vyhrané / prohrané) jako v souhrnu tréninku (19. 11. 2026).
+    { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.legWins },
+    { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.legWins, first: 'asc' },
     { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.gf - r.gc },
   ];
   const items = placeAndSort(table.ranked, table.lowData, cols, sort);
@@ -279,7 +286,7 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
         <tbody>
           {items.map(({ r, place, ranked: isRanked }, i) => (
             <Fragment key={r.playerId}>
-              {i === firstLow && <Cutoff cols={6} />}
+              {i === firstLow && <Cutoff cols={7} />}
               <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                 <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                 <td className={sortedCls(sort, 'name')}>
@@ -289,7 +296,8 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
                 </td>
                 <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
                 <td className={sortedCls(sort, 'matches', 'n')}>{`${r.wins} / ${r.matches}`}</td>
-                <td className={sortedCls(sort, 'legs', 'n')}>{`${r.legWins} / ${r.legs}`}</td>
+                <td className={sortedCls(sort, 'legs', 'n')}>{r.legWins}</td>
+                <td className={sortedCls(sort, 'lost', 'n')}>{r.legs - r.legWins}</td>
                 <td className={sortedCls(sort, 'diff', ['n', diffTone(r.gf - r.gc, r.legs > 0 && (r.gf - r.gc) / r.legs >= STRONG_PER_LEG)].filter(Boolean).join(' '))}>{signed(r.gf - r.gc)}</td>
               </tr>
             </Fragment>

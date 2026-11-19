@@ -41,14 +41,18 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     expect(within(table).getAllByRole('row').at(-1)).toHaveTextContent('Celkově2:01:0');
   });
 
-  it('Pořadí jednotně se Zdržovači (19. 11. 2026): hned za jménem Rozdíl, Legy na konci; řadit klikem na záhlaví', async () => {
+  it('Pořadí jednotně se Zdržovači (19. 11. 2026): hned za jménem Rozdíl, pak L+ / L− a G+ / G−; řadit klikem na záhlaví', async () => {
     const t = custom({ normal: 2 });
     const s = buildSchedule(t);
     // první kolo dohrané, ostatní nehrané
     const scores = Object.fromEntries(s.matches.filter((m) => m.round === 1).map((m) => [m.id, { ga: 6, gb: 2 }]));
     render(<TrainingSummary schedule={s} scores={scores} attendees={t.attendees} names={names} delays={[]} />);
     const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Rozdíl', 'Výhry', 'G+', 'G−', 'Legy']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Rozdíl', 'L+', 'L−', 'G+', 'G−']);
+    // L+ / L− = vyhrané / prohrané legy (19. 11. 2026): vítěz 1 / 0, poražený 0 / 1
+    const cells = (i: number) => [...within(table).getAllByRole('row')[i].querySelectorAll('td')].slice(3, 5).map((c) => c.textContent);
+    expect(cells(1)).toEqual(['1', '0']);
+    expect(cells(within(table).getAllByRole('row').findIndex((r) => r.textContent?.includes('−4')))).toEqual(['0', '1']);
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('+4');
     // medaile jako v žebříčku: první tři, první řádek podbarvený; kdo neodehrál, bez medaile
     expect(within(table).getAllByTitle(/\. místo$/).map((m) => m.title)).toEqual(['1. místo', '2. místo', '3. místo']);

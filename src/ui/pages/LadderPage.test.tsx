@@ -64,7 +64,10 @@ describe('stránka Žebříček', () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
     const table = await screen.findByRole('table', { name: 'Žebříček' });
-    const diffCell = (t: HTMLElement, name: string) => within(within(t).getAllByRole('row')[rowOf(t, name)]).getAllByRole('cell')[4];
+    const diffCell = (t: HTMLElement, name: string) => {
+      const col = within(t).getAllByRole('columnheader').findIndex((h) => /^Rozdíl/.test(h.textContent ?? ''));
+      return within(within(t).getAllByRole('row')[rowOf(t, name)]).getAllByRole('cell')[col];
+    };
     // Průměr: X +0,4 a Y +1,4 / leg → zlatá; kdo je v minusu → červená
     expect(diffCell(table, 'Xaver')).toHaveClass('pos');
     expect(diffCell(table, 'Yvona')).toHaveClass('pos');
@@ -75,6 +78,12 @@ describe('stránka Žebříček', () => {
     const total = screen.getByRole('table', { name: 'Žebříček' });
     expect(diffCell(total, 'Yvona')).toHaveClass('great');
     expect(diffCell(total, 'Xaver')).toHaveClass('pos');
+    // Celkem: místo Legů a Výher L+ / L− (19. 11. 2026); Průměr má dál Legy a Výhry %
+    const heads = (t: HTMLElement) => within(t).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
+    expect(heads(total)).toEqual(expect.arrayContaining(['L+', 'L−']));
+    expect(heads(total)).not.toContain('Legy');
+    await user.click(screen.getByRole('button', { name: 'Průměr' }));
+    expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(expect.arrayContaining(['Legy', 'Výhry %']));
   });
 
   it('stará česká adresa: Stránka nenalezena, tlačítko vede na úvod', async () => {
@@ -135,7 +144,10 @@ describe('stránka Žebříček', () => {
     // Xaver je i v tabulce Zápasy 1 na 1 (singly klasického tréninku, 19. 11. 2026) – klik v hlavním žebříčku
     await user.click(within(ladder).getByRole('button', { name: 'Xaver' }));
     expect(await screen.findByRole('heading', { name: 'Xaver' })).toBeInTheDocument();
-    const rows = within(screen.getByRole('table', { name: 'Tréninky hráče' })).getAllByRole('row').slice(1);
+    const own = screen.getByRole('table', { name: 'Tréninky hráče' });
+    // Rozdíl, pak L+ / L− jako v souhrnu tréninku (19. 11. 2026)
+    expect(within(own).getAllByRole('columnheader').map((h) => h.textContent).slice(2, 5)).toEqual(['Rozdíl', 'L+', 'L−']);
+    const rows = within(own).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent('27. 10. 2026');
     expect(rows[2]).toHaveTextContent('+6');

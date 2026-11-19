@@ -39,9 +39,10 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
               <tr>
                 <th>Datum</th>
                 <th>Trénink</th>
-                <th className="n">Legy</th>
-                <th className="n">Výhry</th>
+                {/* Rozdíl a vyhrané / prohrané legy jako v souhrnu tréninku (19. 11. 2026). */}
                 <th className="n">Rozdíl</th>
+                <th className="n" title="Vyhrané legy">L+</th>
+                <th className="n" title="Prohrané legy">L−</th>
                 <th className="n">Ztráty / leg</th>
                 <th className="n">Simulace</th>
                 {metrics.map((m) => (
@@ -56,9 +57,9 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                 <tr key={r.trainingId} className="clickable" onClick={() => navigate({ page: 'training', id: r.trainingId })}>
                   <td>{formatDate(r.date)}</td>
                   <td>{MODE_LABEL[r.mode]}</td>
-                  <td className="n">{r.legs}</td>
-                  <td className="n">{r.wins}</td>
                   <td className={diffCls(r.diff, r.diff >= STRONG_PER_TRAINING)}>{signed(r.diff)}</td>
+                  <td className="n">{r.wins}</td>
+                  <td className="n">{r.legs - r.wins}</td>
                   <td className="n">{r.lossPerLeg === null ? '–' : dec1(r.lossPerLeg)}</td>
                   <td className="n">{r.simM ? `${r.simW} / ${r.simM}` : '–'}</td>
                   {metrics.map((m) => (
