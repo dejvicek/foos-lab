@@ -243,7 +243,8 @@ describe('stránka Disciplíny', () => {
     expect(row('Řetězec')).toHaveTextContent('8 min11 s / míček');
     expect(row('Normální leg')).toHaveTextContent('3 min11 s / míček');
     expect(row('Rozcvička')).toHaveTextContent('10 min');
-  });
+    // prochází všechny disciplíny – na pomalejším CI trvá víc než výchozích 5 s
+  }, 20_000);
 
   it('hráč dobu míčku ani reálný průměr nevidí', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: { playerId: 'id2', isAdmin: false, mustChangePassword: false } });
