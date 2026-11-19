@@ -4,7 +4,7 @@ import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, 
 import { computeMatchLadder, type MatchKindFilter, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
 import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
-import type { PlayerId } from '../../domain/types';
+import type { DisciplineId, PlayerId } from '../../domain/types';
 import type { LadderDrills, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
@@ -249,6 +249,9 @@ function SoloTable({
   );
 }
 
+/** Název tabulky zápasů podle disciplín: Normální leg ve čtyřhře = „2v2“ (singl jsou Jedničky), 19. 11. 2026. */
+const matchTableName = (id: DisciplineId) => (id === 'normal' ? '2v2' : discipline(id).name);
+
 /** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
   const [sort, setSort] = useSort();
@@ -264,7 +267,7 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
   const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
-      <table aria-label={discipline(table.discipline).name} className="solo-table">
+      <table aria-label={matchTableName(table.discipline)} className="solo-table">
         <thead>
           <tr>
             <RankTh sort={sort} onReset={() => setSort(null)} />
@@ -485,13 +488,13 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
               : matchKind === 'doubles'
                 ? 'Čtyřhry z klubu (i simulace); výhra se počítá oběma hráčům dvojice.'
                 : 'Singly i čtyřhry z klubu (i simulace) a zápasy z vlastních tréninků ve dvou.'}{' '}
-            Normální leg v singlu je Jedničky. Víc vyhraných je lépe.
+            Normální leg v singlu jsou Jedničky, ve čtyřhře 2v2. Víc vyhraných je lépe.
           </p>
           {!matchTables.length && <p className="note">V tomhle období žádné takové zápasy nejsou.</p>}
           <div className="solo-grid">
             {matchTables.map((t) => (
               <section key={t.discipline} className="solo-block">
-                <h3>{discipline(t.discipline).name}</h3>
+                <h3>{matchTableName(t.discipline)}</h3>
                 <PracticeMatchTable table={t} name={name} open={open} />
               </section>
             ))}

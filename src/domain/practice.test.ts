@@ -358,7 +358,7 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     expect([plain, tax, start, sim].every(Boolean)).toBe(true);
     const scores = { [plain.id]: { ga: 6, gb: 5 }, [tax.id]: { ga: 4, gb: 6 }, [start.id]: { ga: 4, gb: 3 }, [sim.id]: { ga: 6, gb: 2 } };
     const tables = computeMatchLadder([{ ...classic, scores }], null, null, 3);
-    expect(tables.map((x) => x.discipline).sort()).toEqual(['lossTax', 'singles', 'start03']);
+    expect(tables.map((x) => x.discipline)).toEqual(['singles', 'lossTax', 'start03']);
     const t1 = tables.find((x) => x.discipline === 'singles')!;
     const ones = [...t1.lowData, ...t1.ranked];
     // Normální leg i simulace v Jedničkách
@@ -382,7 +382,8 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     // výhra oběma hráčům dvojice
     for (const p of plainD.sideA) expect(rows.find((r) => r.playerId === p)!.wins).toBeGreaterThan(0);
     expect(computeMatchLadder([t], null, null, 3, 'singles').map((x) => x.discipline)).toEqual(['singles']);
-    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline).sort()).toEqual(['normal', 'singles']);
+    // Jedničky nahoře před 2v2, stejné pořadí jako v 1 na 1
+    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline)).toEqual(['singles', 'normal']);
   });
 
   it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {

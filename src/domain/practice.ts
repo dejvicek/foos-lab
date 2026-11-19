@@ -383,7 +383,8 @@ export function computeMatchLadder(trainings: Training[], from: string | null, t
         }
     }
   }
-  const order = DISCIPLINES.map((d) => d.id);
+  // Jedničky (singl Normálního legu) nahoře hned před 2v2 – v 1 na 1 i 2 na 2 stejné pořadí disciplín (19. 11. 2026).
+  const order: DisciplineId[] = ['singles', ...DISCIPLINES.map((d) => d.id).filter((id) => id !== 'singles')];
   return [...acc.entries()]
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([discipline, table]) => {
