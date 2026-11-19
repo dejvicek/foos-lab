@@ -328,7 +328,7 @@ export interface PracticeMatchRow {
   legWins: number;
   gf: number;
   gc: number;
-  /** (výhry + ½ remízy) / zápasy */
+  /** výhry / zápasy (remíza se nepočítá, 19. 11. 2026) */
   rate: number;
 }
 
@@ -339,8 +339,8 @@ export interface PracticeMatchTable {
 }
 
 /**
- * Žebříček Vlastní – zápasy 1 na 1 (12. 11. 2026): pro každou zápasovou disciplínu vyhrané zápasy (BO2
- * remíza = půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
+ * Žebříček Vlastní – zápasy 1 na 1 (12. 11. 2026): pro každou zápasovou disciplínu vyhrané zápasy (remíza
+ * BO2 1:1 se od 19. 11. 2026 nepočítá jako výhra ani půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
  * vyhraných zápasů → rozdíl skóre na leg → tréninky; pod 3 tréninky „málo dat“ jako jinde.
  */
 export function computePracticeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number): PracticeMatchTable[] {
@@ -383,7 +383,7 @@ export function computePracticeMatchLadder(trainings: Training[], from: string |
   return [...acc.entries()]
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([discipline, table]) => {
-      const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? (r.wins + r.draws / 2) / r.matches : 0 }));
+      const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? r.wins / r.matches : 0 }));
       const perLeg = (r: PracticeMatchRow) => (r.legs ? (r.gf - r.gc) / r.legs : 0);
       rows.sort((a, b) => b.rate - a.rate || perLeg(b) - perLeg(a) || b.trainings - a.trainings || (a.playerId < b.playerId ? -1 : 1));
       return { discipline, ranked: rows.filter((r) => r.trainings >= minTrainings), lowData: rows.filter((r) => r.trainings < minTrainings) };

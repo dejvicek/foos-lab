@@ -255,9 +255,8 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
   const cols: SortCol<PracticeMatchRow>[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
-    { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => r.wins + r.draws / 2 },
-    // Remízy (BO2 1:1) ve vlastním sloupci (19. 11. 2026, *rozhodnutí uživatele*; dřív „(+1 rem.)“ u zápasů).
-    { key: 'draws', label: 'Remízy', className: 'n', value: (r) => r.draws },
+    // Jen výhry z odehraných zápasů; remízy (BO2 1:1) se neukazují ani nepočítají (19. 11. 2026, *rozhodnutí uživatele*).
+    { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => r.wins },
     { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legWins },
     { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.gf - r.gc },
   ];
@@ -277,7 +276,7 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
         <tbody>
           {items.map(({ r, place, ranked: isRanked }, i) => (
             <Fragment key={r.playerId}>
-              {i === firstLow && <Cutoff cols={7} />}
+              {i === firstLow && <Cutoff cols={6} />}
               <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                 <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                 <td className={sortedCls(sort, 'name')}>
@@ -287,7 +286,6 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
                 </td>
                 <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
                 <td className={sortedCls(sort, 'matches', 'n')}>{`${r.wins} / ${r.matches}`}</td>
-                <td className={sortedCls(sort, 'draws', 'n')}>{r.draws}</td>
                 <td className={sortedCls(sort, 'legs', 'n')}>{`${r.legWins} / ${r.legs}`}</td>
                 <td className={sortedCls(sort, 'diff', r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n')}>{signed(r.gf - r.gc)}</td>
               </tr>

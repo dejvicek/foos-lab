@@ -243,9 +243,10 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(await screen.findByRole('heading', { name: 'Zápasy 1 na 1' })).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'Goalie war' });
     const rows = within(table).getAllByRole('row').slice(1);
-    // remízy (BO2 1:1) ve vlastním sloupci (19. 11. 2026)
-    expect(within(table).getByRole('columnheader', { name: /Remízy/ })).toBeInTheDocument();
-    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 6)).toEqual(['4', '2 / 4', '1', '5 / 9']);
+    // remíza (BO2 1:1) se nikde neukazuje, v zápasech jen výhry (19. 11. 2026)
+    expect(within(table).queryByRole('columnheader', { name: /Remízy/ })).toBeNull();
+    expect(table).not.toHaveTextContent('rem.');
+    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 5)).toEqual(['4', '2 / 4', '5 / 9']);
     expect(rows[1]).toHaveTextContent(/H2.*4.*1 \/ 4/);
   });
 
