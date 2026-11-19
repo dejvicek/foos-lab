@@ -426,19 +426,18 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 }
 .rail-node.pause i { display: block; width: 3px; height: 9px; border-radius: 1px; background: var(--ink); }
 /* Barvy osy podle druhu kola jako v kroku Disciplíny (19. 11. 2026, *rozhodnutí uživatele*): cvičení · zápasy a scénáře
-   · simulace; odehraná kola světleji, nadcházející plnou barvou. Pauzy a nadpisy sekcí zůstávají šedé. */
+   · simulace; odehraná kola plnou barvou, nadcházející světleji. Pauzy a nadpisy sekcí zůstávají šedé. */
 .has-rail { --dc: var(--muted); }
 .has-rail .rk-drill { --dc: var(--k-drill); }
 .has-rail .rk-match { --dc: var(--k-match); }
 .has-rail .rk-sim { --dc: var(--k-sim); }
-.has-rail .rk.rail, .has-rail .rk.rail-line { --dl: var(--dc); --rt: var(--dl); --rb: var(--dl); }
-.has-rail .rk.rail.st-done, .has-rail .rk.rail-line.on { --dl: color-mix(in srgb, var(--dc) 40%, transparent); }
-.st-done > .rail-node, .st-done .rail-node { background: color-mix(in srgb, var(--dc) 22%, var(--surface)); border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); color: var(--dc); }
-.st-done .rail-node.pause i { background: var(--muted); }
-.rk .rail-node { border-color: var(--dc); color: var(--dc); }
-.rk.st-done .rail-node { border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); }
-.st-playing .rail-node { border-color: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 22%, transparent); }
-.rk.st-playing .rail-node { background: var(--dc); color: var(--surface); }
+.has-rail .rk.rail, .has-rail .rk.rail-line { --dl: color-mix(in srgb, var(--dc) 35%, transparent); --rt: var(--dl); --rb: var(--dl); }
+.has-rail .rk.rail.st-done, .has-rail .rk.rail-line.on { --dl: var(--dc); }
+.st-done > .rail-node, .st-done .rail-node { background: var(--dc); border-color: var(--dc); color: var(--surface); }
+.st-done .rail-node.pause i { background: var(--surface); }
+.rk .rail-node { border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); color: var(--dc); }
+.rk.st-done .rail-node { border-color: var(--dc); color: var(--surface); }
+.st-playing .rail-node, .rk.st-playing .rail-node { border-color: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 22%, transparent); }
 /* Hrané kolo: kroužek bez pulzování (19. 11. 2026, *rozhodnutí uživatele*). */
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
@@ -661,13 +660,13 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .my-table .entry-card { padding: 8px; }
 
 /* ── Moje hry: nadpis kola s průběhem tréninku, přechod mezi koly (18. 11. 2026) ── */
-/* Barva kola jako v kroku Disciplíny (19. 11. 2026): cvičení · zápasy a scénáře · simulace; odehraná světleji. */
+/* Barva kola jako v kroku Disciplíny (19. 11. 2026): cvičení · zápasy a scénáře · simulace; odehraná plnou barvou, další světleji. */
 .prog { display: flex; align-items: flex-end; gap: 2px; height: 20px; padding-top: 9px; }
-.seg { --dc: var(--k-match); display: block; height: 5px; min-width: 4px; border-radius: 2px; position: relative; background: var(--dc); }
+.seg { --dc: var(--k-match); display: block; height: 5px; min-width: 4px; border-radius: 2px; position: relative; background: color-mix(in srgb, var(--dc) 35%, transparent); }
 .seg.t-sim { --dc: var(--k-sim); }
 .seg.t-drill { --dc: var(--k-drill); }
-.seg.done { background: color-mix(in srgb, var(--dc) 40%, transparent); }
-.seg.cur { height: 10px; border-radius: 3px; }
+.seg.done { background: var(--dc); }
+.seg.cur { background: var(--dc); height: 10px; border-radius: 3px; }
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;
