@@ -800,7 +800,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .tile-line .tl-curve { overflow: hidden; }
-.tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: start; }
+.tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: center; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
 /* Číslo stolu: velká číslice přes oba řádky zápasu, svislá čára k zápasu (19. 11. 2026, bez ikonky stolu). */
 .table-no { display: grid; justify-items: center; align-content: center; gap: 1px; align-self: stretch; padding-right: 6px; border-right: 1px solid var(--line); color: var(--muted); }
@@ -812,11 +812,13 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 /* Telefon: linka vlevo od karet; mezera mezi kartami (8px) je součástí linky nad uzlem */
 .round-cards.has-rail { padding-left: 28px; }
 .round-cards.has-rail > .rail, .round-cards.has-rail > .rail-line { position: relative; overflow: visible; --rail-mid: 26px; }
-.round-cards.has-rail > .rail::before, .round-cards.has-rail > .rail-line::before { left: -15px; top: -8px; bottom: 0; }
+/* --bw: rámeček prvku – čára a uzel se počítají od vnitřku rámečku, u karet s rámečkem o 1 px vlevo (19. 11. 2026). */
+.round-cards.has-rail > .round-card, .round-cards.has-rail > .round-break.pause, .round-cards.has-rail > .round-break.editable { --bw: 1px; }
+.round-cards.has-rail > .rail::before, .round-cards.has-rail > .rail-line::before { left: calc(-15px - var(--bw, 0px)); top: calc(-8px - var(--bw, 0px)); bottom: calc(0px - var(--bw, 0px)); }
 .round-cards.has-rail > .round-sec.rail-line::before { top: -16px; bottom: -2px; }
 .round-cards.has-rail > .rail-first::before { top: 18px; }
 .round-cards.has-rail > .rail-last::before { bottom: auto; height: 26px; }
-.round-cards.has-rail > .rail > .rail-node { left: -26px; top: 13px; }
+.round-cards.has-rail > .rail > .rail-node { left: calc(-26px - var(--bw, 0px)); top: 13px; }
 .round-cards.has-rail > .round-break.rail > .rail-node { top: calc(50% - 11px); }
 .round-cards.has-rail > .done-fold.rail > .rail-node { top: 6px; }
 .round-cards.has-rail > .round-break.rail { --rail-mid: 16px; }
