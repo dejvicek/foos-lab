@@ -667,8 +667,9 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .seg.t-sim { --dc: var(--k-sim); }
 .seg.t-drill { --dc: var(--k-drill); }
 .seg.done { background: var(--dc); }
-/* Vyšší dílek = kolo, které hraju / je na řadě; zobrazené kolo jen ▼ (19. 11. 2026, *rozhodnutí uživatele*). */
+/* Vyšší dílek = aktuální kolo (hraju / na řadě plně, čeká světle); zobrazené kolo jen ▼ (19. 11. 2026, *rozhodnutí uživatele*). */
 .seg.live { background: var(--dc); height: 10px; border-radius: 3px; }
+.seg.live.waits:not(.done) { background: color-mix(in srgb, var(--dc) 35%, transparent); }
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;

@@ -419,14 +419,14 @@ describe('Moje hry otevře rozehranou hru', () => {
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     expect(within(mine).getByRole('group', { name: /^Kolo 1 z 3/ })).toBeInTheDocument();
     expect(mine.querySelector('.next-bar.wait')).toHaveTextContent('Čeká se na pauzu – spustí ji organizátor');
-    // další kolo není na řadě: vyšší dílek má dohrané kolo 1; po přepnutí na kolo 2 se posune jen šipka
+    // další kolo čeká: vyšší dílek má ono (světle, „waits“), dohrané kolo 1 jen plnou barvou; přepnutí posune jen šipku
     const seg = (n: number) => within(mine).getByRole('button', { name: new RegExp(`^${n}\\. kolo:`) });
-    expect(seg(1)).toHaveClass('live', 'done', 'cur');
+    expect(seg(1)).toHaveClass('done', 'cur');
+    expect(seg(1)).not.toHaveClass('live');
+    expect(seg(2)).toHaveClass('live', 'waits');
     await userEvent.setup().click(seg(2));
-    expect(seg(1)).toHaveClass('live');
     expect(seg(1)).not.toHaveClass('cur');
-    expect(seg(2)).toHaveClass('cur');
-    expect(seg(2)).not.toHaveClass('live');
+    expect(seg(2)).toHaveClass('cur', 'live', 'waits');
   });
 });
 
