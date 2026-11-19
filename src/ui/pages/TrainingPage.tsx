@@ -20,8 +20,8 @@ import type { ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
 import { usedTables } from '../components/TrainingTable';
-import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
-import { pauseRows, playingRow, roundStates } from '../roundState';
+import { minutesSinceStart, useNow } from '../now';
+import { pauseRows, roundStates } from '../roundState';
 import { trainingRunning } from '../liveTag';
 import { TrainingSummary } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
@@ -102,8 +102,6 @@ export function TrainingPage({
   // Moje hry: výchozí kolo pro hráče bez aktivní hry (podle hodin).
   const since = minutesSinceStart(training.date, training.startTime, now);
   const rounds = schedule && queueInfo ? roundStates(schedule, queueInfo.states, pauseStates(queueInfo.queue, training.playTimes ?? {}, Math.max(tick, Date.now()))) : null;
-  const fallback = schedule ? defaultOpenRow(schedule, training, playingRow(schedule, rounds)) : null;
-  const openKey = expanded ?? (fallback ? rowKey(fallback) : null);
 
   /** Úprava z rozpisu (pauzy): přeplánovat, při ztrátě výsledků se zeptat, uložit. */
   const apply = (input: Training) => {
@@ -426,8 +424,8 @@ export function TrainingPage({
               names={names}
               rounds={rounds}
               pauseSlots={pauseSlots}
-              expanded={manage ? (expanded ?? openKey) : null}
-              onToggle={(key) => setExpanded((expanded ?? openKey) === key ? '' : key)}
+              expanded={manage ? expanded : null}
+              onToggle={(key) => setExpanded(expanded === key ? null : key)}
               onScore={onScore}
               onSolo={onSolo}
               canMatch={canMatch}

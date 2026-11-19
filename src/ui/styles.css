@@ -454,7 +454,6 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .plan tr.break td { color: var(--muted); }
 .plan tr.break .c-time { font-weight: 500; }
 /* Admin / organizátor: tužka rozbalí kolo k zápisu celkového výsledku (19. 11. 2026, místo „zapsat / opravit“). */
-.plan .c-block > button.edit-ic { display: flex; margin: 2px 0 0 -4px; }
 .row-label { font-weight: 600; }
 .cell-sub { display: block; color: var(--muted); font-size: 12px; }
 .cell-names { display: block; }
@@ -771,11 +770,9 @@ button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transpar
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 6px; font-size: 13.5px; align-items: start; }
-.tile-row > button.pr-ic { margin-top: -4px; }
 .tile-line .tl-box { cursor: default; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
 .tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
-.round-card > button.edit-ic { margin: -6px 8px 6px auto; display: flex; }
 .tile-entry { border-top: 1px solid var(--line); padding: 8px 10px 10px; }
 .round-cards .done-fold { display: flex; align-items: center; min-height: 34px; }
 /* Telefon: linka vlevo od karet; mezera mezi kartami (8px) je součástí linky nad uzlem */
@@ -1224,7 +1221,9 @@ button.pr-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; 
 button.pr-ic:hover { color: var(--ink); background: none; }
 button.pr-ic[aria-expanded='true'] { color: var(--felt); }
 .plan td.has-prog { position: relative; padding-right: 34px; }
-.plan td.has-prog > button.pr-ic { position: absolute; top: 4px; right: 4px; }
+/* Ikonky u stolu (graf, tužka) vpravo nahoře pod sebou. */
+.plan td.has-prog > .cell-ics { position: absolute; top: 4px; right: 4px; display: flex; flex-direction: column; gap: 2px; }
+.tile-row > .cell-ics { display: flex; flex-direction: column; gap: 0; margin-top: -4px; }
 .plan tr.prog-row > td { background: var(--surface); padding: 6px 14px 12px; }
 .plan.has-rail tr.prog-row > td { position: relative; padding-left: 34px; }
 .prog-k { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }

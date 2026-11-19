@@ -128,6 +128,8 @@ interface Props {
   onTapSolo?: TapSolo;
   /** Zdržovači: Zahájit / Ukončit u každého stolu; skóre jde zadat až po zahájení. */
   timing?: ItemTiming;
+  /** Jen jeden stůl (index v row.cells) – tužka v rozpisu u konkrétního stolu (19. 11. 2026). */
+  only?: number;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -265,7 +267,7 @@ export function GameProgress({ row, table, training, names }: { row: ScheduleRow
   return <ItemProgress itemId={c.match.id} match={c.match} players={[...c.match.sideA, ...c.match.sideB]} training={training} names={names} />;
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only }: Props) {
   /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
     const id = drillItemId(r, j + 1, players);
@@ -320,7 +322,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     <div className="block-entry">
       <div className="entry-cards">
         {row.cells.map((c, j) => {
-          if (!c) return null;
+          if (!c || (only !== undefined && j !== only)) return null;
           const label = `${row.label}, stůl ${j + 1}`;
           if (c.type === 'match') {
             const m = c.match;
@@ -479,7 +481,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
       </div>
       <div className="entry-foot">
         {scenario && <p className="entry-warn">Zapisuje se stav na stole, startovní góly appka odečte sama.</p>}
-        {unassigned.length > 0 && (
+        {only === undefined && unassigned.length > 0 && (
           <p className="muted">
             {refs.size ? 'Čeká' : (row.waitingLabel ?? waitingLabel)}: {unassigned.map((p) => names[p] ?? '?').join(', ')}
           </p>

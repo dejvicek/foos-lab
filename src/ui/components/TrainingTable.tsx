@@ -336,7 +336,9 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                 const st = rail.get(key);
                 const no = numbers.get(key);
                 const min = minutes.get(key);
-                const open = manage && expanded === key;
+                // Tužka u stolu (19. 11. 2026): otevřený zápis = `${klíč řádku}|${stůl}`, jen ten jeden stůl.
+                const edit = manage && expanded?.startsWith(`${key}|`) ? Number(expanded.split('|')[1]) : null;
+                const open = edit !== null;
                 const progress = manage ? soloProgress(row, training) : null;
                 const place = placeOf(row, me);
                 const bi = row.breakIndex;
@@ -418,7 +420,6 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         <span className="row-name">{rowName(row, sec.id)}</span>
                         {min && <span className="cell-sub">{min} min</span>}
                         {progress && <span className="cell-sub">{progress}</span>}
-                        {manage && <EditToggle open={open} done={st?.state === 'done'} label={row.label} onToggle={() => onToggle(key)} />}
                       </td>
                       {visible.map((j) => {
                         const c = row.cells[j];
@@ -426,9 +427,14 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const has = !!c && hasProgress(training, id, c.type === 'match' ? c.match : undefined);
                         const pk = `${key}|${j}`;
                         return (
-                          <td key={j} className={c ? (has ? 'has-prog' : undefined) : 'free'}>
+                          <td key={j} className={c ? (has || manage ? 'has-prog' : undefined) : 'free'}>
                             {c ? <CompactCell cell={c} t={training} names={names} me={me} /> : 'volný'}
-                            {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                            {c && (has || manage) && (
+                              <span className="cell-ics">
+                                {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                                {manage && <EditToggle open={expanded === pk} done={st?.cells[j] === 'done'} label={`${row.label}, stůl ${j + 1}`} onToggle={() => onToggle(pk)} />}
+                              </span>
+                            )}
                           </td>
                         );
                       })}
@@ -475,6 +481,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                             }}
                             canMatch={canMatch}
                             canSolo={canSolo}
+                            only={edit!}
                           />
                         </td>
                       </tr>

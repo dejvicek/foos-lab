@@ -74,7 +74,7 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     unmount();
     render(<Harness me={null} manage />);
     const card = tile('1. kolo').closest('article')!;
-    await user.click(within(card).getByRole('button', { name: 'Zapsat: 1. kolo' }));
+    await user.click(within(card).getByRole('button', { name: 'Zapsat: 1. kolo, stůl 1' }));
     const cell = within(card).getByRole('group', { name: '1. kolo, stůl 1' });
     expect(within(cell).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vlevo 6' }));

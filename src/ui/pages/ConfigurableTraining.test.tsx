@@ -49,8 +49,8 @@ describe('konfigurovatelný trénink v UI', () => {
     expect(screen.queryByLabelText('Typ tréninku')).toBeNull();
     while (screen.queryByRole('button', { name: /^Další:/ })) await next(user);
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
-    expect(await screen.findByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. kolo$/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. kolo$/ }).closest('tr')).toHaveTextContent('Přihrávky na pětce');
+    expect(await screen.findByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. kolo, stůl 1$/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. kolo, stůl 1$/ }).closest('tr')).toHaveTextContent('Přihrávky na pětce');
     await vi.waitFor(() => expect(repo.snapshot().trainings[0]).toMatchObject({ format: 'custom', durationMin: 180 }));
   });
 
@@ -76,7 +76,7 @@ describe('konfigurovatelný trénink v UI', () => {
 
   it('zápis výsledku zamkne kola; nastavení běžícího tréninku jde otevřít (uložení přegeneruje rozpis)', async () => {
     const { user, repo } = await newTraining(8);
-    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 6\. kolo$/ }));
+    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 6\. kolo, stůl 1$/ }));
     const card = screen.getAllByRole('group').find((g) => g.getAttribute('aria-label')?.startsWith('6. kolo, stůl 1'))!;
     fireEvent.click(within(card).getByRole('button', { name: '6. kolo, stůl 1: góly vlevo 6' }));
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].lockedRounds).toHaveLength(6));
@@ -85,7 +85,7 @@ describe('konfigurovatelný trénink v UI', () => {
 
   it('první výsledek simulace zamkne kola i týmy jedním uložením', async () => {
     const { user, repo } = await newTraining(8);
-    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna$/ }));
+    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna, stůl 1$/ }));
     fireEvent.click(screen.getByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 2' }));
     await vi.waitFor(() => {
       const t = repo.snapshot().trainings[0];
@@ -96,7 +96,7 @@ describe('konfigurovatelný trénink v UI', () => {
 
   it('simulace se zapisuje po legech (18. 11. 2026): BO3 do 6, předvyplnění vítěze, další leg', async () => {
     const { user, repo } = await newTraining(8);
-    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna$/ }));
+    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna, stůl 1$/ }));
     expect(screen.getByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 6' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vpravo 4' }));
     await vi.waitFor(() => {
@@ -116,7 +116,7 @@ describe('konfigurovatelný trénink v UI', () => {
     await user.click(screen.getByRole('button', { name: 'Zahájit trénink' }));
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     expect(repo.snapshot().trainings[0].matchFormats?.sim).toEqual({ bestOf: 5, legTo: 5, finalWinBy2: true, cap: 8 });
-    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna$/ }));
+    await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1\. vlna, stůl 1$/ }));
     expect(screen.getByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 5' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1. vlna, stůl 1, leg 1: góly vlevo 6' })).toBeNull();
   });

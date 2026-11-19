@@ -17,6 +17,7 @@ describe('cvičení v rozpisu: admin / organizátor zapisuje jen celkový výsle
     render(<App repo={repo} />);
     const user = userEvent.setup();
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
+    await user.click(screen.getByRole('button', { name: 'Zapsat: 1. kolo, stůl 1' }));
     const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
     expect(within(card).queryByRole('button', { name: 'Zahájit' })).toBeNull();
     expect(within(card).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
@@ -35,22 +36,20 @@ describe('cvičení v rozpisu: admin / organizátor zapisuje jen celkový výsle
 });
 
 describe('Rozcvička v rozpisu (notebook)', () => {
-  it('karta stolu bez zápisu, kompaktní timer, mimo stůl „Čeká“; rozbalený je zápas s chybějícím zápisem', async () => {
+  it('karta stolu bez zápisu, kompaktní timer; tužka otevře jen ten stůl', async () => {
     window.location.hash = '#/trainings/tw';
     const p9: Player[] = Array.from({ length: 9 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
     const tw: Training = { ...t, id: 'tw', tables: 4, attendees: p9.map((p) => p.id), plan: { warmup: 2, normal: 1 } };
     render(<App repo={memoryRepository({ players: p9, trainings: [tw] })} />);
     const user = userEvent.setup();
     const table = await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    // výchozí rozbalený blok = první s chybějícím zápisem → zápas (Rozcvička nic nezapisuje)
-    expect(screen.getByRole('group', { name: '3. kolo, stůl 1' })).toBeInTheDocument();
-    await user.click(within(table).getByRole('button', { name: 'Zapsat: 1. kolo' }));
+    await user.click(within(table).getByRole('button', { name: 'Zapsat: 1. kolo, stůl 1' }));
     const card = screen.getByRole('group', { name: '1. kolo, stůl 1' });
     expect(within(card).queryAllByRole('textbox')).toHaveLength(0);
     expect(within(card).queryAllByRole('spinbutton')).toHaveLength(0);
     expect(within(card).queryByRole('button', { name: /povedená/ })).toBeNull();
     expect(card).toHaveTextContent('Rozcvička – 7 fází, 8:35');
-    expect(screen.getByText(/^Čeká: /)).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: '1. kolo, stůl 2' })).toBeNull();
     expect(screen.queryByText(/^Počítá: /)).toBeNull();
   });
 });

@@ -141,8 +141,36 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         <span className="tile-row">
                           <b>Stůl {j + 1}</b>
                           <span>{c ? <CompactCell cell={c} t={training} names={names} me={me} /> : <span className="free">volný</span>}</span>
-                          {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                          {c && (has || manage) && (
+                            <span className="cell-ics">
+                              {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                              {manage && <EditToggle open={expanded === pk} done={rs?.cells[j] === 'done'} label={`${row.label}, stůl ${j + 1}`} onToggle={() => onToggle(pk)} />}
+                            </span>
+                          )}
                         </span>
+                        {manage && expanded === pk && (
+                          <div className="tile-entry" onClick={(e) => e.stopPropagation()}>
+                            <BlockEntry
+                              row={row}
+                              waitingLabel={sec.waitingLabel}
+                              training={training}
+                              names={names}
+                              onScore={(id, sc) => {
+                                onScore(id, sc);
+                                const done = finishedByScore(row, training.scores, id, sc);
+                                if (done) autoEnd?.(done);
+                              }}
+                              onSolo={(p, k, v) => {
+                                onSolo(p, k, v);
+                                const done = finishedBySolo(row, training, p, k, v);
+                                if (done) autoEnd?.(done);
+                              }}
+                              canMatch={canMatch}
+                              canSolo={canSolo}
+                              only={j}
+                            />
+                          </div>
+                        )}
                         {has && prog === pk && c && (
                           <div onClick={(e) => e.stopPropagation()}>
                             <ItemProgress
@@ -181,7 +209,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
               const isOpen = tiles[key] ?? mineLines.length === 0;
               const shown = isOpen ? lines : mineLines;
               const more = lines.length > shown.length;
-              const entry = manage && expanded === key;
               const progress = manage ? soloProgress(row, training) : null;
               return (
                 <article key={key} className={['round-card', state, takesPart(place) ? 'mine-row' : '', more ? 'stacked' : ''].filter(Boolean).join(' ')}>
@@ -209,29 +236,6 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                   <div className="tile-rows" onClick={() => setTiles({ ...tiles, [key]: !isOpen })}>
                     {shown.map((x) => x.node)}
                   </div>
-                  {manage && <EditToggle open={entry} done={rs?.state === 'done'} label={row.label} onToggle={() => onToggle(key)} />}
-                  {entry && (
-                    <div className="tile-entry">
-                      <BlockEntry
-                        row={row}
-                        waitingLabel={sec.waitingLabel}
-                        training={training}
-                        names={names}
-                        onScore={(id, sc) => {
-                          onScore(id, sc);
-                          const done = finishedByScore(row, training.scores, id, sc);
-                          if (done) autoEnd?.(done);
-                        }}
-                        onSolo={(p, k, v) => {
-                          onSolo(p, k, v);
-                          const done = finishedBySolo(row, training, p, k, v);
-                          if (done) autoEnd?.(done);
-                        }}
-                        canMatch={canMatch}
-                        canSolo={canSolo}
-                      />
-                    </div>
-                  )}
                 </article>
               );
             })}
