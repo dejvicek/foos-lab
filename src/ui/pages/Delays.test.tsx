@@ -215,9 +215,16 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
 
   it('před zahájením jen Připraven (19. 11. 2026); po připravenosti zrcadlo skóre; nadpis kola s průběhem a startem', async () => {
     const { mine, user } = await openMine();
-    expect(within(mine).getByRole('img', { name: 'Kolo 1 z 3, 0 odehraných, zbývá 2 kola, žádná další pauza' })).toBeInTheDocument();
+    const tl = within(mine).getByRole('group', { name: 'Kolo 1 z 3, 0 odehraných, zbývá 2 kola, žádná další pauza' });
     expect(within(mine).getByRole('heading', { level: 2 })).toHaveTextContent('Normální leg');
     expect(mine).toHaveTextContent('Hraje se do 6.');
+    // jako dlaždice v Rozpisu (19. 11. 2026): stůl jen jednou – velké číslo u zápasu
+    expect(mine.textContent).not.toMatch(/stůl \d/); // dřív „ZÁPAS · STŮL 1“ a „H1: stůl 1, s … proti …“
+    expect(within(mine).getByRole('group', { name: /^H2 \+ H3 vs H4 \+ H1/ })).toBeInTheDocument();
+    // klik na kolo v časové ose ho otevře
+    await user.click(within(tl).getByRole('button', { name: /^3\. kolo:/ }));
+    expect(within(mine).getByText(/^Kolo 3 z 3/)).toBeInTheDocument();
+    await user.click(within(mine).getByRole('button', { name: /^1\. kolo:/ }));
     expect(mine.querySelector('.mirror-stage')).toBeNull();
     expect(within(mine).queryByRole('group', { name: 'Průběh' })).toBeNull();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
@@ -243,11 +250,11 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ })).toBeInTheDocument();
     await user.click(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ }));
-    expect(within(mine).getByText('Kolo 2 z 3')).toBeInTheDocument();
+    expect(within(mine).getByText(/^Kolo 2 z 3/)).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Připraven' })).toBeInTheDocument();
     // šipkou zpět: dohrané kolo normálně – výsledek, Průběh, bez přechodu a karty Otevřít
     await user.click(within(mine).getByRole('button', { name: 'Předchozí kolo' }));
-    expect(within(mine).getByText('Kolo 1 z 3')).toBeInTheDocument();
+    expect(within(mine).getByText(/^Kolo 1 z 3/)).toBeInTheDocument();
     expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
     expect(within(mine).getByRole('group', { name: 'Průběh' })).toBeInTheDocument();
     expect(mine).toHaveTextContent('Leg dohrán 6 : 0 ✓');

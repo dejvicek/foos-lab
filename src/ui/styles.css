@@ -717,6 +717,20 @@ button.my-nextcard .open {
   background: var(--action); color: var(--action-ink); font-size: 18px; font-weight: 800;
 }
 
+/* Moje hry jako dlaždice kola v Rozpisu (19. 11. 2026): klikací časová osa s ‹ ›, karta kola, zápis bez hlavičky stolu. */
+.my-tl { display: flex; align-items: center; gap: 6px; }
+.my-tl > .prog { flex: 1; min-width: 0; height: 28px; padding-top: 12px; }
+.my-tl button.icon { min-width: 40px; min-height: 40px; font-size: 22px; flex: none; }
+.my-tl .prog > button.seg { padding: 0; border: 0; min-height: 0; cursor: pointer; }
+.my-tl .prog > button.seg::after { content: ''; position: absolute; inset: -12px 0 -8px; }
+.my-tl .prog > button.seg:hover:not(.cur) { height: 8px; }
+.my-tl .prog > button.seg:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.my-card { margin: 6px 0 8px; }
+.my-head .tile-name { margin: 0; font-size: 18px; }
+.my-head .my-rule { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ink); }
+.my-table .entry-head { display: none; }
+button.my-nextcard .tile-head { padding: 0; }
+
 /* Zamčené / dohrané zrcadlo (18. 11. 2026): proč nejde zapisovat a co udělat. */
 .mirror-stage { position: relative; }
 .mirror-stage.locked .mirror-half { filter: grayscale(1); opacity: 0.4; }

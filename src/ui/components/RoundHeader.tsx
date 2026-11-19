@@ -1,12 +1,12 @@
 import { discipline } from '../../domain/disciplines';
 import { legCap, legTarget, winsByTwo } from '../../domain/legState';
-import { nextBreak, ROUND_TYPE_NAME, rowType, type ProgressSeg } from '../../domain/progress';
+import { nextBreak, rowType, type ProgressSeg } from '../../domain/progress';
 import type { Assignment } from '../../domain/my';
 import { clockAt, soloMetric } from '../../domain/solo';
 import type { Match, PlayerId } from '../../domain/types';
 
 /**
- * Nadpis kola v Moje hry (18. 11. 2026, *rozhodnutí uživatele*): nahoře čára průběhu tréninku (kola v čase,
+ * Moje hry (18. 11. 2026, *rozhodnutí uživatele*; od 19. 11. 2026 jako dlaždice kola v Rozpisu): nahoře čára průběhu tréninku (kola v čase,
  * barva podle typu, pauzy, kde jsem), pod ní „Kolo 5 ze 14“, typ · stůl · čas, velký název disciplíny a
  * pravidlo jednou větou. Bez výplně – nadpis nemá vypadat jako tlačítko; zlatá je jen pro tlačítka.
  */
@@ -40,7 +40,7 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   if (!m) return a.row.rule ?? '';
   if (m.block === 'sim') return a.row.rule ? `Simulace ligového kola, ${a.row.rule}.` : 'Simulace ligového kola.';
   const parts: string[] = [];
-  if (a.role === 'referee') parts.push(m.trackLosses ? `Jsi rozhodčí u stolu ${a.table}: čárkuješ ztráty` : `Jsi rozhodčí u stolu ${a.table}`);
+  if (a.role === 'referee') parts.push(m.trackLosses ? 'Jsi rozhodčí: čárkuješ ztráty' : 'Jsi rozhodčí');
   const mine: 'A' | 'B' = m.sideA.includes(me) ? 'A' : 'B';
   if (m.start && a.role === 'play') {
     const [x, y] = mine === 'A' ? m.start : [m.start[1], m.start[0]];
@@ -48,76 +48,112 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   }
   if (m.wall && a.role === 'play') parts.push(m.wall === mine ? 'Vaše strana drží zeď' : 'Soupeř drží zeď, vy ji lámete');
   if (m.lossTax && a.role === 'play') parts.push('Ztráta = gól soupeře, ztráty čárkuje rozhodčí');
-  parts.push(`hraje se ${formatText(m)}`);
+  // BO formát je v hlavičce kola vpravo – tady se neopakuje (19. 11. 2026).
+  if ((m.bestOf ?? 1) === 1) parts.push(`hraje se ${formatText(m)}`);
+  if (!parts.length) return '';
   const s = parts.join(' · ');
   return `${s.charAt(0).toUpperCase()}${s.slice(1)}.`;
 }
 
-interface Props {
-  segs: ProgressSeg[];
-  /** Pořadí zobrazeného kola (0 = první). */
-  current: number;
-  a: Assignment;
-  me: PlayerId;
-  startTime: string;
-  /** Krátké zvýraznění při změně kola. */
-  flash?: boolean;
-  prev?: { disabled: boolean; onClick(): void };
-  next?: { disabled: boolean; onClick(): void };
-  /** Uvnitř tlačítka (karta dalšího kola): jen řádkové prvky. */
-  inline?: boolean;
-}
-
-export function RoundHeader({ segs, current, a, me, startTime, flash, prev, next, inline }: Props) {
-  const Box = inline ? 'span' : 'div';
-  const Name = inline ? 'span' : 'h2';
-  const Rule = inline ? 'span' : 'p';
+/** Popis čáry průběhu pro čtečky: „Kolo 5 ze 14, 4 odehraná, zbývá 9 kol, pauza 10 min v 19:30 (za 2 kola)“. */
+export function progressLabel(segs: ProgressSeg[], current: number, startTime: string): string {
   const total = segs.filter((x) => x.kind === 'round').length;
-  const type = rowType(a.row);
-  const done = current;
   const left = total - current - 1;
   const br = nextBreak(segs, current);
   const pause = br
     ? `pauza ${br.min} min v ${clockAt(startTime, br.time)} (${br.afterRounds === 0 ? 'po tomhle kole' : `za ${br.afterRounds} ${kol(br.afterRounds)}`})`
     : 'žádná další pauza';
-  const label = `Kolo ${current + 1} ${zeOf(total)} ${total}, ${done} ${odeh(done)}, zbývá ${left} ${kol(left)}, ${pause}`;
-  const where = a.role === 'wait' ? 'nehraješ' : `stůl ${a.table}`;
+  return `Kolo ${current + 1} ${zeOf(total)} ${total}, ${current} ${odeh(current)}, zbývá ${left} ${kol(left)}, ${pause}`;
+}
+
+/**
+ * Časová osa tréninku nahoře v Moje hry (18. 11. 2026; od 19. 11. 2026 klikací): kola v čase (barva podle typu),
+ * pauzy, ▼ zobrazené kolo. Ťuknutí na kolo ho otevře; po stranách ‹ › o kolo zpět / dál.
+ */
+export function MyTimeline({
+  segs,
+  current,
+  startTime,
+  onPick,
+  prev,
+  next,
+}: {
+  segs: ProgressSeg[];
+  current: number;
+  startTime: string;
+  onPick(index: number): void;
+  prev: { disabled: boolean; onClick(): void };
+  next: { disabled: boolean; onClick(): void };
+}) {
   return (
-    <Box className={`round-head t-${type}${flash ? ' flash' : ''}`}>
-      <span className="prog" role="img" aria-label={label}>
+    <div className="my-tl">
+      <button type="button" className="icon" aria-label="Předchozí kolo" disabled={prev.disabled} onClick={prev.onClick}>
+        ‹
+      </button>
+      <span className="prog" role="group" aria-label={progressLabel(segs, current, startTime)}>
         {segs.map((x, i) =>
           x.kind === 'break' ? (
             <span key={i} className="pz" style={{ flexGrow: x.min }} title={`Pauza ${x.min} min · ${clockAt(startTime, x.time)}`} />
           ) : (
-            <span
+            <button
               key={i}
+              type="button"
               className={`seg t-${x.type}${x.index! < current ? ' done' : x.index === current ? ' cur' : ''}`}
               style={{ flexGrow: x.min }}
-              title={`${x.index! + 1}. kolo · ${roundName({ row: x.row, role: 'wait' })} · ${clockAt(startTime, x.time)}`}
+              aria-label={`${x.index! + 1}. kolo: ${roundName({ row: x.row, role: 'wait' })}, ${clockAt(startTime, x.time)}`}
+              aria-current={x.index === current ? 'step' : undefined}
+              onClick={() => onPick(x.index!)}
             />
           ),
         )}
       </span>
-      <span className="rh-nav">
-        {prev && (
-          <button type="button" className="icon" aria-label="Předchozí kolo" disabled={prev.disabled} onClick={prev.onClick}>
-            ‹
-          </button>
-        )}
-        <span className="rh-count" aria-hidden="true">
-          Kolo {current + 1} {zeOf(total)} {total}
-        </span>
-        {next && (
-          <button type="button" className="icon" aria-label="Další kolo" disabled={next.disabled} onClick={next.onClick}>
-            ›
-          </button>
-        )}
+      <button type="button" className="icon" aria-label="Další kolo" disabled={next.disabled} onClick={next.onClick}>
+        ›
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Hlavička kola v Moje hry stejně jako dlaždice kola v Rozpisu (19. 11. 2026, *rozhodnutí uživatele*): čas vlevo,
+ * název disciplíny uprostřed (zlatě), formát vpravo; pod tím „Kolo 2 ze 14 · 8 min“ a pravidlo jednou větou.
+ */
+export function RoundTileHead({
+  a,
+  name,
+  format,
+  min,
+  current,
+  total,
+  startTime,
+  me,
+  inline,
+}: {
+  a: Assignment;
+  name: string;
+  format: string | null;
+  min?: number;
+  current: number;
+  total: number;
+  startTime: string;
+  me: PlayerId;
+  inline?: boolean;
+}) {
+  const Box = inline ? 'span' : 'div';
+  const Name = inline ? 'span' : 'h2';
+  const Line = inline ? 'span' : 'p';
+  return (
+    <Box className={`tile-head my-head t-${rowType(a.row)}`}>
+      <span className="tile-top">
+        <span className="tile-time">{clockAt(startTime, a.row.time)}</span>
+        <Name className="tile-name">{name}</Name>
+        <span className="tile-fmt">{format}</span>
       </span>
-      <span className="rh-type">
-        {ROUND_TYPE_NAME[type]} · {where} · {clockAt(startTime, a.row.time)}
+      <span className="tile-sub">
+        Kolo {current + 1} {zeOf(total)} {total}
+        {min ? ` · ${min} min` : ''}
       </span>
-      <Name className="rh-name">{roundName(a)}</Name>
-      <Rule className="rh-rule">{roundRule(a, me)}</Rule>
+      {roundRule(a, me) && <Line className="my-rule">{roundRule(a, me)}</Line>}
     </Box>
   );
 }

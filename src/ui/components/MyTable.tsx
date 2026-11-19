@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { matchState } from '../../domain/matchFormat';
 import { tableScore } from '../../domain/legState';
 import { trainingProgress } from '../../domain/progress';
-import { RoundHeader, roundName } from './RoundHeader';
+import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
+import { CompactCell, Names } from './TrainingTable';
+import { TableNo } from './TableNo';
+import { flatRows, rowKey } from '../now';
+import { rowFormat, rowMinutes, rowName } from '../scheduleView';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, GameProgress, type TapEntry, type TapSolo } from './BlockEntry';
@@ -129,13 +133,32 @@ export function MyTable(props: Props) {
   // Kam vede „Otevřít“: na hru, která je na řadě, jinak na další kolo.
   const target = activeIdx > i ? activeIdx : i + 1 < list.length ? i + 1 : null;
   const finished = a.role !== 'wait' && !!myItemId && ended(a);
-  const header = (j: number, extra: Partial<Parameters<typeof RoundHeader>[0]> = {}) => (
-    <RoundHeader key={j} segs={segs} current={j} a={list[j]} me={playerId} startTime={training.startTime} flash {...extra} />
+  const total = segs.filter((x) => x.kind === 'round').length;
+  const minutes = rowMinutes(schedule, training.format === 'custom' ? training.durationMin : undefined);
+  const keyOf = (row: Assignment['row']) => {
+    const ref = flatRows(schedule).find((r) => schedule.sections[r.section].rows[r.row] === row);
+    return ref ? rowKey(ref) : '';
+  };
+  const secOf = (row: Assignment['row']) => schedule.sections.find((x) => x.rows.includes(row));
+  /** Hlavička kola jako dlaždice v Rozpisu: čas · název · formát, „Kolo 2 ze 14 · 8 min“, pravidlo. */
+  const header = (j: number, inline = false) => (
+    <RoundTileHead
+      key={j}
+      a={list[j]}
+      name={rowName(list[j].row, secOf(list[j].row)?.id)}
+      format={rowFormat(list[j].row, true)}
+      min={minutes.get(keyOf(list[j].row))}
+      current={j}
+      total={total}
+      startTime={training.startTime}
+      me={playerId}
+      inline={inline}
+    />
   );
   const nextCard = target !== null && (
     <button type="button" className="my-nextcard" onClick={() => go(target)} aria-label={`Otevřít ${list[target].row.label}: ${roundName(list[target])}`}>
       <span className="k">{activeIdx === target ? 'Další kolo · na řadě' : 'Další kolo'}</span>
-      {header(target, { inline: true })}
+      {header(target, true)}
       <span className="vs">{summary(list[target], names, playerId)}</span>
       <span className="open">Otevřít ›</span>
     </button>
@@ -169,14 +192,43 @@ export function MyTable(props: Props) {
     );
   return (
     <section className="my-table" aria-label="Moje kolo">
-      {header(i, {
-        prev: { disabled: i === 0, onClick: () => go(i - 1, true) },
-        next: { disabled: i === list.length - 1, onClick: () => go(i + 1, true) },
-      })}
-      <p className="my-role">
-        <strong>{names[playerId] ?? ''}</strong>: {summary(a, names, playerId)}
-        {a.role === 'wait' && sec?.id === 'drills' && !a.row.waitingLabel && ', počítáš'}
-      </p>
+      <MyTimeline
+        segs={segs}
+        current={i}
+        startTime={training.startTime}
+        onPick={(j) => go(j, true)}
+        prev={{ disabled: i === 0, onClick: () => go(i - 1, true) }}
+        next={{ disabled: i === list.length - 1, onClick: () => go(i + 1, true) }}
+      />
+      {/* Kolo jako dlaždice v Rozpisu: hlavička a můj stůl (velké číslo + zápas), bez opakování „stůl 2“ (19. 11. 2026). */}
+      <article className="round-card my-card mine-row" aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
+        {header(i)}
+        <div className="tile-rows">
+          {a.role === 'wait' ? (
+            <div className="tile-line">
+              <span className="tile-row">
+                <b>Volno</b>
+                <span>
+                  {a.row.waiting.length ? <Names ids={a.row.waiting} names={names} me={playerId} sep=", " /> : null}
+                  {sec?.id === 'drills' && !a.row.waitingLabel && ' · počítáš'}
+                </span>
+              </span>
+            </div>
+          ) : (
+            a.table !== undefined &&
+            a.row.cells[a.table - 1] && (
+              <div className="tile-line">
+                <span className="tile-row">
+                  <TableNo n={a.table} />
+                  <span>
+                    <CompactCell cell={a.row.cells[a.table - 1]!} t={training} names={names} me={playerId} />
+                  </span>
+                </span>
+              </div>
+            )
+          )}
+        </div>
+      </article>
       {done}
       {a.role !== 'wait' && (
         <BlockEntry
