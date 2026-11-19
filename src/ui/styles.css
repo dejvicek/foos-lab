@@ -453,14 +453,8 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
 .plan tr.break .c-time { font-weight: 500; }
-/* Admin / organizátor: rozbalit kolo k zápisu celkového výsledku */
-button.row-toggle {
-  display: inline-block; margin-top: 4px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong);
-  border-radius: 99px; padding: 1px 10px; min-height: 0; font-size: 12px; font-weight: 700; cursor: pointer;
-}
-button.row-toggle::before { content: '▸ '; }
-button.row-toggle[aria-expanded='true'] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-button.row-toggle[aria-expanded='true']::before { content: '▾ '; }
+/* Admin / organizátor: tužka rozbalí kolo k zápisu celkového výsledku (19. 11. 2026, místo „zapsat / opravit“). */
+.plan .c-block > button.edit-ic { display: flex; margin: 2px 0 0 -4px; }
 .row-label { font-weight: 600; }
 .cell-sub { display: block; color: var(--muted); font-size: 12px; }
 .cell-names { display: block; }
@@ -764,7 +758,7 @@ button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transpar
 .tile-line .tl-box { cursor: default; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
 .tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
-.round-card > button.row-toggle { margin: 0 12px 10px; }
+.round-card > button.edit-ic { margin: -6px 8px 6px auto; display: flex; }
 .tile-entry { border-top: 1px solid var(--line); padding: 8px 10px 10px; }
 .round-cards .done-fold { display: flex; align-items: center; min-height: 34px; }
 /* Telefon: linka vlevo od karet; mezera mezi kartami (8px) je součástí linky nad uzlem */

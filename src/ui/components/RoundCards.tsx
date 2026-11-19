@@ -7,6 +7,7 @@ import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, 
 import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
+import { EditToggle } from './EditToggle';
 import { drillItemId } from '../../domain/queue';
 import { CompactCell, Names, RailNode, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
@@ -208,17 +209,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                   <div className="tile-rows" onClick={() => setTiles({ ...tiles, [key]: !isOpen })}>
                     {shown.map((x) => x.node)}
                   </div>
-                  {manage && (
-                    <button
-                      type="button"
-                      className="row-toggle"
-                      aria-expanded={entry}
-                      aria-label={`${entry ? 'Zavřít' : rs?.state === 'done' ? 'Opravit' : 'Zapsat'}: ${row.label}`}
-                      onClick={() => onToggle(key)}
-                    >
-                      {entry ? 'zavřít' : rs?.state === 'done' ? 'opravit' : 'zapsat'}
-                    </button>
-                  )}
+                  {manage && <EditToggle open={entry} done={rs?.state === 'done'} label={row.label} onToggle={() => onToggle(key)} />}
                   {entry && (
                     <div className="tile-entry">
                       <BlockEntry

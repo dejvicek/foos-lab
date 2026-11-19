@@ -11,6 +11,7 @@ import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, 
 import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress, type TapSolo } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
+import { EditToggle } from './EditToggle';
 import { drillItemId } from '../../domain/queue';
 import type { ItemTiming } from './Timing';
 
@@ -376,17 +377,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         <span className="row-name">{rowName(row, sec.id)}</span>
                         {min && <span className="cell-sub">{min} min</span>}
                         {progress && <span className="cell-sub">{progress}</span>}
-                        {manage && (
-                          <button
-                            type="button"
-                            className="row-toggle"
-                            aria-expanded={open}
-                            aria-label={`${open ? 'Zavřít' : st?.state === 'done' ? 'Opravit' : 'Zapsat'}: ${row.label}`}
-                            onClick={() => onToggle(key)}
-                          >
-                            {open ? 'zavřít' : st?.state === 'done' ? 'opravit' : 'zapsat'}
-                          </button>
-                        )}
+                        {manage && <EditToggle open={open} done={st?.state === 'done'} label={row.label} onToggle={() => onToggle(key)} />}
                       </td>
                       {visible.map((j) => {
                         const c = row.cells[j];
