@@ -44,10 +44,15 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
   it('Pořadí jednotně se Zdržovači (19. 11. 2026): hned za jménem Rozdíl, Legy na konci; řadit klikem na záhlaví', async () => {
     const t = custom({ normal: 2 });
     const s = buildSchedule(t);
-    render(<TrainingSummary schedule={s} scores={{ [s.matches[0].id]: { ga: 6, gb: 2 } }} attendees={t.attendees} names={names} delays={[]} />);
+    // první kolo dohrané, ostatní nehrané
+    const scores = Object.fromEntries(s.matches.filter((m) => m.round === 1).map((m) => [m.id, { ga: 6, gb: 2 }]));
+    render(<TrainingSummary schedule={s} scores={scores} attendees={t.attendees} names={names} delays={[]} />);
     const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Rozdíl', 'Výhry', 'G+', 'G−', 'Legy']);
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('+4');
+    // medaile jako v žebříčku: první tři, první řádek podbarvený; kdo neodehrál, bez medaile
+    expect(within(table).getAllByTitle(/\. místo$/).map((m) => m.title)).toEqual(['1. místo', '2. místo', '3. místo']);
+    expect(within(table).getAllByRole('row')[1]).toHaveClass('top-1');
     await userEvent.setup().click(within(table).getByRole('button', { name: /Rozdíl/ }));
     expect(within(table).getByRole('columnheader', { name: /Rozdíl/ })).toHaveAttribute('aria-sort', 'descending');
   });

@@ -5,6 +5,7 @@ import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
 import { signed } from '../format';
 import { Seg } from './Seg';
+import { Medal, podiumRow } from './Rank';
 import { placeAndSort, RankTh, SortTh, sortedCls, useSort, type SortCol } from './SortTable';
 import { DelayTable } from './Timing';
 
@@ -193,6 +194,7 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
     { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legs },
   ];
   const items = placeAndSort(rows, [], cols, sort);
+  const played = (r: Row) => r.legs > 0 || r.simM > 0;
   return (
     <div className="standings">
       {empty ? (
@@ -211,8 +213,11 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
               </thead>
               <tbody>
                 {items.map(({ r: x, place }) => (
-                  <tr key={x.playerId}>
-                    <td className="n rank">{place}.</td>
+                  // Medaile pro první tři jako v žebříčku (19. 11. 2026); kdo nic neodehrál, medaili nedostane.
+                  <tr key={x.playerId} className={podiumRow(place, played(x))}>
+                    <td className="n rank">
+                      <Medal place={place} ranked={played(x)} />
+                    </td>
                     <td className={sortedCls(sort, 'name', 'name')}>{names[x.playerId] ?? '?'}</td>
                     <td className={sortedCls(sort, 'diff', x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n')}>{signed(x.diff)}</td>
                     <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
