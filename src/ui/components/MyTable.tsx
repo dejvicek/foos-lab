@@ -231,7 +231,7 @@ export function MyTable(props: Props) {
         </div>
         {help && (
           <div className="my-help help" role="region" aria-label="Nápověda">
-            <RoundHelp row={a.row} />
+            <RoundHelp row={a.row} untitledMain />
           </div>
         )}
       </article>

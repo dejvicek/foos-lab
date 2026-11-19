@@ -739,6 +739,7 @@ button.help-ic:hover { color: var(--ink); background: none; }
 button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .my-help { border-top: 1px solid var(--line); padding: 8px 12px 10px; }
 .my-help .help-item + .help-item { margin-top: 8px; }
+.my-help .skill-tags { margin: 0 0 8px; }
 /* Název cvičení a co se počítá je v hlavičce kola – nad počítadlem se neopakuje (19. 11. 2026). */
 .my-table .mirror-metric, .my-table .entry-metric { display: none; }
 button.my-nextcard .tile-head { padding: 0; }

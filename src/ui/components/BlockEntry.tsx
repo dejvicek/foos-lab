@@ -276,8 +276,11 @@ export function hasRoundHelp(row: ScheduleRow): boolean {
   return ex.main.length > 0 || ex.general.length > 0 || ex.perTable.some(Boolean);
 }
 
-/** Obsah nápovědy kola: co disciplína trénuje, stanoviště po stolech, pravidla. */
-export function RoundHelp({ row }: { row: ScheduleRow }) {
+/**
+ * Obsah nápovědy kola: co disciplína trénuje, stanoviště po stolech, pravidla. `untitledMain`: hlavní pravidlo
+ * bez nadpisu – název disciplíny je v hlavičce karty (Moje hry, 19. 11. 2026).
+ */
+export function RoundHelp({ row, untitledMain }: { row: ScheduleRow; untitledMain?: boolean }) {
   const ex = explanationsFor(row);
   return (
     <>
@@ -287,7 +290,10 @@ export function RoundHelp({ row }: { row: ScheduleRow }) {
           {ex.perTable.map((it, j) => (it ? <HelpItem key={j} title={`Stůl ${j + 1}: ${explanationTitle(it.name)}`} item={it} /> : <div key={j} />))}
         </div>
       )}
-      {[...ex.main, ...ex.general].map((it) => (
+      {ex.main.map((it) => (
+        <HelpItem key={it.name} title={untitledMain ? undefined : explanationTitle(it.name)} item={it} />
+      ))}
+      {ex.general.map((it) => (
         <HelpItem key={it.name} title={explanationTitle(it.name)} item={it} />
       ))}
     </>

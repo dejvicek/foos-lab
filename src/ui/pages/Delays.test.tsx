@@ -233,7 +233,10 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const q = within(mine).getByRole('button', { name: 'Nápověda' });
     expect(q).toHaveAttribute('aria-expanded', 'false');
     await user.click(q);
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('region', { name: 'Nápověda' })).toHaveTextContent('Normální leg');
+    const helpBox = within(mine.querySelector('.my-card') as HTMLElement).getByRole('region', { name: 'Nápověda' });
+    expect(helpBox).toHaveTextContent('Leg do 6 bez dalších pravidel.');
+    expect(within(helpBox).queryByRole('heading', { name: 'Normální leg' })).toBeNull(); // název je v hlavičce karty
+    expect(within(helpBox).getByRole('heading', { name: 'Role rozhodčího' })).toBeInTheDocument();
     await user.click(q);
     expect(within(mine).queryByRole('region', { name: 'Nápověda' })).toBeNull();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
