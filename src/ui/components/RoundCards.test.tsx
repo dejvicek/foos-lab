@@ -49,6 +49,9 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     expect(card).toHaveTextContent('Stůl 1');
     expect(card).toHaveTextContent('Stůl 2');
     expect(within(card).getByText('H5')).toHaveClass('me-name');
+    // číslo stolu zlatě jen tam, kde hraju (19. 11. 2026)
+    expect(card.querySelectorAll('.table-no.mine')).toHaveLength(1);
+    expect(card.querySelectorAll('.table-no').length).toBeGreaterThan(1);
     expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4' })).toBeInTheDocument();
     // volné stoly se v kolech neukazují (19. 11. 2026)
     expect(card).not.toHaveTextContent('volný');

@@ -144,7 +144,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     node: (
                       <div key={j} className="tile-line">
                         <span className="tile-row">
-                          <TableNo n={j + 1} />
+                          <TableNo n={j + 1} mine={takesPart(place) && 'table' in place && place.table === j + 1} />
                           <span>
                             <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />
                           </span>

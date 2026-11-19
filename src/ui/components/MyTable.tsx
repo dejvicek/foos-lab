@@ -220,7 +220,7 @@ export function MyTable(props: Props) {
             a.row.cells[a.table - 1] && (
               <div className="tile-line">
                 <span className="tile-row">
-                  <TableNo n={a.table} />
+                  <TableNo n={a.table} mine />
                   <span>
                     <CompactCell cell={a.row.cells[a.table - 1]!} t={training} names={names} me={playerId} roundName={rowName(a.row, sec?.id)} />
                   </span>
