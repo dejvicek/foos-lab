@@ -1,5 +1,6 @@
 import type { DisciplineId } from '../domain/types';
 import type { LadderRange, LadderView } from '../domain/ladder';
+import type { MatchKindFilter } from '../domain/practice';
 
 /**
  * Část žebříčku (18. 11. 2026, *rozhodnutí uživatele*): Zápasy · Cvičení · Zdržovači; Cvičení má podčásti
@@ -14,6 +15,8 @@ export interface UiPrefs {
   ladderPart: LadderPart;
   /** Naposledy zvolená podčást Cvičení – kam vede záložka Cvičení. */
   ladderDrills?: LadderDrills;
+  /** Zápasy podle disciplín: 1 na 1 / 2 na 2 / vše (19. 11. 2026); chybí = vše. */
+  ladderMatchKind?: MatchKindFilter;
 }
 
 const KEY = 'foosball-practice.prefs.v1';
@@ -34,11 +37,12 @@ export function loadPrefs(): UiPrefs {
     const raw = localStorage.getItem(KEY);
     const p = raw ? JSON.parse(raw) : null;
     if (!valid(p)) return defaultPrefs();
-    const { ladderDrills, ...rest } = p;
+    const { ladderDrills, ladderMatchKind, ...rest } = p;
     return {
       ...rest,
       ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches',
       ...(ladderDrills === 'solo' || ladderDrills === 'practice' ? { ladderDrills } : {}),
+      ...(ladderMatchKind === 'singles' || ladderMatchKind === 'doubles' || ladderMatchKind === 'all' ? { ladderMatchKind } : {}),
     };
   } catch {
     return defaultPrefs();

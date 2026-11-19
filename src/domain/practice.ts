@@ -268,13 +268,15 @@ export function practiceMinutes(t: Training): number | null {
   return s !== undefined && e !== undefined ? Math.max(0, Math.round((e - s) / 60_000)) : null;
 }
 
+/** Které zápasy berou tabulky podle disciplín v žebříčku (19. 11. 2026): 1 na 1, 2 na 2, nebo vše. */
+export type MatchKindFilter = 'singles' | 'doubles' | 'all';
+
 /**
- * Zápasy 1 na 1 tréninku (12. 11. 2026) pro tabulky zápasů v žebříčku: vlastní trénink duo i singly klubového
- * tréninku – stejné podmínky. Klubový Normální leg v singlu se počítá jako Jedničky. Od 19. 11. 2026
- * (*rozhodnutí uživatele*) i klasický trénink (disciplína podle pravidel kola) a singly simulace (= Jedničky).
+ * Zápasy tréninku pro tabulky podle disciplín v žebříčku (12. 11. 2026, od 19. 11. 2026 *rozhodnutí uživatele*
+ * i čtyřhry, klasický trénink a simulace): vlastní trénink duo (vždy 1 na 1) i zápasy klubového tréninku.
  * Jen zápasy, kde je něco zapsané.
  */
-export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match: Match; state: ReturnType<typeof matchState> }[] {
+export function ladderMatches(t: Training): { discipline: DisciplineId; match: Match; state: ReturnType<typeof matchState> }[] {
   if (isPractice(t)) return practiceMatches(t).map((x) => ({ discipline: x.match.discipline!, match: x.match, state: x.state }));
   if (!canBuildSchedule(t)) return [];
   let matches: Match[];
@@ -284,8 +286,7 @@ export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match:
     return [];
   }
   return matches.flatMap((m) => {
-    if (m.kind !== 'singles') return [];
-    const discipline = oneOnOneDiscipline(m);
+    const discipline = matchDiscipline(m);
     if (!discipline) return [];
     const state = matchState(m, t.scores);
     if (!state.legs.some((l) => l.score?.ga !== undefined && l.score?.gb !== undefined)) return [];
@@ -294,16 +295,17 @@ export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match:
 }
 
 /**
- * Disciplína singlu pro tabulky 1 na 1: simulace a Normální leg = Jedničky; konfigurovatelný trénink podle
- * disciplíny kola, klasický podle pravidel kola (Daň, Zeď, scénářový start).
+ * Disciplína zápasu pro tabulky: Normální leg a simulace = Jedničky v singlu, Normální leg ve čtyřhře;
+ * konfigurovatelný trénink podle disciplíny kola, klasický podle pravidel kola (Daň, Zeď, scénářový start).
  */
-function oneOnOneDiscipline(m: Match): DisciplineId | null {
-  if (m.block === 'sim') return 'singles';
-  if (m.discipline) return m.discipline === 'normal' ? 'singles' : m.discipline;
+function matchDiscipline(m: Match): DisciplineId | null {
+  const plain: DisciplineId = m.kind === 'singles' ? 'singles' : 'normal';
+  if (m.block === 'sim') return plain;
+  if (m.discipline) return m.discipline === 'normal' ? plain : m.discipline;
   if (m.lossTax) return 'lossTax';
   if (m.wall) return 'wall';
   if (m.start) return DISCIPLINES.find((d) => d.start && d.start[0] === m.start![0] && d.start[1] === m.start![1])?.id ?? null;
-  return 'singles';
+  return plain;
 }
 
 /** Zápasy vlastního tréninku: kolo, zápas a stav po legech (jen kola, kde je něco zapsané). */
@@ -339,15 +341,17 @@ export interface PracticeMatchTable {
 }
 
 /**
- * Žebříček Vlastní – zápasy 1 na 1 (12. 11. 2026): pro každou zápasovou disciplínu vyhrané zápasy (remíza
+ * Zápasy podle disciplín (12. 11. 2026 jako 1 na 1; od 19. 11. 2026 s filtrem 1 na 1 / 2 na 2 / vše): pro každou
+ * zápasovou disciplínu vyhrané zápasy (remíza
  * BO2 1:1 se od 19. 11. 2026 nepočítá jako výhra ani půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
  * vyhraných zápasů → rozdíl skóre na leg → tréninky; pod 3 tréninky „málo dat“ jako jinde.
  */
-export function computePracticeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number): PracticeMatchTable[] {
+export function computeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number, kind: MatchKindFilter = 'singles'): PracticeMatchTable[] {
   const acc = new Map<DisciplineId, Map<PlayerId, PracticeMatchRow & { seen: Set<string> }>>();
   for (const t of trainings) {
     if ((from && t.date < from) || (to && t.date > to)) continue;
-    for (const { discipline: id, match, state } of oneOnOneMatches(t)) {
+    for (const { discipline: id, match, state } of ladderMatches(t)) {
+      if (kind !== 'all' && match.kind !== kind) continue;
       const table = acc.get(id) ?? new Map();
       acc.set(id, table);
       const sides: [PlayerId[], 'A' | 'B'][] = [

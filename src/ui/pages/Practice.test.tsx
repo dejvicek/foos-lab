@@ -240,7 +240,8 @@ describe('vlastní trénink (PRD 5.11)', () => {
     const ts = [game('a', 'id1', 'id2', [[6, 2], [6, 4]]), game('b', 'id1', 'id2', [[2, 6], [6, 3], [6, 5]]), game('c', 'id2', 'id1', [[6, 1], [6, 0]]), game('d', 'id1', 'id2', [[6, 2], [3, 6]], 2)];
     render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
     // zápasy 1 na 1 jsou od 18. 11. 2026 v části Zápasy (výchozí), ne v Cvičení
-    expect(await screen.findByRole('heading', { name: 'Zápasy 1 na 1' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Zápasy podle disciplín' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Typ zápasu' })).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'Goalie war' });
     const rows = within(table).getAllByRole('row').slice(1);
     // remíza (BO2 1:1) se nikde neukazuje, v zápasech jen výhry (19. 11. 2026)
@@ -248,6 +249,10 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(table).not.toHaveTextContent('rem.');
     expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 5)).toEqual(['4', '2 / 4', '5 / 9']);
     expect(rows[1]).toHaveTextContent(/H2.*4.*1 \/ 4/);
+    // 2 na 2: vlastní trénink je jen 1 na 1 → žádná tabulka; volba se pamatuje
+    await userEvent.setup().click(within(screen.getByRole('group', { name: 'Typ zápasu' })).getByRole('button', { name: '2 na 2' }));
+    expect(screen.queryByRole('table', { name: 'Goalie war' })).toBeNull();
+    expect(screen.getByText('V tomhle období žádné takové zápasy nejsou.')).toBeInTheDocument();
   });
 
   it('výchozí výběr zvlášť pro solo a duo, pamatuje se zvlášť; tlačítko Výchozí (12. 11. 2026)', async () => {

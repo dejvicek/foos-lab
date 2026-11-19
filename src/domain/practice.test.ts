@@ -19,7 +19,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes, computePracticeMatchLadder } from './practice';
+  roundTimes, computeMatchLadder } from './practice';
 import { drillSections } from './disciplines';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
@@ -323,14 +323,14 @@ describe('žebříček Vlastní – zápasy (12. 11. 2026)', () => {
 
   it('podíl vyhraných zápasů, legy a skóre; málo dat pod 3 tréninky', () => {
     const ts = [game('g1', 'A', 'B', [[6, 2], [6, 4]]), game('g2', 'B', 'A', [[6, 5], [2, 6], [3, 6]]), game('g3', 'A', 'B', [[1, 6], [6, 3], [6, 0]]), game('g4', 'A', 'C', [[6, 1]])];
-    const [gw] = computePracticeMatchLadder(ts, null, null, 3);
+    const [gw] = computeMatchLadder(ts, null, null, 3);
     expect(gw.discipline).toBe('goalieWar');
     expect(gw.ranked.map((r) => r.playerId)).toEqual(['A', 'B']);
     expect(gw.ranked[0]).toMatchObject({ trainings: 4, matches: 3, wins: 3, legs: 9, legWins: 7, gf: 48, gc: 27 });
     expect(gw.ranked[1]).toMatchObject({ trainings: 3, matches: 3, wins: 0, legs: 8 });
     // nedohraný zápas (g4, jen 1 leg) se počítá do legů, ne do zápasů
     expect(gw.lowData).toEqual([expect.objectContaining({ playerId: 'C', matches: 0, legs: 1, gf: 1, gc: 6 })]);
-    expect(computePracticeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
+    expect(computeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
   });
 });
 
@@ -357,12 +357,32 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     const sim = ms.find((m) => m.block === 'sim')!;
     expect([plain, tax, start, sim].every(Boolean)).toBe(true);
     const scores = { [plain.id]: { ga: 6, gb: 5 }, [tax.id]: { ga: 4, gb: 6 }, [start.id]: { ga: 4, gb: 3 }, [sim.id]: { ga: 6, gb: 2 } };
-    const tables = computePracticeMatchLadder([{ ...classic, scores }], null, null, 3);
+    const tables = computeMatchLadder([{ ...classic, scores }], null, null, 3);
     expect(tables.map((x) => x.discipline).sort()).toEqual(['lossTax', 'singles', 'start03']);
     const t1 = tables.find((x) => x.discipline === 'singles')!;
     const ones = [...t1.lowData, ...t1.ranked];
     // Normální leg i simulace v Jedničkách
     for (const p of [plain.sideA[0], plain.sideB[0], sim.sideA[0], sim.sideB[0]]) expect(ones.map((r) => r.playerId)).toContain(p);
+  });
+
+  it('zápasy podle disciplín: 2 na 2 (Normální leg, simulace = Normální leg) a vše (19. 11. 2026)', () => {
+    const classic = {
+      id: 'k', date: '2026-11-01', startTime: '18:00', mode: 'team', tables: 4, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'classic', durationMin: null, plan: null, lockedRounds: [],
+    } as unknown as Training;
+    const ms = buildSchedule(classic).matches;
+    const plainD = ms.find((m) => m.kind === 'doubles' && m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const simD = ms.find((m) => m.kind === 'doubles' && m.block === 'sim')!;
+    const plainS = ms.find((m) => m.kind === 'singles' && m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const scores = { [plainD.id]: { ga: 6, gb: 2 }, [simD.id]: { ga: 6, gb: 4 }, [plainS.id]: { ga: 6, gb: 5 } };
+    const t = { ...classic, scores };
+    const d = computeMatchLadder([t], null, null, 3, 'doubles');
+    expect(d.map((x) => x.discipline)).toEqual(['normal']);
+    const rows = [...d[0].ranked, ...d[0].lowData];
+    // výhra oběma hráčům dvojice
+    for (const p of plainD.sideA) expect(rows.find((r) => r.playerId === p)!.wins).toBeGreaterThan(0);
+    expect(computeMatchLadder([t], null, null, 3, 'singles').map((x) => x.discipline)).toEqual(['singles']);
+    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline).sort()).toEqual(['normal', 'singles']);
   });
 
   it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {
@@ -377,7 +397,7 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     const scored = { ...clubT, scores: { [singles[0].id]: { ga: 6, gb: 3 }, ...(doubles[0] ? { [doubles[0].id]: { ga: 6, gb: 1 } } : {}) } };
     const duo = newPractice('p', '2026-11-06', '18:00', 'A', 'B', ['singles']);
     const m = practiceRounds(duo)[0].match!;
-    const tables = computePracticeMatchLadder([scored, { ...duo, scores: { [m.id]: { ga: 6, gb: 4 } } }], null, null, 3);
+    const tables = computeMatchLadder([scored, { ...duo, scores: { [m.id]: { ga: 6, gb: 4 } } }], null, null, 3);
     expect(tables.map((x) => x.discipline)).toEqual(['singles']);
     const rows = [...tables[0].ranked, ...tables[0].lowData];
     const winner = singles[0].sideA[0];

@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { Seg } from '../components/Seg';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
-import { computePracticeMatchLadder, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
+import { computeMatchLadder, type MatchKindFilter, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
 import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
 import type { PlayerId } from '../../domain/types';
@@ -373,7 +373,9 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
   // Cvičení: Týmové (klub + duo stejných cvičení) / Solo/Duo (jen vlastní tréninky), 18. 11. 2026.
   const drills: LadderDrills | null = prefs.ladderPart === 'solo' || prefs.ladderPart === 'practice' ? prefs.ladderPart : null;
   const resolved = resolveRange(range, today);
-  const matchTables = prefs.ladderPart === 'matches' ? computePracticeMatchLadder(store.data.trainings, resolved.from ?? null, resolved.to ?? null, MIN_TRAININGS) : [];
+  // Zápasy podle disciplín: 1 na 1 / 2 na 2 / vše (19. 11. 2026, *rozhodnutí uživatele*).
+  const matchKind: MatchKindFilter = prefs.ladderMatchKind ?? 'all';
+  const matchTables = prefs.ladderPart === 'matches' ? computeMatchLadder(store.data.trainings, resolved.from ?? null, resolved.to ?? null, MIN_TRAININGS, matchKind) : [];
 
   const setRangeKind = (kind: 'form' | 'all' | 'custom') => {
     if (kind === 'custom') {
@@ -438,7 +440,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
             : prefs.ladderPart === 'solo'
               ? `Cvičení z klubových tréninků i z vlastních tréninků duo (stejné podmínky). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
-              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období (u zápasů 1 na 1 tréninků se zápasem).`}{' '}
+              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období (u zápasů podle disciplín tréninků s takovým zápasem).`}{' '}
           Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}
@@ -464,10 +466,28 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
           </p>
         </>
       )}
-      {matchTables.length > 0 && (
+      {prefs.ladderPart === 'matches' && (ranked.length > 0 || lowData.length > 0 || matchTables.length > 0 || matchKind !== 'all') && (
         <>
-          <h2>Zápasy 1 na 1</h2>
-          <p className="note">Z vlastních tréninků ve dvou i singly z klubu, po disciplínách; víc vyhraných je lépe.</p>
+          <h2>Zápasy podle disciplín</h2>
+          <Seg<MatchKindFilter>
+            label="Typ zápasu"
+            value={matchKind}
+            onChange={(v) => setPrefs({ ...prefs, ladderMatchKind: v })}
+            options={[
+              ['all', 'Vše'],
+              ['singles', '1 na 1'],
+              ['doubles', '2 na 2'],
+            ]}
+          />
+          <p className="note">
+            {matchKind === 'singles'
+              ? 'Singly z klubu (i simulace) a z vlastních tréninků ve dvou.'
+              : matchKind === 'doubles'
+                ? 'Čtyřhry z klubu (i simulace); výhra se počítá oběma hráčům dvojice.'
+                : 'Singly i čtyřhry z klubu (i simulace) a zápasy z vlastních tréninků ve dvou.'}{' '}
+            Normální leg v singlu je Jedničky. Víc vyhraných je lépe.
+          </p>
+          {!matchTables.length && <p className="note">V tomhle období žádné takové zápasy nejsou.</p>}
           <div className="solo-grid">
             {matchTables.map((t) => (
               <section key={t.discipline} className="solo-block">
