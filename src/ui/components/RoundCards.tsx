@@ -148,12 +148,11 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                           <span>
                             <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />
                           </span>
-                          {c && (has || manage) && (
-                            <span className="cell-ics">
-                              {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
-                              {manage && <EditToggle open={expanded === pk} done={rs?.cells[j] === 'done'} label={`${row.label}, stůl ${j + 1}`} onToggle={() => onToggle(pk)} />}
-                            </span>
-                          )}
+                          {/* Vždy (i prázdné): sloupec ikonek má v celé kartě stejnou šířku, skóre zůstane pod sebou. */}
+                          <span className="cell-ics">
+                            {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                            {manage && <EditToggle open={expanded === pk} done={rs?.cells[j] === 'done'} label={`${row.label}, stůl ${j + 1}`} onToggle={() => onToggle(pk)} />}
+                          </span>
                         </span>
                         {manage && expanded === pk && (
                           <div className="tile-entry">

@@ -1257,9 +1257,14 @@ button.pr-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; 
 button.pr-ic:hover { color: var(--ink); background: none; }
 button.pr-ic[aria-expanded='true'] { color: var(--felt); }
 .plan td.has-prog { position: relative; padding-right: 34px; }
-/* Ikonky u stolu (graf, tužka) vpravo nahoře pod sebou. */
-.plan td.has-prog > .cell-ics { position: absolute; top: 4px; right: 4px; display: flex; flex-direction: column; gap: 2px; }
-.tile-row > .cell-ics { display: flex; flex-direction: column; gap: 0; margin-top: -4px; }
+/* Ikonky u stolu (graf, tužka) vpravo nahoře vedle sebe. */
+.plan td.has-prog > .cell-ics { position: absolute; top: 4px; right: 4px; display: flex; flex-direction: row; gap: 2px; }
+/* Dvě ikonky vedle sebe: v celé tabulce stejné odsazení, ať skóre ve sloupci sedí pod sebou. */
+.plan:has(td.has-prog > .cell-ics > :nth-child(2)) td.has-prog { padding-right: 64px; }
+/* Ikonky u stolu (graf, tužka) vedle sebe na řádku (19. 11. 2026, *rozhodnutí uživatele*). */
+.tile-row > .cell-ics { display: flex; flex-direction: row; justify-content: flex-end; gap: 0; }
+.round-card:has(.cell-ics > *) .tile-row > .cell-ics { min-width: 28px; }
+.round-card:has(.cell-ics > :nth-child(2)) .tile-row > .cell-ics { min-width: 56px; }
 .plan tr.prog-row > td { background: var(--surface); padding: 6px 14px 12px; }
 .plan.has-rail tr.prog-row > td { position: relative; padding-left: 34px; }
 .prog-k { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
