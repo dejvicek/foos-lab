@@ -733,10 +733,10 @@ button.my-nextcard .open {
 .my-head .tile-fmt { display: inline-flex; align-items: center; gap: 8px; }
 button.help-ic {
   width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 50%; display: inline-grid; place-items: center;
-  border: 1.5px solid var(--line-strong); background: var(--surface); color: var(--muted); font-size: 14px; font-weight: 800; line-height: 1; cursor: pointer;
+  border: 0; background: none; color: var(--muted); font-size: 16px; font-weight: 800; line-height: 1; cursor: pointer;
 }
-button.help-ic:hover { color: var(--ink); border-color: var(--ink); }
-button.help-ic[aria-expanded='true'] { background: var(--felt); border-color: var(--felt); color: var(--surface); }
+button.help-ic:hover { color: var(--ink); background: none; }
+button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .my-help { border-top: 1px solid var(--line); padding: 8px 12px 10px; }
 .my-help .help-item + .help-item { margin-top: 8px; }
 /* Název cvičení a co se počítá je v hlavičce kola – nad počítadlem se neopakuje (19. 11. 2026). */
