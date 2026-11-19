@@ -499,6 +499,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                             }}
                             canMatch={canMatch}
                             canSolo={canSolo}
+                            onEnd={autoEnd}
                             only={edit!}
                           />
                         </td>

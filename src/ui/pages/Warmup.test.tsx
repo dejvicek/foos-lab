@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -54,6 +54,22 @@ it('Moje hry: po doběhnutí timeru se Ukončit už neptá', async () => {
   const ask = vi.spyOn(window, 'confirm');
   await user.click(screen.getByRole('button', { name: 'Potvrdit konec' }));
   expect(ask).not.toHaveBeenCalled();
+  await vi.waitFor(() => expect(ended(repo, id)).toBeDefined());
+});
+
+it('Rozpis: organizátor potvrdí konec Rozcvičky tužkou u stolu (dřív v Živě, 19. 11. 2026); běžící se zeptá', async () => {
+  window.location.hash = '#/trainings/t1';
+  const id = warmupItemOf('id1');
+  const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 120_000 }, [id]: { startedAt: Date.now() - 70_000 } } }] });
+  render(<App repo={repo} auth={authAs('id9')} />);
+  const user = userEvent.setup();
+  await screen.findByRole('table', { name: 'Rozpis tréninku' });
+  const table = buildSchedule(base).sections[0].rows[0].cells.findIndex((c) => c?.type === 'group' && c.players.includes('id1')) + 1;
+  await user.click(screen.getByRole('button', { name: `Zapsat: 1. kolo, stůl ${table}` }));
+  const card = screen.getByRole('group', { name: `1. kolo, stůl ${table}` });
+  const ask = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await user.click(within(card).getByRole('button', { name: 'Potvrdit konec' }));
+  expect(ask).toHaveBeenCalledWith('Rozcvička ještě běží – opravdu ukončit?');
   await vi.waitFor(() => expect(ended(repo, id)).toBeDefined());
 });
 

@@ -132,6 +132,10 @@ interface Props {
   only?: number;
   /** Nápověda je jinde (Moje hry: otazník v hlavičce kola, 19. 11. 2026). */
   noHelp?: boolean;
+  /**
+   * Organizátor v Rozpisu (bez stopek): potvrdí konec utkání bez výsledku – Rozcvičky (19. 11. 2026; dřív v Živě).
+   */
+  onEnd?(id: string): void;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -300,7 +304,7 @@ export function RoundHelp({ row, untitledMain }: { row: ScheduleRow; untitledMai
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only, noHelp }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only, noHelp, onEnd }: Props) {
   /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
     const id = drillItemId(r, j + 1, players);
@@ -432,8 +436,9 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
           }
           if (c.discipline === 'warmup') {
             const wid = drillItemId(row, j + 1, c.players);
-            const startedAt = timing?.state(wid)?.startedAt;
-            const endedAt = timing?.state(wid)?.endedAt;
+            // Bez stopek (Rozpis, organizátor): časy přímo z tréninku.
+            const startedAt = timing ? timing.state(wid)?.startedAt : training.playTimes?.[wid]?.startedAt;
+            const endedAt = timing ? timing.state(wid)?.endedAt : training.playTimes?.[wid]?.endedAt;
             const now = timing?.now ?? Date.now();
             const wtmr = timer(wid, c.players, false, startedAt !== undefined && warmupState((now - startedAt) / 1000).done, undefined, true);
             return (
@@ -442,6 +447,11 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <span className="entry-players">{c.players.map((p) => names[p] ?? '?').join(', ')}</span>
                 {wtmr.bar}
                 <WarmupTimer startedAt={startedAt} endedAt={endedAt} now={now} compact={!tap && !timing?.allowStart} />
+                {!timing && onEnd && endedAt === undefined && (
+                  <button type="button" className="ghost" onClick={() => onEnd(wid)}>
+                    Potvrdit konec
+                  </button>
+                )}
               </div>
             );
           }

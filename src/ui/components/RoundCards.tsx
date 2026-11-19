@@ -176,6 +176,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                               }}
                               canMatch={canMatch}
                               canSolo={canSolo}
+                              onEnd={autoEnd}
                               only={j}
                             />
                           </div>
