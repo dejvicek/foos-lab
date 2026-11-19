@@ -261,7 +261,8 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const bar = mine.querySelector('.next-bar.ready') as HTMLElement;
     expect(bar).toHaveTextContent('Na řadě');
     const open = within(bar).getByRole('button', { name: /^Otevřít 2\. kolo: Normální leg/ });
-    expect(open).toHaveTextContent('Otevřít ›');
+    expect(open).toHaveTextContent(/^Otevřít$/);
+    expect(open).toHaveClass('link');
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     // Průběh dohrané hry rovnou rozbalený, jen křivka
     const prog = within(mine).getByRole('group', { name: 'Průběh' });

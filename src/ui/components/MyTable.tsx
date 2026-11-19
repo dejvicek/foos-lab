@@ -297,8 +297,9 @@ export function MyTable(props: Props) {
         {up ? (
           <div className="c-state live" role="status">
             <span>● Na řadě</span>
-            <button type="button" className="go" onClick={() => go(nextIdx)} aria-label={`Otevřít ${nx.row.label}: ${roundName(nx)}`}>
-              Otevřít ›
+            {/* Odkaz jako Opravit v proužku Dohráno (19. 11. 2026, *rozhodnutí uživatele*). */}
+            <button type="button" className="link" onClick={() => go(nextIdx)} aria-label={`Otevřít ${nx.row.label}: ${roundName(nx)}`}>
+              Otevřít
             </button>
           </div>
         ) : (

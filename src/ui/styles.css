@@ -723,7 +723,6 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .next-bar .tile-head { padding-top: 2px; }
 .next-bar .my-rule { display: none; }
 .next-bar .c-state.wait { font-weight: 600; }
-.next-bar .c-state button.go { background: var(--gold); color: var(--gold-ink); border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 800; font-size: 14px; white-space: nowrap; min-height: 36px; }
 .next-bar .c-state .count { font-size: 18px; font-weight: 800; }
 .my-zone { display: grid; gap: 8px; margin-top: 8px; }
 .my-zone > .big-action { min-height: 56px; border-radius: 12px; font-size: 18px; font-weight: 800; background: var(--gold); color: var(--gold-ink); border: 0; }
