@@ -127,7 +127,10 @@ export function RoundTileHead({
   startTime,
   me,
   inline,
+  help,
 }: {
+  /** Otazník vpravo v hlavičce: rozbalí nápovědu kola pod řádkem se stolem (19. 11. 2026). */
+  help?: { open: boolean; onToggle(): void };
   a: Assignment;
   name: string;
   format: string | null;
@@ -144,7 +147,14 @@ export function RoundTileHead({
       <span className="tile-top">
         <span className="tile-time">{clockAt(startTime, a.row.time)}</span>
         <Name className="tile-name">{name}</Name>
-        <span className="tile-fmt">{format}</span>
+        <span className="tile-fmt">
+          {format}
+          {help && (
+            <button type="button" className="help-ic" aria-label="Nápověda" aria-expanded={help.open} title="Nápověda" onClick={help.onToggle}>
+              ?
+            </button>
+          )}
+        </span>
       </span>
       {/* „Kolo 2 ze 14“ ukazuje časová osa nahoře – tady jen délka (19. 11. 2026). */}
       {min ? <span className="tile-sub">{min} min</span> : null}

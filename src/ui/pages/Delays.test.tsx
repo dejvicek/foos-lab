@@ -228,6 +228,14 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     await user.click(within(mine).getByRole('button', { name: /^1\. kolo:/ }));
     expect(mine.querySelector('.mirror-stage')).toBeNull();
     expect(within(mine).queryByRole('group', { name: 'Průběh' })).toBeNull();
+    // nápověda: otazník v hlavičce karty, obsah pod řádkem se stolem; sbalená nápověda pod zápisem není (19. 11. 2026)
+    expect(mine.querySelector('details.help')).toBeNull();
+    const q = within(mine).getByRole('button', { name: 'Nápověda' });
+    expect(q).toHaveAttribute('aria-expanded', 'false');
+    await user.click(q);
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('region', { name: 'Nápověda' })).toHaveTextContent('Normální leg');
+    await user.click(q);
+    expect(within(mine).queryByRole('region', { name: 'Nápověda' })).toBeNull();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeEnabled();
   });

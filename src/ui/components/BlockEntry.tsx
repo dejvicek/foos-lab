@@ -130,6 +130,8 @@ interface Props {
   timing?: ItemTiming;
   /** Jen jeden stůl (index v row.cells) – tužka v rozpisu u konkrétního stolu (19. 11. 2026). */
   only?: number;
+  /** Nápověda je jinde (Moje hry: otazník v hlavičce kola, 19. 11. 2026). */
+  noHelp?: boolean;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -268,7 +270,31 @@ export function GameProgress({ row, table, training, names }: { row: ScheduleRow
   return <ItemProgress itemId={c.match.id} match={c.match} players={[...c.match.sideA, ...c.match.sideB]} training={training} names={names} />;
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only }: Props) {
+/** Je pro kolo nějaká nápověda (pravidla, stanoviště)? */
+export function hasRoundHelp(row: ScheduleRow): boolean {
+  const ex = explanationsFor(row);
+  return ex.main.length > 0 || ex.general.length > 0 || ex.perTable.some(Boolean);
+}
+
+/** Obsah nápovědy kola: co disciplína trénuje, stanoviště po stolech, pravidla. */
+export function RoundHelp({ row }: { row: ScheduleRow }) {
+  const ex = explanationsFor(row);
+  return (
+    <>
+      {row.discipline && <SkillTags skills={discipline(row.discipline)?.skills} />}
+      {ex.perTable.some(Boolean) && (
+        <div className="help-grid">
+          {ex.perTable.map((it, j) => (it ? <HelpItem key={j} title={`Stůl ${j + 1}: ${explanationTitle(it.name)}`} item={it} /> : <div key={j} />))}
+        </div>
+      )}
+      {[...ex.main, ...ex.general].map((it) => (
+        <HelpItem key={it.name} title={explanationTitle(it.name)} item={it} />
+      ))}
+    </>
+  );
+}
+
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only, noHelp }: Props) {
   /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
     const id = drillItemId(r, j + 1, players);
@@ -504,20 +530,10 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             {refs.size ? 'Čeká' : (row.waitingLabel ?? waitingLabel)}: {unassigned.map((p) => names[p] ?? '?').join(', ')}
           </p>
         )}
-        {hasHelp && (
+        {hasHelp && !noHelp && (
           <details className="help">
             <summary>{helpTitle}</summary>
-            {row.discipline && <SkillTags skills={discipline(row.discipline)?.skills} />}
-            {ex.perTable.some(Boolean) && (
-              <div className="help-grid">
-                {ex.perTable.map((it, j) =>
-                  it ? <HelpItem key={j} title={`Stůl ${j + 1}: ${explanationTitle(it.name)}`} item={it} /> : <div key={j} />,
-                )}
-              </div>
-            )}
-            {[...ex.main, ...ex.general].map((it) => (
-              <HelpItem key={it.name} title={explanationTitle(it.name)} item={it} />
-            ))}
+            <RoundHelp row={row} />
           </details>
         )}
       </div>

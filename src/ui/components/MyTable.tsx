@@ -9,7 +9,7 @@ import { flatRows, rowKey } from '../now';
 import { rowFormat, rowMinutes, rowName } from '../scheduleView';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
-import { BlockEntry, GameProgress, type TapEntry, type TapSolo } from './BlockEntry';
+import { BlockEntry, GameProgress, hasRoundHelp, RoundHelp, type TapEntry, type TapSolo } from './BlockEntry';
 import type { ItemTiming } from './Timing';
 import { drillItemId } from '../../domain/queue';
 
@@ -109,6 +109,8 @@ export function MyTable(props: Props) {
   const [fix, setFix] = useState(false);
   // Listování šipkami: starší dohrané kolo se ukáže normálně (výsledek a Průběh), ne jako přechod.
   const [browse, setBrowse] = useState(false);
+  // Nápověda kola pod řádkem se stolem (otazník v hlavičce, 19. 11. 2026).
+  const [help, setHelp] = useState(false);
   const activeId = activeIdx >= 0 ? itemOf(list[activeIdx]) : null;
   // Další hra je na řadě: přepnout na ni – ne však z dohraného utkání (tam čeká přechod s „Otevřít“).
   useEffect(() => {
@@ -120,6 +122,7 @@ export function MyTable(props: Props) {
   const a = list[i];
   const go = (j: number, manual = false) => {
     setFix(false);
+    setHelp(false);
     setBrowse(manual);
     setIdx(j);
   };
@@ -140,7 +143,7 @@ export function MyTable(props: Props) {
   };
   const secOf = (row: Assignment['row']) => schedule.sections.find((x) => x.rows.includes(row));
   /** Hlavička kola jako dlaždice v Rozpisu: čas · název · formát, „Kolo 2 ze 14 · 8 min“, pravidlo. */
-  const header = (j: number, inline = false) => (
+  const header = (j: number, inline = false, withHelp = false) => (
     <RoundTileHead
       key={j}
       a={list[j]}
@@ -150,6 +153,7 @@ export function MyTable(props: Props) {
       startTime={training.startTime}
       me={playerId}
       inline={inline}
+      help={withHelp && hasRoundHelp(list[j].row) ? { open: help, onToggle: () => setHelp(!help) } : undefined}
     />
   );
   const nextCard = target !== null && (
@@ -199,7 +203,7 @@ export function MyTable(props: Props) {
       />
       {/* Kolo jako dlaždice v Rozpisu: hlavička a můj stůl (velké číslo + zápas), bez opakování „stůl 2“ (19. 11. 2026). */}
       <article className="round-card my-card mine-row" aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
-        {header(i)}
+        {header(i, false, true)}
         <div className="tile-rows">
           {a.role === 'wait' ? (
             <div className="tile-line">
@@ -225,6 +229,11 @@ export function MyTable(props: Props) {
             )
           )}
         </div>
+        {help && (
+          <div className="my-help help" role="region" aria-label="Nápověda">
+            <RoundHelp row={a.row} />
+          </div>
+        )}
       </article>
       {done}
       {a.role !== 'wait' && (
@@ -241,6 +250,7 @@ export function MyTable(props: Props) {
           timing={props.timing}
           onTapSolo={props.onTapSolo}
           timelineOpen
+          noHelp
         />
       )}
       {finished && !browse && nextCard}
