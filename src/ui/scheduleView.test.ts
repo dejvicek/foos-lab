@@ -1,7 +1,7 @@
 import { buildSchedule } from '../domain/schedule';
 import type { Training } from '../domain/types';
 import { flatRows, rowKey } from './now';
-import { collapsedDone, placeOf, roundNumbers, rowMinutes, rowName } from './scheduleView';
+import { collapsedDone, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub } from './scheduleView';
 import type { RoundStatus } from './roundState';
 
 const ids = Array.from({ length: 8 }, (_, i) => `p${i + 1}`);
@@ -23,6 +23,19 @@ describe('rozpis očima hráče (18. 11. 2026)', () => {
     expect(rowName(row(1))).toBe('Normální leg');
     const min = rowMinutes(s, t.durationMin);
     expect(min.get(rowKey(refs[1]))).toBeGreaterThan(0);
+  });
+
+  it('formát zápasu vedle délky kola, ne v názvu (19. 11. 2026)', () => {
+    const bo = buildSchedule({ ...t, plan: { normal: 1, sim: 1 }, breaks: [], matchFormats: { normal: { bestOf: 3, legTo: 5 } } });
+    const rows = bo.sections.flatMap((x) => x.rows);
+    const normal = rows.find((r) => r.discipline === 'normal')!;
+    expect(rowName(normal)).toBe('Normální leg');
+    expect(rowFormat(normal)).toBe('BO3 do 5');
+    expect(rowSub(24, normal)).toBe('24 min · BO3 do 5');
+    expect(rowSub(24, normal, 'zapsáno 1 z 8')).toBe('24 min · BO3 do 5 · zapsáno 1 z 8');
+    const sim = rows.find((r) => r.discipline === 'sim')!;
+    expect(rowFormat(sim)).toMatch(/^BO\d/);
+    expect(rowFormat(row(1))).toBeNull(); // výchozí formát se nepíše
   });
 
   it('kde jsem: hraju u stolu, mám volno, nebo nejsem v tréninku', () => {

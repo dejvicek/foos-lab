@@ -332,8 +332,9 @@ describe('BO formát v klubovém tréninku (12. 11. 2026)', () => {
     const repo = memoryRepository({ players: players(4), trainings: [t] });
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
-    expect(screen.getByText('Normální leg BO3 do 5')).toBeInTheDocument();
-    expect(screen.getByText('24 min')).toBeInTheDocument();
+    // formát vedle délky kola, název bez něj (19. 11. 2026)
+    expect(screen.getByText('Normální leg')).toBeInTheDocument();
+    expect(screen.getByText('24 min · BO3 do 5')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1. kolo, stůl 1$/ }));
     const cell = () => screen.getByRole('group', { name: '1. kolo, stůl 1' });
     const legs = () => within(cell()).getByRole('group', { name: 'Legy: 1. kolo, stůl 1' });

@@ -35,9 +35,21 @@ export function rowMinutes(s: Schedule, durationMin?: number): Map<string, numbe
 /** Název disciplíny řádku: pravidlo bez délky („Normální leg“, „Zeď“); simulace „Simulace · 1. vlna“. */
 export function rowName(row: ScheduleRow, sectionId?: string): string {
   if (row.discipline === 'sim' || sectionId === 'sim') return `Simulace · ${row.label}`;
-  const rule = row.rule?.split(',')[0].trim();
+  // Formát zápasu (BO3 do 5) je vedle délky kola, ne v názvu (19. 11. 2026).
+  const rule = row.rule?.split(',')[0].replace(BO_RE, '').trim();
   return rule && !/^\d+ min$/.test(rule) ? rule : row.label;
 }
+
+const BO_RE = /\s*\bBO\d[^,]*/;
+
+/** Formát zápasu z pravidla řádku („BO3 do 5“), nebo null – v rozpisu vedle délky kola (19. 11. 2026). */
+export function rowFormat(row: ScheduleRow): string | null {
+  return row.rule?.match(BO_RE)?.[0].trim() ?? null;
+}
+
+/** Podřádek kola: „24 min · BO3 do 5“ (a u organizátora průběh zápisu). */
+export const rowSub = (min: number | undefined, row: ScheduleRow, extra?: string | null): string =>
+  [min ? `${min} min` : null, rowFormat(row), extra].filter(Boolean).join(' · ');
 
 export type Place = { kind: 'play' | 'ref'; table: number } | { kind: 'free' } | { kind: 'none' };
 

@@ -7,7 +7,7 @@ import { clockAt, soloKey } from '../../domain/solo';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
 import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
-import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, rowName, takesPart, upcomingRounds } from '../scheduleView';
+import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress, type TapSolo } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
@@ -418,7 +418,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                       </td>
                       <td className="c-block">
                         <span className="row-name">{rowName(row, sec.id)}</span>
-                        {min && <span className="cell-sub">{min} min</span>}
+                        {(min || rowFormat(row)) && <span className="cell-sub">{rowSub(min, row)}</span>}
                         {progress && <span className="cell-sub">{progress}</span>}
                       </td>
                       {visible.map((j) => {

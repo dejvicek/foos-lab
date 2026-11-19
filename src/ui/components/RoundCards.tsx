@@ -3,7 +3,7 @@ import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
 import { railClass, railLine, type RoundStatus } from '../roundState';
-import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, rowName, takesPart, upcomingRounds } from '../scheduleView';
+import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
 import { ProgressToggle } from './ProgressToggle';
@@ -223,17 +223,12 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     aria-label={`${row.label}, ${rowName(row, sec.id)}, ${time}: ${isOpen ? 'skrýt ostatní stoly' : 'zobrazit všechny stoly'}`}
                     onClick={() => setTiles({ ...tiles, [key]: !isOpen })}
                   >
+                    {/* Čas vlevo, pak název (19. 11. 2026, jako sloupce Čas · Disciplína na notebooku). */}
                     <span className="tile-top">
-                      <span className="tile-name">{rowName(row, sec.id)}</span>
                       <span className="tile-time">{time}</span>
+                      <span className="tile-name">{rowName(row, sec.id)}</span>
                     </span>
-                    {(min || progress) && (
-                      <span className="tile-sub">
-                        {min ? `${min} min` : ''}
-                        {min && progress ? ' · ' : ''}
-                        {progress}
-                      </span>
-                    )}
+                    {rowSub(min, row, progress) && <span className="tile-sub">{rowSub(min, row, progress)}</span>}
                   </button>
                   {/* Řádky stolů: ťuknutí rozbalí / sbalí dlaždici (klávesnicí přes hlavičku); ikonka grafu otevře Průběh. */}
                   <div className="tile-rows" onClick={() => setTiles({ ...tiles, [key]: !isOpen })}>
