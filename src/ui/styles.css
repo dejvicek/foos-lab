@@ -1080,7 +1080,9 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 .sim-legs { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 8px; font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.25; }
 .sim-run { color: var(--muted); }
 .sim-live { display: inline-block; font-size: 11px; font-weight: 800; color: var(--felt); background: var(--felt-soft); border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
-.sim-table tr.sim-total td { background: var(--felt-soft); font-weight: 800; }
+/* Celkově jasně odlišené (19. 11. 2026): silná čára nad, větší tučné písmo, popisek velkými písmeny jako v lize. */
+.wrap .sim-table tr.sim-total td { background: var(--felt-soft); color: var(--ink); font-weight: 800; font-size: 16px; border-top: 2px solid var(--ink); border-bottom: 0; padding-top: 7px; padding-bottom: 7px; }
+.wrap .sim-table tr.sim-total td:first-child { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
 .sim-table tr.sim-total td:first-child { text-align: right; }
 @media (max-width: 560px) {
   /* Telefon: domácí a hosté pod sebou, legy pod hrami, bez sloupce Stav – bez posouvání do strany. */
