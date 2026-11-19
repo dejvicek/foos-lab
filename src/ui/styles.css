@@ -770,9 +770,8 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: start; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
-/* Číslo stolu: velká číslice přes oba řádky zápasu, nad ní stůl v perspektivě, svislá čára k zápasu (19. 11. 2026). */
+/* Číslo stolu: velká číslice přes oba řádky zápasu, svislá čára k zápasu (19. 11. 2026, bez ikonky stolu). */
 .table-no { display: grid; justify-items: center; align-content: center; gap: 1px; align-self: stretch; padding-right: 6px; border-right: 1px solid var(--line); color: var(--muted); }
-.table-no svg { width: 22px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 .table-no b { font-size: 24px; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 .round-card.st-done .table-no b { color: var(--muted); }
 .tile-row .cell-score { float: right; margin: 0 0 0 8px; font-size: 14px; }
