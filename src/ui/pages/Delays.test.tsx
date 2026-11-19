@@ -263,6 +263,9 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const open = within(bar).getByRole('button', { name: /^Otevřít 2\. kolo: Normální leg/ });
     expect(open).toHaveTextContent(/^Otevřít$/);
     expect(open).toHaveClass('link');
+    // nápověda dalšího kola: otazník v hlavičce karty
+    await user.click(within(bar).getByRole('button', { name: /nápověd/i }));
+    expect(within(bar).getByRole('region', { name: 'Nápověda: Další kolo' })).toBeInTheDocument();
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     // Průběh dohrané hry rovnou rozbalený, jen křivka
     const prog = within(mine).getByRole('group', { name: 'Průběh' });

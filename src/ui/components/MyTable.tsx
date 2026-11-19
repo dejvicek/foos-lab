@@ -90,6 +90,8 @@ export function MyTable(props: Props) {
   const [fix, setFix] = useState(false);
   // Nápověda kola pod řádkem se stolem (otazník v hlavičce, 19. 11. 2026).
   const [help, setHelp] = useState(false);
+  // Nápověda karty Další kolo (otazník v její hlavičce, 19. 11. 2026).
+  const [nextHelp, setNextHelp] = useState(false);
   const activeId = activeIdx >= 0 ? itemOf(list[activeIdx]) : null;
   // Další hra je na řadě: přepnout na ni – ne však z dohraného kola (tam ji nabídne lišta Další kolo).
   useEffect(() => {
@@ -102,6 +104,7 @@ export function MyTable(props: Props) {
   const go = (j: number) => {
     setFix(false);
     setHelp(false);
+    setNextHelp(false);
     setIdx(j);
   };
   const sec = schedule.sections.find((x) => x.rows.includes(a.row));
@@ -292,6 +295,7 @@ export function MyTable(props: Props) {
           min={minutes.get(keyOf(nx.row))}
           startTime={training.startTime}
           me={playerId}
+          help={hasRoundHelp(nx.row) ? { open: nextHelp, onToggle: () => setNextHelp(!nextHelp) } : undefined}
         />
         {tableRows(nx)}
         {up ? (
@@ -306,6 +310,11 @@ export function MyTable(props: Props) {
           <div className="c-state wait" role="status">
             <b>{w!.text}</b>
             {w!.left !== undefined && <span className="count">{fmtDur(Math.max(0, w!.left))}</span>}
+          </div>
+        )}
+        {nextHelp && (
+          <div className="my-help help" role="region" aria-label="Nápověda: Další kolo">
+            <RoundHelp row={nx.row} untitledMain />
           </div>
         )}
       </article>
