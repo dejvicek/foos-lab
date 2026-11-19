@@ -762,8 +762,9 @@ button.tile-head {
   text-align: left; font-weight: 400; min-height: 0; cursor: pointer;
 }
 button.tile-head:active { background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.tile-top { display: flex; justify-content: flex-start; gap: 10px; align-items: baseline; }
-.tile-name { font-weight: 800; font-size: 16px; }
+.tile-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+/* Název disciplíny vpravo, čas vlevo (19. 11. 2026). */
+.tile-name { font-weight: 800; font-size: 16px; text-align: right; min-width: 0; }
 .tile-time { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; flex: none; }
 .tile-sub { color: var(--muted); font-size: 12px; }
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; cursor: pointer; }
