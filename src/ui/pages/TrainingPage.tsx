@@ -5,7 +5,7 @@ import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
-import { parseSoloKey, soloKey, soloMetric } from '../../domain/solo';
+import { parseSoloKey, soloKey } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
 import { canManage, canMarkReady, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
@@ -14,12 +14,10 @@ import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, se
 import { RoundCards } from '../components/RoundCards';
 import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
-import { ActiveMatches } from '../components/ActiveMatches';
 import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
 import type { ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
-import { usedTables } from '../components/TrainingTable';
 import { minutesSinceStart, useNow } from '../now';
 import { pauseRows, roundStates } from '../roundState';
 import { trainingRunning } from '../liveTag';
@@ -44,7 +42,7 @@ export function TrainingPage({
   navigate: (r: Route) => void;
   viewer?: Viewer;
   /** schedule = stránka tréninku (rozpis, souhrn), live = Živě, my = Moje hry (hlavní navigace). */
-  view?: 'schedule' | 'live' | 'my';
+  view?: 'schedule' | 'my';
 }) {
   const training = store.data.trainings.find((t) => t.id === id);
   // Průběh her (časová osa, automatický konec utkání) se načítá jen pro trénink na obrazovce.
@@ -166,9 +164,6 @@ export function TrainingPage({
       : undefined;
   const canAddBreak = !!breakControls && freeSlots(training).length > 0;
 
-  /** Smí přihlášený zahájit / ukončit utkání? Zápas jako skóre, cvičení hráči skupiny a správce. */
-  const canItem = (e: Extract<QueueEntry, { kind: 'item' }>) =>
-    e.match ? canMatch(e.match) : manage || (!!viewer.playerId && e.players.includes(viewer.playerId));
   const delays = queueInfo ? delayStats(queueInfo.queue, queueInfo.states) : [];
   // Týmy simulace: nastavují se v tréninku, dokud simulace nezačala (pak jsou zamčené).
   const simItems = queueInfo?.queue.filter((e): e is Extract<QueueEntry, { kind: 'item' }> => e.kind === 'item' && e.match?.block === 'sim') ?? [];
@@ -223,16 +218,6 @@ export function TrainingPage({
       }
     : undefined;
 
-  /** Živě: metrika a klíč výsledku cvičení podle kola, stolu a hráčů ve frontě. */
-  const drillEntryOf = (label: string, table: number, players: PlayerId[]) => {
-    for (const sec of schedule?.sections ?? [])
-      for (const r of sec.rows) {
-        if (r.label !== label) continue;
-        const c = r.cells[table - 1];
-        if (c?.type === 'group' && c.metric && c.players.join() === players.join()) return { def: soloMetric(c.metric), key: soloKey(c.metric, c.soloRound) };
-      }
-    return null;
-  };
   /** ID utkání cvičení (stůl, kde hráč s danou metrikou a kolem cvičí). */
   const drillItemOf = (playerId: PlayerId, key: SoloKey): string | null => {
     for (const sec of schedule?.sections ?? [])
@@ -305,31 +290,6 @@ export function TrainingPage({
       )}
     </div>
   );
-
-  if (view === 'live')
-    return (
-      <section>
-        {viewHead('Živě')}
-        {flowBar(true)}
-        {simNext && simSetup}
-        {schedule && queueInfo && (
-          <ActiveMatches
-            queue={queueInfo.queue}
-            states={queueInfo.states}
-            tables={usedTables(schedule).map((j) => j + 1)}
-            names={names}
-            me={viewer.playerId}
-            now={tick}
-            canWrite={canItem}
-            manage={manage}
-            onEnd={(e) => itemTiming?.end(e.id)}
-            entry={{ training, onScore, onSolo, drillOf: (e) => drillEntryOf(e.label, e.table, e.players) }}
-            training={training}
-            onMyGame={attends ? () => navigate({ page: 'my' }) : undefined}
-          />
-        )}
-      </section>
-    );
 
   if (view === 'my')
     return (

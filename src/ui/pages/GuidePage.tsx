@@ -125,7 +125,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </div>
             <ul className="g-list">
               <Li i="!" red>
-                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 11). Kdo je
+                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 10). Kdo je
                 připravený dřív, nečeká na úkor sebe. U cvičení se hlásí každý hráč sám za sebe; rozhodčí může ohlásit kteroukoli stranu.
               </Li>
             </ul>
@@ -189,23 +189,10 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </Step>
 
           <h2 className="g-group">Přehled a výsledky</h2>
-          <Step n={7} label="Živě" title="Co se hraje u všech stolů" phone={<LivePhone />}>
+          <Step n={7} label="Trénink" title="Celý trénink na jedné stránce" phone={<TrainingPhone />}>
             <p>
-              Záložka <b>Živě</b> ukazuje stoly a utkání na nich, se stopkami. Pod tím je „Další v pořadí“ a proč se na ně čeká: obsazený stůl, hráči, kteří
-              ještě hrají, nebo pauza.
-            </p>
-            <ul className="g-list">
-              <Li i="⏱">Plánované časy v rozpisu jsou jen orientační. Další utkání se pustí, jakmile jsou volní hráči i stůl.</Li>
-              <Li i="›">
-                Připravenost se v Živě nehlásí. U svého utkání máš odkaz <b>Připraven v Moje hry</b>; v Živě je vidět, kdo už je připravený.
-              </Li>
-            </ul>
-          </Step>
-
-          <Step n={8} label="Trénink" title="Celý trénink na jedné stránce" phone={<TrainingPhone />}>
-            <p>
-              V záložce <b>Trénink</b> je seznam tréninků, dnešní nahoře se štítkem „Hraješ – kolo 3 právě běží“. Po otevření vidíš celý rozpis, pod ním
-              souhrn tréninku a Zdržovače.
+              Když trénink probíhá, záložka <b>Trénink</b> ho otevře rovnou; jinak ukáže seznam tréninků. Nahoře je souhrn (Pořadí, Zdržovači,
+              Simulace), pod ním celý rozpis kol.
             </p>
             <ul className="g-list">
               <Li i="✓">
@@ -222,7 +209,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={9} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
+          <Step n={8} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
             <p>
               Každá ťuknutá hra má <b>Průběh</b> jako křivku. V Moje hry je rozbalený rovnou.
             </p>
@@ -237,9 +224,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={10} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
+          <Step n={9} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 11). Výchozí období je <b>forma</b>: tréninky za posledních
+              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
               28 dní.
             </p>
             <ul className="g-list">
@@ -261,7 +248,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={11} label="Zdržovači" title="Kdo nechá ostatní čekat" phone={<LadderPhone start="delays" label="Ukázka: Zdržovači" />}>
+          <Step n={10} label="Zdržovači" title="Kdo nechá ostatní čekat" phone={<LadderPhone start="delays" label="Ukázka: Zdržovači" />}>
             <p>
               Zdržovači měří, jak dlouho kdo nechá ostatní čekat: od chvíle, kdy jsou volní hráči i stůl a utkání je na řadě, do ťuknutí na{' '}
               <b>Připraven</b>. Každý hráč dostane čekání své strany (u cvičení svoje), takže připravený tým nepyká za soupeře.
@@ -315,7 +302,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 const TOC: [string, [number, string][]][] = [
   ['Než začneš', [[1, 'Přihlášení'], [2, 'Moje hry']]],
   ['U stolu', [[3, 'Hra'], [4, 'Rozcvička'], [5, 'Cvičení'], [6, 'Zápasy']]],
-  ['Přehled a výsledky', [[7, 'Živě'], [8, 'Trénink'], [9, 'Průběh'], [10, 'Žebříček'], [11, 'Zdržovači']]],
+  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříček'], [10, 'Zdržovači']]],
 ];
 
 /** Posun na krok bez změny adresy (adresy appky jsou v #, kotva by otevřela „Stránka nenalezena“). */
@@ -423,9 +410,8 @@ function Li({ i, red, children }: { i: React.ReactNode; red?: boolean; children:
   );
 }
 
-type Tab = 'live' | 'my' | 'trainings' | 'ladder' | 'disciplines';
+type Tab = 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
-  ['live', 'Živě'],
   ['my', 'Moje hry'],
   ['trainings', 'Trénink'],
   ['ladder', 'Žebříček'],
@@ -779,28 +765,6 @@ function WarmupPhone() {
       <div className="g-card">
         <span className="g-k">Celkem</span>
         <span>zbývá 6:18 z 8:35</span>
-      </div>
-    </Phone>
-  );
-}
-
-function LivePhone() {
-  const table = (n: number, who: React.ReactNode, t: React.ReactNode, wait = false) => (
-    <div className={wait ? 'g-tbl g-wait' : 'g-tbl'}>
-      <b>{n}</b>
-      <span className="g-w">{who}</span>
-      <span className="g-t">{t}</span>
-    </div>
-  );
-  return (
-    <Phone time="18:55" title="Živě" sub="kolo 3 · 2 ze 4 stolů hraje" tab="live">
-      {table(1, <>Luky + Ondra<br />vs David K + Lavi</>, <>hraje<br />4:10</>)}
-      {table(2, <>Dejv + Milan<br />vs Osky + Denys</>, <>hraje<br />7:12</>)}
-      {table(3, 'volný', 'čeká na hráče', true)}
-      {table(4, 'volný', 'čeká na hráče', true)}
-      <div className="g-card">
-        <span className="g-k">Další v pořadí</span>
-        <span>4. kolo, stůl 1 · čeká na Luky, Ondra</span>
       </div>
     </Phone>
   );

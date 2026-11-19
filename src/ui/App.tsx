@@ -1,4 +1,4 @@
-import { activeFor } from './active';
+import { activeFor, runningTraining } from './active';
 import { useNow } from './now';
 import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -147,17 +147,19 @@ function SignedIn({
     savePrefs(p);
   };
   const myName = store.data.players.find((p) => p.id === viewer.playerId)?.name ?? null;
-  // Běžící trénink, na kterém jsem → Živě a Moje hry v navigaci.
+  // Běžící trénink, na kterém hraju → Moje hry v navigaci; probíhající trénink kohokoli → „Trénink“ ho otevře.
   const now = useNow();
   const active = useMemo(() => activeFor(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now())), [store.data.trainings, viewer.playerId, now]);
-  // Otevření appky (bez adresy): rozehraná hra → Moje hry, běžící trénink → Živě, jinak Trénink.
+  const running = useMemo(() => runningTraining(store.data.trainings, Math.max(now.getTime(), Date.now())), [store.data.trainings, now]);
+  // Otevření appky (bez adresy): rozehraná hra → Moje hry, probíhající trénink → jeho rozpis, jinak Trénink (Živě zrušeno 19. 11. 2026).
   const [openedBare] = useState(() => /^#?\/?$/.test(window.location.hash));
   const redirected = useRef(false);
   useEffect(() => {
     if (!openedBare || redirected.current || store.status !== 'ready') return;
     redirected.current = true;
-    if (active) navigate({ page: active.myGame ? 'my' : 'live' });
-  }, [openedBare, store.status, active, navigate]);
+    if (active?.myGame) navigate({ page: 'my' });
+    else if (running) navigate({ page: 'training', id: running.id });
+  }, [openedBare, store.status, active, running, navigate]);
   const noLive = (
     <div className="empty-live">
       <p>
@@ -205,7 +207,14 @@ function SignedIn({
   else if (route.page === 'training-new') body = <NewTrainingPage store={store} navigate={navigate} viewer={viewer} />;
   else if (route.page === 'training-edit')
     body = <EditTrainingPage key={route.id} store={store} id={route.id} navigate={navigate} viewer={viewer} />;
-  else if (route.page === 'live' || route.page === 'my')
+  else if (route.page === 'live')
+    // Stará adresa záložky Živě: probíhající trénink, jinak seznam tréninků.
+    body = running ? (
+      <TrainingPage key={running.id} store={store} id={running.id} navigate={navigate} viewer={viewer} />
+    ) : (
+      <TrainingsPage store={store} navigate={navigate} viewer={viewer} />
+    );
+  else if (route.page === 'my')
     body = active ? (
       <TrainingPage key={`${route.page}-${active.training.id}`} store={store} id={active.training.id} navigate={navigate} viewer={viewer} view={route.page} />
     ) : (
@@ -235,6 +244,7 @@ function SignedIn({
         onChangePassword={onChangePassword}
         onSignOut={onSignOut}
         live={!!active}
+        running={running?.id ?? null}
         mine={!!active?.plays}
         myTurn={!!active?.myTurn}
         admin={viewer.isAdmin}

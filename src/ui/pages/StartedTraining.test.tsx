@@ -86,7 +86,7 @@ describe('běžící trénink jde upravit – rozpis se přegeneruje (10. 11. 20
   });
 });
 
-it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště); Živě ho má', async () => {
+it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště)', async () => {
   window.location.hash = '#/my-games';
   const players4 = Array.from({ length: 4 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
   const { memoryAuth } = await import('../../storage/auth');
@@ -99,6 +99,4 @@ it('Moje hry bez odkazu „celý rozpis“ (stačí Trénink ve spodní liště)
   );
   await screen.findByRole('heading', { name: 'Moje hry' });
   expect(screen.queryByRole('button', { name: 'celý rozpis ›' })).toBeNull();
-  window.location.hash = '#/live';
-  expect(await screen.findByRole('button', { name: 'celý rozpis ›' })).toBeInTheDocument();
 });
