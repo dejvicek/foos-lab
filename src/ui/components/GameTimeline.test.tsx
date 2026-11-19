@@ -26,6 +26,8 @@ it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače
   expect([...container.querySelectorAll('.tl-pt')].map((c) => c.getAttribute('class'))).toEqual(['tl-pt side-b', 'tl-pt side-a']);
   expect([...container.querySelectorAll('.tl-pt title')].map((t) => t.textContent)).toEqual(['Gól: Svoboda + Černý v 0:02 → 4:5', 'Gól: Novák + Dvořák v 0:04 → 5:5']);
   expect(container.querySelector('.tl-tax-step')).toBeNull();
+  // čas po čtvrtinách celku (5 s): 0:00 · 0:01 · 0:02 · 0:04 · 0:05
+  expect([...container.querySelectorAll('svg text.tl-time')].slice(-5).map((x) => x.textContent)).toHaveLength(5);
 });
 
 it('zápas: obrat – první gól, po kterém vede strana, která prohrávala', () => {
@@ -34,13 +36,13 @@ it('zápas: obrat – první gól, po kterém vede strana, která prohrávala', 
   expect(container.querySelector('.tl-turn')).toHaveTextContent('obrat 2:1');
 });
 
-it('Daň (19. 11. 2026): gól ze ztráty soupeře má čárkovaný schod a kroužek, v legendě vysvětlení', () => {
+it('Daň (19. 11. 2026): gól ze ztráty soupeře má čárkovaný schod a kroužek; legenda jen jména', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'loss', { side: 'B' }), ev(2.01, 'goal', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
   const { container } = render(<MatchTimeline match={match({ lossTax: true, trackLosses: true })} events={events} from={0} to={5000} names={names} />);
   expect(container.querySelectorAll('.tl-tax-step')).toHaveLength(1);
   expect(container.querySelectorAll('.tl-tax-ring')).toHaveLength(1);
   expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(0); // ztráta je vidět na gólu, ne zvlášť
-  expect(container.querySelector('.tl-legend-tax')).toHaveTextContent('gól ze ztráty soupeře');
+  expect(container.querySelector('.tl-legend')).toHaveTextContent(/^Novák \+ DvořákSvoboda \+ Černý$/);
   expect([...container.querySelectorAll('.tl-pt title')].map((t) => t.textContent)).toEqual([
     'Gól: Svoboda + Černý v 0:02 → 0:1',
     'Gól ze ztráty soupeře: Novák + Dvořák v 0:03 → 1:1',
@@ -73,5 +75,6 @@ it('cvičení: křivky povedených pokusů hráčů, nepovedené jako tečky; be
   expect(screen.getByRole('img', { name: 'Povedené pokusy po pokusech' })).toBeInTheDocument();
   expect(screen.queryByRole('button')).toBeNull();
   expect(container.querySelectorAll('.tl-pline')).toHaveLength(2);
+  expect(screen.getByText('pokus')).toBeInTheDocument();
   expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1);
 });

@@ -4,7 +4,6 @@ import { setScores } from '../../domain/legState';
 import type { GameEvent, Match, PlayerId } from '../../domain/types';
 import { fmtDur } from '../queue';
 
-const MIN = 60_000;
 
 /** Šířka prvku (pro SVG křivky); ve sbaleném Průběhu nebo bez ResizeObserver výchozí. */
 function useWidth(fallback = 320) {
@@ -41,8 +40,8 @@ function turnOf(p: MatchProgress) {
 
 /**
  * Zápas – křivka vedení (PRD 4.9, podoba z 19. 11. 2026): rozdíl skóre v čase, nad nulou vede levá, pod nulou pravá.
- * Krátká legenda s barvou stran, body v barvě strany, která dala gól, osa +N / 0 / −N, vyznačený obrat.
- * Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
+ * Legenda jen se jmény stran (barva), body v barvě strany, která dala gól, osa +N / 0 / −N, vyznačený obrat,
+ * čas po čtvrtinách. Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
  */
 function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
   const [ref, width] = useWidth();
@@ -77,8 +76,8 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
   area += ` H${x(1)} V${mid} Z`;
   const id = `tl${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const total = p.end - p.start;
-  const ticks: number[] = [];
-  for (let m = MIN; m < total; m += MIN) ticks.push(m / total);
+  // Osa času po čtvrtinách celku (19. 11. 2026): 0, 25 %, 50 %, 75 %, konec.
+  const quarters = [0, 0.25, 0.5, 0.75, 1];
   const turn = turnOf(p);
   const tx = turn ? x(turn.pos) : 0;
   const nameOf = (s: 'A' | 'B') => (s === 'A' ? nameA : nameB);
@@ -94,12 +93,6 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
           <i className="tl-dot side-b" />
           {nameB}
         </span>
-        {tax.length > 0 && (
-          <span className="tl-legend-tax">
-            <i className="tl-tax-key" />
-            gól ze ztráty soupeře
-          </span>
-        )}
       </div>
       <svg width={W} height={H} role="img" aria-label={`Křivka vedení, konečný stav ${p.score.join(':')}`}>
         <defs>
@@ -150,15 +143,14 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
             <title>{`Ztráta: ${nameOf(l.side)} v ${fmtDur(l.at - p.start)}`}</title>
           </circle>
         ))}
-        {ticks.map((t) => (
-          <line key={t} className="tl-tick" x1={x(t)} x2={x(t)} y1={H - 14} y2={H - 10} />
+        {quarters.map((q) => (
+          <g key={q}>
+            <line className="tl-tick" x1={x(q)} x2={x(q)} y1={H - 14} y2={H - 10} />
+            <text className="tl-time" textAnchor={q === 0 ? 'start' : q === 1 ? 'end' : 'middle'} x={x(q)} y={H - 1}>
+              {fmtDur(total * q)}
+            </text>
+          </g>
         ))}
-        <text className="tl-time" x={L} y={H - 1}>
-          0:00
-        </text>
-        <text className="tl-time" textAnchor="end" x={x(1)} y={H - 1}>
-          {fmtDur(total)}
-        </text>
       </svg>
     </div>
   );
@@ -236,17 +228,15 @@ function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: numb
             {e.hits}
           </text>
         ))}
-        <text className="tl-time" textAnchor="middle" x={x(1)} y={H - 6}>
-          1
-        </text>
-        <text className="tl-time" textAnchor="middle" x={x(n)} y={H - 6}>
-          {n}
-        </text>
-        {n >= 6 && (
-          <text className="tl-time" textAnchor="middle" x={x((n + 1) / 2)} y={H - 6}>
-            pokus
+        {/* Pokusy po čtvrtinách celku (19. 11. 2026): např. 5 · 10 · 15 · 20. */}
+        {[...new Set([0.25, 0.5, 0.75, 1].map((q) => Math.max(1, Math.round(n * q))))].map((a) => (
+          <text key={a} className="tl-time" textAnchor={a === n ? 'end' : 'middle'} x={x(a)} y={H - 6}>
+            {a}
           </text>
-        )}
+        ))}
+        <text className="tl-time" textAnchor="start" x={x(0)} y={H - 6}>
+          pokus
+        </text>
       </svg>
     </div>
   );
