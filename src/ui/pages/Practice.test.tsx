@@ -232,19 +232,21 @@ describe('vlastní trénink (PRD 5.11)', () => {
   it('žebříček Zápasy: tabulka zápasů 1 na 1 (vyhrané zápasy, legy, rozdíl)', async () => {
     window.location.hash = '#/ladder';
     const d = today();
-    const game = (id: string, a: string, b: string, legs: [number, number][]) => {
-      const p = newPractice(id, d, '10:00', a, b, ['goalieWar'], { goalieWar: { bestOf: 3, legTo: 6 } });
+    const game = (id: string, a: string, b: string, legs: [number, number][], bestOf = 3) => {
+      const p = newPractice(id, d, '10:00', a, b, ['goalieWar'], { goalieWar: { bestOf, legTo: 6 } });
       const mid = `practice|1|${a}v${b}`;
       return { ...p, scores: Object.fromEntries(legs.map(([x, y], i) => [i ? `${mid}#${i + 1}` : mid, { ga: x, gb: y }])) };
     };
-    const ts = [game('a', 'id1', 'id2', [[6, 2], [6, 4]]), game('b', 'id1', 'id2', [[2, 6], [6, 3], [6, 5]]), game('c', 'id2', 'id1', [[6, 1], [6, 0]])];
+    const ts = [game('a', 'id1', 'id2', [[6, 2], [6, 4]]), game('b', 'id1', 'id2', [[2, 6], [6, 3], [6, 5]]), game('c', 'id2', 'id1', [[6, 1], [6, 0]]), game('d', 'id1', 'id2', [[6, 2], [3, 6]], 2)];
     render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
     // zápasy 1 na 1 jsou od 18. 11. 2026 v části Zápasy (výchozí), ne v Cvičení
     expect(await screen.findByRole('heading', { name: 'Zápasy 1 na 1' })).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'Goalie war' });
     const rows = within(table).getAllByRole('row').slice(1);
-    expect(rows[0]).toHaveTextContent(/H1.*3.*2 \/ 3.*4 \/ 7/);
-    expect(rows[1]).toHaveTextContent(/H2.*3.*1 \/ 3/);
+    // remízy (BO2 1:1) ve vlastním sloupci (19. 11. 2026)
+    expect(within(table).getByRole('columnheader', { name: /Remízy/ })).toBeInTheDocument();
+    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 6)).toEqual(['4', '2 / 4', '1', '5 / 9']);
+    expect(rows[1]).toHaveTextContent(/H2.*4.*1 \/ 4/);
   });
 
   it('výchozí výběr zvlášť pro solo a duo, pamatuje se zvlášť; tlačítko Výchozí (12. 11. 2026)', async () => {

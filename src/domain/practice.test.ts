@@ -348,8 +348,8 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
   it('zápasy 1 na 1 z klasického tréninku (podle pravidel kola) a singly simulace = Jedničky (19. 11. 2026)', () => {
     const classic: Training = {
       id: 'k', date: '2026-11-01', startTime: '18:00', mode: 'team', tables: 4, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
-      simSplit: 'order', simTeams: null, lockedRounds: [],
-    } as Training;
+      simSplit: 'order', simTeams: null, format: 'classic', durationMin: null, plan: null, lockedRounds: [],
+    } as unknown as Training;
     const ms = buildSchedule(classic).matches.filter((m) => m.kind === 'singles');
     const plain = ms.find((m) => m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
     const tax = ms.find((m) => m.block === 'league' && m.lossTax)!;
