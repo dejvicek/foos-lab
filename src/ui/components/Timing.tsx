@@ -237,7 +237,7 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
     ...(rankBy === 'sum' ? [waitSum, waitAvg] : [waitAvg, waitSum]),
     { key: 'playAvg', label: 'Hra ⌀', className: 'n', value: (r) => r.playAvg },
-    { key: 'items', label: compact ? 'Utk.' : 'Utkání', className: 'n', value: (r) => r.items },
+    { key: 'items', label: 'Utkání', className: 'n', value: (r) => r.items },
     ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
   ];
   const rankKey = rankBy === 'sum' ? 'waitSum' : 'waitAvg';
@@ -262,7 +262,7 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
               <td className="n rank">
                 <ShameRank place={place} shamed={shamed} />
               </td>
-              <td className={sortedCls(sort, 'name')}>
+              <td className={sortedCls(sort, 'name', 'name')}>
                 <span className="delay-who">
                   {open ? (
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>

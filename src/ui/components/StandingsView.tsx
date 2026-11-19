@@ -5,6 +5,7 @@ import type { DelayRow } from '../../domain/queue';
 import type { MatchId, PlayerId, Schedule, Score } from '../../domain/types';
 import { signed } from '../format';
 import { Seg } from './Seg';
+import { placeAndSort, RankTh, SortTh, sortedCls, useSort, type SortCol } from './SortTable';
 import { DelayTable } from './Timing';
 
 interface Props {
@@ -174,12 +175,24 @@ const How = ({ children }: { children: ReactNode }) => (
 );
 
 /**
- * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně (19. 11. 2026): góly zvlášť G+ / G−,
- * bez ztrát (*rozhodnutí uživatele*), vysvětlivka sbalená.
+ * Pořadí v rámci jednoho tréninku (PRD 5.5). Kompaktně a jednotně se Zdržovači (19. 11. 2026, *rozhodnutí uživatele*):
+ * hned za jménem to, podle čeho se řadí (Rozdíl, Výhry, G+), počet odehraného (Legy) na konci; řadit jde
+ * klikem na záhlaví, „#“ vrátí oficiální pořadí. Bez ztrát.
  */
 export function StandingsView({ schedule, scores, attendees, names }: Props) {
+  const [sort, setSort] = useSort();
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const empty = legsDone === 0 && (!sim || sim.played === 0);
+  type Row = (typeof rows)[number];
+  const cols: SortCol<Row>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
+    { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.diff },
+    { key: 'wins', label: 'Výhry', className: 'n', value: (r) => r.wins },
+    { key: 'gf', label: <span title="Góly vstřelené">G+</span>, className: 'n', value: (r) => r.gf },
+    { key: 'gc', label: <span title="Góly obdržené">G−</span>, className: 'n', value: (r) => r.gc, first: 'asc' },
+    { key: 'legs', label: 'Legy', className: 'n', value: (r) => r.legs },
+  ];
+  const items = placeAndSort(rows, [], cols, sort);
   return (
     <div className="standings">
       {empty ? (
@@ -190,32 +203,30 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
             <table aria-label="Souhrn tréninku" className="summary-table">
               <thead>
                 <tr>
-                  <th className="n" title="Pořadí">#</th>
-                  <th>Hráč</th>
-                  <th className="n">Legy</th>
-                  <th className="n">Výhry</th>
-                  <th className="n" title="Góly vstřelené">G+</th>
-                  <th className="n" title="Góly obdržené">G−</th>
-                  <th className="n">Rozdíl</th>
+                  <RankTh sort={sort} onReset={() => setSort(null)} />
+                  {cols.map((c) => (
+                    <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((x, i) => (
+                {items.map(({ r: x, place }) => (
                   <tr key={x.playerId}>
-                    <td className="n">{i + 1}.</td>
-                    <td className="name">{names[x.playerId] ?? '?'}</td>
-                    <td className="n">{x.legs}</td>
-                    <td className="n">{x.wins}</td>
-                    <td className="n">{x.gf}</td>
-                    <td className="n">{x.gc}</td>
-                    <td className={x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n'}>{signed(x.diff)}</td>
+                    <td className="n rank">{place}.</td>
+                    <td className={sortedCls(sort, 'name', 'name')}>{names[x.playerId] ?? '?'}</td>
+                    <td className={sortedCls(sort, 'diff', x.diff > 0 ? 'n pos' : x.diff < 0 ? 'n neg' : 'n')}>{signed(x.diff)}</td>
+                    <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
+                    <td className={sortedCls(sort, 'gf', 'n')}>{x.gf}</td>
+                    <td className={sortedCls(sort, 'gc', 'n')}>{x.gc}</td>
+                    <td className={sortedCls(sort, 'legs', 'n')}>{x.legs}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <How>
-            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry. U scénářových startů jde do skóre jen to, co se v kole odehrálo. Při úplné shodě rozhodují výhry v simulaci.
+            Pořadí dělá rozdíl skóre ze scénářové ligy (pravidlo Každý gól se počítá), pak výhry a vstřelené góly. U scénářových startů jde do skóre jen to, co se v kole
+            odehrálo. Při úplné shodě rozhodují výhry v simulaci.
           </How>
         </>
       )}

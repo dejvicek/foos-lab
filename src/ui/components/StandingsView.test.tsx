@@ -41,6 +41,17 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     expect(within(table).getAllByRole('row').at(-1)).toHaveTextContent('Celkově1:02:0');
   });
 
+  it('Pořadí jednotně se Zdržovači (19. 11. 2026): hned za jménem Rozdíl, Legy na konci; řadit klikem na záhlaví', async () => {
+    const t = custom({ normal: 2 });
+    const s = buildSchedule(t);
+    render(<TrainingSummary schedule={s} scores={{ [s.matches[0].id]: { ga: 6, gb: 2 } }} attendees={t.attendees} names={names} delays={[]} />);
+    const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Rozdíl', 'Výhry', 'G+', 'G−', 'Legy']);
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('+4');
+    await userEvent.setup().click(within(table).getByRole('button', { name: /Rozdíl/ }));
+    expect(within(table).getByRole('columnheader', { name: /Rozdíl/ })).toHaveAttribute('aria-sort', 'descending');
+  });
+
   it('bez simulace a bez čekání: jen pořadí, bez přepínače', () => {
     const t = custom({ normal: 1 });
     const s = buildSchedule(t);
