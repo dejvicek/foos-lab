@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { ExplanationItem } from '../../domain/content';
 import { explanationsFor, explanationTitle } from '../../domain/explain';
 import { parseScoreValue } from '../../domain/standings';
@@ -10,7 +10,7 @@ import type { Match, MatchId, PlayerId, ScheduleRow, Score, SoloKey, Training } 
 import { ScorePicker } from './ScorePicker';
 import { DrillMirror, ScoreMirror, StreakMirror } from './ScoreMirror';
 import { streakLimitSec, trainingStreak } from '../../domain/streak';
-import { ReadyLock, TimingBar, waitText, type ReadySlot, type ItemTiming } from './Timing';
+import { ReadyLock, TimingBar, type ReadySlot, type ItemTiming } from './Timing';
 import { DrillTimeline, MatchTimeline, TimelineBox } from './GameTimeline';
 import { drillItemId, readyKeys } from '../../domain/queue';
 import { isEmptyScore } from '../../domain/training';
@@ -314,6 +314,17 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
   // Rozhodčí u stolu se ukazuje v kartě; pod kartami jen ti, kdo nejsou u žádného stolu.
   const refs = new Set(row.cells.flatMap((c) => (c?.type === 'match' && c.match.referee ? [c.match.referee] : [])));
   const unassigned = row.waiting.filter((p) => !refs.has(p));
+  /**
+   * Moje hry před zahájením (19. 11. 2026, *rozhodnutí uživatele*): místo zápisu jen velké Připraven a stav stran –
+   * výběr skóre, pokusy ani Průběh se neukazují, dokud nejsou připravení všichni.
+   */
+  const readyGate = (id: string, players: PlayerId[], open: boolean, can: boolean, m?: Match): ReactNode | null => {
+    if (!timing?.allowStart || !timing.ready || !timing.canReady || open || !can) return null;
+    const st = timing.state(id);
+    if (!st) return null;
+    return <ReadyLock s={st} slots={readySlots(players, m)} onReady={(key, on) => timing.ready!(id, key, on, readyKeys({ match: m, players }))} />;
+  };
+
   const hasHelp = ex.main.length > 0 || ex.general.length > 0 || ex.perTable.some(Boolean);
   const helpTitle = ex.perTable.some(Boolean)
     ? 'Nápověda ke stanovištím'
@@ -334,15 +345,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             const tmr = timer(m.id, players, legIds(m).some((id) => !isEmptyScore(training.scores[id])), st.over, m, false, inMirror && canMatch(m));
             const can = canMatch(m) && tmr.open;
             const ist = timing?.state(m.id);
-            let lock: Parameters<typeof MatchScore>[0]['lock'];
-            if (inMirror && ist && canMatch(m) && !tmr.open && timing!.ready && timing!.canReady) {
-              const slots = readySlots(players, m);
-              const mineTodo = slots.some((x) => x.can && ist.ready?.[x.key] === undefined);
-              lock = {
-                content: <ReadyLock s={ist} slots={slots} onReady={(key, on) => timing!.ready!(m.id, key, on, readyKeys({ match: m, players }))} />,
-                message: ist.state !== 'ready' ? waitText(ist) : mineTodo ? 'Nejdřív ťukni Připraven' : 'Čeká se na soupeře',
-              };
-            }
+            const gate = readyGate(m.id, players, tmr.open, canMatch(m), m);
             // Dohráno, nepotvrzeno a smím potvrdit (hráč po zahájení, organizátor vždy).
             const mayEnd =
               !!ist && ist.endedAt === undefined && timing!.canWrite(m.id, players, m) && (timing!.manage || (timing!.allowStart && ist.startedAt !== undefined));
@@ -364,6 +367,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                 <span className="visually-hidden">
                   {nm(m.sideA)} vs {nm(m.sideB)}
                 </span>
+                {gate ?? (
+                  <>
                 {tmr.bar}
                 <MatchScore
                   m={m}
@@ -373,12 +378,13 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   tap={tap}
                   disabled={!can}
                   note={canMatch(m) && !tmr.open ? 'Skóre jde zapsat po zahájení utkání.' : undefined}
-                  lock={lock}
                   done={done}
                   ended={ist?.endedAt !== undefined}
                   onScore={onScore}
                   timelineOpen={timelineOpen}
                 />
+                  </>
+                )}
                 {m.block === 'league' && (m.trackLosses || m.referee) && (
                   <p className="entry-ref">
                     {m.trackLosses
@@ -414,6 +420,14 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             c.players.every((p) => drillCount({ value: training.soloResults[p]?.[gkey], attempts: training.soloAttempts?.[p]?.[gkey] }, def).done),
           );
           const canP = (p: PlayerId) => canSolo(c.players, p) && gtmr.open;
+          const dgate = readyGate(drillItemId(row, j + 1, c.players), c.players, gtmr.open, c.players.some((p) => canSolo(c.players, p)));
+          if (dgate)
+            return (
+              <div key={j} className="entry-card" role="group" aria-label={label}>
+                <div className="entry-head">Stůl {j + 1}</div>
+                {dgate}
+              </div>
+            );
           if (def.streak) {
             // Čistá desítka: notebook i telefon ťukají stejně (čas se měří od zahájení stolu).
             const item = drillItemId(row, j + 1, c.players);

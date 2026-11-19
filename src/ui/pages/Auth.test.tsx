@@ -35,6 +35,11 @@ beforeEach(() => {
   window.location.hash = '#/trainings';
 });
 
+/** Moje hry: přejít na kolo se zápasem (před zahájením je v kartě jen Připraven, 19. 11. 2026). */
+const toMatchRound = async (user: ReturnType<typeof userEvent.setup>, mine: HTMLElement) => {
+  while (!/Stůl \d+, (dvojice|singl)/.test(mine.textContent ?? '')) await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+};
+
 describe('přihlášení', () => {
   it('bez přihlášení jen přihlašovací obrazovka; první heslo = přezdívka; vynucená změna hesla', async () => {
     const auth = memoryAuth({ players: authPlayers, signedIn: null });
@@ -106,15 +111,15 @@ describe('přihlášení', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
-    while (!within(mine).queryAllByRole('button', { name: /góly vlevo 6$/ }).length)
-      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    await toMatchRound(user, mine);
     expect(screen.getByRole('button', { name: 'Hráči' })).toBeInTheDocument(); // opravdu admin
-    expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled();
+    expect(within(mine).queryByRole('button', { name: /góly vlevo 6$/ })).toBeNull(); // před připraveností jen Připraven
+    expect(within(mine).queryByRole('button', { name: /^Potvrdit/ })).toBeNull(); // konec bez zahájení jen v Živě
     // admin smí hlásit připravenost za obě strany; dokud není připravená i druhá, zapsat nejde
     const ready = within(mine).getAllByRole('button', { name: /^Připraven: / });
     expect(ready).toHaveLength(2);
     await user.click(ready[0]);
-    expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled();
+    expect(within(mine).queryByRole('button', { name: /góly vlevo 6$/ })).toBeNull();
     await user.click(within(mine).getAllByRole('button', { name: /^Připraven: / }).at(-1)!);
     await vi.waitFor(() => expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeEnabled());
   });
@@ -126,10 +131,9 @@ describe('přihlášení', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
-    while (!within(mine).queryAllByRole('button', { name: /góly vlevo 6$/ }).length)
-      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    await toMatchRound(user, mine);
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
-    expect(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]).toBeDisabled(); // až po zahájení
+    expect(within(mine).queryByRole('button', { name: /góly vlevo 6$/ })).toBeNull(); // až po zahájení
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     await othersReady(repo);
     await user.click(within(mine).getAllByRole('button', { name: /góly vlevo 6$/ })[0]);
@@ -150,8 +154,7 @@ describe('přihlášení', () => {
     await user.click(await screen.findByRole('button', { name: /^Moje hry/ }));
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     expect(within(mine).queryByRole('spinbutton')).toBeNull(); // žádná klávesnice
-    while (!within(mine).queryByRole('button', { name: /^Gól vlevo/ }))
-      await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+    await toMatchRound(user, mine);
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     await othersReady(repo);
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
@@ -150,9 +150,11 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
   it('skóre jde ťukat až po připravenosti obou stran; dohraný leg čeká na potvrzení (odpočet 15 s)', async () => {
     const { repo, mine, user } = await openMine();
     expect(screen.getByRole('button', { name: 'Moje hry – jsi na řadě' })).toHaveAttribute('aria-current', 'page');
-    expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
-    // zamčené zrcadlo (18. 11. 2026): uprostřed Připraven a proč skóre ještě nejde
+    // před zahájením jen velké Připraven a stav stran, bez zrcadla skóre (19. 11. 2026)
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(mine).toHaveTextContent('Skóre zapíšete, až budou připravené obě strany.');
+    expect(within(mine).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
+    expect(mine).not.toHaveTextContent('aktivní od');
     // připravenost: soupeři už jsou připravení, moje strana čeká
     const ready = within(mine).getByRole('group', { name: 'Připravenost' });
     expect(ready).toHaveTextContent('H2 + H3 ✓ připraveni 18:01');
@@ -187,7 +189,8 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const user = userEvent.setup();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     expect(within(mine).getByRole('group', { name: 'Připravenost' })).toHaveTextContent('H4 + H1 ✓ připraveni 18:03');
-    expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeDisabled();
+    expect(mine).toHaveTextContent('Jste připravení. Skóre půjde zapsat, jakmile bude připravený i soupeř.');
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Moje hry' })).toBeInTheDocument(); // tečka zmizela, čeká se na soupeře
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]).toEqual({ ready: { B: at(18, 3) } }));
     await user.click(within(mine).getByRole('button', { name: 'Zrušit připravenost: H4 + H1' }));
@@ -210,15 +213,14 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     await vi.waitFor(() => expect(screen.getByRole('region', { name: 'Moje kolo' })).not.toHaveTextContent('skončí samo'));
   });
 
-  it('zamčené zrcadlo (18. 11. 2026): ťuknutí do šedého zrcadla zatřese a řekne proč; nadpis kola s průběhem a startem', async () => {
+  it('před zahájením jen Připraven (19. 11. 2026); po připravenosti zrcadlo skóre; nadpis kola s průběhem a startem', async () => {
     const { mine, user } = await openMine();
     expect(within(mine).getByRole('img', { name: 'Kolo 1 z 3, 0 odehraných, zbývá 2 kola, žádná další pauza' })).toBeInTheDocument();
     expect(within(mine).getByRole('heading', { level: 2 })).toHaveTextContent('Normální leg');
     expect(mine).toHaveTextContent('Hraje se do 6.');
-    fireEvent.click(mine.querySelector('.mirror-lock')!);
-    expect(within(mine).getByRole('alert')).toHaveTextContent('Nejdřív ťukni Připraven');
+    expect(mine.querySelector('.mirror-stage')).toBeNull();
+    expect(within(mine).queryByRole('group', { name: 'Průběh' })).toBeNull();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    expect(mine.querySelector('.mirror-lock')).toBeNull();
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeEnabled();
   });
 

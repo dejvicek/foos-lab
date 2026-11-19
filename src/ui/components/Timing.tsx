@@ -163,7 +163,9 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
   const showReady = readyMode && !hideReady && started === undefined && ended === undefined && s.state === 'ready' && (allowStart || manage);
   const playerStart = !readyMode && allowStart && canWrite && started === undefined && s.state === 'ready';
   // Konec potvrzuje hráč utkání v Moje hry, nebo organizátor kdekoli (i bez zahájení).
-  const confirm = !(hideFinish && finished) && ended === undefined && ((manage && canWrite) || (allowStart && canWrite && started !== undefined));
+  // Moje hry (allowStart): před zahájením nic nepotvrzuje ani organizátor – konec bez zahájení jen v Živě (19. 11. 2026).
+  const confirm =
+    !(hideFinish && finished) && ended === undefined && ((manage && canWrite && !(allowStart && started === undefined)) || (allowStart && canWrite && started !== undefined));
   return (
     <div className={`timing ${s.state}${finished && ended === undefined ? ' finished' : ''}`}>
       <div className="timing-main">
@@ -204,7 +206,8 @@ export function TimingBar({ state: s, now, canWrite, allowStart, manage, finishe
             : 'Hotovo – zkontroluj výsledek a potvrď konec.'}
         </p>
       )}
-      {(s.activeAt !== null || started !== undefined) && (
+      {/* Časy „aktivní od / zahájeno / konec“ jen mimo Moje hry (patří do Zdržovačů, hráče zahlcují; 19. 11. 2026). */}
+      {!allowStart && (s.activeAt !== null || started !== undefined) && (
         <div className="timing-times">
           {s.activeAt !== null && <span>aktivní od {clockOf(s.activeAt)}</span>}
           {started !== undefined && <span>zahájeno {clockOf(started)}</span>}
