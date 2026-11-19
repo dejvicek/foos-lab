@@ -5,6 +5,7 @@ import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
 import { CompactCell, Names } from './TrainingTable';
 import { TableNo } from './TableNo';
 import { flatRows, rowKey } from '../now';
+import type { RoundStatus } from '../roundState';
 import { keepLast, rowGoal, rowMinutes, rowName } from '../scheduleView';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
@@ -34,6 +35,8 @@ interface Props {
   onTapSolo?: TapSolo;
   /** Nejbližší pauza, která ještě neskončila (lišta Další kolo: čeká se na pauzu / odpočet). */
   pause?: PauseState | null;
+  /** Stav kol podle skutečnosti: barvy osy (odehraná plně) nezávisle na zobrazeném kole (19. 11. 2026). */
+  rounds?: Map<string, RoundStatus> | null;
 }
 
 function missing(a: Assignment, t: Training): boolean {
@@ -134,6 +137,8 @@ export function MyTable(props: Props) {
   const secOf = (row: Assignment['row']) => schedule.sections.find((x) => x.rows.includes(row));
   // Další kolo: první moje neskončené kolo po zobrazeném.
   const nextIdx = list.findIndex((x, k) => k > i && stOf(x) && !ended(x));
+  // Odehraná kola na ose (plná barva) podle skutečnosti, ne podle zobrazeného kola (19. 11. 2026, *rozhodnutí uživatele*).
+  const played = new Set(segs.filter((x) => x.kind === 'round' && props.rounds?.get(keyOf(x.row))?.state === 'done').map((x) => x.index!));
   const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
 
   /** Proč další utkání ještě nejde hrát (lišta Další kolo i proužek čekajícího kola). */
@@ -357,7 +362,8 @@ export function MyTable(props: Props) {
       <MyTimeline
         segs={segs}
         current={i}
-        upcoming={nextIdx >= 0 && nextIdx !== i ? nextIdx : undefined}
+        played={played}
+        upcoming={activeIdx >= 0 && activeIdx !== i ? activeIdx : undefined}
         startTime={training.startTime}
         onPick={(j) => go(j)}
         prev={{ disabled: i === 0, onClick: () => go(i - 1) }}

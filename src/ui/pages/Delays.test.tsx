@@ -243,9 +243,17 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
 
   it('po konci zůstane dohrané kolo (výsledek, Průběh) a lišta Další kolo nabídne Otevřít (19. 11. 2026)', async () => {
     const { mine, user } = await openMine();
+    // osa: barva podle skutečnosti, zlatý rámeček jen u kola na řadě (ne u příštího, dokud hraju)
+    const seg = (n: number) => within(mine).getByRole('button', { name: new RegExp(`^${n}\\. kolo:`) });
+    const cls = () => [1, 2, 3].map((n) => ['done', 'cur', 'upnext'].filter((c) => seg(n).classList.contains(c)).join('+'));
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    expect(cls()).toEqual(['cur', '', '']);
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
+    expect(cls()).toEqual(['done+cur', 'upnext', '']);
+    await user.click(seg(3));
+    expect(cls()).toEqual(['done', 'upnext', 'cur']);
+    await user.click(seg(1));
     const card = () => mine.querySelector('.my-card') as HTMLElement;
     expect(within(card()).getByRole('status')).toHaveTextContent('✓ Dohráno · prohráli jste'); // H1 hraje vpravo
     expect(within(mine).getByRole('group', { name: /^Kolo 1 z 3,/ })).toBeInTheDocument();

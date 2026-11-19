@@ -310,6 +310,7 @@ export function TrainingPage({
             timing={itemTiming}
             onTapSolo={onTapSolo}
             pause={pauseList.find((p) => p.state !== 'over') ?? null}
+            rounds={rounds}
           />
         ) : (
           <p className="note">V tomhle tréninku nehraješ.</p>
