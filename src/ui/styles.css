@@ -447,10 +447,7 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .st-done > .rail-node, .st-done .rail-node { background: var(--gold); border-color: var(--rail-on); color: var(--gold-ink); }
 .st-done .rail-node.pause i { background: var(--gold-ink); }
 .st-playing .rail-node { border-color: var(--rail-on); color: var(--felt); box-shadow: 0 0 0 4px var(--felt-soft); }
-@media (prefers-reduced-motion: no-preference) {
-  .st-playing .rail-node { animation: rail-pulse 2s ease-in-out infinite; }
-}
-@keyframes rail-pulse { 50% { box-shadow: 0 0 0 7px var(--felt-soft); } }
+/* Hrané kolo: kroužek bez pulzování (19. 11. 2026, *rozhodnutí uživatele*). */
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
 .plan tr.break .c-time { font-weight: 500; }
