@@ -116,7 +116,7 @@ function LadderTable({
                       <small>{typeof shown.label === 'string' ? shown.label.toLowerCase() : ''}</small>
                     </span>
                   ) : (
-                    <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
+                    <span className={['ll-main', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' ')}>
                       {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
                       <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
                     </span>
@@ -154,7 +154,7 @@ function LadderTable({
                   </td>
                   <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
                   <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>
-                  <td className={sortedCls(sort, 'diff', d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n')}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
+                  <td className={sortedCls(sort, 'diff', ['n', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
                   <td className={sortedCls(sort, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
                   <td className={sortedCls(sort, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
                   <td className={sortedCls(sort, 'gc', 'n')}>{avg ? dec1(r.gcPerLeg) : r.gc}</td>
@@ -249,6 +249,15 @@ function SoloTable({
   );
 }
 
+/**
+ * Barva rozdílu skóre v žebříčku (19. 11. 2026, *rozhodnutí uživatele*): zelená = výrazný náskok, zlatá = plus,
+ * červená = minus, nula bez barvy. Výrazný: v Průměru aspoň +1,5 na leg, v Celkem aspoň +10 na trénink
+ * (trénink má kolem 7 legů, tedy zhruba totéž), v zápasech podle disciplín aspoň +1,5 na leg.
+ */
+const STRONG_PER_LEG = 1.5;
+const STRONG_PER_TRAINING = 10;
+const diffTone = (diff: number, strong: boolean) => (diff > 0 ? (strong ? 'great' : 'pos') : diff < 0 ? 'neg' : '');
+
 /** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
 const matchTableName = (id: DisciplineId) => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);
 
@@ -290,7 +299,7 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
                 <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
                 <td className={sortedCls(sort, 'matches', 'n')}>{`${r.wins} / ${r.matches}`}</td>
                 <td className={sortedCls(sort, 'legs', 'n')}>{`${r.legWins} / ${r.legs}`}</td>
-                <td className={sortedCls(sort, 'diff', r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n')}>{signed(r.gf - r.gc)}</td>
+                <td className={sortedCls(sort, 'diff', ['n', diffTone(r.gf - r.gc, r.legs > 0 && (r.gf - r.gc) / r.legs >= STRONG_PER_LEG)].filter(Boolean).join(' '))}>{signed(r.gf - r.gc)}</td>
               </tr>
             </Fragment>
           ))}

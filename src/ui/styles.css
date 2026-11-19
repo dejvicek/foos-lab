@@ -34,6 +34,8 @@
   /* text na červené výplni (ve tmavém režimu tmavý – bílá na světlejší červené nestačí) */
   --warn-ink: #ffffff;
   --warn-soft: #f6e3e0;
+  /* výrazný náskok v žebříčku (19. 11. 2026) */
+  --good: #237a43;
   /* soupeř / pravá strana stolu: grafit (od zlaté se liší i světlostí) */
   --side-b: #3a3936;
   --side-b-ink: #ffffff;
@@ -66,6 +68,7 @@
     --warn: #e36c60;
     --warn-ink: #141414;
     --warn-soft: #2c1816;
+    --good: #5cc287;
     --side-b: #666a74;
     --side-b-ink: #ffffff;
     --side-b-text: #c9ccd2;
@@ -93,6 +96,7 @@
   --warn: #e36c60;
   --warn-ink: #141414;
   --warn-soft: #2c1816;
+  --good: #5cc287;
   --side-b: #666a74;
   --side-b-ink: #ffffff;
   --side-b-text: #c9ccd2;
@@ -897,6 +901,7 @@ td.rank { width: 1%; white-space: nowrap; }
 /* Rozdíl +/− barevně i pod čarou, jako v souhrnu tréninku (19. 11. 2026, *rozhodnutí uživatele*). */
 .low-data td.pos, .ladder-list li.low-data .ll-main.pos { color: var(--felt); }
 .low-data td.neg, .ladder-list li.low-data .ll-main.neg { color: var(--warn); }
+td.great, .ll-main.great, .low-data td.great, .ladder-list li.low-data .ll-main.great { color: var(--good); font-weight: 800; }
 .progress { display: inline-flex; gap: 3px; vertical-align: middle; }
 .progress i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--control); }
 .progress i.on { background: var(--muted); border-color: var(--muted); }

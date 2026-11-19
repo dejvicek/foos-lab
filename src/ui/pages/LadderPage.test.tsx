@@ -60,6 +60,23 @@ describe('stránka Žebříček', () => {
     expect(within(within(total).getAllByRole('row')[rowOf(total, 'Yvona')]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
   });
 
+  it('barva rozdílu: zelená jen výrazný náskok (+1,5 / leg, v Celkem +10 na trénink), zlatá plus, červená minus (19. 11. 2026)', async () => {
+    const user = userEvent.setup();
+    render(<App repo={repo()} />);
+    const table = await screen.findByRole('table', { name: 'Žebříček' });
+    const diffCell = (t: HTMLElement, name: string) => within(within(t).getAllByRole('row')[rowOf(t, name)]).getAllByRole('cell')[4];
+    // Průměr: X +0,4 a Y +1,4 / leg → zlatá; kdo je v minusu → červená
+    expect(diffCell(table, 'Xaver')).toHaveClass('pos');
+    expect(diffCell(table, 'Yvona')).toHaveClass('pos');
+    expect(table.querySelector('td.neg')).toHaveTextContent(/^−/);
+    expect(table.querySelector('td.great')).toBeNull();
+    // Celkem: Y +10 za jediný trénink → zelená; X +2 za 3 tréninky → zlatá
+    await user.click(screen.getByRole('button', { name: 'Celkem' }));
+    const total = screen.getByRole('table', { name: 'Žebříček' });
+    expect(diffCell(total, 'Yvona')).toHaveClass('great');
+    expect(diffCell(total, 'Xaver')).toHaveClass('pos');
+  });
+
   it('stará česká adresa: Stránka nenalezena, tlačítko vede na úvod', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/zebricek';
