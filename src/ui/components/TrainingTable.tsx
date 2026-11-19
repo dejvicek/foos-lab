@@ -189,7 +189,7 @@ function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<
     );
   };
   const foot: ReactNode[] = [];
-  if (m.start && !asymStart) foot.push(`start ${st[0]}:${st[1]}`);
+  // Rovný start (4:4, 5:5) je v názvu kola i ve výsledku – pod zápasem se neopakuje (19. 11. 2026).
   if (m.referee)
     foot.push(
       <>
