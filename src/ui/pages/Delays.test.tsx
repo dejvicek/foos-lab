@@ -430,6 +430,29 @@ describe('Moje hry otevře rozehranou hru', () => {
   });
 });
 
+describe('osa v Moje hry: odehrané kolo (19. 11. 2026)', () => {
+  it('moje utkání skončilo, na druhém stole se ještě hraje: kolo je na ose plné (v Tréninku ne)', async () => {
+    const eight: Player[] = Array.from({ length: 8 }, (_, i) => ({ id: `id${i + 1}`, name: `H${i + 1}`, order: i, archived: false }));
+    const base: Training = { ...t, attendees: eight.map((p) => p.id), plan: { normal: 2 } };
+    const row = buildSchedule(base).sections.flatMap((x) => x.rows).find((r) => r.kind !== 'break')!;
+    const ms = row.cells.flatMap((c) => (c?.type === 'match' ? [c.match] : []));
+    expect(ms).toHaveLength(2);
+    const mine = ms.find((m) => [...m.sideA, ...m.sideB].includes('id1'))!;
+    const other = ms.find((m) => m !== mine)!;
+    const tr: Training = {
+      ...base,
+      scores: { [mine.id]: { ga: 6, gb: 2 } },
+      playTimes: { training: { startedAt: at(18, 0) }, [mine.id]: { startedAt: at(18, 0), endedAt: at(18, 2) }, [other.id]: { startedAt: at(18, 0) } },
+    };
+    const auth = memoryAuth({ players: eight.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+    window.location.hash = '#/my-games';
+    render(<App repo={memoryRepository({ players: eight, trainings: [tr] })} auth={auth} />);
+    const region = await screen.findByRole('region', { name: 'Moje kolo' });
+    expect(within(region).getByRole('button', { name: /^1\. kolo:/ })).toHaveClass('done');
+    expect(within(region).getByRole('button', { name: /^2\. kolo:/ })).not.toHaveClass('done');
+  });
+});
+
 describe('průběh hry', () => {
   const original = window.matchMedia;
   beforeEach(() => {

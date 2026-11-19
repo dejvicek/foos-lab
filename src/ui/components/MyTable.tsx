@@ -137,8 +137,13 @@ export function MyTable(props: Props) {
   const secOf = (row: Assignment['row']) => schedule.sections.find((x) => x.rows.includes(row));
   // Další kolo: první moje neskončené kolo po zobrazeném.
   const nextIdx = list.findIndex((x, k) => k > i && stOf(x) && !ended(x));
-  // Odehraná kola na ose (plná barva) podle skutečnosti, ne podle zobrazeného kola (19. 11. 2026, *rozhodnutí uživatele*).
-  const played = new Set(segs.filter((x) => x.kind === 'round' && props.rounds?.get(keyOf(x.row))?.state === 'done').map((x) => x.index!));
+  // Odehraná kola na ose (plná barva) podle skutečnosti, ne podle zobrazeného kola (19. 11. 2026, *rozhodnutí uživatele*):
+  // kde hraju / cvičím, hned po konci mého utkání; Volno, až je dohrané celé kolo.
+  const roundDone = (row: Assignment['row']) => {
+    const mine = list.find((x) => x.row === row);
+    return mine && itemOf(mine) ? ended(mine) : props.rounds?.get(keyOf(row))?.state === 'done';
+  };
+  const played = new Set(segs.filter((x) => x.kind === 'round' && roundDone(x.row)).map((x) => x.index!));
   const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
 
   /** Proč další utkání ještě nejde hrát (lišta Další kolo i proužek čekajícího kola). */
