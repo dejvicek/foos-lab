@@ -21,9 +21,20 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     const x = m({ start: [4, 5], referee: 'r' });
     const { container, rerender } = render(<CompactCell cell={cell(x)} t={t({ scores: { m: { ga: 2, gb: 0 } } })} names={names} />);
     expect(screen.getByRole('group', { name: /6:5$/ })).toBeInTheDocument();
-    expect(container.querySelector('.mb-foot')).toHaveTextContent('start 4:5 · rozhodčí Kuba');
+    // nerovný start = asymetrická disciplína: štítek u každé dvojice, kdo začíná s kolika (19. 11. 2026)
+    expect([...container.querySelectorAll('.mb-badge')].map((b) => b.textContent)).toEqual(['začíná 4', 'začíná 5']);
+    expect(container.querySelector('.mb-foot')).toHaveTextContent(/^rozhodčí Kuba$/);
     rerender(<CompactCell cell={cell(x)} t={t()} names={names} />);
     expect([...container.querySelectorAll('.mb-sc b')].map((b) => b.textContent)).toEqual(['4', '5']);
+  });
+
+  it('Zeď: štítek Zeď u strany, která ji hraje, Láme zeď u druhé; rovný start bez štítků, „start 5:5“ pod zápasem', () => {
+    const { container, rerender } = render(<CompactCell cell={cell(m({ wall: 'B' }))} t={t()} names={names} />);
+    expect([...container.querySelectorAll('.mb-badge')].map((b) => b.textContent)).toEqual(['Láme zeď', 'Zeď']);
+    expect(container.querySelector('.mb-foot')).toBeNull();
+    rerender(<CompactCell cell={cell(m({ start: [5, 5] }))} t={t()} names={names} />);
+    expect(container.querySelector('.mb-badge')).toBeNull();
+    expect(container.querySelector('.mb-foot')).toHaveTextContent('start 5:5');
   });
 
   it('rozehrané utkání (zahájené, neukončené): „hraje se“, rozehraný leg zlatě, bez vítěze', () => {

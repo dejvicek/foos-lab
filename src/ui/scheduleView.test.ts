@@ -35,6 +35,8 @@ describe('rozpis očima hráče (18. 11. 2026)', () => {
     expect(rowSub(24, normal, 'zapsáno 1 z 8')).toBe('24 min · BO3 do 5 · zapsáno 1 z 8');
     const sim = rows.find((r) => r.discipline === 'sim')!;
     expect(rowFormat(sim)).toMatch(/^BO\d/);
+    expect(rowFormat(sim, true)).toMatch(/^BO\d+( do \d+)?$/); // krátce do hlavičky dlaždice
+    expect(rowSub(20, sim, null, false)).toBe('20 min');
     expect(rowFormat(row(1))).toBeNull(); // výchozí formát se nepíše
   });
 

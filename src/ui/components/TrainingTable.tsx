@@ -159,15 +159,23 @@ function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<
   }
   const winner = tot && !playing ? (tot[0] > tot[1] ? 'A' : tot[1] > tot[0] ? 'B' : null) : null;
   const plain = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
+  // Asymetrická disciplína (19. 11. 2026): štítek u dvojice, kdo hraje kterou stranu – Zeď / Láme zeď, nerovný start.
+  const asymStart = !!m.start && st[0] !== st[1];
+  const badge = (k: 'A' | 'B'): string | null =>
+    m.wall ? (m.wall === k ? 'Zeď' : 'Láme zeď') : asymStart ? `začíná ${st[k === 'A' ? 0 : 1]}` : null;
   const side = (k: 'A' | 'B') => {
     const ids = k === 'A' ? m.sideA : m.sideB;
     const i = k === 'A' ? 0 : 1;
     const total = tot ? tot[i] : m.start && (m.bestOf ?? 1) === 1 ? st[i] : '–';
+    const b = badge(k);
     return (
       <Fragment key={k}>
         <span className={winner === k ? 'mb-nm win' : 'mb-nm'} title={plain(ids)}>
           <i className={k === 'A' ? 'mb-dot a' : 'mb-dot b'} />
-          <Names ids={ids} names={names} me={me} />
+          <span className="mb-who">
+            <Names ids={ids} names={names} me={me} />
+          </span>
+          {b && <span className={m.wall === k ? 'mb-badge wall' : 'mb-badge'}>{b}</span>}
         </span>
         <span className="mb-sc">
           {legs.map((l, j) => (
@@ -180,15 +188,8 @@ function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<
       </Fragment>
     );
   };
-  const wallSide = m.wall === 'A' ? m.sideA : m.wall === 'B' ? m.sideB : null;
   const foot: ReactNode[] = [];
-  if (m.start) foot.push(`start ${st[0]}:${st[1]}`);
-  if (wallSide)
-    foot.push(
-      <>
-        Zeď: <Names ids={wallSide} names={names} me={me} />
-      </>,
-    );
+  if (m.start && !asymStart) foot.push(`start ${st[0]}:${st[1]}`);
   if (m.referee)
     foot.push(
       <>
