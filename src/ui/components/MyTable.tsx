@@ -61,23 +61,6 @@ function initialIndex(list: Assignment[], since: number | null, t: Training): nu
   return i < 0 ? 0 : i;
 }
 
-function summary(a: Assignment, names: Record<PlayerId, string>, me: PlayerId): string {
-  const nm = (ids: PlayerId[]) => ids.map((p) => names[p] ?? '?').join(' + ');
-  if (a.role === 'wait') return 'nehraješ';
-  if (a.role === 'referee' && a.match) return `rozhodčí u stolu ${a.table}`;
-  if (a.match) {
-    const mineA = a.match.sideA.includes(me);
-    const partners = (mineA ? a.match.sideA : a.match.sideB).filter((p) => p !== me);
-    const opp = mineA ? a.match.sideB : a.match.sideA;
-    return `stůl ${a.table}${partners.length ? `, s ${nm(partners)}` : ''} proti ${nm(opp)}`;
-  }
-  if (a.group) {
-    const others = a.group.players.filter((p) => p !== me);
-    return `stůl ${a.table}${others.length ? `, s ${nm(others)}` : ''}`;
-  }
-  return '';
-}
-
 /**
  * PRD 4.7 Moje hry (19. 11. 2026, *rozhodnutí uživatele*, návrh „Moje hry od Připraven po další utkání“):
  * pořád stejná kostra – časová osa (▼ zobrazené kolo, zlatě orámované kolo, které je na řadě) → lišta „Další kolo“
@@ -257,33 +240,74 @@ export function MyTable(props: Props) {
     );
   })();
 
-  /** Lišta Další kolo (jen u dohraného kola): na řadě → Otevřít; jinak důvod čekání. */
+  /** Řádek stolu jako v dlaždici Rozpisu: velké číslo stolu + zápas / hráči, nebo Volno. */
+  const tableRows = (x: Assignment) => {
+    const xs = secOf(x.row);
+    return (
+      <div className="tile-rows">
+        {x.role === 'wait' ? (
+          <div className="tile-line">
+            <span className="tile-row">
+              <b>Volno</b>
+              <span>
+                {x.row.waiting.length ? <Names ids={x.row.waiting} names={names} me={playerId} sep=", " /> : null}
+                {xs?.id === 'drills' && !x.row.waitingLabel && ' · počítáš'}
+              </span>
+            </span>
+          </div>
+        ) : (
+          x.table !== undefined &&
+          x.row.cells[x.table - 1] && (
+            <div className="tile-line">
+              <span className="tile-row">
+                <TableNo n={x.table} mine />
+                <span>
+                  <CompactCell cell={x.row.cells[x.table - 1]!} t={training} names={names} me={playerId} roundName={rowName(x.row, xs?.id)} noLive />
+                </span>
+              </span>
+            </div>
+          )
+        )}
+      </div>
+    );
+  };
+
+  /**
+   * Karta Další kolo (jen u dohraného kola) jako karta kola (19. 11. 2026, *rozhodnutí uživatele*): hlavička a stůl
+   * jako v Rozpisu, čárkovaný rám v barvě druhu kola (na řadě plně, čeká světle); proužek Na řadě → Otevřít, jinak důvod.
+   */
   const nextBar = (() => {
     if (!(isEnded || (a.role === 'wait' && nextIdx >= 0)) || nextIdx < 0) return null;
     const nx = list[nextIdx];
     const s = stOf(nx)!;
-    const name = `${rowName(nx.row, secOf(nx.row)?.id)}${nx.table ? ` · stůl ${nx.table}` : ''}`;
-    if (s.state === 'ready' || s.state === 'playing')
-      return (
-        <div className="next-bar ready">
-          <span className="k">Na řadě</span>
-          <span className="w">{name}</span>
-          <span className="why">{summary(nx, names, playerId)}</span>
-          <button type="button" className="go" onClick={() => go(nextIdx)} aria-label={`Otevřít ${nx.row.label}: ${roundName(nx)}`}>
-            Otevřít ›
-          </button>
-        </div>
-      );
-    const w = waitWhy(nx, s);
+    const up = s.state === 'ready' || s.state === 'playing';
+    const w = up ? null : waitWhy(nx, s);
     return (
-      <div className={`next-bar wait rk-${rowKind(nx.row)}`} role="status">
-        <span className="k">Další kolo{w.left !== undefined ? ' · po pauze' : ''}</span>
-        <span className="w">{name}</span>
-        <span className="why">
-          <b>{w.text}</b>
-        </span>
-        {w.left !== undefined && <span className="left">{fmtDur(Math.max(0, w.left))}</span>}
-      </div>
+      <article className={`round-card next-bar ${up ? 'ready' : 'wait'} rk-${rowKind(nx.row)}`} aria-label={`Další kolo: ${nx.row.label}, ${rowName(nx.row, secOf(nx.row)?.id)}`}>
+        <span className="next-k">Další kolo{w?.left !== undefined ? ' · po pauze' : ''}</span>
+        <RoundTileHead
+          a={nx}
+          name={keepLast(rowName(nx.row, secOf(nx.row)?.id))}
+          format={rowGoal(nx.row)}
+          min={minutes.get(keyOf(nx.row))}
+          startTime={training.startTime}
+          me={playerId}
+        />
+        {tableRows(nx)}
+        {up ? (
+          <div className="c-state live" role="status">
+            <span>● Na řadě</span>
+            <button type="button" className="go" onClick={() => go(nextIdx)} aria-label={`Otevřít ${nx.row.label}: ${roundName(nx)}`}>
+              Otevřít ›
+            </button>
+          </div>
+        ) : (
+          <div className="c-state wait" role="status">
+            <b>{w!.text}</b>
+            {w!.left !== undefined && <span className="count">{fmtDur(Math.max(0, w!.left))}</span>}
+          </div>
+        )}
+      </article>
     );
   })();
 
@@ -389,31 +413,7 @@ export function MyTable(props: Props) {
           me={playerId}
           help={hasRoundHelp(a.row) ? { open: help, onToggle: () => setHelp(!help) } : undefined}
         />
-        <div className="tile-rows">
-          {a.role === 'wait' ? (
-            <div className="tile-line">
-              <span className="tile-row">
-                <b>Volno</b>
-                <span>
-                  {a.row.waiting.length ? <Names ids={a.row.waiting} names={names} me={playerId} sep=", " /> : null}
-                  {sec?.id === 'drills' && !a.row.waitingLabel && ' · počítáš'}
-                </span>
-              </span>
-            </div>
-          ) : (
-            a.table !== undefined &&
-            a.row.cells[a.table - 1] && (
-              <div className="tile-line">
-                <span className="tile-row">
-                  <TableNo n={a.table} mine />
-                  <span>
-                    <CompactCell cell={a.row.cells[a.table - 1]!} t={training} names={names} me={playerId} roundName={rowName(a.row, sec?.id)} noLive />
-                  </span>
-                </span>
-              </div>
-            )
-          )}
-        </div>
+        {tableRows(a)}
         {strip}
         {help && (
           <div className="my-help help" role="region" aria-label="Nápověda">

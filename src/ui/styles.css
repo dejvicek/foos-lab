@@ -711,24 +711,20 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .c-state.wait { background: var(--bg); color: var(--ink); }
 .c-state button.link { color: inherit; font-weight: 600; min-height: 0; padding: 0; }
 .c-state .count { font-variant-numeric: tabular-nums; }
-.next-bar { border-radius: 12px; padding: 10px 12px; margin: 8px 0 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; }
-.next-bar > .k, .next-bar > .w, .next-bar > .why { grid-column: 1; min-width: 0; }
-.next-bar .k { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-.next-bar .w { font-weight: 800; font-size: 15px; }
-.next-bar .why { font-size: 12.5px; }
-.next-bar.ready { background: var(--gold); color: var(--gold-ink); }
-.next-bar.ready .k, .next-bar.ready .why { opacity: 0.8; }
-/* Další kolo čeká = světlý rám jako neodehrané kolo na ose (19. 11. 2026, *rozhodnutí uživatele*). */
-.next-bar.wait { background: var(--surface); border: 2px dashed color-mix(in srgb, var(--dc, var(--gold)) 35%, transparent); }
 /* Druh kola jako v kroku Disciplíny: levý pruh karty v Moje hry a čárkovaný rám dalšího kola (19. 11. 2026). */
 .my-table .rk-drill { --dc: var(--k-drill); }
 .my-table .rk-match { --dc: var(--k-match); }
 .my-table .rk-sim { --dc: var(--k-sim); }
 .my-table .round-card.my-card.mine-row { box-shadow: inset 5px 0 0 var(--dc, var(--gold)); }
-.next-bar.wait .k { color: var(--muted); }
-.next-bar > button.go, .next-bar > .left { grid-column: 2; grid-row: 1 / span 3; }
-.next-bar > button.go { background: var(--gold-ink); color: var(--gold); border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 800; font-size: 15px; white-space: nowrap; min-height: 44px; }
-.next-bar > .left { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+/* Karta Další kolo jako karta kola (19. 11. 2026): čárkovaný rám v barvě druhu kola – na řadě plně, čeká světle. */
+.round-card.next-bar { margin: 8px 0 0; border: 2px dashed var(--dc, var(--gold)); }
+.round-card.next-bar.wait { border-color: color-mix(in srgb, var(--dc, var(--gold)) 35%, transparent); }
+.next-bar .next-k { display: block; padding: 8px 12px 0; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.next-bar .tile-head { padding-top: 2px; }
+.next-bar .my-rule { display: none; }
+.next-bar .c-state.wait { font-weight: 600; }
+.next-bar .c-state button.go { background: var(--gold); color: var(--gold-ink); border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 800; font-size: 14px; white-space: nowrap; min-height: 36px; }
+.next-bar .c-state .count { font-size: 18px; font-weight: 800; }
 .my-zone { display: grid; gap: 8px; margin-top: 8px; }
 .my-zone > .big-action { min-height: 56px; border-radius: 12px; font-size: 18px; font-weight: 800; background: var(--gold); color: var(--gold-ink); border: 0; }
 .my-zone > .note { margin: 0; text-align: center; }
