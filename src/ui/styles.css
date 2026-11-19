@@ -532,8 +532,6 @@ th.n .th-sort { flex-direction: row; }
 .wrap td.sorted { font-weight: 700; }
 .wrap th.sorted { color: var(--ink); border-bottom: 2px solid var(--gold); }
 .th-sort.on .th-arrow { opacity: 1; }
-.sort-pick { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
-.sort-pick select { min-height: 34px; }
 td.pos { color: var(--felt); font-weight: 700; }
 td.neg { color: var(--warn); font-weight: 700; }
 tr.clickable { cursor: pointer; }
@@ -854,16 +852,6 @@ button.round-table.sel { border: 2px solid var(--felt); }
 }
 
 /* ── Žebříček na telefonu: seznam (PRD 7.1) ─────────────── */
-.ladder-list { list-style: none; margin: 8px 0 12px; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-.ladder-list li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.ladder-list li:last-child { border-bottom: 0; }
-.ll-rank { font-weight: 800; color: var(--muted); }
-.ll-who { min-width: 0; }
-.ll-who .player-link { font-weight: 700; padding: 0; min-height: 0; }
-.ll-who small, .ll-main small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
-.ll-main { text-align: right; font-weight: 800; font-size: 20px; line-height: 1.1; }
-.ll-main.pos { color: var(--felt); }
-.ll-main.neg { color: var(--warn); }
 
 /* ── Žebříček: první tři (medaile) a Zdržovači (šnek), 10. 11. 2026 ── */
 /* Kovy: zlatá je klubová, stříbrná a bronzová jen tady. Číslo na medaili je tmavé (≥ 5 : 1). */
@@ -872,7 +860,10 @@ button.round-table.sel { border: 2px solid var(--felt); }
   :root:not([data-theme='light']) { --medal-2: #c9ced6; --medal-3: #d08f58; --medal-ink: #141414; }
 }
 :root[data-theme='dark'] { --medal-2: #c9ced6; --medal-3: #d08f58; --medal-ink: #141414; }
-.wrap td.rank, .wrap th.rank, .ll-rank { text-align: center; }
+.wrap td.rank, .wrap th.rank { text-align: center; }
+/* Žebříček na telefonu: jen G± a výhry, G± větším písmem (19. 11. 2026). */
+.ladder-mobile { width: 100%; }
+.ladder-mobile td.main { font-size: 17px; font-weight: 800; }
 td.rank { width: 1%; white-space: nowrap; }
 .rank-n { position: relative; display: inline-block; font-variant-numeric: tabular-nums; }
 .rank-dot { position: absolute; left: 100%; }
@@ -889,19 +880,16 @@ td.rank { width: 1%; white-space: nowrap; }
 }
 .medal.m2 { --m: var(--medal-2); }
 .medal.m3 { --m: var(--medal-3); }
-.wrap tr.top-1 td, .ladder-list li.top-1 { background: var(--felt-soft); }
-.ladder-list li.top-1:first-child { border-radius: 9px 9px 0 0; }
+.wrap tr.top-1 td { background: var(--felt-soft); }
 .wrap tr.top-1 .player-link { font-weight: 800; }
 
 /* Hranice pořadí (3 tréninky): čárkovaná čára v tabulce, pod ní šedě s tečkami postupu; vysvětlení jednou pod obdobím. */
 .wrap tr.cutoff td { padding: 0; height: 0; border-top: 2px dashed var(--control); border-bottom: 0; }
-.ladder-list li.cutoff { display: block; padding: 0; border-top: 2px dashed var(--control); border-bottom: 0; }
-.ladder-list li.cutoff:first-child, .wrap tr.cutoff:first-child td { border-top: 0; }
-.wrap tr.low-data .player-link, .ladder-list li.low-data .player-link, .ladder-list li.low-data .ll-main { color: var(--muted); }
+.wrap tr.low-data .player-link { color: var(--muted); }
 /* Rozdíl +/− barevně i pod čarou, jako v souhrnu tréninku (19. 11. 2026, *rozhodnutí uživatele*). */
-.low-data td.pos, .ladder-list li.low-data .ll-main.pos { color: var(--felt); }
-.low-data td.neg, .ladder-list li.low-data .ll-main.neg { color: var(--warn); }
-td.great, .ll-main.great, .low-data td.great, .ladder-list li.low-data .ll-main.great { color: var(--good); font-weight: 800; }
+.low-data td.pos { color: var(--felt); }
+.low-data td.neg { color: var(--warn); }
+td.great, .low-data td.great { color: var(--good); font-weight: 800; }
 .progress { display: inline-flex; gap: 3px; vertical-align: middle; }
 .progress i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--control); }
 .progress i.on { background: var(--muted); border-color: var(--muted); }

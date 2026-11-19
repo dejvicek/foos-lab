@@ -11,7 +11,7 @@ import { soloMetric } from '../../domain/solo';
 import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
-import { dec1, diffTone, pct, plural, signed, STRONG_PER_LEG, STRONG_PER_TRAINING } from '../format';
+import { dec1, diffTone, pct, signed, STRONG_PER_LEG, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 import { computeDelayLadder } from '../../domain/queue';
@@ -20,7 +20,7 @@ import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
 import { Medal, podiumRow, Progress } from '../components/Rank';
-import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol, type SortDir } from '../components/SortTable';
+import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol } from '../components/SortTable';
 
 interface Props {
   store: AppStore;
@@ -50,92 +50,78 @@ function LadderTable({
   const mobile = useMobile();
   const [sort, setSort] = useSort();
   // Sloupce (18. 11. 2026: řazení podle libovolného sloupce); hodnoty podle Průměr / Celkem jako v buňkách.
-  // Krátká záhlaví (G+, L−, Sim.) mají plný název v nápovědě; `text` je ho pro výběr řazení a popisek na telefonu (19. 11. 2026).
-  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string; text?: string })[] = [
+  // Krátká záhlaví (G±, G+, L−, Sim.) mají plný název v nápovědě (19. 11. 2026).
+  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
     // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
     ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
     // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
-    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, text: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
-      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, text: 'Vyhrané legy', className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
-    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, text: 'Prohrané legy', className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
-    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>G+</span>, text: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
-    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>G−</span>, text: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
-    { key: 'loss', label: <span title="Ztráty na leg">Ztráty</span>, text: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
+      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
+    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
+    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>G+</span>, className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>G−</span>, className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+    { key: 'loss', label: <span title="Ztráty na leg">Ztráty</span>, className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
     {
       key: 'sim',
       label: <span title={avg ? 'Výhry v simulaci' : 'Simulace: výhry / zápasy'}>{avg ? 'Sim. %' : 'Sim.'}</span>,
-      text: avg ? 'Simulace %' : 'Simulace',
       className: 'n',
       value: (r) => (avg ? r.simRate : r.simM ? r.simW : null),
       show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
     },
   ];
-  const colText = (c: (typeof cols)[number]) => c.text ?? (typeof c.label === 'string' ? c.label : c.key);
   const items = placeAndSort(ranked, lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);
-  const shown = sort && sort.key !== 'diff' && sort.key !== 'name' ? cols.find((c) => c.key === sort.key) : undefined;
-  if (mobile)
+  const tone = (r: LadderRow) =>
+    diffTone(avg ? r.diffPerLeg : r.diff, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING);
+  // Telefon: jen to hlavní (19. 11. 2026, *rozhodnutí uživatele*, návrh D) – G± a výhry (Průměr: Výhry %, Celkem: L+ / L−);
+  // ostatní na notebooku a v detailu hráče. Řadí se klepnutím na záhlaví.
+  if (mobile) {
+    const keys = avg ? ['name', 'diff', 'wins'] : ['name', 'diff', 'wins', 'lost'];
+    const few = cols.filter((c) => keys.includes(c.key));
+    const rows = placeAndSort(ranked, lowData, few, sort);
+    const low = rows.findIndex((x) => !x.ranked);
     return (
-      <>
-        <label className="sort-pick">
-          Řadit podle{' '}
-          <select
-            value={sort ? `${sort.key}:${sort.dir}` : ''}
-            onChange={(e) => {
-              const [key, dir] = e.target.value.split(':');
-              setSort(null);
-              if (key) setSort({ key, first: dir as SortDir });
-            }}
-          >
-            <option value="">pořadí</option>
-            {cols.flatMap((c) => [
-              <option key={`${c.key}:${c.first ?? 'desc'}`} value={`${c.key}:${c.first ?? 'desc'}`}>
-                {`${colText(c)} ${(c.first ?? 'desc') === 'desc' ? '↓' : '↑'}`}
-              </option>,
-              <option key={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`} value={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`}>
-                {`${colText(c)} ${(c.first ?? 'desc') === 'desc' ? '↑' : '↓'}`}
-              </option>,
-            ])}
-          </select>
-        </label>
-        <ol aria-label={label} className="ladder-list">
-          {items.map(({ r, place, ranked: isRanked }, i) => {
-            const d = avg ? r.diffPerLeg : r.diff;
-            return (
+      <div className="wrap">
+        <table aria-label={label} className="ladder-table ladder-mobile">
+          <thead>
+            <tr>
+              <RankTh sort={sort} onReset={() => setSort(null)} />
+              {few.map((c) => (
+                <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ r, place, ranked: isRanked }, i) => (
               <Fragment key={r.playerId}>
-                {i === firstLow && <li role="presentation" aria-hidden="true" className="cutoff" />}
-                <li className={isRanked ? podiumRow(place) : 'low-data'}>
-                  <span className="ll-rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
-                  <span className="ll-who">
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                      {name(r.playerId)}
-                    </button>
-                    <small>
-                      {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
-                    </small>
-                  </span>
-                  {shown ? (
-                    <span className="ll-main">
-                      {shown.show(r)}
-                      <small>{colText(shown).toLowerCase()}</small>
-                    </span>
-                  ) : (
-                    <span className={['ll-main', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' ')}>
-                      {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
-                      <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
-                    </span>
+                {i === low && <Cutoff cols={few.length + 1} />}
+                <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  {few.map((c) =>
+                    c.key === 'name' ? (
+                      <td key={c.key} className={sortedCls(sort, 'name')}>
+                        <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                          {name(r.playerId)}
+                        </button>
+                      </td>
+                    ) : (
+                      <td key={c.key} className={sortedCls(sort, c.key, ['n', c.key === 'diff' ? `main ${tone(r)}` : ''].filter(Boolean).join(' '))}>
+                        {c.show(r)}
+                      </td>
+                    ),
                   )}
-                </li>
+                </tr>
               </Fragment>
-            );
-          })}
-        </ol>
-      </>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
+  }
   return (
     <div className="wrap">
       <table aria-label={label}>
@@ -149,7 +135,6 @@ function LadderTable({
         </thead>
         <tbody>
           {items.map(({ r, place, ranked: isRanked }, i) => {
-            const d = avg ? r.diffPerLeg : r.diff;
             return (
               <Fragment key={r.playerId}>
                 {i === firstLow && <Cutoff cols={10} />}
@@ -162,7 +147,7 @@ function LadderTable({
                   </td>
                   <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
                   {avg && <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>}
-                  <td className={sortedCls(sort, 'diff', ['n', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
+                  <td className={sortedCls(sort, 'diff', ['n', tone(r)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
                   <td className={sortedCls(sort, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
                   {!avg && <td className={sortedCls(sort, 'lost', 'n')}>{r.legs - r.wins}</td>}
                   <td className={sortedCls(sort, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
