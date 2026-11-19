@@ -249,8 +249,8 @@ function SoloTable({
   );
 }
 
-/** Název tabulky zápasů podle disciplín: Normální leg ve čtyřhře = „2v2“ (singl jsou Jedničky), 19. 11. 2026. */
-const matchTableName = (id: DisciplineId) => (id === 'normal' ? '2v2' : discipline(id).name);
+/** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
+const matchTableName = (id: DisciplineId) => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);
 
 /** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
@@ -488,7 +488,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
               : matchKind === 'doubles'
                 ? 'Čtyřhry z klubu (i simulace); výhra se počítá oběma hráčům dvojice.'
                 : 'Singly i čtyřhry z klubu (i simulace) a zápasy z vlastních tréninků ve dvou.'}{' '}
-            Normální leg v singlu jsou Jedničky, ve čtyřhře 2v2. Víc vyhraných je lépe.
+            Normální leg (i Jedničky) v singlu je 1v1, ve čtyřhře 2v2. Víc vyhraných je lépe.
           </p>
           {!matchTables.length && <p className="note">V tomhle období žádné takové zápasy nejsou.</p>}
           <div className="solo-grid">
