@@ -43,8 +43,8 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                 <th className="n">Rozdíl</th>
                 <th className="n" title="Vyhrané legy">L+</th>
                 <th className="n" title="Prohrané legy">L−</th>
-                <th className="n">Ztráty / leg</th>
-                <th className="n">Simulace</th>
+                <th className="n" title="Ztráty na leg">Ztráty</th>
+                <th className="n" title="Simulace: výhry / zápasy">Sim.</th>
                 {metrics.map((m) => (
                   <th key={m.id} className="n" title={m.what}>
                     {m.name}

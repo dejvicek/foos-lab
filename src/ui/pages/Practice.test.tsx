@@ -182,7 +182,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.click(await screen.findByRole('button', { name: 'Cvičení' }));
     await user.click(screen.getByRole('button', { name: 'Solo/Duo' }));
     const table = screen.getByRole('table', { name: 'Čistá desítka – střela z trojky' });
-    expect(within(table).getByRole('columnheader', { name: 'Nejlepší čas' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Čas' })).toBeInTheDocument();
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent(/H2.*2 \/ 3.*1:20/);
     expect(rows[1]).toHaveTextContent(/H1.*2 \/ 3.*1:35/);

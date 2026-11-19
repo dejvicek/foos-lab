@@ -56,14 +56,15 @@ function LadderTable({
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
     // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
     ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
-    { key: 'diff', label: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
+    { key: 'diff', label: avg ? <span title="Rozdíl skóre na leg">Rozdíl</span> : 'Rozdíl', text: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
       : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, text: 'Vyhrané legy', className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
     ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, text: 'Prohrané legy', className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
-    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>{avg ? 'G+ / leg' : 'G+'}</span>, text: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
-    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>{avg ? 'G− / leg' : 'G−'}</span>, text: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
-    { key: 'loss', label: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
+    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>G+</span>, text: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>G−</span>, text: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+    { key: 'loss', label: <span title="Ztráty na leg">Ztráty</span>, text: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
     {
       key: 'sim',
       label: <span title={avg ? 'Výhry v simulaci' : 'Simulace: výhry / zápasy'}>{avg ? 'Sim. %' : 'Sim.'}</span>,
@@ -217,7 +218,7 @@ function SoloTable({
     ...(showAttempts ? [{ key: 'attempts', label: 'Pokusy', className: 'n', value: (r: SoloLadderRow) => r.sumMax }] : []),
     ...(streak ? [{ key: 'done', label: 'Splněno', className: 'n', value: (r: SoloLadderRow) => r.sum }] : []),
     streak
-      ? { key: 'best', label: 'Nejlepší čas', className: 'n', value: (r) => r.best || null, first: 'asc' as const }
+      ? { key: 'best', label: <span title="Nejlepší čas">Čas</span>, className: 'n', value: (r) => r.best || null, first: 'asc' as const }
       : { key: 'value', label: view === 'avg' ? 'Průměr' : 'Celkem', className: 'n', value: (r) => (view === 'avg' ? r.avg : r.sum) },
   ];
   const items = placeAndSort(ranked, lowData, cols, sort);
