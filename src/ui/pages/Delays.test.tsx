@@ -443,10 +443,8 @@ describe('průběh hry', () => {
     await user.click(within(mine).getByRole('button', { name: /^Gól vpravo/ }));
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: /Zpět/ }));
-    const lanes = within(mine).getByRole('group', { name: 'Průběh' });
-    // křivka: góly v pořadí (zrušený třetí gól tam není)
-    expect([...lanes.querySelectorAll('.tl-pt title')].map((x) => x.textContent?.replace(/ v \d+:\d+/, ''))).toEqual(['Gól: H2 + H3 → 1:0', 'Gól: H4 + H1 → 1:1']);
-    expect(within(lanes).getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
+    // Moje hry: během hry bez grafu – Průběh až po dohrání (19. 11. 2026)
+    expect(within(mine).queryByRole('group', { name: 'Průběh' })).toBeNull();
     // Živě: skóre stolu a ikonka grafu rozbalí Průběh (18. 11. 2026)
     await user.click(screen.getByRole('button', { name: 'Živě' }));
     const t1 = within(screen.getByRole('region', { name: 'Aktivní utkání' })).getByRole('group', { name: 'Stůl 1' });
@@ -455,6 +453,8 @@ describe('průběh hry', () => {
     expect(icon).toHaveAttribute('aria-expanded', 'false');
     await user.click(icon);
     expect(within(t1).getByRole('img', { name: 'Křivka vedení, konečný stav 1:1' })).toBeInTheDocument();
+    // křivka: góly v pořadí (zrušený třetí gól tam není)
+    expect([...t1.querySelectorAll('.tl-pt title')].map((x) => x.textContent?.replace(/ v \d+:\d+/, ''))).toEqual(['Gól: H2 + H3 → 1:0', 'Gól: H4 + H1 → 1:1']);
     // Trénink: ikonka u stolu s ťukanými góly, Průběh pod kolem
     act(() => {
       window.location.hash = '#/trainings/t1';

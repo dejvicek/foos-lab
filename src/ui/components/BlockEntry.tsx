@@ -208,7 +208,8 @@ export function MatchScore({ m, training, names, label, tap, disabled, note, onS
       ) : (
         <ScorePicker label={multi ? `${label}, leg ${leg.legNo}` : label} match={leg} score={training.scores[leg.id]} names={names} disabled={disabled} onChange={(sc) => onScore(leg.id, sc)} />
       )}
-      <TimelineBox count={evs.length} open={timelineOpen}>
+      {/* Moje hry: Průběh až po dohrání utkání (19. 11. 2026); během hry jen zápis. */}
+      <TimelineBox count={timelineOpen && !ended ? 0 : evs.length} open={timelineOpen}>
         <MatchTimeline match={leg} events={evs} from={(leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first)} to={to} names={names} />
       </TimelineBox>
     </>
@@ -272,8 +273,10 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
     const id = drillItemId(r, j + 1, players);
     const evs = (training.events ?? []).filter((e) => e.itemId === id);
+    // Moje hry: Průběh až po dohrání (19. 11. 2026).
+    const ended = timing?.state(id)?.endedAt !== undefined;
     return (
-      <TimelineBox count={evs.length} open={timelineOpen}>
+      <TimelineBox count={timelineOpen && !ended ? 0 : evs.length} open={timelineOpen}>
         <DrillTimeline players={players} events={evs} names={names} />
       </TimelineBox>
     );
