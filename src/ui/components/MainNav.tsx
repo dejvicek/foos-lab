@@ -59,7 +59,7 @@ interface Item {
 }
 
 /**
- * Hlavní navigace: Moje hry (běžící trénink, na kterém hráč hraje) · Trénink (probíhající trénink, jinak seznam) · Žebříček
+ * Hlavní navigace: Moje hry (běžící trénink, na kterém hráč hraje) · Tréninky (probíhající trénink, jinak seznam) · Žebříček
  * · Disciplíny · Šablony a Hráči (jen admin). Na telefonu dole s ikonami.
  */
 export function MainNav({
@@ -74,7 +74,7 @@ export function MainNav({
   admin = true,
   running = null,
 }: {
-  /** Probíhající trénink: „Trénink“ ho rovnou otevře (19. 11. 2026); záložka Živě zrušena. */
+  /** Probíhající trénink: „Tréninky“ ho rovnou otevře (19. 11. 2026); záložka Živě zrušena. */
   running?: string | null;
   route: Route;
   navigate: (r: Route) => void;
@@ -90,7 +90,7 @@ export function MainNav({
 }) {
   const items: Item[] = [
     ...(live && mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
-    { key: 'trainings', label: 'Trénink', route: running ? { page: 'training', id: running } : { page: 'trainings' }, match: ['live', 'trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
+    { key: 'trainings', label: 'Tréninky', route: running ? { page: 'training', id: running } : { page: 'trainings' }, match: ['live', 'trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
     { key: 'ladder', label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
     { key: 'disciplines', label: 'Disciplíny', route: { page: 'disciplines' }, match: ['disciplines'] },
     ...(admin ? [{ key: 'templates', label: 'Šablony', route: { page: 'templates' } as Route, match: ['templates'] as Route['page'][] }] : []),

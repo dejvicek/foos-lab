@@ -191,8 +191,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           <h2 className="g-group">Přehled a výsledky</h2>
           <Step n={7} label="Trénink" title="Celý trénink na jedné stránce" phone={<TrainingPhone />}>
             <p>
-              Když trénink probíhá, záložka <b>Trénink</b> ho otevře rovnou; jinak ukáže seznam tréninků. Nahoře je souhrn (Pořadí, Zdržovači,
-              Simulace), pod ním celý rozpis kol.
+              Když trénink probíhá, záložka <b>Tréninky</b> ho otevře rovnou; jinak ukáže seznam. Přepínač <b>Klubové / Vlastní</b> nahoře: vlastní trénink
+              (sám nebo ve dvou) založíš v části Vlastní tlačítkem <b>+ Vlastní trénink</b>. V tréninku je nahoře souhrn (Pořadí, Zdržovači, Simulace), pod ním
+              celý rozpis kol.
             </p>
             <ul className="g-list">
               <Li i="✓">
@@ -204,7 +205,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 hry. Na telefonu má každé kolo dlaždici se všemi stoly; velké číslo vlevo je číslo stolu.
               </Li>
               <Li i="Σ">
-                <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre, pak výhry, góly a výhry v simulaci.
+                <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre (G±), pak vyhrané legy (L+), góly (G+) a výhry v simulaci. L− jsou
+                prohrané legy; od +10 je rozdíl zeleně.
               </Li>
             </ul>
           </Step>
@@ -240,7 +242,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. Zápasy 1 na 1 jsou v Zápasech.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. Zápasy po disciplínách (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou.
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
@@ -413,7 +415,7 @@ function Li({ i, red, children }: { i: React.ReactNode; red?: boolean; children:
 type Tab = 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
   ['my', 'Moje hry'],
-  ['trainings', 'Trénink'],
+  ['trainings', 'Tréninky'],
   ['ladder', 'Žebříček'],
   ['disciplines', 'Disciplíny'],
 ];

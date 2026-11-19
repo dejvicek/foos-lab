@@ -96,7 +96,7 @@ describe('stránka Žebříček', () => {
     expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Na úvodní stránku' }));
     expect(window.location.hash).toBe('#/trainings');
-    expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Tréninky' })).toBeInTheDocument();
   });
 
   it('logo s nápisem Foos Lab vede na úvodní stránku', async () => {
@@ -111,7 +111,7 @@ describe('stránka Žebříček', () => {
     expect(mobile).toHaveAttribute('href', '#/trainings');
     await user.click(logo);
     expect(window.location.hash).toBe('#/trainings');
-    expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Tréninky' })).toBeInTheDocument();
   });
 
   it('volby se pamatují po novém otevření', async () => {

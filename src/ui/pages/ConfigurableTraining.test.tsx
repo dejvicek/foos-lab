@@ -15,7 +15,7 @@ async function newTraining(n = 8, stop?: 'disc') {
   const repo = memoryRepository({ players: players(n), trainings: [], catalog: DEFAULT_CATALOG });
   window.location.hash = '#/trainings';
   render(<App repo={repo} />);
-  await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+  await user.click(await screen.findByRole('button', { name: 'Klubový trénink' }));
   for (let i = 1; i <= n; i++) await user.click(screen.getByRole('checkbox', { name: `H${i}` }));
   await next(user);
   if (stop) return { user, repo };
@@ -126,7 +126,7 @@ describe('konfigurovatelný trénink v UI', () => {
     const repo = memoryRepository({ players: players(4), trainings: [], catalog: DEFAULT_CATALOG });
     window.location.hash = '#/trainings';
     render(<App repo={repo} />);
-    await user.click(await screen.findByRole('button', { name: 'Nový trénink' }));
+    await user.click(await screen.findByRole('button', { name: 'Klubový trénink' }));
     await user.click(screen.getByRole('checkbox', { name: 'H1' }));
     await user.click(screen.getByRole('checkbox', { name: 'H2' }));
     expect(screen.getByText(/Ještě chybí 2 hráči do minima 4/)).toBeInTheDocument();

@@ -207,7 +207,7 @@ describe('přihlášení', () => {
     window.location.hash = '#/trainings';
     render(<App repo={memoryRepository({ players: roster, trainings: [] })} auth={auth} />);
     expect(await screen.findByText('Zatím žádný trénink. Zakládá je admin nebo organizátor.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Nový trénink/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Klubový trénink/ })).toBeNull();
     window.location.hash = '#/trainings/new'; // ani přímou adresou
     expect(await screen.findByText(/Zakládat tréninky smí jen admin a organizátoři/)).toBeInTheDocument();
   });

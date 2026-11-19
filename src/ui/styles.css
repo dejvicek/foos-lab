@@ -848,6 +848,8 @@ button.round-table.sel { border: 2px solid var(--felt); }
     min-height: 52px; padding: 0 20px; border-radius: 26px; font-size: 16px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   }
+  /* Plovoucí tlačítko je mimo tok stránky – jeho řádek nezabírá místo nad seznamem (19. 11. 2026). */
+  .actions-row:has(> button.fab:only-child) { margin: 0; }
   .training-list button { padding: 12px 14px; }
 }
 

@@ -23,7 +23,7 @@ describe('App – fronta zápisů v zařízení', () => {
         }}
       />,
     );
-    await screen.findByRole('heading', { name: 'Trénink' });
+    await screen.findByRole('heading', { name: 'Tréninky' });
     await waitFor(() => expect(repo.snapshot().trainings[0].scores).toEqual({ m1: { ga: 1, gb: 0 } }));
     expect(new Set(asked)).toEqual(new Set(['p1']));
     expect(mine.load()).toEqual([]);

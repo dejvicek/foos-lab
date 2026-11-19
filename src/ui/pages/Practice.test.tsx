@@ -30,7 +30,9 @@ describe('vlastní trénink (PRD 5.11)', () => {
     const repo = memoryRepository({ players, trainings: [club] });
     render(<App repo={repo} auth={asPlayer()} />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Začít vlastní trénink' }));
+    // stránka Tréninky: část Vlastní a tlačítko + Vlastní trénink (19. 11. 2026)
+    await user.click(within(await screen.findByRole('group', { name: 'Tréninky' })).getByRole('button', { name: /^Vlastní/ }));
+    await user.click(screen.getByRole('button', { name: 'Vlastní trénink' }));
 
     // Sám: cvičení s bránícím se nenabízí; výchozí výběr = cvičení pro jednoho.
     const list = screen.getByRole('group', { name: 'Cvičení' });
@@ -112,10 +114,13 @@ describe('vlastní trénink (PRD 5.11)', () => {
     window.location.hash = '#/trainings';
     const p = { ...setSolo(newPractice('p1', '2026-11-05', '17:00', 'id1', null, ['penaltySolo']), 'id1', 'penaltySolo@1', 7), playTimes: { training: { startedAt: 1, endedAt: 1 + 35 * 60_000 } } };
     render(<App repo={memoryRepository({ players, trainings: [club, p] })} auth={asPlayer()} />);
-    const mine = await screen.findByRole('list', { name: 'Vlastní tréninky' });
-    expect(mine).toHaveTextContent('sám · 35 min · 1 série');
-    const clubList = screen.getByRole('list', { name: 'Uložené tréninky' });
+    // Klubové jsou výchozí část, vlastní v části Vlastní (19. 11. 2026)
+    const clubList = await screen.findByRole('list', { name: 'Uložené tréninky' });
     expect(within(clubList).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByRole('list', { name: 'Vlastní tréninky' })).toBeNull();
+    await userEvent.setup().click(within(screen.getByRole('group', { name: 'Tréninky' })).getByRole('button', { name: 'Vlastní (1)' }));
+    const mine = screen.getByRole('list', { name: 'Vlastní tréninky' });
+    expect(mine).toHaveTextContent('sám · 35 min · 1 série');
   });
 
   it('žebříček Cvičení → Solo/Duo: jen vlastní tréninky, sloupec Pokusy', async () => {

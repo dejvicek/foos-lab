@@ -36,7 +36,7 @@ describe('bez záložky Živě (19. 11. 2026)', () => {
     const user = userEvent.setup();
     const nav = await screen.findByRole('navigation', { name: 'Hlavní navigace' });
     expect(within(nav).queryByRole('button', { name: 'Živě' })).toBeNull();
-    await user.click(within(nav).getByRole('button', { name: 'Trénink' }));
+    await user.click(within(nav).getByRole('button', { name: 'Tréninky' }));
     expect(window.location.hash).toBe('#/trainings/t1');
     expect(await screen.findByRole('table', { name: 'Rozpis tréninku' })).toBeInTheDocument();
     // stará adresa Živě vede na probíhající trénink
@@ -51,7 +51,7 @@ describe('bez záložky Živě (19. 11. 2026)', () => {
     render(<App repo={memoryRepository({ players, trainings: [t] })} auth={organizer()} />);
     const user = userEvent.setup();
     const nav = await screen.findByRole('navigation', { name: 'Hlavní navigace' });
-    await user.click(within(nav).getByRole('button', { name: 'Trénink' }));
+    await user.click(within(nav).getByRole('button', { name: 'Tréninky' }));
     expect(await screen.findByRole('list', { name: 'Uložené tréninky' })).toBeInTheDocument();
   });
 });
@@ -357,7 +357,7 @@ describe('organizátor, který nehraje', () => {
     render(<App repo={memoryRepository({ players: [...players, { id: 'org', name: 'Org', order: 9, archived: false, organizer: true }], trainings: [run] })} auth={auth} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
-    expect(within(nav).getByRole('button', { name: 'Trénink' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('button', { name: 'Tréninky' })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).queryByRole('button', { name: /^Moje hry/ })).toBeNull();
     expect(screen.getByRole('button', { name: /^Zapsat: 1\. kolo, stůl 1$/ })).toBeInTheDocument();
   });

@@ -30,7 +30,7 @@ describe('App – rychlý start z uloženého stavu', () => {
   it('když se přihlášení nejde ověřit kvůli spojení, hráč zůstává přihlášený', async () => {
     const repo = memoryRepository({ players, trainings: [t] });
     render(<App repo={repo} auth={auth(() => Promise.reject(new Error('bez spojení')))} />);
-    expect(await screen.findByRole('heading', { name: 'Trénink' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Tréninky' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Přezdívka')).toBeNull();
   });
 
@@ -69,7 +69,7 @@ describe('App – stav spojení', () => {
   it('bez spojení ukáže klidnou lištu, že jsou vidět uložená data; po obnovení zmizí', async () => {
     const repo = memoryRepository({ players, trainings: [t] });
     render(<App repo={repo} auth={memoryAuth({ signedIn: me })} />);
-    await screen.findByRole('heading', { name: 'Trénink' });
+    await screen.findByRole('heading', { name: 'Tréninky' });
     expect(screen.queryByText(/Bez spojení/)).toBeNull();
     act(() => repo.emit().live?.(false));
     expect(await screen.findByText(/Bez spojení/)).toBeInTheDocument();
