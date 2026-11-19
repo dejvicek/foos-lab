@@ -40,7 +40,7 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                 <th>Datum</th>
                 <th>Trénink</th>
                 {/* Rozdíl a vyhrané / prohrané legy jako v souhrnu tréninku (19. 11. 2026). */}
-                <th className="n">Rozdíl</th>
+                <th className="n" title="Rozdíl skóre (G+ − G−)">G±</th>
                 <th className="n" title="Vyhrané legy">L+</th>
                 <th className="n" title="Prohrané legy">L−</th>
                 <th className="n" title="Ztráty na leg">Ztráty</th>

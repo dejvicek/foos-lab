@@ -187,7 +187,8 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
   type Row = (typeof rows)[number];
   const cols: SortCol<Row>[] = [
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
-    { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.diff },
+    // G± = rozdíl skóre (19. 11. 2026, *rozhodnutí uživatele*: krátce jako G+ / G−).
+    { key: 'diff', label: <span title="Rozdíl skóre (G+ − G−)">G±</span>, className: 'n', value: (r) => r.diff },
     { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins },
     { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.wins, first: 'asc' },
     { key: 'gf', label: <span title="Góly vstřelené">G+</span>, className: 'n', value: (r) => r.gf },

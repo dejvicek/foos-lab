@@ -65,7 +65,7 @@ describe('stránka Žebříček', () => {
     render(<App repo={repo()} />);
     const table = await screen.findByRole('table', { name: 'Žebříček' });
     const diffCell = (t: HTMLElement, name: string) => {
-      const col = within(t).getAllByRole('columnheader').findIndex((h) => /^Rozdíl/.test(h.textContent ?? ''));
+      const col = within(t).getAllByRole('columnheader').findIndex((h) => /^G±/.test(h.textContent ?? ''));
       return within(within(t).getAllByRole('row')[rowOf(t, name)]).getAllByRole('cell')[col];
     };
     // Průměr: X +0,4 a Y +1,4 / leg → zlatá; kdo je v minusu → červená
@@ -148,7 +148,7 @@ describe('stránka Žebříček', () => {
     expect(await screen.findByRole('heading', { name: 'Xaver' })).toBeInTheDocument();
     const own = screen.getByRole('table', { name: 'Tréninky hráče' });
     // Rozdíl, pak L+ / L− jako v souhrnu tréninku (19. 11. 2026)
-    expect(within(own).getAllByRole('columnheader').map((h) => h.textContent).slice(2, 5)).toEqual(['Rozdíl', 'L+', 'L−']);
+    expect(within(own).getAllByRole('columnheader').map((h) => h.textContent).slice(2, 5)).toEqual(['G±', 'L+', 'L−']);
     const rows = within(own).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent('27. 10. 2026');

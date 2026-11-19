@@ -57,7 +57,7 @@ function LadderTable({
     // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
     ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
     // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
-    { key: 'diff', label: avg ? <span title="Rozdíl skóre na leg">Rozdíl</span> : 'Rozdíl', text: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, text: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
       : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, text: 'Vyhrané legy', className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
@@ -272,7 +272,7 @@ function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableDa
     // Legy jako L+ / L− (vyhrané / prohrané) jako v souhrnu tréninku (19. 11. 2026).
     { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.legWins },
     { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.legWins, first: 'asc' },
-    { key: 'diff', label: 'Rozdíl', className: 'n', value: (r) => r.gf - r.gc },
+    { key: 'diff', label: <span title="Rozdíl skóre (G+ − G−)">G±</span>, className: 'n', value: (r) => r.gf - r.gc },
   ];
   const items = placeAndSort(table.ranked, table.lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);

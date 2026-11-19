@@ -48,7 +48,7 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     const scores = Object.fromEntries(s.matches.filter((m) => m.round === 1).map((m) => [m.id, { ga: 6, gb: 2 }]));
     render(<TrainingSummary schedule={s} scores={scores} attendees={t.attendees} names={names} delays={[]} />);
     const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Rozdíl', 'L+', 'L−', 'G+', 'G−']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'G±', 'L+', 'L−', 'G+', 'G−']);
     // L+ / L− = vyhrané / prohrané legy (19. 11. 2026): vítěz 1 / 0, poražený 0 / 1
     const cells = (i: number) => [...within(table).getAllByRole('row')[i].querySelectorAll('td')].slice(3, 5).map((c) => c.textContent);
     expect(cells(1)).toEqual(['1', '0']);
@@ -57,8 +57,8 @@ describe('Souhrn tréninku nahoře (19. 11. 2026)', () => {
     // medaile jako v žebříčku: první tři, první řádek podbarvený; kdo neodehrál, bez medaile
     expect(within(table).getAllByTitle(/\. místo$/).map((m) => m.title)).toEqual(['1. místo', '2. místo', '3. místo']);
     expect(within(table).getAllByRole('row')[1]).toHaveClass('top-1');
-    await userEvent.setup().click(within(table).getByRole('button', { name: /Rozdíl/ }));
-    expect(within(table).getByRole('columnheader', { name: /Rozdíl/ })).toHaveAttribute('aria-sort', 'descending');
+    await userEvent.setup().click(within(table).getByRole('button', { name: /G±/ }));
+    expect(within(table).getByRole('columnheader', { name: /G±/ })).toHaveAttribute('aria-sort', 'descending');
   });
 
   it('bez simulace a bez čekání: jen pořadí, bez přepínače', () => {
