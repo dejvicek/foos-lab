@@ -30,7 +30,7 @@ describe('tabulka tréninku', () => {
     render(<App repo={repo} />);
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     expect(within(rowOf('1. kolo')).getByText('19:00')).toBeInTheDocument();
-    expect(rowOf('1. kolo')).toHaveTextContent('H1 + H2 vs H3 + H4');
+    expect(within(rowOf('1. kolo')).getByRole('group', { name: 'H1 + H2 vs H3 + H4' })).toBeInTheDocument();
 
     // jiný den → rozbalený je první blok s chybějícím zápisem (rozehrání)
     expect(screen.getByLabelText('Rozehrání s počítáním, stůl 1: H1')).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('tabulka tréninku', () => {
     expect(within(cell).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vlevo 6' }));
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vpravo 2' }));
-    expect(rowOf('1. kolo')).toHaveTextContent('6:2');
+    expect(within(rowOf('1. kolo')).getByRole('group', { name: 'H1 + H2 vs H3 + H4 6:2' })).toBeInTheDocument();
     const first = within(screen.getByRole('table', { name: 'Souhrn tréninku' })).getAllByRole('row')[1];
     expect(first).toHaveTextContent('H1');
     expect(first).toHaveTextContent('+4');
@@ -340,8 +340,10 @@ describe('BO formát v klubovém tréninku (12. 11. 2026)', () => {
     // zapsaný výsledek utkání ukončí → odehrané kolo se sbalí; rozbalit
     const fold = screen.queryByRole('button', { name: /^Odehráno/ });
     if (fold && fold.getAttribute('aria-expanded') !== 'true') await user.click(fold);
-    expect(rowOf('1. kolo')).toHaveTextContent('2:1');
-    expect(rowOf('1. kolo')).toHaveTextContent('5:3, 4:5, 5:1');
+    // výsledková tabule: legy ve sloupcích po stranách (5 4 5 / 3 5 1), za čarou 2 / 1
+    const board = within(rowOf('1. kolo')).getByRole('group', { name: /vs .* 2:1$/ });
+    expect([...board.querySelectorAll('.mb-sc')].map((x) => x.textContent)).toEqual(['5452', '3511']);
+    expect(board.querySelector('.mb-nm.win')).toBeInTheDocument();
     // dohraný zápas: rozbalí se další kolo; oprava předchozího legu po otevření
     if (!screen.queryByRole('group', { name: '1. kolo, stůl 1' })) await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 1. kolo$/ }));
     expect(legs()).toHaveTextContent('BO3 · 2:1 · konec');

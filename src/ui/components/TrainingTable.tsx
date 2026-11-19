@@ -119,7 +119,6 @@ export function Names({ ids, names, me, sep = ' + ' }: { ids: PlayerId[]; names:
 }
 
 export function CompactCell({ cell, t, names, me = null }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null }) {
-  const nm = (ids: PlayerId[]) => <Names ids={ids} names={names} me={me} />;
   if (cell.type === 'group') {
     return (
       <>
@@ -130,47 +129,89 @@ export function CompactCell({ cell, t, names, me = null }: { cell: Cell; t: Trai
       </>
     );
   }
-  const m = cell.match;
-  const ref = m.referee ? (
-    <span className="cell-sub">
-      rozhodčí <Names ids={[m.referee]} names={names} me={me} />
-    </span>
-  ) : null;
-  if ((m.bestOf ?? 1) > 1) {
-    // BO zápas: stav v legech a skóre legů.
-    const ms = matchState(m, t.scores);
-    const played = ms.legs.filter((l) => !isEmptyScore(l.score));
-    return (
-      <>
-        <span className="cell-names">
-          {nm(m.sideA)} <span className="vs">vs</span> {nm(m.sideB)}
-        </span>
-        {ref}
-        <span className={played.length ? 'cell-score' : 'cell-score empty'}>{played.length ? `${ms.legsA}:${ms.legsB}` : `BO${m.bestOf}`}</span>
-        {played.length > 0 && <span className="cell-sub">{played.map((l) => tableScore(l.leg, l.score).join(':')).join(', ')}</span>}
-      </>
-    );
-  }
-  const s = t.scores[m.id];
-  const has = s && s.ga !== undefined && s.ga !== null && s.gb !== undefined && s.gb !== null;
+  return <MatchBoard m={cell.match} t={t} names={names} me={me} />;
+}
+
+/**
+ * Zápas na stole jako výsledková tabule (19. 11. 2026, *rozhodnutí uživatele*, návrh A): každá strana vlastní řádek
+ * s tečkou barvy strany, vedle skóre legů ve sloupcích a za čarou výsledek (legy u BO, jinak góly včetně startu).
+ * Vítěz tučně, poražený výsledek šedě, rozehraný leg zlatě; pod tím drobně start, Zeď, rozhodčí, „hraje se“.
+ * Rozehranost podle zahájení utkání (ne podle skóre – starší legy na čas nekončily na 6).
+ */
+function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<PlayerId, string>; me: PlayerId | null }) {
+  const pt = t.playTimes?.[m.id];
+  const playing = pt?.startedAt !== undefined && pt.endedAt === undefined;
   const st = m.start ?? [0, 0];
+  let legs: { a: number; b: number; win: 'A' | 'B' | null; run: boolean }[] = [];
+  let tot: [number, number] | null = null;
+  if ((m.bestOf ?? 1) > 1) {
+    const ms = matchState(m, t.scores);
+    legs = ms.legs
+      .filter((l) => !isEmptyScore(l.score))
+      .map((l) => {
+        const [a, b] = tableScore(l.leg, l.score);
+        return { a, b, win: l.winner, run: !l.over && playing };
+      });
+    if (legs.length) tot = [ms.legsA, ms.legsB];
+  } else {
+    const s = t.scores[m.id];
+    if (s && s.ga !== undefined && s.ga !== null && s.gb !== undefined && s.gb !== null) tot = [s.ga + st[0], s.gb + st[1]];
+  }
+  const winner = tot && !playing ? (tot[0] > tot[1] ? 'A' : tot[1] > tot[0] ? 'B' : null) : null;
+  const plain = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
+  const side = (k: 'A' | 'B') => {
+    const ids = k === 'A' ? m.sideA : m.sideB;
+    const i = k === 'A' ? 0 : 1;
+    const total = tot ? tot[i] : m.start && (m.bestOf ?? 1) === 1 ? st[i] : '–';
+    return (
+      <Fragment key={k}>
+        <span className={winner === k ? 'mb-nm win' : 'mb-nm'} title={plain(ids)}>
+          <i className={k === 'A' ? 'mb-dot a' : 'mb-dot b'} />
+          <Names ids={ids} names={names} me={me} />
+        </span>
+        <span className="mb-sc">
+          {legs.map((l, j) => (
+            <span key={j} className={l.run ? 'run' : l.win === k ? 'lw' : undefined}>
+              {k === 'A' ? l.a : l.b}
+            </span>
+          ))}
+          <b className={!tot ? 'none' : winner && winner !== k ? 'lose' : undefined}>{total}</b>
+        </span>
+      </Fragment>
+    );
+  };
   const wallSide = m.wall === 'A' ? m.sideA : m.wall === 'B' ? m.sideB : null;
+  const foot: ReactNode[] = [];
+  if (m.start) foot.push(`start ${st[0]}:${st[1]}`);
+  if (wallSide)
+    foot.push(
+      <>
+        Zeď: <Names ids={wallSide} names={names} me={me} />
+      </>,
+    );
+  if (m.referee)
+    foot.push(
+      <>
+        rozhodčí <Names ids={[m.referee]} names={names} me={me} />
+      </>,
+    );
+  if (playing) foot.push(<span className="mb-live">hraje se</span>);
+  const label = `${plain(m.sideA)} vs ${plain(m.sideB)}${tot ? ` ${tot[0]}:${tot[1]}` : ''}`;
   return (
-    <>
-      <span className="cell-names">
-        {nm(m.sideA)} <span className="vs">vs</span> {nm(m.sideB)}
-      </span>
-      {wallSide && <span className="cell-sub">Zeď: {nm(wallSide)}</span>}
-      {ref}
-      <span className={has ? 'cell-score' : 'cell-score empty'}>
-        {has ? `${s!.ga! + st[0]}:${s!.gb! + st[1]}` : m.start ? `${st[0]}:${st[1]} start` : '–:–'}
-      </span>
-      {has && m.start && (
-        <span className="cell-sub">
-          odehráno {s!.ga}:{s!.gb}
+    <span className="mb" role="group" aria-label={label}>
+      {side('A')}
+      {side('B')}
+      {foot.length > 0 && (
+        <span className="mb-foot">
+          {foot.map((f, j) => (
+            <Fragment key={j}>
+              {j > 0 && ' · '}
+              {f}
+            </Fragment>
+          ))}
         </span>
       )}
-    </>
+    </span>
   );
 }
 

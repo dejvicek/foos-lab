@@ -54,7 +54,7 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     await user.click(t);
     expect(t).toHaveAttribute('aria-expanded', 'true');
     expect(card).toHaveTextContent('Stůl 1');
-    expect(card).toHaveTextContent('H1 + H2 vs H3 + H4');
+    expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4' })).toBeInTheDocument();
     expect(card).not.toHaveClass('stacked');
   });
 
@@ -79,6 +79,7 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     expect(within(cell).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vlevo 6' }));
     await user.click(within(cell).getByRole('button', { name: '1. kolo, stůl 1: góly vpravo 2' }));
-    expect(card).toHaveTextContent('6:2');
+    // výsledková tabule: strana na řádek, výsledek v názvu skupiny (19. 11. 2026)
+    expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4 6:2' })).toBeInTheDocument();
   });
 });
