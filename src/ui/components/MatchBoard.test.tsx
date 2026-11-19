@@ -58,3 +58,17 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     expect(container).toHaveTextContent('Clearing');
   });
 });
+
+describe('skončené cvičení jako tabule (19. 11. 2026)', () => {
+  const g = { type: 'group' as const, players: ['a1', 'b1'], metric: 'warmupPasses' as const };
+  it('po potvrzeném konci: hráč na řádek, vpravo povedené z pokusů', () => {
+    const res = { soloResults: { a1: { warmupPasses: 15 }, b1: { warmupPasses: 12 } }, soloAttempts: { a1: { warmupPasses: 20 }, b1: { warmupPasses: 20 } } };
+    const { container, rerender } = render(<CompactCell cell={g} t={t({ ...res, playTimes: { d: { startedAt: 1, endedAt: 2 } } } as Partial<Training>)} names={names} itemId="d" />);
+    expect(screen.getByRole('group', { name: 'Ondra 15/20, Dejv 12/20' })).toBeInTheDocument();
+    expect([...container.querySelectorAll('.mb-sc b')].map((b) => b.textContent)).toEqual(['15/20', '12/20']);
+    // ještě se cvičí: jen jména
+    rerender(<CompactCell cell={g} t={t({ ...res, playTimes: { d: { startedAt: 1 } } } as Partial<Training>)} names={names} itemId="d" />);
+    expect(container.querySelector('.mb')).toBeNull();
+    expect(container).toHaveTextContent('Ondra, Dejv');
+  });
+});

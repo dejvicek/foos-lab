@@ -3,7 +3,8 @@ import { matchState } from '../../domain/matchFormat';
 import { tableScore } from '../../domain/legState';
 import { isEmptyScore } from '../../domain/training';
 import { BREAK_OPTIONS } from '../../domain/breaks';
-import { clockAt, soloKey } from '../../domain/solo';
+import { clockAt, soloKey, soloMetric } from '../../domain/solo';
+import { drillCount } from '../../domain/drillTap';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
 import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
@@ -121,8 +122,48 @@ export function Names({ ids, names, me, sep = ' + ' }: { ids: PlayerId[]; names:
 }
 
 /** `roundName`: název kola – stanoviště se stejným názvem se pod hráči neopakuje (19. 11. 2026). */
-export function CompactCell({ cell, t, names, me = null, roundName, noLive }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null; roundName?: string; noLive?: boolean }) {
+export function CompactCell({
+  cell,
+  t,
+  names,
+  me = null,
+  roundName,
+  noLive,
+  itemId,
+}: {
+  cell: Cell;
+  t: Training;
+  names: Record<PlayerId, string>;
+  me?: PlayerId | null;
+  roundName?: string;
+  noLive?: boolean;
+  /** ID utkání cvičení: po skončení ukáže výsledky jako tabule zápasu. */
+  itemId?: string;
+}) {
   if (cell.type === 'group') {
+    const board = itemId ? drillBoard(cell, itemId, t) : null;
+    const station = cell.station && !(roundName === cell.station || roundName?.startsWith(`${cell.station} – `)) ? cell.station : null;
+    if (board)
+      return (
+        <>
+          <span className="mb" role="group" aria-label={board.map((x) => `${names[x.p] ?? '?'} ${x.text}`).join(', ')}>
+            {board.map((x, k) => (
+              <Fragment key={x.p}>
+                <span className="mb-nm" title={names[x.p] ?? '?'}>
+                  <i className={k === 0 ? 'mb-dot a' : 'mb-dot b'} />
+                  <span className="mb-who">
+                    <Names ids={[x.p]} names={names} me={me} />
+                  </span>
+                </span>
+                <span className="mb-sc">
+                  <b>{x.text}</b>
+                </span>
+              </Fragment>
+            ))}
+          </span>
+          {station && <span className="cell-sub grp">{station}</span>}
+        </>
+      );
     return (
       <>
         {/* Jména cvičení odsazená jako jména zápasu za tečkou strany (19. 11. 2026). */}
@@ -219,6 +260,26 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
       )}
     </span>
   );
+}
+
+/**
+ * Výsledky skončeného cvičení jako tabule zápasu (19. 11. 2026, *rozhodnutí uživatele*): hráč na řádek, vpravo
+ * povedené z pokusů („12/20“), u Čisté desítky čas. Skončené = potvrzený konec; starší trénink bez časů = všichni zapsaní.
+ */
+function drillBoard(c: Extract<Cell, { type: 'group' }>, itemId: string, t: Training): { p: PlayerId; text: string }[] | null {
+  if (!c.metric) return null;
+  const pt = t.playTimes?.[itemId];
+  const key = soloKey(c.metric, c.soloRound);
+  const all = c.players.every((p) => t.soloResults[p]?.[key] !== undefined);
+  if (pt ? pt.endedAt === undefined : !all) return null;
+  const def = soloMetric(c.metric);
+  return c.players.map((p) => {
+    const value = t.soloResults[p]?.[key];
+    if (value === undefined || value === null) return { p, text: '–' };
+    if (def.streak) return { p, text: value > 0 ? `${Math.floor(value / 60)}:${String(Math.round(value) % 60).padStart(2, '0')}` : '–' };
+    const n = drillCount({ value, attempts: t.soloAttempts?.[p]?.[key] }, def);
+    return { p, text: `${n.hits}/${n.attempts}` };
+  });
 }
 
 export function soloProgress(row: ScheduleRow, t: Training): string | null {
@@ -441,7 +502,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const pk = `${key}|${j}`;
                         return (
                           <td key={j} className={c ? (has || manage ? 'has-prog' : undefined) : 'free'}>
-                            {c && <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />}
+                            {c && <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} itemId={id} />}
                             {c && (has || manage) && (
                               <span className="cell-ics">
                                 {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}

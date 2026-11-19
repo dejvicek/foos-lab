@@ -265,7 +265,7 @@ export function MyTable(props: Props) {
               <span className="tile-row">
                 <TableNo n={x.table} mine />
                 <span>
-                  <CompactCell cell={x.row.cells[x.table - 1]!} t={training} names={names} me={playerId} roundName={rowName(x.row, xs?.id)} noLive />
+                  <CompactCell cell={x.row.cells[x.table - 1]!} t={training} names={names} me={playerId} roundName={rowName(x.row, xs?.id)} noLive itemId={itemOf(x) ?? undefined} />
                 </span>
               </span>
             </div>

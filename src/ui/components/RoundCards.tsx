@@ -150,7 +150,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                         <span className="tile-row">
                           <TableNo n={j + 1} mine={takesPart(place) && 'table' in place && place.table === j + 1} />
                           <span>
-                            <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} />
+                            <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} itemId={id} />
                           </span>
                           {/* Vždy (i prázdné): sloupec ikonek má v celé kartě stejnou šířku, skóre zůstane pod sebou. */}
                           <span className="cell-ics">

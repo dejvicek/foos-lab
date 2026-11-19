@@ -8,14 +8,6 @@ const ev = (i: number, kind: GameEvent['kind'], extra: Partial<GameEvent>): Game
 const names = { a1: 'Novák', a2: 'Dvořák', b1: 'Svoboda', b2: 'Černý' };
 const match = (extra: Partial<Match> = {}): Match => ({ id: 'm', kind: 'doubles', block: 'league', sideA: ['a1', 'a2'], sideB: ['b1', 'b2'], ...extra }) as Match;
 
-it('průběh cvičení: legenda jen povedené z pokusů (bez série a půlek, 19. 11. 2026)', () => {
-  const marks = [true, true, true, false, true, false, false, false];
-  const events: GameEvent[] = marks.map((ok, i) => ({ id: `e${i}`, itemId: 'd', at: 1000 + i, kind: ok ? 'hit' : 'miss', playerId: 'a', delta: 1 }));
-  render(<DrillTimeline players={['a']} events={events} names={{ a: 'Dejv' }} />);
-  expect(screen.getByText('4/8')).toBeInTheDocument();
-  expect(screen.queryByText(/série|půlka/)).toBeNull();
-});
-
 it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače; krátká legenda stran', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(3, 'goal', { side: 'A' })];
   const { container } = render(<MatchTimeline match={match({ start: [4, 4] })} events={events} from={0} to={5000} names={names} />);
@@ -79,8 +71,8 @@ it('cvičení: křivky povedených pokusů hráčů, nepovedené jako tečky; be
   expect(container.querySelectorAll('.tl-pline')).toHaveLength(2);
   expect(screen.getByText('pokus')).toBeInTheDocument();
   expect(container.querySelectorAll('.tl-loss-pt')).toHaveLength(1);
-  // povedené pokusy jako tečky v barvě hráče; legenda jen jméno a povedené z pokusů
+  // povedené pokusy jako tečky v barvě hráče; bez legendy pod grafem
   expect(container.querySelectorAll('circle.tl-pt.pl-0')).toHaveLength(1);
   expect(container.querySelector('circle.tl-pt title')).toHaveTextContent('1. pokus povedený');
-  expect([...container.querySelectorAll('.tl-sum span')].map((x) => x.textContent)).toEqual(['1/1', '0/1']);
+  expect(container.querySelector('.tl-sums')).toBeNull();
 });

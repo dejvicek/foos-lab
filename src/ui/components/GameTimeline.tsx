@@ -144,9 +144,6 @@ export function MatchTimeline({ match: m, events, from, to, names }: { match: Ma
   return <MatchCurve {...props} />;
 }
 
-/** Legenda cvičení: jen povedené z pokusů (19. 11. 2026, *rozhodnutí uživatele*; bez série a půlek). */
-const drillSummary = (r: DrillRow) => `${r.marks.filter(Boolean).length}/${r.marks.length}`;
-
 /** Barva hráče v cvičení: 1. zlatá, 2. tmavá, další černá (čárkovaně v křivce). */
 const playerCls = (i: number) => `pl-${Math.min(i, 2)}`;
 
@@ -217,24 +214,13 @@ function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: numb
   );
 }
 
-/** Cvičení (PRD 4.9): křivky povedených pokusů (jediné zobrazení od 18. 11. 2026), pod tím souhrn každého hráče. */
+/** Cvičení (PRD 4.9): křivky povedených pokusů (jediné zobrazení od 18. 11. 2026), bez legendy. */
 export function DrillTimeline({ players, events, names }: { players: PlayerId[]; events: GameEvent[]; names: Record<PlayerId, string> }) {
   const all = drillTimeline(events, players);
   const rows = players.map((p, i) => ({ p, r: all[p], i })).filter((x) => x.r.marks.length > 0);
   if (!rows.length) return null;
-  return (
-    <>
-      <DrillCurve rows={rows} names={names} />
-      <div className="tl-sums">
-        {rows.map(({ p, r, i }) => (
-          <p key={p} className="tl-sum">
-            <i className={`tl-dot ${playerCls(i)}`} />
-            <b>{names[p] ?? '?'}</b> <span>{drillSummary(r)}</span>
-          </p>
-        ))}
-      </div>
-    </>
-  );
+  // Bez legendy pod grafem (19. 11. 2026, *rozhodnutí uživatele*): jména a „12/20“ ukazuje tabule cvičení nad grafem.
+  return <DrillCurve rows={rows} names={names} />;
 }
 
 /**
