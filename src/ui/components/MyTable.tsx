@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { matchState } from '../../domain/matchFormat';
-import { trainingProgress } from '../../domain/progress';
+import { rowKind, trainingProgress } from '../../domain/progress';
 import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
 import { CompactCell, Names } from './TrainingTable';
 import { TableNo } from './TableNo';
@@ -271,7 +271,7 @@ export function MyTable(props: Props) {
       );
     const w = waitWhy(nx, s);
     return (
-      <div className="next-bar wait" role="status">
+      <div className={`next-bar wait rk-${rowKind(nx.row)}`} role="status">
         <span className="k">Další kolo{w.left !== undefined ? ' · po pauze' : ''}</span>
         <span className="w">{name}</span>
         <span className="why">
@@ -371,7 +371,7 @@ export function MyTable(props: Props) {
       />
       {nextBar}
       {/* Kolo jako dlaždice v Rozpisu: hlavička, můj stůl (velké číslo + zápas) a stavový proužek. */}
-      <article className="round-card my-card mine-row" aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
+      <article className={`round-card my-card mine-row rk-${rowKind(a.row)}`} aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
         <RoundTileHead
           a={a}
           name={keepLast(rowName(a.row, sec?.id))}
