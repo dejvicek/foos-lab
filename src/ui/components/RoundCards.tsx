@@ -11,6 +11,7 @@ import { ProgressToggle } from './ProgressToggle';
 import { EditToggle } from './EditToggle';
 import { TableNo } from './TableNo';
 import { drillItemId } from '../../domain/queue';
+import { rowKind } from '../../domain/progress';
 import { CompactCell, Names, RailNode, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 
@@ -218,7 +219,7 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                 // Všechny stoly vždy (19. 11. 2026, *rozhodnutí uživatele*) – dlaždice se nerozbaluje.
                 <article
                   key={key}
-                  className={['round-card', state, takesPart(place) ? 'mine-row' : ''].filter(Boolean).join(' ')}
+                  className={['round-card', state, 'rk', `rk-${rowKind(row)}`, takesPart(place) ? 'mine-row' : ''].filter(Boolean).join(' ')}
                   aria-label={`${row.label}, ${rowName(row, sec.id)}, ${time}`}
                 >
                   <RailNode st={rs} no={numbers.get(key)} />

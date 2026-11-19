@@ -39,6 +39,14 @@ export function rowType(row: ScheduleRow): RoundType {
   return row.kind === 'groups' ? 'drill' : 'normal';
 }
 
+/** Druh kola jako v kroku Disciplíny (19. 11. 2026): cvičení · zápasy a scénáře · simulace – barva na časové ose. */
+export type RoundKind = 'drill' | 'match' | 'sim';
+
+export function rowKind(row: ScheduleRow): RoundKind {
+  const t = rowType(row);
+  return t === 'sim' || t === 'drill' ? t : 'match';
+}
+
 export interface ProgressSeg {
   kind: 'round' | 'break';
   /** Délka v minutách (do začátku dalšího řádku). */

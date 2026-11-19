@@ -1,5 +1,5 @@
 import { buildSchedule } from './schedule';
-import { nextBreak, rowType, trainingProgress } from './progress';
+import { nextBreak, rowKind, rowType, trainingProgress } from './progress';
 import type { Training } from './types';
 import { H } from '../test/fixtures';
 
@@ -14,6 +14,13 @@ describe('průběh tréninku (čára v nadpisu kola, 18. 11. 2026)', () => {
     const types = trainingProgress(s, 120).filter((x) => x.kind === 'round').map((x) => x.type);
     expect(new Set(types)).toEqual(new Set(['drill', 'normal', 'scen', 'wall', 'tax', 'sim']));
     for (const x of trainingProgress(s, 120).filter((y) => y.kind === 'round')) expect(x.type).toBe(rowType(x.row));
+  });
+
+  it('druh kola pro barvu osy jako v kroku Disciplíny: cvičení, zápasy a scénáře, simulace', () => {
+    const s = buildSchedule(custom({ warmupPasses: 1, normal: 1, start45: 2, wall: 2, lossTax: 1, sim: 1 }));
+    const rounds = trainingProgress(s, 120).filter((x) => x.kind === 'round');
+    const kinds = new Map(rounds.map((x) => [x.type, rowKind(x.row)]));
+    expect(Object.fromEntries(kinds)).toEqual({ drill: 'drill', normal: 'match', scen: 'match', wall: 'match', tax: 'match', sim: 'sim' });
   });
 
   it('kola očíslovaná po sobě bez pauz, délka = do dalšího řádku, poslední do konce tréninku', () => {

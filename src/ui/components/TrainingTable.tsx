@@ -14,6 +14,7 @@ import { HelpToggle } from './HelpToggle';
 import { ProgressToggle } from './ProgressToggle';
 import { EditToggle } from './EditToggle';
 import { drillItemId } from '../../domain/queue';
+import { rowKind } from '../../domain/progress';
 import type { ItemTiming } from './Timing';
 
 interface Props {
@@ -392,11 +393,13 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                     </tr>
                   );
                 }
+                // Barva osy podle druhu kola jako v kroku Disciplíny (19. 11. 2026).
+                const rk = `rk rk-${rowKind(row)}`;
                 const droppable = dragging !== null && !!breaks && row.roundNo !== undefined;
                 return (
                   <Fragment key={key}>
                     <tr
-                      className={[state, row.kind, open ? 'open' : '', takesPart(place) ? 'mine-row' : '', drop?.key === key ? `drop-${drop.pos}` : ''].filter(Boolean).join(' ')}
+                      className={[state, row.kind, rk, open ? 'open' : '', takesPart(place) ? 'mine-row' : '', drop?.key === key ? `drop-${drop.pos}` : ''].filter(Boolean).join(' ')}
                       onDragOver={
                         droppable
                           ? (e) => {
@@ -451,7 +454,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                       <td className="c-wait">{row.waiting.length ? <Names ids={row.waiting} names={names} me={me} sep=", " /> : '–'}</td>
                     </tr>
                     {help === key && (
-                      <tr className={['help-row', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
+                      <tr className={['help-row', rk, railLine(rail, order, idx)].filter(Boolean).join(' ')}>
                         <td colSpan={cols}>
                           <div className="my-help help" role="region" aria-label={`Nápověda: ${row.label}`}>
                             <RoundHelp row={row} untitledMain />
@@ -465,7 +468,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const c = row.cells[j];
                         if (!c) return null;
                         return (
-                          <tr className={['prog-row', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
+                          <tr className={['prog-row', rk, railLine(rail, order, idx)].filter(Boolean).join(' ')}>
                             <td colSpan={cols}>
                               <span className="prog-k">Stůl {j + 1} · Průběh</span>
                               <ItemProgress
@@ -480,7 +483,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         );
                       })()}
                     {open && (
-                      <tr className={['expand', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
+                      <tr className={['expand', rk, railLine(rail, order, idx)].filter(Boolean).join(' ')}>
                         <td colSpan={cols}>
                           {/* Celkový výsledek bez stopek a ťukání; zapsaný dohraný výsledek utkání ukončí. */}
                           <BlockEntry

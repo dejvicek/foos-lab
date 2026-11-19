@@ -39,13 +39,6 @@
   --side-b-ink: #ffffff;
   --side-b-text: #3a3936;
   --side-b-soft: #e3e5e9;
-  /* Typy disciplín (nadpis kola v Moje hry, 18. 11. 2026) – žádná zlatá: zlatá = dá se ťuknout. */
-  --d-normal: #4a5262;
-  --d-scen: #1f6f78;
-  --d-wall: #2f5fa6;
-  --d-tax: #b53a2f;
-  --d-sim: #2f7d4f;
-  --d-drill: #6b5a2e;
   --nav-h: 56px;
   /* Šířka celé appky na notebooku; víc je jen okraj (širokoúhlé monitory appka nepotřebuje). */
   --app-max: 1200px;
@@ -77,12 +70,6 @@
     --side-b-ink: #ffffff;
     --side-b-text: #c9ccd2;
     --side-b-soft: #23252a;
-    --d-normal: #8a93a6;
-    --d-scen: #3aa3ad;
-    --d-wall: #6b9be0;
-    --d-tax: #e36c60;
-    --d-sim: #5cc287;
-    --d-drill: #b8a06a;
     color-scheme: dark;
   }
 }
@@ -110,12 +97,6 @@
   --side-b-ink: #ffffff;
   --side-b-text: #c9ccd2;
   --side-b-soft: #23252a;
-  --d-normal: #8a93a6;
-  --d-scen: #3aa3ad;
-  --d-wall: #6b9be0;
-  --d-tax: #e36c60;
-  --d-sim: #5cc287;
-  --d-drill: #b8a06a;
   color-scheme: dark;
 }
 
@@ -424,7 +405,7 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .cell-sub.live, .round-name small.live { color: var(--felt); font-weight: 700; }
 
 /* Časová osa rozpisu: odehráno / hraje se / přijde (stav podle skutečnosti, ne hodin) */
-.has-rail { --rail-off: var(--line-strong); --rail-on: var(--felt); }
+.has-rail { --rail-off: var(--line-strong); --rail-on: var(--line-strong); }
 .plan.has-rail .c-time, .plan.has-rail .section-row th, .plan.has-rail .expand > td, .plan.has-rail .sim-setup-row > td { position: relative; padding-left: 34px; }
 .plan.has-rail .c-time::before, .plan.has-rail .rail-line > *::before, .round-cards.has-rail > .rail::before, .round-cards.has-rail > .rail-line::before {
   content: ''; position: absolute; left: 14px; top: 0; bottom: 0; width: 2px;
@@ -444,9 +425,20 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
   font-variant-numeric: tabular-nums;
 }
 .rail-node.pause i { display: block; width: 3px; height: 9px; border-radius: 1px; background: var(--ink); }
-.st-done > .rail-node, .st-done .rail-node { background: var(--gold); border-color: var(--rail-on); color: var(--gold-ink); }
-.st-done .rail-node.pause i { background: var(--gold-ink); }
-.st-playing .rail-node { border-color: var(--rail-on); color: var(--felt); box-shadow: 0 0 0 4px var(--felt-soft); }
+/* Barvy osy podle druhu kola jako v kroku Disciplíny (19. 11. 2026, *rozhodnutí uživatele*): cvičení · zápasy a scénáře
+   · simulace; odehraná kola světleji, nadcházející plnou barvou. Pauzy a nadpisy sekcí zůstávají šedé. */
+.has-rail { --dc: var(--muted); }
+.has-rail .rk-drill { --dc: var(--k-drill); }
+.has-rail .rk-match { --dc: var(--k-match); }
+.has-rail .rk-sim { --dc: var(--k-sim); }
+.has-rail .rk.rail, .has-rail .rk.rail-line { --dl: var(--dc); --rt: var(--dl); --rb: var(--dl); }
+.has-rail .rk.rail.st-done, .has-rail .rk.rail-line.on { --dl: color-mix(in srgb, var(--dc) 40%, transparent); }
+.st-done > .rail-node, .st-done .rail-node { background: color-mix(in srgb, var(--dc) 22%, var(--surface)); border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); color: var(--dc); }
+.st-done .rail-node.pause i { background: var(--muted); }
+.rk .rail-node { border-color: var(--dc); color: var(--dc); }
+.rk.st-done .rail-node { border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); }
+.st-playing .rail-node { border-color: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 22%, transparent); }
+.rk.st-playing .rail-node { background: var(--dc); color: var(--surface); }
 /* Hrané kolo: kroužek bez pulzování (19. 11. 2026, *rozhodnutí uživatele*). */
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
@@ -669,30 +661,18 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .my-table .entry-card { padding: 8px; }
 
 /* ── Moje hry: nadpis kola s průběhem tréninku, přechod mezi koly (18. 11. 2026) ── */
-.round-head { --dc: var(--d-normal); display: flex; flex-direction: column; gap: 2px; text-align: left; }
-.round-head.t-scen, .seg.t-scen { --dc: var(--d-scen); }
-.round-head.t-wall, .seg.t-wall { --dc: var(--d-wall); }
-.round-head.t-tax, .seg.t-tax { --dc: var(--d-tax); }
-.round-head.t-sim, .seg.t-sim { --dc: var(--d-sim); }
-.round-head.t-drill, .seg.t-drill { --dc: var(--d-drill); }
-.round-head.flash { animation: rh-glow 1200ms ease-out; border-radius: 8px; }
-@keyframes rh-glow { 0% { background: color-mix(in srgb, var(--dc) 22%, transparent); } 100% { background: transparent; } }
+/* Barva kola jako v kroku Disciplíny (19. 11. 2026): cvičení · zápasy a scénáře · simulace; odehraná světleji. */
 .prog { display: flex; align-items: flex-end; gap: 2px; height: 20px; padding-top: 9px; }
-.seg { --dc: var(--d-normal); display: block; height: 5px; min-width: 4px; border-radius: 2px; position: relative; background: color-mix(in srgb, var(--dc) 26%, transparent); }
-.seg.done { background: var(--dc); opacity: 0.55; }
-.seg.cur { background: var(--dc); height: 10px; border-radius: 3px; }
+.seg { --dc: var(--k-match); display: block; height: 5px; min-width: 4px; border-radius: 2px; position: relative; background: var(--dc); }
+.seg.t-sim { --dc: var(--k-sim); }
+.seg.t-drill { --dc: var(--k-drill); }
+.seg.done { background: color-mix(in srgb, var(--dc) 40%, transparent); }
+.seg.cur { height: 10px; border-radius: 3px; }
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;
 }
 .pz { display: block; height: 5px; min-width: 10px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--muted) 0 2px, transparent 2px 4px); }
-.rh-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
-.rh-nav button.icon { min-width: 44px; min-height: 40px; font-size: 22px; }
-.rh-count { font-size: 13px; font-weight: 700; color: var(--ink); }
-.rh-type { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dc); }
-.rh-type::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--dc); flex: none; }
-.round-head .rh-name { display: block; margin: 0; font-size: 26px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; color: var(--ink); text-wrap: balance; }
-.round-head .rh-rule { display: block; margin: 2px 0 0; font-size: 14px; font-weight: 600; color: var(--ink); }
 
 /* Moje hry jako dlaždice kola v Rozpisu (19. 11. 2026): klikací časová osa s ‹ ›, karta kola, zápis bez hlavičky stolu. */
 .my-tl { display: flex; align-items: center; gap: 6px; }
@@ -776,7 +756,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .mirror-nudge { margin: 0; padding: 6px 10px; border-radius: 99px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
 .mirror-lock-card.shake { animation: mirror-shake 380ms; }
 .mirror-from { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; opacity: 0.8; }
-@media (prefers-reduced-motion: reduce) { .round-head.flash, .mirror-halves.shake, .mirror-lock-card.shake { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .mirror-halves.shake, .mirror-lock-card.shake { animation: none; } }
 @media (max-width: 767px) {
   .my-table { margin: 0 -8px; padding: 10px 8px; }
   .mirror-halves.cols-3 .mirror-num { font-size: 48px; }
