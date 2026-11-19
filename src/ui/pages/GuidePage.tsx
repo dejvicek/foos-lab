@@ -213,7 +213,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 tréninku se odehraná kola sbalí do řádku „Odehráno 3 kola“, ťuknutím je zase uvidíš.
               </Li>
               <Li i="▣">
-                <b>Kola, kde hraješ nebo rozhoduješ,</b> mají vlevo žlutý pruh a tvoje jméno je tučně zlatě. Rozpis je jen ke čtení, výsledky zapisuješ v Moje
+                <b>Tvoje jméno</b> je tučně zlatě; odehraná a právě hraná kola, kde hraješ nebo rozhoduješ, mají vlevo žlutý pruh. Rozpis je jen ke čtení, výsledky zapisuješ v Moje
                 hry. Na telefonu má každé kolo dlaždici se všemi stoly; velké číslo vlevo je číslo stolu.
               </Li>
               <Li i="Σ">
