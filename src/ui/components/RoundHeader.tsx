@@ -69,7 +69,7 @@ export function MyTimeline({
   segs,
   current,
   played,
-  upcoming,
+  active,
   startTime,
   onPick,
   prev,
@@ -79,8 +79,8 @@ export function MyTimeline({
   current: number;
   /** Odehraná kola (plná barva); zobrazené kolo jen zvětší dílek, barvy nemění (19. 11. 2026). */
   played?: Set<number>;
-  /** Kolo, které je na řadě nebo se hraje (zlatě orámované), když se díváš jinam (19. 11. 2026). */
-  upcoming?: number;
+  /** Kolo, které hraju nebo je na řadě: vyšší dílek; zobrazené kolo má jen ▼ (19. 11. 2026). */
+  active?: number;
   startTime: string;
   onPick(index: number): void;
   prev: { disabled: boolean; onClick(): void };
@@ -99,7 +99,7 @@ export function MyTimeline({
             <button
               key={i}
               type="button"
-              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === upcoming ? ' upnext' : ''}`}
+              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === active ? ' live' : ''}`}
               style={{ flexGrow: x.min }}
               aria-label={`${x.index! + 1}. kolo: ${roundName({ row: x.row, role: 'wait' })}, ${clockAt(startTime, x.time)}`}
               aria-current={x.index === current ? 'step' : undefined}

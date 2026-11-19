@@ -363,7 +363,7 @@ export function MyTable(props: Props) {
         segs={segs}
         current={i}
         played={played}
-        upcoming={activeIdx >= 0 && activeIdx !== i ? activeIdx : undefined}
+        active={activeIdx >= 0 ? activeIdx : undefined}
         startTime={training.startTime}
         onPick={(j) => go(j)}
         prev={{ disabled: i === 0, onClick: () => go(i - 1) }}
