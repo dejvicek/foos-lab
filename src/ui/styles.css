@@ -133,15 +133,16 @@ h4 { font-size: 15px; margin: 16px 0 6px; }
 
 /* ── Ovládací prvky ─────────────────────────────────────── */
 button, input, select, textarea { font: inherit; color: var(--ink); }
+/* Tlačítka menší a zakulacenější (19. 11. 2026, *rozhodnutí uživatele*, návrh „Malé čipy“ C): 32 px, rádius 8. */
 button {
   background: var(--action); color: var(--action-ink);
-  border: 1px solid var(--action-edge); border-radius: 4px;
-  padding: 7px 14px; font-weight: 600; cursor: pointer; min-height: 36px;
+  border: 1px solid var(--action-edge); border-radius: 8px;
+  padding: 5px 12px; font-weight: 600; cursor: pointer; min-height: 32px;
 }
 button:disabled { opacity: 0.35; cursor: default; }
 button.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
 button.danger, button.ghost.danger { background: var(--surface); color: var(--warn); border-color: var(--warn); }
-button.icon { background: var(--surface); color: var(--ink); border-color: var(--line); min-width: 34px; padding: 0; }
+button.icon { background: var(--surface); color: var(--ink); border-color: var(--line); min-width: 30px; padding: 0; }
 button.back { background: none; border: 0; padding: 0; min-height: 28px; color: var(--muted); font-weight: 500; }
 button.back::before { content: '‹ '; }
 input[type='text'], input:not([type]), input[type='date'], input[type='time'], input[type='number'], select {
@@ -257,7 +258,7 @@ details.archived { margin-top: 16px; }
 .practice-card strong { font-size: 16px; }
 .practice-card button { min-height: 44px; padding: 0 18px; }
 @media (max-width: 767px) { .practice-card button { flex: 1 1 100%; } }
-.practice .segmented button { min-height: 40px; padding: 0 18px; }
+.practice .segmented button { min-height: 32px; height: 32px; padding: 0 14px; }
 .practice-setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 32px; align-items: start; }
 @media (max-width: 767px) { .practice-setup { grid-template-columns: minmax(0, 1fr); } }
 .practice-section h3 { margin: 14px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
@@ -540,13 +541,13 @@ tr.clickable:hover td { background: var(--felt-soft); }
 .player-link:hover { color: var(--felt); text-decoration: underline; }
 
 /* ── Žebříček ───────────────────────────────────────────── */
-.segmented {
-  display: inline-flex; margin: 4px 8px 6px 0;
-  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden;
+/* Přepínač jako malé oddělené čipy (19. 11. 2026, *rozhodnutí uživatele*, návrh C): 28 px, zvolený zlatě. */
+.segmented { display: inline-flex; flex-wrap: wrap; gap: 6px; margin: 4px 8px 6px 0; }
+.segmented button {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 99px;
+  padding: 0 11px; min-height: 28px; height: 28px; font-size: 13px; font-weight: 600;
 }
-.segmented button { background: none; color: var(--ink); border: 0; border-radius: 0; border-right: 1px solid var(--line); font-weight: 500; }
-.segmented button:last-child { border-right: 0; }
-.segmented button[aria-pressed='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--action-edge); }
+.segmented button[aria-pressed='true'] { background: var(--action); border-color: var(--action-edge); color: var(--action-ink); font-weight: 700; }
 .range-dates { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; align-items: center; }
 .solo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 8px 24px; }
 .solo-block { margin-top: 12px; }
@@ -726,7 +727,7 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .next-bar .c-state.wait { font-weight: 600; }
 .next-bar .c-state .count { font-size: 18px; font-weight: 800; }
 .my-zone { display: grid; gap: 8px; margin-top: 8px; }
-.my-zone > .big-action { min-height: 56px; border-radius: 12px; font-size: 18px; font-weight: 800; background: var(--gold); color: var(--gold-ink); border: 0; }
+.my-zone > .big-action { min-height: 46px; border-radius: 10px; font-size: 16px; font-weight: 800; background: var(--gold); color: var(--gold-ink); border: 0; }
 .my-zone > .note { margin: 0; text-align: center; }
 .my-zone > .end-early { justify-self: end; }
 @media (max-width: 767px) {
