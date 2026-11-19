@@ -82,6 +82,8 @@ describe('stránka Žebříček', () => {
     const heads = (t: HTMLElement) => within(t).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
     expect(heads(total)).toEqual(expect.arrayContaining(['L+', 'L−']));
     expect(heads(total)).not.toContain('Legy');
+    // krátká záhlaví G+ / G− / Sim. (19. 11. 2026)
+    expect(heads(total)).toEqual(expect.arrayContaining(['G+', 'G−', 'Sim.']));
     await user.click(screen.getByRole('button', { name: 'Průměr' }));
     expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(expect.arrayContaining(['Legy', 'Výhry %']));
   });

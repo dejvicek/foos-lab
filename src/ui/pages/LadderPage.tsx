@@ -50,7 +50,8 @@ function LadderTable({
   const mobile = useMobile();
   const [sort, setSort] = useSort();
   // Sloupce (18. 11. 2026: řazení podle libovolného sloupce); hodnoty podle Průměr / Celkem jako v buňkách.
-  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
+  // Krátká záhlaví (G+, L−, Sim.) mají plný název v nápovědě; `text` je ho pro výběr řazení a popisek na telefonu (19. 11. 2026).
+  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string; text?: string })[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
     // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
@@ -58,19 +59,21 @@ function LadderTable({
     { key: 'diff', label: avg ? 'Rozdíl / leg' : 'Rozdíl', className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
-      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
-    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
-    { key: 'gf', label: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
-    { key: 'gc', label: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, text: 'Vyhrané legy', className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
+    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, text: 'Prohrané legy', className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
+    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>{avg ? 'G+ / leg' : 'G+'}</span>, text: avg ? 'Góly + / leg' : 'Góly +', className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>{avg ? 'G− / leg' : 'G−'}</span>, text: avg ? 'Góly − / leg' : 'Góly −', className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
     { key: 'loss', label: 'Ztráty / leg', className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
     {
       key: 'sim',
-      label: avg ? 'Simulace %' : 'Simulace (výhry / zápasy)',
+      label: <span title={avg ? 'Výhry v simulaci' : 'Simulace: výhry / zápasy'}>{avg ? 'Sim. %' : 'Sim.'}</span>,
+      text: avg ? 'Simulace %' : 'Simulace',
       className: 'n',
       value: (r) => (avg ? r.simRate : r.simM ? r.simW : null),
       show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
     },
   ];
+  const colText = (c: (typeof cols)[number]) => c.text ?? (typeof c.label === 'string' ? c.label : c.key);
   const items = placeAndSort(ranked, lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);
   const shown = sort && sort.key !== 'diff' && sort.key !== 'name' ? cols.find((c) => c.key === sort.key) : undefined;
@@ -90,10 +93,10 @@ function LadderTable({
             <option value="">pořadí</option>
             {cols.flatMap((c) => [
               <option key={`${c.key}:${c.first ?? 'desc'}`} value={`${c.key}:${c.first ?? 'desc'}`}>
-                {`${typeof c.label === 'string' ? c.label : c.key} ${(c.first ?? 'desc') === 'desc' ? '↓' : '↑'}`}
+                {`${colText(c)} ${(c.first ?? 'desc') === 'desc' ? '↓' : '↑'}`}
               </option>,
               <option key={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`} value={`${c.key}:${(c.first ?? 'desc') === 'desc' ? 'asc' : 'desc'}`}>
-                {`${typeof c.label === 'string' ? c.label : c.key} ${(c.first ?? 'desc') === 'desc' ? '↑' : '↓'}`}
+                {`${colText(c)} ${(c.first ?? 'desc') === 'desc' ? '↑' : '↓'}`}
               </option>,
             ])}
           </select>
@@ -117,7 +120,7 @@ function LadderTable({
                   {shown ? (
                     <span className="ll-main">
                       {shown.show(r)}
-                      <small>{typeof shown.label === 'string' ? shown.label.toLowerCase() : ''}</small>
+                      <small>{colText(shown).toLowerCase()}</small>
                     </span>
                   ) : (
                     <span className={['ll-main', diffTone(d, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING)].filter(Boolean).join(' ')}>
