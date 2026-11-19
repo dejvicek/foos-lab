@@ -5,7 +5,8 @@ import { flatRows, rowKey } from '../now';
 import { railClass, railLine, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
-import { BlockEntry, hasProgress, ItemProgress } from './BlockEntry';
+import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp } from './BlockEntry';
+import { HelpToggle } from './HelpToggle';
 import { ProgressToggle } from './ProgressToggle';
 import { EditToggle } from './EditToggle';
 import { TableNo } from './TableNo';
@@ -50,6 +51,8 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
   const minutes = rowMinutes(s, training.format === 'custom' ? training.durationMin : undefined);
   // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
   const [prog, setProg] = useState<string | null>(null);
+  // Otevřená nápověda kola (otazník v hlavičce, 19. 11. 2026): klíč řádku.
+  const [help, setHelp] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
   const folded = collapsedDone(s, rounds, running);
   const doneRounds = [...folded].filter((k) => numbers.has(k)).length;
@@ -225,12 +228,18 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                       <span className="tile-name">{keepLast(rowName(row, sec.id))}</span>
                       <span className="tile-fmt" title={rowFormat(row) ?? undefined}>
                         {rowFormat(row, true)}
+                        {hasRoundHelp(row) && <HelpToggle open={help === key} onToggle={() => setHelp(help === key ? null : key)} label={row.label} />}
                       </span>
                     </span>
                     {rowSub(min, row, progress, false) && <span className="tile-sub">{rowSub(min, row, progress, false)}</span>}
                   </div>
                   {/* Řádky stolů a Volno; ikonka grafu otevře Průběh, tužka zápis stolu. */}
                   <div className="tile-rows">{lines.map((x) => x.node)}</div>
+                  {help === key && (
+                    <div className="my-help help" role="region" aria-label={`Nápověda: ${row.label}`}>
+                      <RoundHelp row={row} untitledMain />
+                    </div>
+                  )}
                 </article>
               );
             })}

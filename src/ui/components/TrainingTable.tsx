@@ -9,7 +9,8 @@ import { flatRows, rowKey } from '../now';
 import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
-import { BlockEntry, hasProgress, ItemProgress, type TapSolo } from './BlockEntry';
+import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp, type TapSolo } from './BlockEntry';
+import { HelpToggle } from './HelpToggle';
 import { ProgressToggle } from './ProgressToggle';
 import { EditToggle } from './EditToggle';
 import { drillItemId } from '../../domain/queue';
@@ -261,6 +262,8 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
   const [showDone, setShowDone] = useState(false);
   // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
   const [prog, setProg] = useState<string | null>(null);
+  // Otevřená nápověda kola (otazník u názvu, 19. 11. 2026): klíč řádku.
+  const [help, setHelp] = useState<string | null>(null);
   const folded = collapsedDone(s, rounds, running);
   const doneRounds = [...folded].filter((k) => numbers.has(k)).length;
   const hidden = (key: string) => !showDone && folded.has(key);
@@ -420,7 +423,10 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         {clockAt(training.startTime, row.time)}
                       </td>
                       <td className="c-block">
-                        <span className="row-name">{keepLast(rowName(row, sec.id))}</span>
+                        <span className="row-name">
+                          {keepLast(rowName(row, sec.id))}
+                          {hasRoundHelp(row) && <HelpToggle open={help === key} onToggle={() => setHelp(help === key ? null : key)} label={row.label} />}
+                        </span>
                         {(min || rowFormat(row)) && <span className="cell-sub">{rowSub(min, row)}</span>}
                         {progress && <span className="cell-sub">{progress}</span>}
                       </td>
@@ -443,6 +449,15 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                       })}
                       <td className="c-wait">{row.waiting.length ? <Names ids={row.waiting} names={names} me={me} sep=", " /> : '–'}</td>
                     </tr>
+                    {help === key && (
+                      <tr className={['help-row', railLine(rail, order, idx)].filter(Boolean).join(' ')}>
+                        <td colSpan={cols}>
+                          <div className="my-help help" role="region" aria-label={`Nápověda: ${row.label}`}>
+                            <RoundHelp row={row} untitledMain />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {prog?.startsWith(`${key}|`) &&
                       (() => {
                         const j = Number(prog.split('|')[1]);

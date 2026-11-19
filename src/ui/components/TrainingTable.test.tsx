@@ -304,6 +304,17 @@ describe('tabulka tréninku – stav kol podle skutečnosti', () => {
   });
 });
 
+it('otazník u názvu kola rozbalí nápovědu pod řádkem kola (19. 11. 2026)', async () => {
+  const user = userEvent.setup();
+  window.location.hash = '#/trainings/t1';
+  render(<App repo={memoryRepository({ players: players(8), trainings: [training(8, 'team', 4)] })} />);
+  await screen.findByRole('table', { name: 'Rozpis tréninku' });
+  await user.click(screen.getByRole('button', { name: 'Nápověda: 1. kolo' }));
+  const box = screen.getByRole('region', { name: 'Nápověda: 1. kolo' });
+  expect(box.closest('tr')).toHaveClass('help-row');
+  expect(box.closest('tr')!.previousElementSibling).toBe(rowOf('1. kolo'));
+});
+
 it('nápověda kola ukazuje, co disciplína trénuje (štítky)', async () => {
   const user = userEvent.setup();
   const t = { ...training(8, 'team', 4), format: 'custom' as const, plan: { penaltyKeeper: 2 } };

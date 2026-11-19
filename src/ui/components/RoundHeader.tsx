@@ -4,6 +4,7 @@ import { nextBreak, rowType, type ProgressSeg } from '../../domain/progress';
 import type { Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
 import type { Match, PlayerId } from '../../domain/types';
+import { HelpToggle } from './HelpToggle';
 
 /**
  * Moje hry (18. 11. 2026, *rozhodnutí uživatele*; od 19. 11. 2026 jako dlaždice kola v Rozpisu): nahoře čára průběhu tréninku (kola v čase,
@@ -150,9 +151,7 @@ export function RoundTileHead({
         <span className="tile-fmt">
           {format}
           {help && (
-            <button type="button" className="help-ic" aria-label="Nápověda" aria-expanded={help.open} title="Nápověda" onClick={help.onToggle}>
-              ?
-            </button>
+            <HelpToggle open={help.open} onToggle={help.onToggle} />
           )}
         </span>
       </span>

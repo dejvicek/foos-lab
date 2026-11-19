@@ -733,7 +733,10 @@ button.my-nextcard .open {
 .my-head .my-rule { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ink); }
 .my-table .entry-head { display: none; }
 /* Nápověda kola: otazník vpravo v hlavičce karty, obsah pod řádkem se stolem (19. 11. 2026). */
-.my-head .tile-fmt { display: inline-flex; align-items: center; gap: 8px; }
+.tile-fmt { display: inline-flex; align-items: center; gap: 8px; }
+.row-name > button.help-ic { width: 24px; height: 24px; margin-left: 4px; vertical-align: -2px; display: inline-grid; }
+.plan tr.help-row > td { background: var(--surface); padding: 0 14px 6px 34px; position: relative; }
+.plan tr.help-row .my-help { border-top: 0; padding: 4px 0; max-width: 90ch; }
 button.help-ic {
   width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 50%; display: inline-grid; place-items: center;
   border: 0; background: none; color: var(--muted); font-size: 16px; font-weight: 800; line-height: 1; cursor: pointer;

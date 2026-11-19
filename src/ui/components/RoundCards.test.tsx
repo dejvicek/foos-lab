@@ -82,4 +82,15 @@ describe('Celý rozpis na telefonu – dlaždice kol (18. 11. 2026)', () => {
     // výsledková tabule: strana na řádek, výsledek v názvu skupiny (19. 11. 2026)
     expect(within(card).getByRole('group', { name: 'H1 + H2 vs H3 + H4 6:2' })).toBeInTheDocument();
   });
+
+  it('otazník v hlavičce dlaždice rozbalí nápovědu kola pod stoly (19. 11. 2026)', async () => {
+    const user = userEvent.setup();
+    render(<Harness me="id5" />);
+    const card = tile('1. kolo');
+    const q = within(card).getByRole('button', { name: 'Nápověda: 1. kolo' });
+    expect(within(card).queryByRole('region', { name: 'Nápověda: 1. kolo' })).toBeNull();
+    await user.click(q);
+    expect(q).toHaveAttribute('aria-expanded', 'true');
+    expect(within(card).getByRole('region', { name: 'Nápověda: 1. kolo' })).toBeInTheDocument();
+  });
 });
