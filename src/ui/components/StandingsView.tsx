@@ -51,7 +51,7 @@ const pair = (x: [number, number] | null) => (x ? `${x[0]}:${x[1]}` : null);
 
 /**
  * Simulace kola jako ligový zápis (19. 11. 2026, *rozhodnutí uživatele*, návrh B): nahoře skóre týmů se sestavami,
- * řádek na zápas po vlnách – Domácí : Hosté (vítěz tučně s linkou v barvě týmu), Body, Hry s legy, průběžný Stav.
+ * řádek na zápas po vlnách – Domácí : Hosté (vítěz tučně s linkou v barvě týmu), Hry s legy, Body, průběžný Stav.
  */
 function SimView({ schedule, scores, attendees, names }: Props) {
   const sh = simSheet(schedule, scores, attendees);
@@ -110,7 +110,6 @@ function SimView({ schedule, scores, attendees, names }: Props) {
             {who(r, 'b')}
           </div>
         </td>
-        <td className="n sim-pts">{r.points ? pair(r.points) : r.state === 'playing' ? <span className="sim-live">hraje se</span> : <span className="muted">–</span>}</td>
         <td className="n">
           <b>{pair(r.games) ?? <span className="muted">–</span>}</b>
           {r.legs.length > 0 && (
@@ -123,6 +122,7 @@ function SimView({ schedule, scores, attendees, names }: Props) {
             </span>
           )}
         </td>
+        <td className="n sim-pts">{r.points ? pair(r.points) : r.state === 'playing' ? <span className="sim-live">hraje se</span> : <span className="muted">–</span>}</td>
         <td className="n sim-run">{pair(r.running)}</td>
       </tr>,
     );
@@ -147,8 +147,8 @@ function SimView({ schedule, scores, attendees, names }: Props) {
             <tr>
               <th className="sim-no" title="Zápas">#</th>
               <th className="sim-mid">Domácí : Hosté</th>
-              <th className="n">Body</th>
               <th className="n">Hry</th>
+              <th className="n">Body</th>
               <th className="n">Stav</th>
             </tr>
           </thead>
@@ -156,8 +156,8 @@ function SimView({ schedule, scores, attendees, names }: Props) {
             {rows}
             <tr className="sim-total">
               <td colSpan={2}>Celkově</td>
-              <td className="n">{pair(sh.points)}</td>
               <td className="n">{pair(sh.games)}</td>
+              <td className="n">{pair(sh.points)}</td>
               <td />
             </tr>
           </tbody>
