@@ -114,8 +114,9 @@ describe('stránka Žebříček', () => {
   it('detail hráče: tréninky nejnovější první, odkaz na trénink', async () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
-    await screen.findByRole('table', { name: 'Žebříček' });
-    await user.click(screen.getByRole('button', { name: 'Xaver' }));
+    const ladder = await screen.findByRole('table', { name: 'Žebříček' });
+    // Xaver je i v tabulce Zápasy 1 na 1 (singly klasického tréninku, 19. 11. 2026) – klik v hlavním žebříčku
+    await user.click(within(ladder).getByRole('button', { name: 'Xaver' }));
     expect(await screen.findByRole('heading', { name: 'Xaver' })).toBeInTheDocument();
     const rows = within(screen.getByRole('table', { name: 'Tréninky hráče' })).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);

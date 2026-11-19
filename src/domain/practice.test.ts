@@ -345,6 +345,26 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     expect(own.map((x) => x.metric)).toEqual(['penaltySolo']); // jen cvičení pouze pro vlastní trénink
   });
 
+  it('zápasy 1 na 1 z klasického tréninku (podle pravidel kola) a singly simulace = Jedničky (19. 11. 2026)', () => {
+    const classic: Training = {
+      id: 'k', date: '2026-11-01', startTime: '18:00', mode: 'team', tables: 4, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, lockedRounds: [],
+    } as Training;
+    const ms = buildSchedule(classic).matches.filter((m) => m.kind === 'singles');
+    const plain = ms.find((m) => m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const tax = ms.find((m) => m.block === 'league' && m.lossTax)!;
+    const start = ms.find((m) => m.block === 'league' && m.start?.[0] === 0 && m.start?.[1] === 3)!;
+    const sim = ms.find((m) => m.block === 'sim')!;
+    expect([plain, tax, start, sim].every(Boolean)).toBe(true);
+    const scores = { [plain.id]: { ga: 6, gb: 5 }, [tax.id]: { ga: 4, gb: 6 }, [start.id]: { ga: 4, gb: 3 }, [sim.id]: { ga: 6, gb: 2 } };
+    const tables = computePracticeMatchLadder([{ ...classic, scores }], null, null, 3);
+    expect(tables.map((x) => x.discipline).sort()).toEqual(['lossTax', 'singles', 'start03']);
+    const t1 = tables.find((x) => x.discipline === 'singles')!;
+    const ones = [...t1.lowData, ...t1.ranked];
+    // Normální leg i simulace v Jedničkách
+    for (const p of [plain.sideA[0], plain.sideB[0], sim.sideA[0], sim.sideB[0]]) expect(ones.map((r) => r.playerId)).toContain(p);
+  });
+
   it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {
     const clubT: Training = {
       id: 'c', date: '2026-11-05', startTime: '18:00', mode: 'team', tables: 2, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},

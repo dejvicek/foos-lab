@@ -269,13 +269,14 @@ export function practiceMinutes(t: Training): number | null {
 }
 
 /**
- * Zápasy 1 na 1 tréninku (12. 11. 2026) pro tabulky zápasů v žebříčku Vlastní: vlastní trénink duo
- * i singly klubového (konfigurovatelného) tréninku – stejné podmínky. Klubový Normální leg v singlu
- * se počítá jako Jedničky. Jen zápasy, kde je něco zapsané.
+ * Zápasy 1 na 1 tréninku (12. 11. 2026) pro tabulky zápasů v žebříčku: vlastní trénink duo i singly klubového
+ * tréninku – stejné podmínky. Klubový Normální leg v singlu se počítá jako Jedničky. Od 19. 11. 2026
+ * (*rozhodnutí uživatele*) i klasický trénink (disciplína podle pravidel kola) a singly simulace (= Jedničky).
+ * Jen zápasy, kde je něco zapsané.
  */
 export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match: Match; state: ReturnType<typeof matchState> }[] {
   if (isPractice(t)) return practiceMatches(t).map((x) => ({ discipline: x.match.discipline!, match: x.match, state: x.state }));
-  if (t.format !== 'custom' || !canBuildSchedule(t)) return [];
+  if (!canBuildSchedule(t)) return [];
   let matches: Match[];
   try {
     matches = buildSchedule(t).matches;
@@ -283,11 +284,26 @@ export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match:
     return [];
   }
   return matches.flatMap((m) => {
-    if (m.block !== 'league' || m.kind !== 'singles' || !m.discipline) return [];
+    if (m.kind !== 'singles') return [];
+    const discipline = oneOnOneDiscipline(m);
+    if (!discipline) return [];
     const state = matchState(m, t.scores);
     if (!state.legs.some((l) => l.score?.ga !== undefined && l.score?.gb !== undefined)) return [];
-    return [{ discipline: m.discipline === 'normal' ? ('singles' as const) : m.discipline, match: m, state }];
+    return [{ discipline, match: m, state }];
   });
+}
+
+/**
+ * Disciplína singlu pro tabulky 1 na 1: simulace a Normální leg = Jedničky; konfigurovatelný trénink podle
+ * disciplíny kola, klasický podle pravidel kola (Daň, Zeď, scénářový start).
+ */
+function oneOnOneDiscipline(m: Match): DisciplineId | null {
+  if (m.block === 'sim') return 'singles';
+  if (m.discipline) return m.discipline === 'normal' ? 'singles' : m.discipline;
+  if (m.lossTax) return 'lossTax';
+  if (m.wall) return 'wall';
+  if (m.start) return DISCIPLINES.find((d) => d.start && d.start[0] === m.start![0] && d.start[1] === m.start![1])?.id ?? null;
+  return 'singles';
 }
 
 /** Zápasy vlastního tréninku: kolo, zápas a stav po legech (jen kola, kde je něco zapsané). */
