@@ -3,7 +3,7 @@ import { clockAt } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
 import { railClass, railLine, type RoundStatus } from '../roundState';
-import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
+import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowGoal, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp } from './BlockEntry';
 import { HelpToggle } from './HelpToggle';
@@ -226,12 +226,19 @@ export function RoundCards({ schedule: s, training, names, rounds = null, pauseS
                     <span className="tile-top">
                       <span className="tile-time">{time}</span>
                       <span className="tile-name">{keepLast(rowName(row, sec.id))}</span>
-                      <span className="tile-fmt" title={rowFormat(row) ?? undefined}>
-                        {rowFormat(row, true)}
+                      <span className="tile-fmt">
                         {hasRoundHelp(row) && <HelpToggle open={help === key} onToggle={() => setHelp(help === key ? null : key)} label={row.label} />}
                       </span>
                     </span>
-                    {rowSub(min, row, progress, false) && <span className="tile-sub">{rowSub(min, row, progress, false)}</span>}
+                    {/* Pod tím: délka kola vlevo, do kolika se hraje vpravo (19. 11. 2026). */}
+                    <span className="tile-sub">
+                      <span>{rowSub(min, row, progress, false)}</span>
+                      {rowGoal(row) && (
+                        <b className="tile-goal" title={rowFormat(row) ?? undefined}>
+                          {rowGoal(row)}
+                        </b>
+                      )}
+                    </span>
                   </div>
                   {/* Řádky stolů a Volno; ikonka grafu otevře Průběh, tužka zápis stolu. */}
                   <div className="tile-rows">{lines.map((x) => x.node)}</div>

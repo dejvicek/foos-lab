@@ -214,7 +214,8 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const tl = within(mine).getByRole('group', { name: 'Kolo 1 z 3, 0 odehraných, zbývá 2 kola, žádná další pauza' });
     expect(within(mine).getByRole('heading', { level: 2 })).toHaveTextContent('Normální leg');
     expect(mine.querySelector('.my-card')).not.toHaveTextContent(/Kolo \d+ z/); // jen na časové ose (19. 11. 2026)
-    expect(mine).toHaveTextContent('Hraje se do 6.');
+    expect(mine.querySelector('.tile-goal')).toHaveTextContent('do 6'); // do kolika se hraje: v hlavičce vpravo (19. 11. 2026)
+    expect(mine).not.toHaveTextContent('Hraje se do 6');
     // jako dlaždice v Rozpisu (19. 11. 2026): stůl jen jednou – velké číslo u zápasu
     expect(mine.textContent).not.toMatch(/stůl \d/); // dřív „ZÁPAS · STŮL 1“ a „H1: stůl 1, s … proti …“
     expect(within(mine).getByRole('group', { name: /^H2 \+ H3 vs H4 \+ H1/ })).toBeInTheDocument();

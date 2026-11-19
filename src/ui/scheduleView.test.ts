@@ -1,7 +1,7 @@
 import { buildSchedule } from '../domain/schedule';
 import type { Training } from '../domain/types';
 import { flatRows, rowKey } from './now';
-import { collapsedDone, keepLast, placeOf, roundNumbers, rowFormat, rowMinutes, rowName, rowSub } from './scheduleView';
+import { collapsedDone, keepLast, placeOf, roundNumbers, rowFormat, rowGoal, rowMinutes, rowName, rowSub } from './scheduleView';
 import type { RoundStatus } from './roundState';
 
 const ids = Array.from({ length: 8 }, (_, i) => `p${i + 1}`);
@@ -38,6 +38,13 @@ describe('rozpis očima hráče (18. 11. 2026)', () => {
     expect(rowFormat(sim, true)).toMatch(/^BO\d+( do \d+)?$/); // krátce do hlavičky dlaždice
     expect(rowSub(20, sim, null, false)).toBe('20 min');
     expect(rowFormat(row(1))).toBeNull(); // výchozí formát se nepíše
+    // do kolika se hraje – u všech kol (19. 11. 2026)
+    expect(rowGoal(row(1))).toBe('do 6');
+    expect(rowGoal(row(0))).toBe('20 pokusů');
+    expect(rowGoal(normal)).toBe('BO3 do 5');
+    expect(rowGoal(sim)).toMatch(/^BO\d do \d+ · poslední leg o 2, strop \d+$/);
+    const s55 = buildSchedule({ ...t, plan: { start55: 1 }, breaks: [] }).sections.flatMap((x) => x.rows).find((r) => r.discipline === 'start55')!;
+    expect(rowGoal(s55)).toBe('do 6 · o 2, strop 10');
   });
 
   it('krátké poslední slovo zůstane u předchozího (19. 11. 2026)', () => {

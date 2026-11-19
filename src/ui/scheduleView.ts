@@ -3,7 +3,9 @@
  * časové osy, řádek nese název disciplíny a délku, kola s mou účastí mají zlatý pruh, moje jméno je
  * tučně zlatě, odehraná kola se během běžícího tréninku sbalí. Volno místo „Mimo stůl“.
  */
-import { matchState } from '../domain/matchFormat';
+import { legOf, matchState } from '../domain/matchFormat';
+import { legCap, legTarget, setScores, winsByTwo } from '../domain/legState';
+import { soloMetric } from '../domain/solo';
 import { drillItemId } from '../domain/queue';
 import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../domain/types';
 import { flatRows, rowKey } from './now';
@@ -54,9 +56,31 @@ export function rowFormat(row: ScheduleRow, short = false): string | null {
   return f && short ? (f.match(/^BO\d+(?: do \d+)?/)?.[0] ?? f) : f;
 }
 
+/**
+ * Do kolika se hraje (19. 11. 2026, *rozhodnutí uživatele*) – v hlavičce kola vedle otazníku, u všech kol:
+ * zápas „do 6“ / „BO3 do 6“, s „o 2, strop 10“ (u BO „poslední leg o 2, strop 10“; starší simulace „na 2 sety“),
+ * cvičení „20 pokusů“, Čistá desítka „10 v řadě“.
+ * Stanoviště s různými cvičeními u stolů a Rozcvička nic.
+ */
+export function rowGoal(row: ScheduleRow): string | null {
+  const m = row.cells.find((c): c is Extract<Cell, { type: 'match' }> => c?.type === 'match')?.match;
+  if (m) {
+    if (setScores(m)) return 'na 2 sety';
+    const bo = m.bestOf ?? 1;
+    // O 2 góly se strop (19. 11. 2026): u jednoho legu celý leg, u BO rozhodující (poslední) leg.
+    const last = legOf(m, bo);
+    const two = winsByTwo(last) ? ` · ${bo > 1 ? 'poslední leg ' : ''}o 2, strop ${legCap(last)}` : '';
+    return `${bo > 1 ? `BO${bo} ` : ''}do ${legTarget(m)}${two}`;
+  }
+  const metrics = [...new Set(row.cells.flatMap((c) => (c?.type === 'group' && c.metric ? [c.metric] : [])))];
+  if (metrics.length !== 1) return null;
+  const def = soloMetric(metrics[0]);
+  return def.streak ? `${def.streak} v řadě` : `${def.max} pokusů`;
+}
+
 /** Podřádek kola: „24 min · BO3 do 5“ (a u organizátora průběh zápisu); bez formátu, když je jinde. */
 export const rowSub = (min: number | undefined, row: ScheduleRow, extra?: string | null, withFormat = true): string =>
-  [min ? `${min} min` : null, withFormat ? rowFormat(row) : null, extra].filter(Boolean).join(' · ');
+  [min ? `${min} min` : null, withFormat ? rowGoal(row) : null, extra].filter(Boolean).join(' · ');
 
 export type Place = { kind: 'play' | 'ref'; table: number } | { kind: 'free' } | { kind: 'none' };
 

@@ -1,9 +1,8 @@
 import { discipline } from '../../domain/disciplines';
-import { legCap, legTarget, winsByTwo } from '../../domain/legState';
 import { nextBreak, rowType, type ProgressSeg } from '../../domain/progress';
 import type { Assignment } from '../../domain/my';
 import { clockAt } from '../../domain/solo';
-import type { Match, PlayerId } from '../../domain/types';
+import type { PlayerId } from '../../domain/types';
 import { HelpToggle } from './HelpToggle';
 
 /**
@@ -23,11 +22,6 @@ export function roundName(a: Assignment): string {
   return (a.row.rule ?? a.row.label).split(',')[0];
 }
 
-function formatText(m: Match): string {
-  const top = `do ${legTarget(m)}`;
-  const two = winsByTwo(m) ? `, o 2 (strop ${legCap(m)})` : '';
-  return (m.bestOf ?? 1) > 1 ? `BO${m.bestOf}, leg ${top}` : `${top}${two}`;
-}
 
 /** Pravidlo kola jednou větou z pohledu hráče. */
 export function roundRule(a: Assignment, me: PlayerId): string {
@@ -50,8 +44,7 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   }
   if (m.wall && a.role === 'play') parts.push(m.wall === mine ? 'Vaše strana drží zeď' : 'Soupeř drží zeď, vy ji lámete');
   if (m.lossTax && a.role === 'play') parts.push('Ztráta = gól soupeře, ztráty čárkuje rozhodčí');
-  // BO formát je v hlavičce kola vpravo – tady se neopakuje (19. 11. 2026).
-  if ((m.bestOf ?? 1) === 1) parts.push(`hraje se ${formatText(m)}`);
+  // Do kolika se hraje, je v hlavičce kola vpravo („do 6“, „BO3 do 6“) – tady se neopakuje (19. 11. 2026).
   if (!parts.length) return '';
   const s = parts.join(' · ');
   return `${s.charAt(0).toUpperCase()}${s.slice(1)}.`;
@@ -148,15 +141,15 @@ export function RoundTileHead({
       <span className="tile-top">
         <span className="tile-time">{clockAt(startTime, a.row.time)}</span>
         <Name className="tile-name">{name}</Name>
-        <span className="tile-fmt">
-          {format}
-          {help && (
-            <HelpToggle open={help.open} onToggle={help.onToggle} />
-          )}
-        </span>
+        <span className="tile-fmt">{help && <HelpToggle open={help.open} onToggle={help.onToggle} />}</span>
       </span>
-      {/* „Kolo 2 ze 14“ ukazuje časová osa nahoře – tady jen délka (19. 11. 2026). */}
-      {min ? <span className="tile-sub">{min} min</span> : null}
+      {/* Délka kola vlevo, do kolika se hraje vpravo; „Kolo 2 ze 14“ ukazuje časová osa (19. 11. 2026). */}
+      {(min || format) && (
+        <span className="tile-sub">
+          <span>{min ? `${min} min` : ''}</span>
+          {format && <b className="tile-goal">{format}</b>}
+        </span>
+      )}
       {roundRule(a, me) && <Line className="my-rule">{roundRule(a, me)}</Line>}
     </Box>
   );

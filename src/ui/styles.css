@@ -797,7 +797,9 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--felt); text-wrap: balance; }
 .tile-fmt { justify-self: end; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .tile-time { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; justify-self: start; }
-.tile-sub { color: var(--muted); font-size: 12px; }
+.tile-sub { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; gap: 8px; }
+/* Do kolika se hraje (19. 11. 2026): vpravo pod otazníkem, na první pohled. */
+.tile-goal { font-weight: 700; color: var(--ink); text-align: right; }
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 .tile-line .tl-curve { overflow: hidden; }
