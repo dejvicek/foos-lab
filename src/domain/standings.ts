@@ -1,4 +1,5 @@
-import { legIds } from './matchFormat';
+import { legIds, matchState } from './matchFormat';
+import { setScores } from './legState';
 import type { MatchId, PlayerId, Schedule, Score } from './types';
 
 /** Celé číslo ≥ 0, jinak null (prázdné, záporné, text, desetinné). */
@@ -50,15 +51,32 @@ export function computeStandings(
   let legsDone = 0;
   const sim = { teamA: 0, teamB: 0, played: 0 };
 
+  // Simulace v legech (18. 11. 2026): počítá se dohraný zápas – výhra týmu, ne legy ani góly (jako dřív sety).
+  for (const m of schedule.matches) {
+    if (m.block !== 'sim' || setScores(m)) continue;
+    const st = matchState(m, scores);
+    if (!st.over) continue;
+    for (const p of [...m.sideA, ...m.sideB]) {
+      const x = stats.get(p);
+      if (!x) continue;
+      x.simM++;
+      if (st.winner === (m.sideA.includes(p) ? 'A' : 'B')) x.simW++;
+    }
+    sim.played++;
+    if (st.winner === 'A') sim.teamA++;
+    else if (st.winner === 'B') sim.teamB++;
+  }
+
   // BO formát: každý odehraný leg se počítá zvlášť (legy, výhry, góly), jako dřív jeden leg na zápas.
-  for (const m of schedule.matches) for (const id of legIds(m)) {
+  for (const m of schedule.matches) for (const id of m.block === 'sim' && !setScores(m) ? [] : legIds(m)) {
     const s = scores[id];
     if (!s) continue;
     const ga = parseScoreValue(s.ga);
     const gb = parseScoreValue(s.gb);
     if (ga === null || gb === null) continue;
-    const la = parseScoreValue(s.la);
-    const lb = parseScoreValue(s.lb);
+    // Ztráty jen u Daně za ztrátu (18. 11. 2026); starší ztráty jinde se nepočítají.
+    const la = m.trackLosses ? parseScoreValue(s.la) : null;
+    const lb = m.trackLosses ? parseScoreValue(s.lb) : null;
 
     const add = (players: PlayerId[], gf: number, gc: number, l: number | null) => {
       for (const p of players) {

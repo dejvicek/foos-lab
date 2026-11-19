@@ -1,6 +1,7 @@
 import { isEmptyScore } from '../domain/training';
 import { StorageError } from './errors';
 import type { GameEvent, PlayTime, Score, Training } from '../domain/types';
+import { markReady } from '../domain/queue';
 import type { AppData, RemoteHandlers, Repository } from './repository';
 
 const copy = <T>(v: T): T => structuredClone(v);
@@ -218,7 +219,7 @@ export function memoryRepository(
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
         const times = { ...t.playTimes };
-        if (!p || (p.startedAt === undefined && p.endedAt === undefined)) delete times[itemId];
+        if (!p || (p.startedAt === undefined && p.endedAt === undefined && !p.ready)) delete times[itemId];
         else times[itemId] = copy(p);
         if (Object.keys(times).length) t.playTimes = times;
         else delete t.playTimes;
@@ -230,13 +231,23 @@ export function memoryRepository(
         const cur = t.playTimes?.[itemId] ?? {};
         t.playTimes = { ...t.playTimes, [itemId]: { ...cur, startedAt: cur.startedAt ?? at } };
       }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
+    readyItem: (trainingId, itemId, key, ready, keys, at) =>
+      write(() => {
+        const t = training(trainingId);
+        if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
+        const next = markReady(t.playTimes?.[itemId], key, ready, keys, at);
+        const times = { ...t.playTimes, [itemId]: next };
+        if (!Object.keys(next).length) delete times[itemId]; // nikdo připravený, nic nezačalo
+        if (Object.keys(times).length) t.playTimes = times;
+        else delete t.playTimes;
+      }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
     endItem: (trainingId, itemId, startedAt, endedAt) =>
       write(() => {
         const t = training(trainingId);
         if (!t) throw new StorageError('Trénink neexistuje', true, 'trénink už neexistuje');
         const cur = t.playTimes?.[itemId] ?? {};
         const started = cur.startedAt ?? startedAt;
-        t.playTimes = { ...t.playTimes, [itemId]: { ...(started !== undefined ? { startedAt: started } : {}), endedAt: cur.endedAt ?? endedAt } };
+        t.playTimes = { ...t.playTimes, [itemId]: { ...cur, ...(started !== undefined ? { startedAt: started } : {}), endedAt: cur.endedAt ?? endedAt } };
       }).then((): PlayTime => copy(training(trainingId)?.playTimes?.[itemId] ?? {})),
     subscribe: (h) => {
       listeners.add(h);

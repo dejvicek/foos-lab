@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { catalogForm, helpOwner, resetDiscipline, saveDiscipline, saveSkills, validateDisciplineForm, validateSkills, type CatalogData, type DisciplineForm } from '../../domain/catalog';
 import { disciplineDuration, disciplineFacts, disciplineHelp, disciplinePlaces, disciplineWho, MATCH_GENERAL_HELP, offeredDisciplines, PLACE_KEYS, PLACE_LABEL, placesText } from '../../domain/disciplineInfo';
 import type { Places } from '../../domain/disciplines';
@@ -7,6 +7,30 @@ import { bySkillGroup, DEFAULT_SKILLS, matchesSkillFilter, SKILL_GROUPS, skillGr
 import type { DisciplineId } from '../../domain/types';
 import type { AppStore } from '../useAppState';
 import { MinStepper } from '../components/MinStepper';
+import { ballSecOf, CATALOG_FORMAT, catalogSimMins, defaultBallSec, drillBalls, drillRoundMin, goalRoundMin, isStreakDrill, MAX_BALL_SEC, maxGoals, MIN_BALL_SEC, usesBalls } from '../../domain/ballTime';
+import { ballAverages, type BallAverage, type BallAverages } from '../../domain/ballStats';
+import { fixedLegRule, SIM_FORMATS, type MatchFormat } from '../../domain/matchFormat';
+
+/** Reálná doba míčku z průběhu her (jen admin; průběh se stahuje celý jako pro zálohu). */
+type RealBalls = BallAverages | 'loading' | 'error';
+
+const sec = (x: number) => `${Math.round(x)} s`;
+/** „BO3 do 6, rozhodující o 2, strop 10“ */
+const simName = (f: MatchFormat) => `BO${f.bestOf} do ${f.legTo}, rozhodující o 2, strop ${f.cap}`;
+const plural = (n: number, one: string, few: string, many: string) => (n === 1 ? one : n >= 2 && n <= 4 ? few : many);
+/** „3:12“ – celkový čas Čisté desítky. */
+const mmss = (x: number) => `${Math.floor(Math.round(x) / 60)}:${String(Math.round(x) % 60).padStart(2, '0')}`;
+/**
+ * Reálná hodnota s počtem měření: zápas „40 s (2 zápasy)“, cvičení „18 s (3 kola)“, Čistá desítka celkový
+ * čas „3:12 (5 splnění)“; bez dat „zatím nic změřeno“.
+ */
+function realText(a: BallAverage | null | undefined, id: DisciplineId | 'match' | 'drill'): string {
+  if (!a) return 'zatím nic změřeno';
+  const kind = id === 'match' || id === 'drill' ? id : discipline(id).kind === 'drill' ? (isStreakDrill(discipline(id)) ? 'streak' : 'drill') : 'match';
+  if (kind === 'streak') return `${mmss(a.sec)} (${a.n} splnění)`;
+  const unit = kind === 'drill' ? plural(a.n, 'kolo', 'kola', 'kol') : plural(a.n, 'zápas', 'zápasy', 'zápasů');
+  return `${sec(a.sec)} (${a.n} ${unit})`;
+}
 
 const KIND_TITLE = { drill: 'Cvičení', match: 'Zápasy a scénáře', sim: 'Simulace' } as const;
 const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
@@ -64,6 +88,21 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
       return n;
     });
   const save = (c: CatalogData) => store.saveCatalog(c);
+  // Admin: reálná doba míčku ze všech klubových tréninků s průběhem (18. 11. 2026).
+  const [real, setReal] = useState<RealBalls>('loading');
+  const loadBackup = store.loadBackup;
+  useEffect(() => {
+    if (!admin) return;
+    let live = true;
+    setReal('loading');
+    loadBackup().then(
+      (d) => live && setReal(ballAverages(d.trainings)),
+      () => live && setReal('error'),
+    );
+    return () => {
+      live = false;
+    };
+  }, [admin, loadBackup]);
 
   return (
     <section className="disciplines-page">
@@ -137,6 +176,21 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                   </button>
                 )}
               </div>
+              {kind === 'drill' && (
+                <p className="note dp-format-note">
+                  Délky kol cvičení s pokusy: doba míčku × míčky v kole – ve dvojici 2 × 20 pokusů (každý hráč 20, pak se vystřídáte), sólové
+                  cvičení 20. Rozcvička a Čistá desítka mají pevnou délku kola.
+                </p>
+              )}
+              {kind !== 'drill' && (
+                <p className="note dp-format-note">
+                  {kind === 'match'
+                    ? 'Délky kol jsou spočítané, jako by se hrálo BO1 do 6 (scénáře od svého startu): doba míčku × nejvíc možných gólů. V tréninku se přepočítají podle zvoleného formátu (BO2, BO3…).'
+                    : `Délka podle formátu simulace v tréninku: ${catalogSimMins()
+                        .map((x) => `${simName(x.format)} = 2 vlny po ${x.wave} min (${x.min} min)`)
+                        .join('; ')}. Vlna = doba míčku × nejvíc možných gólů jednoho zápasu.`}
+                </p>
+              )}
               {kind === 'match' && general && (
                 <div className="dp-general">
                   {MATCH_GENERAL_HELP.map((it) => (
@@ -168,6 +222,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                           <DisciplineEditor
                             id={d.id}
                             catalog={catalog}
+                            real={real}
                             onSave={(c) => (save(c), setEditing(null))}
                             onCancel={() => setEditing(null)}
                           />
@@ -179,6 +234,7 @@ export function DisciplinesPage({ store, admin }: { store: AppStore; admin: bool
                                 <span key={f}>{f}</span>
                               ))}
                             </div>
+                            {admin && (usesBalls(d.id) || isStreakDrill(d)) && <BallLine id={d.id} real={real} />}
                             {admin && (
                               <button type="button" className="ghost dp-edit" onClick={() => setEditing(d.id)}>
                                 Upravit
@@ -219,6 +275,7 @@ function DisciplineRow({
   children: ReactNode;
 }) {
   const dur = disciplineDuration(d.id);
+  const sim = d.kind === 'sim' ? catalogSimMins() : null;
   const who = disciplineWho(d.id);
   const places = disciplinePlaces(d.id);
   return (
@@ -231,9 +288,26 @@ function DisciplineRow({
           </svg>
           <span className="dp-name">{d.name}</span>
         </button>
-        <span className="dp-dur" title={dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
-          {dur.rounds === 2 && '2× '}
-          <b>{dur.min}</b> min
+        <span className="dp-dur" title={sim ? sim.map((x) => `${simName(x.format)}: 2 vlny po ${x.wave} min = ${x.min} min`).join('\n') : dur.rounds === 2 ? `2 kola po ${dur.min} min` : undefined}>
+          {sim ? (
+            // Simulace (18. 11. 2026): čas pro BO3 i BO5.
+            sim.map((x) => (
+              <span key={x.format.bestOf}>
+                BO{x.format.bestOf} <b>{x.min}</b> min
+              </span>
+            ))
+          ) : (
+            <span>
+              {dur.rounds === 2 && '2× '}
+              <b>{dur.min}</b> min
+            </span>
+          )}
+          {/* Zápas a simulace: délka kola z doby míčku (18. 11. 2026) – doba míčku hned v řádku. */}
+          {usesBalls(d.id) && (
+            <small className="dp-ballsec" aria-label={`Doba míčku ${ballSecOf(d.id)} s`} title="Doba míčku – délka kola = doba míčku × nejvíc míčků v kole">
+              {ballSecOf(d.id)} s / míček
+            </small>
+          )}
         </span>
         <span className="dp-places" role="group" aria-label={`Hraje se: ${placesText(places)}`}>
           {PLACE_KEYS.map((k) =>
@@ -305,8 +379,26 @@ function HelpList({ id }: { id: DisciplineId }) {
   );
 }
 
-/** Admin: úprava disciplíny (název, délka kola, volitelnost, štítky, nápověda). */
-function DisciplineEditor({ id, catalog, onSave, onCancel }: { id: DisciplineId; catalog: CatalogData; onSave(c: CatalogData): void; onCancel(): void }) {
+/** Admin u zápasu / simulace: doba míčku, z níž se počítá délka kola, a reálná doba míčku z průběhu her. */
+function BallLine({ id, real }: { id: DisciplineId; real: RealBalls }) {
+  const own = discipline(id).ballSec;
+  const value = real === 'loading' ? 'počítám…' : real === 'error' ? 'nejde načíst' : <b>{realText(real.by[id], id)}</b>;
+  // Čistá desítka: jen celkový čas (průměr časů splnění).
+  if (isStreakDrill(discipline(id)))
+    return (
+      <p className="dp-ball" aria-label="Celkový čas">
+        Celkový čas reálně: {value}
+      </p>
+    );
+  return (
+    <p className="dp-ball" aria-label="Doba míčku">
+      Doba míčku <b>{sec(ballSecOf(id))}</b> {own === undefined ? '(výchozí)' : '(zadaná)'} · reálně {value}
+    </p>
+  );
+}
+
+/** Admin: úprava disciplíny (název, délka kola nebo doba míčku, štítky, nápověda). */
+function DisciplineEditor({ id, catalog, real, onSave, onCancel }: { id: DisciplineId; catalog: CatalogData; real: RealBalls; onSave(c: CatalogData): void; onCancel(): void }) {
   const [form, setForm] = useState<DisciplineForm>(() => catalogForm(id, catalog));
   const error = validateDisciplineForm(form);
   const owner = helpOwner(id);
@@ -324,11 +416,23 @@ function DisciplineEditor({ id, catalog, onSave, onCancel }: { id: DisciplineId;
       <div className="dp-editor-grid">
         <label htmlFor={`dp-name-${id}`}>Název</label>
         <input id={`dp-name-${id}`} type="text" value={form.name} onChange={(e) => set({ name: e.target.value })} />
-        <span className="dp-editor-label">Délka kola</span>
-        <div>
-          <MinStepper value={form.min} label={form.name || discipline(id).name} onChange={(v) => set({ min: v })} />
-          <p className="note">Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš. Běžící a odehrané tréninky si nechají své časy.</p>
-        </div>
+        {usesBalls(id) ? (
+          <BallField id={id} name={form.name || discipline(id).name} value={form.ballSec} real={real} onChange={(ballSec) => set({ ballSec })} />
+        ) : (
+          <>
+            <span className="dp-editor-label">Délka kola</span>
+            <div>
+              <MinStepper value={form.min} label={form.name || discipline(id).name} onChange={(v) => set({ min: v })} />
+              <p className="note">Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš. Běžící a odehrané tréninky si nechají své časy.</p>
+              {isStreakDrill(discipline(id)) && (
+                <p className="note" aria-label="Reálný celkový čas">
+                  Reálně (průměr časů splnění):{' '}
+                  {real === 'loading' ? 'počítám…' : real === 'error' ? 'průběh her nejde načíst' : <b>{realText(real.by[id], id)}</b>}
+                </p>
+              )}
+            </div>
+          </>
+        )}
         <span className="dp-editor-label">Štítky</span>
         <div className="dp-pick" role="group" aria-label="Štítky">
           {SKILL_GROUPS.map((g) => (
@@ -447,5 +551,95 @@ function SkillsEditor({ catalog, newId, onSave, onCancel }: { catalog: CatalogDa
         )}
       </div>
     </form>
+  );
+}
+
+/**
+ * Doba míčku (18. 11. 2026): délka kola = doba míčku × nejvíc míčků v kole (gólů ve formátu, pokusů ve
+ * cvičení), nahoru na minuty. Prázdné = výchozí (zápasy 40 s, cvičení 20 s). Vedle reálný průměr z průběhu her.
+ */
+function BallField({ id, name, value, real, onChange }: { id: DisciplineId; name: string; value: number | null; real: RealBalls; onChange(v: number | null): void }) {
+  // Délka v katalogu vždy pro BO1 do 6 (18. 11. 2026); v tréninku podle jeho formátu.
+  const f = CATALOG_FORMAT;
+  const d = discipline(id);
+  const def = defaultBallSec(id);
+  const s = value ?? def;
+  const valid = Number.isInteger(s) && s >= MIN_BALL_SEC && s <= MAX_BALL_SEC;
+  const mine = typeof real === 'object' ? real.by[id] : undefined;
+  const drill = d.kind === 'drill';
+  const sim = d.kind === 'sim';
+  // „BO1 do 6“, „BO1, ze 4:4 do 6“, „BO1, ze 5:5 o 2, strop 10“.
+  const rule = `BO1${d.start ? `, ze ${d.start.join(':')}` : ''} ${fixedLegRule(id) ? 'o 2, strop 10' : 'do 6'}`;
+  const balls = drillBalls(id);
+  const all = typeof real === 'object' ? (drill ? real.drills : real.matches) : null;
+  return (
+    <>
+      <label className="dp-editor-label" htmlFor={`dp-ball-${id}`}>
+        Doba míčku
+      </label>
+      <div>
+        <span className="dp-ball-input">
+          <input
+            id={`dp-ball-${id}`}
+            type="number"
+            inputMode="numeric"
+            min={MIN_BALL_SEC}
+            max={MAX_BALL_SEC}
+            step={1}
+            aria-label={`Doba míčku v sekundách: ${name}`}
+            placeholder={String(def)}
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+          />{' '}
+          s
+        </span>
+        {value !== null && (
+          <button type="button" className="link" onClick={() => onChange(null)}>
+            Výchozí ({def} s)
+          </button>
+        )}
+        <p className="note">
+          {!valid ? (
+            `Doba míčku musí být ${MIN_BALL_SEC}–${MAX_BALL_SEC} s.`
+          ) : drill ? (
+            <>
+              Délka kola: {s} s × {balls} míčků ({d.needsPartner ? `2 × ${balls / 2} pokusů – každý hráč ${balls / 2}, pak se vystřídáte` : `${balls} pokusů`}) ={' '}
+              <b>{drillRoundMin(id, s)} min</b>.
+            </>
+          ) : sim ? (
+            SIM_FORMATS.map((sf) => (
+              <span key={sf.bestOf} className="dp-ball-calc">
+                {simName(sf)}: vlna {s} s × nejvíc {maxGoals(id, sf)} gólů = <b>{goalRoundMin(id, sf, s) / 2} min</b>, simulace 2 vlny ={' '}
+                <b>{goalRoundMin(id, sf, s)} min</b>.
+              </span>
+            ))
+          ) : (
+            <>
+              Délka kola: {s} s × nejvíc {maxGoals(id, f)} gólů ({rule}) = <b>{goalRoundMin(id, f, s)} min</b>. V tréninku se délka přepočítá podle
+              zvoleného formátu (BO2, BO3…).
+            </>
+          )}{' '}
+          Prázdné = výchozí {def} s. Platí pro nové tréninky a pro nezahájený trénink, když ho upravíš.
+        </p>
+        <p className="note" aria-label="Reálná doba míčku">
+          Reálně ({drill ? 'od prvního pokusu do ukončení kola / pokusy' : 'od prvního gólu do ukončení utkání / góly'}):{' '}
+          {real === 'loading' ? 'počítám…' : real === 'error' ? 'průběh her nejde načíst' : <b>{realText(mine, id)}</b>}
+          {all && (
+            <>
+              {' '}
+              · všechn{drill ? 'a cvičení' : 'y zápasy'} {realText(all, drill ? 'drill' : 'match')}
+            </>
+          )}
+          {mine && Math.round(mine.sec) >= MIN_BALL_SEC && Math.round(mine.sec) <= MAX_BALL_SEC && Math.round(mine.sec) !== value && (
+            <>
+              {' '}
+              <button type="button" className="link" onClick={() => onChange(Math.round(mine.sec))}>
+                Použít {sec(mine.sec)}
+              </button>
+            </>
+          )}
+        </p>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { bumpLimit, legOver, tableScore, taxGoal } from '../../domain/legState';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { bumpLimit, legOver, setScores, tableScore, taxGoal } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
 import { drillCount, type DrillValue } from '../../domain/drillTap';
 import { streakTime, streakTimeUp, type StreakState } from '../../domain/streak';
@@ -19,18 +19,37 @@ interface Props {
   onBump(field: keyof Score, delta: number): void;
   /** Proč je zápis zamčený (jinak „Zapisují hráči a rozhodčí…“). */
   note?: string;
+  /**
+   * Utkání ještě nezačalo (18. 11. 2026): zrcadlo zešedne a uprostřed je `content` (Připraven); ťuknutí
+   * na zrcadlo s ním zatřese a ukáže `message`.
+   */
+  lock?: { content: ReactNode; message: string };
+  /** Dohrané a nepotvrzené utkání: přes zrcadlo „Dohráno 6:4 ✓“, Potvrdit konec a Opravit výsledek. */
+  done?: { text: string; autoEndIn: number | null; onConfirm(): void };
+  /** Utkání už skončilo (konec potvrzený) – jen „dohrán“, bez výzvy k potvrzení. */
+  ended?: boolean;
+  /** Otevřít rovnou v úpravách (Moje hry: „Opravit“ v kartě kola, 19. 11. 2026). */
+  editInit?: boolean;
 }
 
 /**
  * PRD 7.1 „Zrcadlo stolu“: levá a pravá polovina jako u stolu.
- * Ťuknutí do velkého pole = +1 gól (v simulaci set), červené pole = +1 ztráta.
+ * Ťuknutí do velkého pole = +1 gól (ve starší simulaci set), červené pole = +1 ztráta.
  */
-export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note }: Props) {
+export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note, lock, done, ended, editInit = false }: Props) {
+  const [nudge, setNudge] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const poke = () => {
+    setNudge((n) => n + 1);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setNudge(0), 1800);
+  };
   // Jedno ťuknutí může změnit víc polí (Daň: ztráta + gól soupeře); Zpět vrací celé ťuknutí.
   const [undo, setUndo] = useState<(keyof Score)[][]>([]);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(editInit);
   const s = score ?? {};
-  const sim = m.block === 'sim';
+  const sim = setScores(m); // starší simulace v setech
   const shown = sim ? [s.ga ?? 0, s.gb ?? 0] : tableScore(m, s);
   const { over } = legOver(m, s);
   const locked = disabled || (over && !editing);
@@ -73,7 +92,6 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
           <strong>{nm(ids)}</strong>
           <small>
             {m.wall && <span className={m.wall === side ? 'tag tag-wall' : 'tag tag-break'}>{m.wall === side ? 'Zeď' : 'Láme zeď'}</span>}
-            {m.start && <span className="tag tag-start">začíná {m.start[side === 'A' ? 0 : 1]}</span>}
             {word}
             {me && ids.includes(me) ? ', vy' : ''}
           </small>
@@ -86,6 +104,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
           onClick={() => tap(g)}
         >
           <span className="mirror-num">{value}</span>
+          {m.start && !sim && <span className="mirror-from">start {m.start[side === 'A' ? 0 : 1]}</span>}
           <span className="mirror-lbl">{sim ? 'ťukni = set' : 'ťukni = gól'}</span>
         </button>
         {editing && !disabled && (
@@ -118,17 +137,46 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
 
   return (
     <div className="mirror">
-      {over && (
+      {over && !(done && !editing) && (
         <p className="mirror-done" role="status">
-          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]} – zkontroluj a potvrď konec
+          {sim ? 'Zápas' : 'Leg'} dohrán {shown[0]} : {shown[1]}
+          {ended ? ' ✓' : ' – zkontroluj a potvrď konec'}
         </p>
       )}
-      <div className="mirror-halves">
-        {half('A')}
-        {half('B')}
+      <div className={`mirror-stage${lock ? ' locked' : ''}`}>
+        <div key={nudge ? `n${nudge}` : 'still'} className={`mirror-halves${nudge ? ' shake' : ''}`}>
+          {half('A')}
+          {half('B')}
+        </div>
+        {lock && (
+          <div className="mirror-lock" onClick={(e) => e.target === e.currentTarget && poke()}>
+            <div key={nudge ? `c${nudge}` : 'card'} className={`mirror-lock-card${nudge ? ' shake' : ''}`}>
+              {lock.content}
+              {nudge > 0 && (
+                <p className="mirror-nudge" role="alert">
+                  {lock.message}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+        {done && over && !editing && (
+          <div className="mirror-over">
+            <div className="mirror-over-card" role="status">
+              <b>{done.text}</b>
+              <p>{done.autoEndIn !== null ? `Utkání skončí samo za ${Math.ceil(done.autoEndIn / 1000)} s.` : 'Zkontroluj výsledek a potvrď konec.'}</p>
+              <button type="button" className="big" onClick={done.onConfirm}>
+                Potvrdit konec
+              </button>
+              <button type="button" className="link" onClick={() => setEditing(true)}>
+                Opravit výsledek
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       {disabled ? (
-        <p className="note">{note ?? 'Zapisují hráči a rozhodčí tohoto stolu.'}</p>
+        !lock && <p className="note">{note ?? 'Zapisují hráči a rozhodčí tohoto stolu.'}</p>
       ) : (
         <div className="mirror-bar">
           <button type="button" className="pill" disabled={!undo.length} onClick={back}>
@@ -159,15 +207,17 @@ interface DrillProps {
   canSolo(playerId: PlayerId): boolean;
   /** Pokus: ok = ✓, delta −1 = vrácení. */
   onTap(playerId: PlayerId, ok: boolean, delta: 1 | -1): void;
+  /** Otevřít rovnou v úpravách (Moje hry: „Opravit“, 19. 11. 2026). */
+  editInit?: boolean;
 }
 
 /**
  * PRD 5.8 Cvičení: po každém pokusu ✓ / ✗, appka počítá pokusy i výsledek;
  * po posledním pokusu „Hotovo“. Pole pro každého hráče skupiny (i trojice).
  */
-export function DrillMirror({ players, def, values, names, canSolo, onTap }: DrillProps) {
+export function DrillMirror({ players, def, values, names, canSolo, onTap, editInit = false }: DrillProps) {
   const [undo, setUndo] = useState<{ p: PlayerId; ok: boolean }[]>([]);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(editInit);
   const anyWritable = players.some(canSolo);
   const unit = def.lowerIsBetter ? 'ztrát' : def.ok === 'gól' ? 'gólů' : 'povedených';
   return (

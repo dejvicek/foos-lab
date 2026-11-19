@@ -1,4 +1,4 @@
-import { LEG_CAP, legCap, legTarget, MAX_LOSSES, maxLosses, setLosses, winnerFor } from '../../domain/legState';
+import { LEG_CAP, legCap, legTarget, MAX_LOSSES, maxLosses, setLosses, setScores, winnerFor } from '../../domain/legState';
 import type { Match, PlayerId, Score } from '../../domain/types';
 
 interface Props {
@@ -25,7 +25,7 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
  */
 export function ScorePicker({ label, match: m, score, names, disabled, onChange }: Props) {
   const s = score ?? {};
-  const sim = m.block === 'sim';
+  const sim = setScores(m); // starší simulace v setech
   const fiveFive = !!m.start && m.start[0] === 5 && m.start[1] === 5;
   const start = (side: Side) => (side === 'A' ? m.start?.[0] : m.start?.[1]) ?? 0;
   const goalKey = (side: Side): keyof Score => (side === 'A' ? 'ga' : 'gb');

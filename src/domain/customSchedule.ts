@@ -3,7 +3,8 @@ import { recordDrillRound, recordMatchRound, drillRound, matchRound, newCounters
 import { planSequence, planTimeline, playable, SIM_MIN_PLAYERS, type Plan } from './plan';
 import { breakRow, matchId, simTeamsFor, type ScheduleInput } from './schedule';
 import { simulateTeams } from './simulation';
-import { baseMatchId, formatLabel, formatMins, formatOf, withFormat, type MatchFormat } from './matchFormat';
+import { baseMatchId, formatLabel, formatOf, withFormat, type MatchFormat } from './matchFormat';
+import { roundMinutes } from './ballTime';
 import type {
   Cell,
   DisciplineId,
@@ -16,7 +17,9 @@ import type {
   TableCount,
 } from './types';
 
-const SIM_WAVE_MIN = 20;
+
+/** Vlna simulace v tréninku bez doby míčku (délka kola simulace na vlny vliv neměla). */
+const OLD_SIM_WAVE_MIN = 20;
 
 function cellsOf(items: Cell[], tables: TableCount): (Cell | null)[] {
   return Array.from({ length: tables }, (_, j) => items[j] ?? null);
@@ -35,7 +38,7 @@ function matchCells(def: DisciplineDef, roundNo: number, plans: MatchPlan[], wai
       sideB: p.b,
       discipline: def.id,
       lossTax: !!def.lossTax,
-      trackLosses: true, // i v Dani a bez rozhodčího (rozhodnutí 2. 11. 2026)
+      trackLosses: !!def.lossTax, // ztráty jen v Dani za ztrátu (18. 11. 2026; dřív u každého zápasu)
     };
     if (referee) match.referee = referee;
     if (def.wall) match.wall = 'A';
@@ -89,7 +92,7 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
   for (const id of seq.slice(locked.length)) drillsLeft.set(id, (drillsLeft.get(id) ?? 0) + 1);
 
   // Zápas s BO trvá délka legu × nejvyšší počet legů.
-  const timeline = planTimeline(seq, t.breaks, formatMins(t.disciplineMin, t.matchFormats));
+  const timeline = planTimeline(seq, t.breaks, roundMinutes(t.disciplineMin, t.matchFormats, t.ballSec));
   // Sekce jdou chronologicky: při změně druhu kola začne nová (cvičení přidané později je za zápasy).
   const META = {
     drills: { title: 'Cvičení', waitingLabel: 'Počítá' },
@@ -135,34 +138,41 @@ export function buildCustomSchedule(t: ScheduleInput): Schedule {
     const lockedRound = roundNo <= locked.length ? locked[roundNo - 1] : null;
 
     if (def.kind === 'sim') {
+      // Vlna = polovina kola z doby míčku; starší trénink bez doby míčku pevně 20 min (18. 11. 2026).
+      const waveMin = t.ballSec?.sim !== undefined ? item.min / 2 : OLD_SIM_WAVE_MIN;
       let simRows: ScheduleRow[];
       if (lockedRound)
-        simRows = lockedRound.rows.map((r, w) => ({ ...r, cells: cellsOf(r.cells.filter(Boolean) as Cell[], tables), time: item.start + w * SIM_WAVE_MIN }));
+        simRows = lockedRound.rows.map((r, w) => ({ ...r, cells: cellsOf(r.cells.filter(Boolean) as Cell[], tables), time: item.start + w * waveMin }));
       else {
         teams = simTeamsFor({ ...t, attendees: players }, matches.filter((m) => m.block === 'league'));
         const sim = simulateTeams(teams.A, teams.B, t.tables);
         simDoubles = sim.wave1.doubles + sim.wave2.doubles;
         simSingles = sim.wave1.singles + sim.wave2.singles;
+        // Zápasy simulace po legech ve formátu tréninku (18. 11. 2026); zamčené kolo si nese svůj (starší v setech).
+        const fmt = formatOf(t.matchFormats, 'sim');
         simRows = [sim.wave1, sim.wave2].map((w, wi) => ({
           roundNo,
           discipline: 'sim' as const,
-          time: item.start + wi * SIM_WAVE_MIN,
+          time: item.start + wi * waveMin,
           label: `${wi + 1}. vlna`,
-          rule: `${SIM_WAVE_MIN} min, ligový formát`,
+          rule: `${waveMin} min, ${formatLabel(fmt)}`,
           kind: 'matches' as const,
           cells: cellsOf(
             w.matches.map((p, j) => ({
               type: 'match' as const,
-              match: {
-                id: matchId('sim', wi + 1, j + 1, p.a, p.b),
-                block: 'sim' as const,
-                round: wi + 1,
-                table: j + 1,
-                kind: p.kind,
-                sideA: p.a,
-                sideB: p.b,
-                discipline: 'sim' as const,
-              },
+              match: withFormat(
+                {
+                  id: matchId('sim', wi + 1, j + 1, p.a, p.b),
+                  block: 'sim' as const,
+                  round: wi + 1,
+                  table: j + 1,
+                  kind: p.kind,
+                  sideA: p.a,
+                  sideB: p.b,
+                  discipline: 'sim' as const,
+                },
+                fmt,
+              ),
             })),
             tables,
           ),

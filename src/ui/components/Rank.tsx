@@ -1,6 +1,6 @@
 /**
  * Pořadí v žebříčcích: první tři dostanou medaili (zlatá / stříbrná / bronzová),
- * první tři Zdržovači červený kroužek a šneka (10. 11. 2026). Neřazení hráči („Málo dat“) mají pomlčku.
+ * první Zdržovač červený kroužek, šneka a „Brzdu“ (od 18. 11. 2026 jen jeden, dřív první tři). Neřazení hráči („Málo dat“) mají pomlčku.
  */
 
 const PODIUM = 3;
@@ -27,8 +27,8 @@ export function Medal({ place, ranked = true }: { place: number; ranked?: boolea
   );
 }
 
-/** Zdržovač na čele: jen když opravdu čekal (čekání > 0). */
-export const isShamed = (place: number, waited: boolean) => waited && place <= PODIUM;
+/** Zdržovač na čele (jen první, 18. 11. 2026): jen když opravdu čekal (čekání > 0). */
+export const isShamed = (place: number, waited: boolean) => waited && place === 1;
 
 export function ShameRank({ place, shamed }: { place: number; shamed: boolean }) {
   if (!shamed) return <Plain place={place} />;

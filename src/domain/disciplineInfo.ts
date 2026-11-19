@@ -1,6 +1,7 @@
 import type { ExplanationItem } from './content';
 import { DISCIPLINES, discipline, placesOf, roundStep, type DisciplineDef, type Places } from './disciplines';
 import { explanation } from './explain';
+import { catalogRoundMin } from './ballTime';
 import { SIM_MIN_PLAYERS } from './plan';
 import { soloMetric } from './solo';
 import type { DisciplineId } from './types';
@@ -8,21 +9,20 @@ import type { DisciplineId } from './types';
 /** Stránka Disciplíny: co se nabízí (vyřazené ne), v pořadí rozpisu. */
 export const offeredDisciplines = (): DisciplineDef[] => DISCIPLINES.filter((d) => !d.retired);
 
-/** Vysvětlivky disciplíny – stejné jako nápověda kola v rozpisu (Start 0:3 navíc Daň za ztrátu). */
+/** Vysvětlivky disciplíny – stejné jako nápověda kola v rozpisu. */
 export function disciplineHelp(id: DisciplineId): ExplanationItem[] {
-  const d = discipline(id);
-  const out = [explanation(d.explain)];
-  if (d.id === 'start03') out.push(explanation('Daň za ztrátu'));
-  return out;
+  return [explanation(discipline(id).explain)];
 }
 
 /** Obecná pravidla všech zápasových kol (v rozpisu sbalená pod nápovědou kola). */
 export const MATCH_GENERAL_HELP: ExplanationItem[] = [explanation('Každý gól se počítá'), explanation('Role rozhodčího')];
 
-/** Délka v řádku: kolik kol jde za sebou (párová / na dvě varianty = 2) a délka kola (aktuální katalog). */
+/**
+ * Délka v řádku: kolik kol jde za sebou (párová / na dvě varianty = 2) a délka kola (aktuální katalog;
+ * zápas a simulace z doby míčku ve výchozím formátu).
+ */
 export function disciplineDuration(id: DisciplineId): { rounds: 1 | 2; min: number } {
-  const d = discipline(id);
-  return { rounds: roundStep(d), min: d.min };
+  return { rounds: roundStep(discipline(id)), min: catalogRoundMin(id) };
 }
 
 /** Párový zápas (ikona v řádku): 2 kola, strany si prohodí role. */

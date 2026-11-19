@@ -19,7 +19,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes, computePracticeMatchLadder } from './practice';
+  roundTimes, computeMatchLadder } from './practice';
 import { drillSections } from './disciplines';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
@@ -68,8 +68,8 @@ describe('nabídka cvičení', () => {
     expect(ids).not.toContain('setShooting');
     expect(ids).not.toContain('backRodsBuildUp');
     // zápasy a scénáře ve dvou (12. 11. 2026), simulace ne
-    // v duu Jedničky (1 na 1), Normální leg jen v klubu; „bez brankáře“ jen solo
-    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['lossTax', 'wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6']);
+    // v duu Jedničky (1 na 1), Normální leg jen v klubu; Daň za ztrátu jen v klubu (rozhodčí, 18. 11. 2026); „bez brankáře“ jen solo
+    expect(ids.filter((id) => discipline(id).kind === 'match')).toEqual(['wall', 'start03', 'start44', 'start45', 'start55', 'singles', 'goalieWar', 'penalty6']);
     expect(ids).not.toContain('penaltySolo');
     expect(ids).not.toContain('backShotSolo');
     expect(ids).not.toContain('sim');
@@ -139,8 +139,8 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('kola v pořadí výběru, varianty po sobě, délky z katalogu; sám jen co se sám hraje', () => {
     expect(practiceRounds(plan).map((r) => [r.n, r.drill, r.metric, r.variant, r.min, r.item])).toEqual([
       [1, 'warmup', undefined, undefined, 9, 'round|1'],
-      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 8, 'round|2'],
-      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 8, 'round|3'],
+      [2, 'penaltySolo', 'penaltySolo', 'varianta 1', 7, 'round|2'],
+      [3, 'penaltySolo', 'penaltySolo', 'varianta 2', 7, 'round|3'],
       [4, 'streakShot3', 'streakShot3', undefined, 10, 'round|4'],
     ]);
     expect(plan.disciplineOrder).toEqual(['warmup', 'penaltySolo', 'streakShot3']);
@@ -149,15 +149,16 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   });
 
   it('naplánovaný čas: kola + přechod 1 min mezi koly', () => {
-    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'streakShot3'])).toBe(9 + 8 + 8 + 10 + 3);
-    expect(plan.durationMin).toBe(38);
+    // sólové cvičení: 20 s × 20 pokusů = 7 min
+    expect(practicePlanMinutes(['warmup', 'penaltySolo', 'streakShot3'])).toBe(9 + 7 + 7 + 10 + 3);
+    expect(plan.durationMin).toBe(36);
     expect(practicePlanMinutes([])).toBe(0);
   });
 
   it('délky kol jsou v tréninku – změna katalogu je nehne', () => {
-    applyCatalog({ disciplines: { penaltySolo: { min: 6 } } });
-    expect(practiceRounds(plan)[1].min).toBe(8);
-    expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(13);
+    applyCatalog({ disciplines: { penaltySolo: { ballSec: 15 } } });
+    expect(practiceRounds(plan)[1].min).toBe(7);
+    expect(newPractice('q', TODAY, '17:30', 'A', null, ['penaltySolo']).durationMin).toBe(2 * 5 + 1); // 15 s × 20 = 5 min
   });
 
   it('aktuální kolo = první neukončené; dohraný plán null', () => {
@@ -171,9 +172,9 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
   it('pevný plán: dál až po čase kola, nebo když jsou odehrané všechny pokusy', () => {
     const t = { ...plan, playTimes: { 'round|1': { startedAt: T0, endedAt: T0 + 9 * MIN }, 'round|2': { startedAt: T0 + 10 * MIN } } };
     const r2 = practiceRounds(t)[1];
-    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(420);
+    expect(roundRemainingSec(t, r2, T0 + 11 * MIN)).toBe(360); // kolo 7 min (20 s × 20 pokusů)
     expect(canAdvance(t, r2, T0 + 11 * MIN)).toBe(false);
-    expect(canAdvance(t, r2, T0 + 18 * MIN)).toBe(true);
+    expect(canAdvance(t, r2, T0 + 17 * MIN)).toBe(true);
     const done = setAttempts(setSolo(t, 'A', 'penaltySolo@2', 6), 'A', 'penaltySolo@2', 20);
     expect(canAdvance(done, r2, T0 + 11 * MIN)).toBe(true);
     // Rozcvička nic nezapisuje – jen po čase
@@ -195,9 +196,9 @@ describe('plán (PRD 5.11, 11. 11. 2026)', () => {
     const times = roundTimes(t, T0 + 11 * MIN).map((x) => [x.state, (x.start - T0) / MIN, (x.end - T0) / MIN]);
     expect(times).toEqual([
       ['done', 0, 9],
-      ['playing', 10, 18],
-      ['next', 19, 27],
-      ['next', 28, 38],
+      ['playing', 10, 17],
+      ['next', 18, 25],
+      ['next', 26, 36],
     ]);
     // přetažené kolo posune další
     expect((roundTimes(t, T0 + 20 * MIN)[2].start - T0) / MIN).toBe(21);
@@ -211,15 +212,16 @@ describe('zápasy ve dvou (12. 11. 2026)', () => {
     const p = newPractice('p', TODAY, '18:00', 'A', 'B', ['goalieWar', 'wall', 'penaltyKeeper'], { goalieWar: { bestOf: 3, legTo: 5 } });
     const rs = practiceRounds(p);
     expect(rs.map((r) => [r.drill, r.min, r.match?.sideA.join(), r.match?.bestOf ?? null])).toEqual([
-      ['goalieWar', 24, 'A', 3],
+      // doba míčku 40 s: BO3 do 5 = 3 × 9 gólů → 18 min; Zeď do 6 = 11 gólů → 8 min
+      ['goalieWar', 18, 'A', 3],
       ['wall', 8, 'A', null],
       ['wall', 8, 'B', null],
-      ['penaltyKeeper', 8, undefined, null],
-      ['penaltyKeeper', 8, undefined, null],
+      ['penaltyKeeper', 14, undefined, null], // ve dvojici 20 s × 40 pokusů
+      ['penaltyKeeper', 14, undefined, null],
     ]);
     expect(rs[0].match).toMatchObject({ id: 'practice|1|AvB', legTo: 5, kind: 'singles' });
     expect(rs[1].match?.wall).toBe('A');
-    expect(p.durationMin).toBe(24 + 8 + 8 + 8 + 8 + 4);
+    expect(p.durationMin).toBe(18 + 8 + 8 + 14 + 14 + 4);
     expect(p.matchFormats).toEqual({ goalieWar: { bestOf: 3, legTo: 5 } });
     expect(newPractice('q', TODAY, '18:00', 'A', null, ['goalieWar', 'penaltySolo']).disciplineOrder).toEqual(['penaltySolo']);
   });
@@ -321,14 +323,14 @@ describe('žebříček Vlastní – zápasy (12. 11. 2026)', () => {
 
   it('podíl vyhraných zápasů, legy a skóre; málo dat pod 3 tréninky', () => {
     const ts = [game('g1', 'A', 'B', [[6, 2], [6, 4]]), game('g2', 'B', 'A', [[6, 5], [2, 6], [3, 6]]), game('g3', 'A', 'B', [[1, 6], [6, 3], [6, 0]]), game('g4', 'A', 'C', [[6, 1]])];
-    const [gw] = computePracticeMatchLadder(ts, null, null, 3);
+    const [gw] = computeMatchLadder(ts, null, null, 3);
     expect(gw.discipline).toBe('goalieWar');
     expect(gw.ranked.map((r) => r.playerId)).toEqual(['A', 'B']);
     expect(gw.ranked[0]).toMatchObject({ trainings: 4, matches: 3, wins: 3, legs: 9, legWins: 7, gf: 48, gc: 27 });
     expect(gw.ranked[1]).toMatchObject({ trainings: 3, matches: 3, wins: 0, legs: 8 });
     // nedohraný zápas (g4, jen 1 leg) se počítá do legů, ne do zápasů
     expect(gw.lowData).toEqual([expect.objectContaining({ playerId: 'C', matches: 0, legs: 1, gf: 1, gc: 6 })]);
-    expect(computePracticeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
+    expect(computeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
   });
 });
 
@@ -343,6 +345,47 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     expect(own.map((x) => x.metric)).toEqual(['penaltySolo']); // jen cvičení pouze pro vlastní trénink
   });
 
+  it('zápasy 1 na 1 z klasického tréninku (podle pravidel kola) a singly simulace = Jedničky (19. 11. 2026)', () => {
+    const classic: Training = {
+      id: 'k', date: '2026-11-01', startTime: '18:00', mode: 'team', tables: 4, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'classic', durationMin: null, plan: null, lockedRounds: [],
+    } as unknown as Training;
+    const ms = buildSchedule(classic).matches.filter((m) => m.kind === 'singles');
+    const plain = ms.find((m) => m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const tax = ms.find((m) => m.block === 'league' && m.lossTax)!;
+    const start = ms.find((m) => m.block === 'league' && m.start?.[0] === 0 && m.start?.[1] === 3)!;
+    const sim = ms.find((m) => m.block === 'sim')!;
+    expect([plain, tax, start, sim].every(Boolean)).toBe(true);
+    const scores = { [plain.id]: { ga: 6, gb: 5 }, [tax.id]: { ga: 4, gb: 6 }, [start.id]: { ga: 4, gb: 3 }, [sim.id]: { ga: 6, gb: 2 } };
+    const tables = computeMatchLadder([{ ...classic, scores }], null, null, 3);
+    expect(tables.map((x) => x.discipline)).toEqual(['singles', 'lossTax', 'start03']);
+    const t1 = tables.find((x) => x.discipline === 'singles')!;
+    const ones = [...t1.lowData, ...t1.ranked];
+    // Normální leg i simulace v Jedničkách
+    for (const p of [plain.sideA[0], plain.sideB[0], sim.sideA[0], sim.sideB[0]]) expect(ones.map((r) => r.playerId)).toContain(p);
+  });
+
+  it('zápasy podle disciplín: 2 na 2 (Normální leg, simulace = Normální leg) a vše (19. 11. 2026)', () => {
+    const classic = {
+      id: 'k', date: '2026-11-01', startTime: '18:00', mode: 'team', tables: 4, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
+      simSplit: 'order', simTeams: null, format: 'classic', durationMin: null, plan: null, lockedRounds: [],
+    } as unknown as Training;
+    const ms = buildSchedule(classic).matches;
+    const plainD = ms.find((m) => m.kind === 'doubles' && m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const simD = ms.find((m) => m.kind === 'doubles' && m.block === 'sim')!;
+    const plainS = ms.find((m) => m.kind === 'singles' && m.block === 'league' && !m.start && !m.wall && !m.lossTax)!;
+    const scores = { [plainD.id]: { ga: 6, gb: 2 }, [simD.id]: { ga: 6, gb: 4 }, [plainS.id]: { ga: 6, gb: 5 } };
+    const t = { ...classic, scores };
+    const d = computeMatchLadder([t], null, null, 3, 'doubles');
+    expect(d.map((x) => x.discipline)).toEqual(['normal']);
+    const rows = [...d[0].ranked, ...d[0].lowData];
+    // výhra oběma hráčům dvojice
+    for (const p of plainD.sideA) expect(rows.find((r) => r.playerId === p)!.wins).toBeGreaterThan(0);
+    expect(computeMatchLadder([t], null, null, 3, 'singles').map((x) => x.discipline)).toEqual(['singles']);
+    // Jedničky nahoře před 2v2, stejné pořadí jako v 1 na 1
+    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline)).toEqual(['singles', 'normal']);
+  });
+
   it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {
     const clubT: Training = {
       id: 'c', date: '2026-11-05', startTime: '18:00', mode: 'team', tables: 2, attendees: ['A', 'B', 'C', 'D', 'E', 'F'], scores: {}, soloResults: {},
@@ -355,7 +398,7 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     const scored = { ...clubT, scores: { [singles[0].id]: { ga: 6, gb: 3 }, ...(doubles[0] ? { [doubles[0].id]: { ga: 6, gb: 1 } } : {}) } };
     const duo = newPractice('p', '2026-11-06', '18:00', 'A', 'B', ['singles']);
     const m = practiceRounds(duo)[0].match!;
-    const tables = computePracticeMatchLadder([scored, { ...duo, scores: { [m.id]: { ga: 6, gb: 4 } } }], null, null, 3);
+    const tables = computeMatchLadder([scored, { ...duo, scores: { [m.id]: { ga: 6, gb: 4 } } }], null, null, 3);
     expect(tables.map((x) => x.discipline)).toEqual(['singles']);
     const rows = [...tables[0].ranked, ...tables[0].lowData];
     const winner = singles[0].sideA[0];

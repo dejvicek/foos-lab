@@ -5,24 +5,23 @@ import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
 import { commitEdit, configChanged, prepareEdit } from '../trainingEdit';
 import { SimTeamsFields, SPLIT_TEXT } from '../components/TrainingSetup';
 import { lockThrough, roundOfMatch } from '../../domain/customSchedule';
-import { parseSoloKey, soloKey, soloMetric } from '../../domain/solo';
+import { parseSoloKey, soloKey } from '../../domain/solo';
 import type { Match, MatchId, PlayerId, Score, SoloKey, Training } from '../../domain/types';
-import { canManage, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
+import { canManage, canMarkReady, canWriteMatch, canWriteSolo, type Viewer } from '../../domain/my';
 import { MyTable } from '../components/MyTable';
 import { TrainingTable, type BreakControls } from '../components/TrainingTable';
 import { addBreak, breakMovable, breaksOf, freeSlots, moveBreak, removeBreak, setBreakMin, stepTarget } from '../../domain/breaks';
 import { RoundCards } from '../components/RoundCards';
 import type { TapSolo } from '../components/BlockEntry';
 import { useMobile } from '../useMobile';
-import { ActiveMatches } from '../components/ActiveMatches';
 import { currentPause, FlowBar, PauseInline } from '../components/FlowBar';
-import { DelayTable, type ItemTiming } from '../components/Timing';
+import type { ItemTiming } from '../components/Timing';
 import { delayStats, drillItemId, pauseStates, TRAINING_ITEM, type QueueEntry } from '../../domain/queue';
 import { trainingQueue, useTick } from '../queue';
-import { usedTables } from '../components/TrainingTable';
-import { defaultOpenRow, minutesSinceStart, rowKey, useNow } from '../now';
-import { pauseRows, playingRow, roundStates } from '../roundState';
-import { StandingsView } from '../components/StandingsView';
+import { minutesSinceStart, useNow } from '../now';
+import { pauseRows, roundStates } from '../roundState';
+import { trainingRunning } from '../liveTag';
+import { TrainingSummary } from '../components/StandingsView';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
 import type { AppStore } from '../useAppState';
@@ -43,7 +42,7 @@ export function TrainingPage({
   navigate: (r: Route) => void;
   viewer?: Viewer;
   /** schedule = stránka tréninku (rozpis, souhrn), live = Živě, my = Moje hry (hlavní navigace). */
-  view?: 'schedule' | 'live' | 'my';
+  view?: 'schedule' | 'my';
 }) {
   const training = store.data.trainings.find((t) => t.id === id);
   // Průběh her (časová osa, automatický konec utkání) se načítá jen pro trénink na obrazovce.
@@ -101,8 +100,6 @@ export function TrainingPage({
   // Moje hry: výchozí kolo pro hráče bez aktivní hry (podle hodin).
   const since = minutesSinceStart(training.date, training.startTime, now);
   const rounds = schedule && queueInfo ? roundStates(schedule, queueInfo.states, pauseStates(queueInfo.queue, training.playTimes ?? {}, Math.max(tick, Date.now()))) : null;
-  const fallback = schedule ? defaultOpenRow(schedule, training, playingRow(schedule, rounds)) : null;
-  const openKey = expanded ?? (fallback ? rowKey(fallback) : null);
 
   /** Úprava z rozpisu (pauzy): přeplánovat, při ztrátě výsledků se zeptat, uložit. */
   const apply = (input: Training) => {
@@ -110,6 +107,14 @@ export function TrainingPage({
     if (commitEdit(store, training, next) && configChanged(training, next)) setExpanded(null); // klíč řádku je pozice
   };
   const manage = canManage(viewer, training);
+  // Trénink běží: odehraná kola se v rozpisu sbalí. Proběhlý (vše dohráno nebo zahájený před víc než 12 h)
+  // ukazuje všechna kola rozbalená (19. 11. 2026).
+  const running = !!rounds && !!queueInfo && trainingRunning(training, queueInfo.states, Math.max(tick, Date.now()));
+  /** Admin / organizátor zapsal v rozpisu dohraný výsledek → utkání skončí (nezahajuje, nepotvrzuje). */
+  const autoEnd = (id: string) => {
+    const st = itemTiming?.state(id);
+    if (itemTiming && st && st.endedAt === undefined) itemTiming.end(id);
+  };
   const canMatch = (m: Match) => canWriteMatch(viewer, m, training);
   const canSolo = (group: PlayerId[], p: PlayerId) => canWriteSolo(viewer, group, p, training);
   /**
@@ -159,9 +164,6 @@ export function TrainingPage({
       : undefined;
   const canAddBreak = !!breakControls && freeSlots(training).length > 0;
 
-  /** Smí přihlášený zahájit / ukončit utkání? Zápas jako skóre, cvičení hráči skupiny a správce. */
-  const canItem = (e: Extract<QueueEntry, { kind: 'item' }>) =>
-    e.match ? canMatch(e.match) : manage || (!!viewer.playerId && e.players.includes(viewer.playerId));
   const delays = queueInfo ? delayStats(queueInfo.queue, queueInfo.states) : [];
   // Týmy simulace: nastavují se v tréninku, dokud simulace nezačala (pak jsou zamčené).
   const simItems = queueInfo?.queue.filter((e): e is Extract<QueueEntry, { kind: 'item' }> => e.kind === 'item' && e.match?.block === 'sim') ?? [];
@@ -172,7 +174,7 @@ export function TrainingPage({
   // Panel „Týmy pro simulaci“ u sekce simulace (organizátor, dokud simulace nezačala).
   const simSetupNode = (open: boolean) =>
     manage && schedule?.teams && !teamsLocked ? (
-      <details className="sim-setup no-print" open={open}>
+      <details className="sim-setup" open={open}>
         <summary>
           <span>
             <strong>Týmy pro simulaci</strong>: {SPLIT_TEXT[training.simSplit]}
@@ -197,6 +199,14 @@ export function TrainingPage({
         manage,
         autoEndIn: (id) => (schedule ? autoEndAfter(training, schedule, id, Math.max(tick, Date.now())) : null),
         start: (id) => store.startItem(training.id, id),
+        // Připravenost (18. 11. 2026): strana zápasu / hráč cvičení; utkání začne, až jsou připravení všichni.
+        canReady: (key, e) => canMarkReady(viewer, training, e, key),
+        ready: (id, key, on, keys) => {
+          // Zápas: zamkne kolo – rozhodčí smí hlásit strany (databáze ho pozná podle zamčeného rozpisu).
+          const next = withLocked(training, roundOfMatch(schedule!, id));
+          if (next !== training) persistLock(next);
+          store.readyItem(training.id, id, key, on, keys);
+        },
         // Konec potvrzuje člověk (dohraný výsledek nejdéle 15 s, pak skončí sám). Nezahájené utkání potvrzené organizátorem se počítá od vypsání.
         end: (id) => {
           const now = Date.now();
@@ -208,16 +218,6 @@ export function TrainingPage({
       }
     : undefined;
 
-  /** Živě: metrika a klíč výsledku cvičení podle kola, stolu a hráčů ve frontě. */
-  const drillEntryOf = (label: string, table: number, players: PlayerId[]) => {
-    for (const sec of schedule?.sections ?? [])
-      for (const r of sec.rows) {
-        if (r.label !== label) continue;
-        const c = r.cells[table - 1];
-        if (c?.type === 'group' && c.metric && c.players.join() === players.join()) return { def: soloMetric(c.metric), key: soloKey(c.metric, c.soloRound) };
-      }
-    return null;
-  };
   /** ID utkání cvičení (stůl, kde hráč s danou metrikou a kolem cvičí). */
   const drillItemOf = (playerId: PlayerId, key: SoloKey): string | null => {
     for (const sec of schedule?.sections ?? [])
@@ -291,30 +291,6 @@ export function TrainingPage({
     </div>
   );
 
-  if (view === 'live')
-    return (
-      <section>
-        {viewHead('Živě')}
-        {flowBar(true)}
-        {simNext && simSetup}
-        {schedule && queueInfo && (
-          <ActiveMatches
-            queue={queueInfo.queue}
-            states={queueInfo.states}
-            tables={usedTables(schedule).map((j) => j + 1)}
-            names={names}
-            me={viewer.playerId}
-            now={tick}
-            canWrite={canItem}
-            manage={manage}
-            onEnd={(e) => itemTiming?.end(e.id)}
-            entry={{ training, onScore, onSolo, drillOf: (e) => drillEntryOf(e.label, e.table, e.players) }}
-            onMyGame={attends ? () => navigate({ page: 'my' }) : undefined}
-          />
-        )}
-      </section>
-    );
-
   if (view === 'my')
     return (
       <section className="view-my">
@@ -333,6 +309,8 @@ export function TrainingPage({
             tap={mobile ? tap : undefined}
             timing={itemTiming}
             onTapSolo={onTapSolo}
+            pause={pauseList.find((p) => p.state !== 'over') ?? null}
+            rounds={rounds}
           />
         ) : (
           <p className="note">V tomhle tréninku nehraješ.</p>
@@ -342,21 +320,32 @@ export function TrainingPage({
 
   return (
     <section>
-      <button type="button" className="back no-print" onClick={() => navigate({ page: 'trainings' })}>
+      <button type="button" className="back" onClick={() => navigate({ page: 'trainings' })}>
         Zpět na tréninky
       </button>
-      <h1>{formatDateLong(training.date)}</h1>
+      <div className="title-row">
+        <h1>{formatDateLong(training.date)}</h1>
+        {manage && (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Upravit nastavení"
+            title="Upravit nastavení"
+            onClick={() => navigate({ page: 'training-edit', id: training.id })}
+          >
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M13.5 3.5l3 3L7 16H4v-3z" />
+              <path d="M11.5 5.5l3 3" />
+            </svg>
+          </button>
+        )}
+      </div>
       <div className="training-head">
         <p className="dateline">
           {MODE_LABEL[training.mode]}, {training.attendees.length} {plural(training.attendees.length, 'hráč', 'hráči', 'hráčů')}, {training.tables}{' '}
           {plural(training.tables, 'stůl', 'stoly', 'stolů')}
           {training.format === 'custom' && `, ${Math.floor(training.durationMin / 60)}:${String(training.durationMin % 60).padStart(2, '0')}`}
         </p>
-        {manage && (
-          <button type="button" className="ghost no-print" onClick={() => navigate({ page: 'training-edit', id: training.id })}>
-            Upravit nastavení
-          </button>
-        )}
       </div>
       {!schedule && (
         <p className="note">
@@ -364,6 +353,7 @@ export function TrainingPage({
         </p>
       )}
 
+      {schedule && <TrainingSummary schedule={schedule} scores={training.scores} attendees={training.attendees} names={names} delays={delays} />}
 
       {flowBar(false)}
 
@@ -376,64 +366,52 @@ export function TrainingPage({
               names={names}
               rounds={rounds}
               pauseSlots={pauseSlots}
-              now={tick}
-              expanded={openKey}
-              onToggle={(key) => setExpanded(openKey === key ? '' : key)}
+              expanded={manage ? expanded : null}
+              onToggle={(key) => setExpanded(expanded === key ? null : key)}
+              onScore={onScore}
+              onSolo={onSolo}
               canMatch={canMatch}
               canSolo={canSolo}
-              tap={tap}
               breaks={breakControls}
-              timing={itemTiming}
               simSetup={simSetup}
+              me={viewer.playerId}
+              manage={manage}
+              running={running}
+              autoEnd={autoEnd}
             />
           ) : (
-          <TrainingTable
-            schedule={schedule}
-            training={training}
-            names={names}
-            rounds={rounds}
+            <TrainingTable
+              schedule={schedule}
+              training={training}
+              names={names}
+              rounds={rounds}
               pauseSlots={pauseSlots}
-              now={tick}
-            expanded={openKey}
-            onToggle={(key) => setExpanded(openKey === key ? '' : key)}
-            onScore={onScore}
-            onSolo={onSolo}
-            canMatch={canMatch}
-            canSolo={canSolo}
-            breaks={breakControls}
-            timing={itemTiming}
-            onTapSolo={onTapSolo}
-            simSetup={simSetup}
-          />
+              expanded={manage ? expanded : null}
+              onToggle={(key) => setExpanded(expanded === key ? null : key)}
+              onScore={onScore}
+              onSolo={onSolo}
+              canMatch={canMatch}
+              canSolo={canSolo}
+              breaks={breakControls}
+              simSetup={simSetup}
+              me={viewer.playerId}
+              manage={manage}
+              running={running}
+              autoEnd={autoEnd}
+            />
           )}
-          <div className="actions-row no-print">
-            {breakControls && (
+          {breakControls && (
+            <div className="actions-row">
               <button type="button" className="ghost" disabled={!canAddBreak} onClick={() => apply(addBreak(training))}>
                 + Přidat pauzu
               </button>
-            )}
-            <button type="button" className="ghost" onClick={() => window.print()}>
-              Vytisknout rozpis
-            </button>
-          </div>
-          <StandingsView
-            schedule={schedule}
-            scores={training.scores}
-            attendees={training.attendees}
-            names={names}
-          />
-          {delays.length > 0 && (
-            <section className="delays">
-              <h2>Zdržovači</h2>
-              <p className="note">Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</p>
-              <DelayTable rows={delays} names={names} />
-            </section>
+            </div>
           )}
         </>
       )}
 
       {manage && (
-      <div className="actions-row no-print">
+      <div className="actions-row">
         <button
           type="button"
           className="danger"

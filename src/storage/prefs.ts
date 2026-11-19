@@ -1,13 +1,24 @@
 import type { DisciplineId } from '../domain/types';
 import type { LadderRange, LadderView } from '../domain/ladder';
+import type { MatchKindFilter } from '../domain/practice';
 
-/** practice = žebříček Vlastní (vlastní tréninky, PRD 5.11). */
+/**
+ * Část žebříčku (18. 11. 2026, *rozhodnutí uživatele*): Zápasy · Cvičení · Zdržovači; Cvičení má podčásti
+ * Týmové (`solo`, dřív Stanoviště) a Solo/Duo (`practice`, dřív Vlastní, PRD 5.11).
+ */
 export type LadderPart = 'matches' | 'solo' | 'practice' | 'delays';
+export type LadderDrills = 'solo' | 'practice';
 
 export interface UiPrefs {
   ladderRange: LadderRange;
   ladderView: LadderView;
   ladderPart: LadderPart;
+  /** Naposledy zvolená podčást Cvičení – kam vede záložka Cvičení. */
+  ladderDrills?: LadderDrills;
+  /** Zápasy podle disciplín: 1 na 1 / 2 na 2 / vše (19. 11. 2026); chybí = vše. */
+  ladderMatchKind?: MatchKindFilter;
+  /** Stránka Tréninky: Klubové / Vlastní (19. 11. 2026); chybí = klubové. */
+  trainingsPart?: 'club' | 'own';
 }
 
 const KEY = 'foosball-practice.prefs.v1';
@@ -28,7 +39,14 @@ export function loadPrefs(): UiPrefs {
     const raw = localStorage.getItem(KEY);
     const p = raw ? JSON.parse(raw) : null;
     if (!valid(p)) return defaultPrefs();
-    return { ...p, ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches' };
+    const { ladderDrills, ladderMatchKind, trainingsPart, ...rest } = p;
+    return {
+      ...rest,
+      ladderPart: p.ladderPart === 'solo' || p.ladderPart === 'practice' || p.ladderPart === 'delays' ? p.ladderPart : 'matches',
+      ...(ladderDrills === 'solo' || ladderDrills === 'practice' ? { ladderDrills } : {}),
+      ...(ladderMatchKind === 'singles' || ladderMatchKind === 'doubles' || ladderMatchKind === 'all' ? { ladderMatchKind } : {}),
+      ...(trainingsPart === 'club' || trainingsPart === 'own' ? { trainingsPart } : {}),
+    };
   } catch {
     return defaultPrefs();
   }
@@ -42,36 +60,6 @@ export function savePrefs(p: UiPrefs): void {
   }
 }
 
-/** Zobrazení Průběhu (PRD 4.9): sloupec, nebo křivka; platí pro zápasy i cvičení, výchozí sloupec. */
-export type TimelineView = 'column' | 'curve';
-
-const TIMELINE_KEY = 'foosball-practice.timeline-view.v1';
-const timelineListeners = new Set<() => void>();
-
-export function loadTimelineView(): TimelineView {
-  try {
-    return localStorage.getItem(TIMELINE_KEY) === 'curve' ? 'curve' : 'column';
-  } catch {
-    return 'column';
-  }
-}
-
-/** Uloží volbu a dá vědět všem otevřeným průběhům (přepnou se najednou). */
-export function saveTimelineView(v: TimelineView): void {
-  try {
-    localStorage.setItem(TIMELINE_KEY, v);
-  } catch {
-    /* bez uložení to běží dál */
-  }
-  timelineListeners.forEach((l) => l());
-}
-
-export function subscribeTimelineView(listener: () => void): () => void {
-  timelineListeners.add(listener);
-  return () => {
-    timelineListeners.delete(listener);
-  };
-}
 
 /** Barevný režim zvolený v zařízení; null = podle systému. Klíč čte i skript v index.html (bez probliknutí). */
 export type Theme = 'light' | 'dark';

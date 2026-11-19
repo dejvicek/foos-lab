@@ -7,4 +7,12 @@
 // 2 (11. 11. 2026): vlastní trénink (format 'practice', migrace 26) – starší verze by ho brala jako klasický trénink.
 // 3 (11. 11. 2026): 20 pokusů místo 10 a Čistá desítka (migrace 27) – starší verze by s plným počtem 10
 //   zapisovaly jinak a výsledky na čas by ukazovala jako počty.
-export const COMPAT = 3;
+// 4 (18. 11. 2026): simulace ligového kola po legech (BO3 do 6 / BO5 do 5) – starší verze by do legu 1
+//   zapisovala sety a formát BO5 by při uložení tréninku smazala.
+// 5 (18. 11. 2026): délka kola zápasu z doby míčku (trainings.ball_sec, migrace 30) – starší verze by
+//   ukazovala jiné časy a při uložení tréninku doby míčků smazala.
+// 6 (18. 11. 2026): připravenost místo Zahájit (play_times.ready, ready_item, migrace 31) – starší verze by
+//   utkání zahajovala sama a připravenost by neviděla.
+// 7 (18. 11. 2026): Daň za ztrátu vždy s rozhodčím (méně stolů v kole Daně), ztráty jen v Dani – starší
+//   verze by počítala jiný rozpis a ztráty nabízela i jinde.
+export const COMPAT = 7;

@@ -1,12 +1,18 @@
 import { Fragment, useState, type ReactNode } from 'react';
-import { matchState } from '../../domain/matchFormat';
 import { clockAt } from '../../domain/solo';
-import type { Cell, Match, PlayerId, Schedule, ScheduleRow, Training } from '../../domain/types';
+import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
-import { liveText, railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
-import { BlockEntry, type TapEntry } from './BlockEntry';
-import type { ItemTiming } from './Timing';
-import { CompactCell, soloProgress, type BreakControls } from './TrainingTable';
+import { railClass, railLine, type RoundStatus } from '../roundState';
+import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowFormat, rowGoal, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
+import { plural } from '../format';
+import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp } from './BlockEntry';
+import { HelpToggle } from './HelpToggle';
+import { ProgressToggle } from './ProgressToggle';
+import { EditToggle } from './EditToggle';
+import { TableNo } from './TableNo';
+import { drillItemId } from '../../domain/queue';
+import { rowKind } from '../../domain/progress';
+import { CompactCell, Names, RailNode, soloProgress, type BreakControls } from './TrainingTable';
 import { BREAK_OPTIONS } from '../../domain/breaks';
 
 interface Props {
@@ -15,167 +21,238 @@ interface Props {
   names: Record<PlayerId, string>;
   /** Stav kol podle skutečnosti (null = trénink nezačal). */
   rounds?: Map<string, RoundStatus> | null;
-  now?: number;
   /** Ovládání pauzy v jejím řádku (Zahájit pauzu / Spustit další kolo / odpočet). */
   pauseSlots?: Map<string, ReactNode>;
+  /** Admin / organizátor: rozbalený zápis kola. */
   expanded: string | null;
   onToggle(key: string): void;
+  onScore(id: MatchId, s: Score): void;
+  onSolo(playerId: PlayerId, key: SoloKey, value: number | null): void;
   canMatch(m: Match): boolean;
   canSolo(group: PlayerId[], playerId: PlayerId): boolean;
-  tap: TapEntry;
   breaks?: BreakControls;
-  timing?: ItemTiming;
   /** Panel „Týmy pro simulaci“ – u sekce simulace. */
   simSetup?: ReactNode;
+  me?: PlayerId | null;
+  manage?: boolean;
+  running?: boolean;
+  autoEnd?(itemId: string): void;
 }
 
-/** Dohraný zápas: leg skončil (ťukání), nebo je zapsaný ručně z notebooku. */
-const scored = (t: Training, m: Match) => matchState(m, t.scores).over;
-
-function isMine(c: Cell | null, me: PlayerId | null): boolean {
-  if (!c || !me) return false;
-  if (c.type === 'group') return c.players.includes(me);
-  return [...c.match.sideA, ...c.match.sideB].includes(me) || c.match.referee === me;
-}
-
-function status(row: ScheduleRow, t: Training): string | null {
-  const matches = row.cells.flatMap((c) => (c?.type === 'match' ? [c.match] : []));
-  if (matches.length) {
-    const done = matches.filter((m) => scored(t, m)).length;
-    return `${done}/${matches.length}${done === matches.length ? ' ✓' : ''}`;
-  }
-  return soloProgress(row, t);
-}
-
-/** PRD 7.1: celý rozpis na telefonu jako karty kol; ťuknutí na stůl otevře zrcadlo stolu. */
-export function RoundCards({ schedule: s, training, names, rounds = null, now = 0, pauseSlots, expanded, onToggle, canMatch, canSolo, tap, breaks, timing, simSetup }: Props) {
+/**
+ * PRD 7.1: celý rozpis na telefonu (18. 11. 2026): dlaždice kola ukazuje jen řádek, kde jsem (můj stůl,
+ * rozhodčí, nebo Volno); ťuknutím se objeví ostatní stoly – že jich je víc, naznačují karty vykukující
+ * pod dlaždicí. Kola s mou účastí mají zlatý pruh. Zapisuje se v Moje hry; admin / organizátor tady
+ * rozbalí kolo („zapsat“) a zapíše celkový výsledek.
+ */
+export function RoundCards({ schedule: s, training, names, rounds = null, pauseSlots, expanded, onToggle, onScore, onSolo, canMatch, canSolo, breaks, simSetup, me = null, manage = false, running = false, autoEnd }: Props) {
   const order = flatRows(s).map(rowKey);
-  const [picked, setPicked] = useState<Record<string, number | null>>({});
+  const rail = rounds ?? upcomingRounds(s);
+  const numbers = roundNumbers(s);
+  const minutes = rowMinutes(s, training.format === 'custom' ? training.durationMin : undefined);
+  // Otevřený Průběh stolu: `${klíč řádku}|${stůl}` (ikonka grafu, 18. 11. 2026).
+  const [prog, setProg] = useState<string | null>(null);
+  // Otevřená nápověda kola (otazník v hlavičce, 19. 11. 2026): klíč řádku.
+  const [help, setHelp] = useState<string | null>(null);
+  const [showDone, setShowDone] = useState(false);
+  const folded = collapsedDone(s, rounds, running);
+  const doneRounds = [...folded].filter((k) => numbers.has(k)).length;
   return (
-    <div className={rounds ? 'round-cards has-rail' : 'round-cards'} aria-label="Rozpis tréninku">
+    <div className="round-cards has-rail" aria-label="Rozpis tréninku">
+      {folded.size > 0 && (
+        <div className="rail st-done rb rail-first done-fold">
+          <RailNode st={{ state: 'done', done: 0, total: 0, cells: [] }} label="Odehraná kola" />
+          <button type="button" className="fold-toggle" aria-expanded={showDone} onClick={() => setShowDone(!showDone)}>
+            Odehráno {doneRounds} {plural(doneRounds, 'kolo', 'kola', 'kol')}
+            <span>{showDone ? 'skrýt' : 'zobrazit'}</span>
+          </button>
+        </div>
+      )}
       {s.sections.map((sec, si) => {
-        const line = railLine(rounds, order, order.indexOf(rowKey({ section: si, row: 0 })) - 1);
+        const rows = sec.rows
+          .map((row, ri) => ({ row, key: rowKey({ section: si, row: ri }) }))
+          .filter((x) => !(!showDone && folded.has(x.key)));
+        if (!rows.length) return null;
+        const line = railLine(rail, order, order.indexOf(rows[0].key) - 1);
         return (
-        <Fragment key={`${sec.id}-${si}`}>
-          <h3 className={['round-sec', line].filter(Boolean).join(' ')}>
-            {sec.title}
-            {sec.subtitle && <span> – {sec.subtitle}</span>}
-          </h3>
-          {sec.id === 'sim' && simSetup && <div className={line || undefined}>{simSetup}</div>}
-          {sec.id === 'sim' && s.teams && (
-            <p className={['note', line].filter(Boolean).join(' ')}>
-              Tým A: {s.teams.A.map((p) => names[p] ?? '?').join(', ')}. Tým B: {s.teams.B.map((p) => names[p] ?? '?').join(', ')}.
-            </p>
-          )}
-          {sec.rows.map((row, ri) => {
-            const key = rowKey({ section: si, row: ri });
-            const time = clockAt(training.startTime, row.time);
-            const bi = row.breakIndex;
-            const idx = order.indexOf(key);
-            const state = railClass(rounds, order, idx);
-            const rs = rounds?.get(key);
-            const node = rs && <span className="rail-node" role="img" aria-label={STATE_LABEL[rs.state]} title={STATE_LABEL[rs.state]} />;
-            const live = liveText(rs, now, row.kind === 'break');
-            if (breaks && bi !== undefined && breaks.list[bi])
-              return (
-                <div key={key} className={['round-break', 'editable', state].filter(Boolean).join(' ')}>
-                  {node}
-                  <span>{time} Pauza</span>
-                  <select aria-label="Délka pauzy" value={breaks.list[bi].min} onChange={(e) => breaks.setMin(bi, Number(e.target.value))}>
-                    {BREAK_OPTIONS.map((m) => (
-                      <option key={m} value={m}>
-                        {m} min
-                      </option>
-                    ))}
-                  </select>
-                  {breaks.movable(bi) && (
-                    <>
-                      <button type="button" className="icon" aria-label="Pauzu o kolo dřív" disabled={!breaks.canStep(bi, -1)} onClick={() => breaks.step(bi, -1)}>
-                        ↑
-                      </button>
-                      <button type="button" className="icon" aria-label="Pauzu o kolo později" disabled={!breaks.canStep(bi, 1)} onClick={() => breaks.step(bi, 1)}>
-                        ↓
-                      </button>
-                      <button type="button" className="link" aria-label="Odebrat pauzu" onClick={() => breaks.remove(bi)}>
-                        odebrat
-                      </button>
-                    </>
-                  )}
-                  {pauseSlots?.get(key)}
-                </div>
-              );
-            if (row.kind === 'break')
-              return (
-                <div key={key} className={['round-break', state].filter(Boolean).join(' ')}>
-                  {node}
-                  <span>
-                    {time} {row.label}
-                  </span>
-                  {pauseSlots?.get(key)}
-                </div>
-              );
-            const open = expanded === key;
-            const mineIdx = row.cells.findIndex((c) => isMine(c, tap.me));
-            const sel = key in picked ? picked[key] : mineIdx >= 0 ? mineIdx : null;
-            const st = status(row, training);
-            const cell = sel === null ? null : row.cells[sel];
-            return (
-              <article key={key} className={['round-card', state, open ? 'open' : ''].filter(Boolean).join(' ')}>
-                {node}
-                <button type="button" className="round-head" aria-expanded={open} onClick={() => onToggle(key)}>
-                  <span className="round-time">{time}</span>{' '}
-                  <span className="round-name">
-                    {row.label}
-                    {row.rule && <small> {row.rule}</small>}
-                    {live && <small className="live"> {live}</small>}
-                  </span>{' '}
-                  <span className="round-st">{st ?? (open ? '▾' : '▸')}</span>
-                </button>
-                {open && (
-                  <div className="round-body">
-                    <div className="round-tables">
-                      {row.cells.map((c, j) =>
-                        c ? (
-                          <button
-                            key={j}
-                            type="button"
-                            className={['round-table', isMine(c, tap.me) ? 'mine' : '', sel === j ? 'sel' : '', rs?.state === 'playing' && rs.cells[j] === 'done' ? 'cell-done' : '', rs?.state === 'playing' && rs.cells[j] === 'playing' ? 'cell-live' : ''].filter(Boolean).join(' ')}
-                            aria-pressed={sel === j}
-                            onClick={() => setPicked({ ...picked, [key]: sel === j ? null : j })}
-                          >
-                            <span className="round-tno">Stůl {j + 1}</span>{' '}
-                            <span className="round-tcell">
-                              <CompactCell cell={c} t={training} names={names} />
-                            </span>
-                          </button>
-                        ) : null,
-                      )}
-                    </div>
-                    {row.waiting.length > 0 && (
-                      <p className="note">
-                        {row.waitingLabel ?? sec.waitingLabel}: {row.waiting.map((p) => names[p] ?? '?').join(', ')}
-                      </p>
+          <Fragment key={`${sec.id}-${si}`}>
+            <h3 className={['round-sec', line].filter(Boolean).join(' ')}>
+              {sec.title}
+              {sec.subtitle && <span> – {sec.subtitle}</span>}
+            </h3>
+            {sec.id === 'sim' && simSetup && <div className={line || undefined}>{simSetup}</div>}
+            {sec.id === 'sim' && s.teams && (
+              <p className={['note', line].filter(Boolean).join(' ')}>
+                Tým A: <Names ids={s.teams.A} names={names} me={me} sep=", " />. Tým B: <Names ids={s.teams.B} names={names} me={me} sep=", " />.
+              </p>
+            )}
+            {rows.map(({ row, key }) => {
+              const time = clockAt(training.startTime, row.time);
+              const bi = row.breakIndex;
+              const idx = order.indexOf(key);
+              const state = railClass(rail, order, idx);
+              const rs = rail.get(key);
+              const min = minutes.get(key);
+              if (row.kind === 'break') {
+                const editable = breaks && bi !== undefined && breaks.list[bi];
+                return (
+                  <div key={key} className={['round-break', row.label === 'Pauza' ? 'pause' : '', editable ? 'editable' : '', state].filter(Boolean).join(' ')}>
+                    {row.label === 'Pauza' ? <RailNode st={rs} pause /> : <RailNode st={rs} label={row.label} />}
+                    {/* Čas vlevo, název uprostřed, délka vpravo – jako hlavička ostatních karet (19. 11. 2026). */}
+                    <span className="rb-top">
+                      <span className="rb-time">{time}</span>
+                      <span className="rb-name">{row.label}</span>
+                      <span className="rb-min">
+                        {editable ? (
+                          // Délka pauzy vpravo – na místě délky u hráče (19. 11. 2026).
+                          <select aria-label="Délka pauzy" value={breaks!.list[bi!].min} onChange={(e) => breaks!.setMin(bi!, Number(e.target.value))}>
+                            {BREAK_OPTIONS.map((m) => (
+                              <option key={m} value={m}>
+                                {m} min
+                              </option>
+                            ))}
+                          </select>
+                        ) : min && row.label === 'Pauza' ? (
+                          `${min} min`
+                        ) : (
+                          ''
+                        )}
+                      </span>
+                    </span>
+                    {editable && breaks!.movable(bi!) && (
+                      <span className="rb-edit">
+                        <button type="button" className="icon" aria-label="Pauzu o kolo dřív" disabled={!breaks!.canStep(bi!, -1)} onClick={() => breaks!.step(bi!, -1)}>
+                          ↑
+                        </button>
+                        <button type="button" className="icon" aria-label="Pauzu o kolo později" disabled={!breaks!.canStep(bi!, 1)} onClick={() => breaks!.step(bi!, 1)}>
+                          ↓
+                        </button>
+                        <button type="button" className="link" aria-label="Odebrat pauzu" onClick={() => breaks!.remove(bi!)}>
+                          odebrat
+                        </button>
+                      </span>
                     )}
-                    {cell && (
-                      <BlockEntry
-                        row={{ ...row, cells: row.cells.map((c, j) => (j === sel ? c : null)), waiting: [] }}
-                        waitingLabel={sec.waitingLabel}
-                        training={training}
-                        names={names}
-                        onScore={() => {}}
-                        onSolo={() => {}}
-                        canMatch={canMatch}
-                        canSolo={canSolo}
-                        tap={tap}
-                        timing={timing}
-                      />
-                    )}
+                    {pauseSlots?.get(key) && <div className="rb-slot">{pauseSlots.get(key)}</div>}
                   </div>
-                )}
-              </article>
-            );
-          })}
-        </Fragment>
+                );
+              }
+              const place = placeOf(row, me);
+              // Řádky stolů a Volno (všechny, 19. 11. 2026). Volné stoly se neukazují.
+              const lines = [
+                ...row.cells.flatMap((c, j) => {
+                  if (!c) return [];
+                  const id = c.type === 'match' ? c.match.id : drillItemId(row, j + 1, c.players);
+                  const has = hasProgress(training, id, c.type === 'match' ? c.match : undefined);
+                  const pk = `${key}|${j}`;
+                  return [{
+                    node: (
+                      <div key={j} className="tile-line">
+                        <span className="tile-row">
+                          <TableNo n={j + 1} mine={takesPart(place) && 'table' in place && place.table === j + 1} />
+                          <span>
+                            <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} itemId={id} />
+                          </span>
+                          {/* Vždy (i prázdné): sloupec ikonek má v celé kartě stejnou šířku, skóre zůstane pod sebou. */}
+                          <span className="cell-ics">
+                            {has && <ProgressToggle open={prog === pk} onToggle={() => setProg(prog === pk ? null : pk)} label={`${row.label}, stůl ${j + 1}`} />}
+                            {manage && <EditToggle open={expanded === pk} done={rs?.cells[j] === 'done'} label={`${row.label}, stůl ${j + 1}`} onToggle={() => onToggle(pk)} />}
+                          </span>
+                        </span>
+                        {manage && expanded === pk && (
+                          <div className="tile-entry">
+                            <BlockEntry
+                              row={row}
+                              waitingLabel={sec.waitingLabel}
+                              training={training}
+                              names={names}
+                              onScore={(id, sc) => {
+                                onScore(id, sc);
+                                const done = finishedByScore(row, training.scores, id, sc);
+                                if (done) autoEnd?.(done);
+                              }}
+                              onSolo={(p, k, v) => {
+                                onSolo(p, k, v);
+                                const done = finishedBySolo(row, training, p, k, v);
+                                if (done) autoEnd?.(done);
+                              }}
+                              canMatch={canMatch}
+                              canSolo={canSolo}
+                              onEnd={autoEnd}
+                              only={j}
+                            />
+                          </div>
+                        )}
+                        {has && prog === pk && c && (
+                          <div>
+                            <ItemProgress
+                              itemId={id}
+                              match={c.type === 'match' ? c.match : undefined}
+                              players={c.type === 'match' ? [...c.match.sideA, ...c.match.sideB] : c.players}
+                              training={training}
+                              names={names}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  }];
+                }),
+                ...(row.waiting.length
+                  ? [
+                      {
+                        node: (
+                          <div key="free" className="tile-line">
+                            <span className="tile-row">
+                              <b>Volno</b>
+                              <span>
+                                <Names ids={row.waiting} names={names} me={me} sep=", " />
+                              </span>
+                            </span>
+                          </div>
+                        ),
+                      },
+                    ]
+                  : []),
+              ];
+              const progress = manage ? soloProgress(row, training) : null;
+              return (
+                // Všechny stoly vždy (19. 11. 2026, *rozhodnutí uživatele*) – dlaždice se nerozbaluje.
+                <article
+                  key={key}
+                  className={['round-card', state, 'rk', `rk-${rowKind(row)}`, takesPart(place) ? 'mine-row' : ''].filter(Boolean).join(' ')}
+                  aria-label={`${row.label}, ${rowName(row, sec.id)}, ${time}`}
+                >
+                  <RailNode st={rs} no={numbers.get(key)} />
+                  <div className="tile-head">
+                    {/* Čas vlevo, název uprostřed, formát vpravo (19. 11. 2026). */}
+                    <span className="tile-top">
+                      <span className="tile-time">{time}</span>
+                      <span className="tile-name">{keepLast(rowName(row, sec.id))}</span>
+                      <span className="tile-fmt">
+                        {hasRoundHelp(row) && <HelpToggle open={help === key} onToggle={() => setHelp(help === key ? null : key)} label={row.label} />}
+                      </span>
+                    </span>
+                    {/* Pod tím: délka kola vlevo, do kolika se hraje vpravo (19. 11. 2026). */}
+                    <span className="tile-sub">
+                      <span>{rowSub(min, row, progress, false)}</span>
+                      {rowGoal(row) && (
+                        <b className="tile-goal" title={rowFormat(row) ?? undefined}>
+                          {rowGoal(row)}
+                        </b>
+                      )}
+                    </span>
+                  </div>
+                  {/* Řádky stolů a Volno; ikonka grafu otevře Průběh, tužka zápis stolu. */}
+                  <div className="tile-rows">{lines.map((x) => x.node)}</div>
+                  {help === key && (
+                    <div className="my-help help" role="region" aria-label={`Nápověda: ${row.label}`}>
+                      <RoundHelp row={row} untitledMain />
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </Fragment>
         );
       })}
     </div>

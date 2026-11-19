@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ballRoundMin, ballSecOf, catalogRoundMin, usesBalls } from '../../domain/ballTime';
 import { DISCIPLINES, discipline, drillSections, type DisciplineDef } from '../../domain/disciplines';
 import { activePlayers, alphabetical } from '../../domain/roster';
 import {
@@ -55,15 +56,15 @@ const namedVariants = (v: readonly string[]) => !v.every((x) => /^varianta /.tes
 /** „Varianta 1“ / „Varianta: ke zdi“. */
 const variantText = (v: string) => (/^varianta /.test(v) ? `V${v.slice(1)}` : `Varianta: ${v}`);
 
-/** Délka v plánu: „8 min“, u dvou variant / párového zápasu „2× 4 min“; zápas s BO × počet legů. */
+/** Délka v plánu: „8 min“, u dvou variant / párového zápasu „2× 4 min“; zápas z doby míčku × nejvíc gólů ve formátu. */
 const lengthText = (d: DisciplineDef, formats?: MatchFormats | null) => {
-  const min = d.min * (d.kind === 'match' ? formatOf(formats, d.id).bestOf : 1);
+  const min = usesBalls(d.id) ? ballRoundMin(d.id, formatOf(formats, d.id), ballSecOf(d.id)) : d.min;
   return roundsOf(d) > 1 ? `${roundsOf(d)}× ${min} min` : `${min} min`;
 };
 
 /** Popisek v nabídce: délka, pokusy, varianty, s bránícím; u zápasu pravidlo. */
 function drillSub(d: DisciplineDef, players: number): string {
-  if (d.kind === 'match') return [`${d.min} min / leg`, d.paired ? '2 kola, strany si prohodí role' : ''].filter(Boolean).join(' · ');
+  if (d.kind === 'match') return [`${catalogRoundMin(d.id)} min / leg`, d.paired ? '2 kola, strany si prohodí role' : ''].filter(Boolean).join(' · ');
   const m = practiceMetric(d, players);
   const def = m ? soloMetric(m) : null;
   const parts = [lengthText(d), def ? (def.streak ? `${def.streak} povedených po sobě na čas` : `${def.max} pokusů`) : 'timer, nic se nezapisuje'];
@@ -117,7 +118,7 @@ function seriesResults(t: Training, s: PracticeSeries | undefined, name: (id: Pl
 
 /**
  * PRD 5.11: Pořadí hráčů vlastního tréninku za formu, pro každou metriku tréninku – cvičení, která jsou
- * i v klubu, ve Stanovištích (12. 11. 2026, stejné podmínky napříč), ostatní ve Vlastní.
+ * i v klubu, v Týmovém cvičení (dřív Stanoviště; 12. 11. 2026, stejné podmínky napříč), ostatní v Solo/Duo cvičení (dřív Vlastní).
  */
 function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: PlayerId): string }) {
   const metrics = [...new Set(practiceSeries(t).map((s) => s.metric))];
@@ -140,7 +141,7 @@ function Ranks({ store, t, name }: { store: AppStore; t: Training; name(id: Play
                 <span>
                   {seriesDrill(m).name}
                   {pair ? ` · ${name(p)}` : ''}
-                  <small className="muted"> · {clubMetric(m) ? 'Stanoviště' : 'Vlastní'}</small>
+                  <small className="muted"> · {clubMetric(m) ? 'Cvičení · Týmové' : 'Cvičení · Solo/Duo'}</small>
                 </span>
                 {at >= 0 ? (
                   <span className="practice-place">
@@ -360,7 +361,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
           Trénink
         </button>
         <h1>Vlastní trénink</h1>
-        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku Vlastní.</p>
+        <p className="dateline">Sám nebo ve dvou, kdykoli u stolu. Výsledky jdou do žebříčku: cvičení do Cvičení, zápasy do Zápasů 1 na 1.</p>
         {mine && (
           <div className="flow-bar practice-resume" role="status">
             <span>Máš rozdělaný vlastní trénink.</span>

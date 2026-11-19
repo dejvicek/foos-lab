@@ -24,23 +24,26 @@ describe('telefon', () => {
     render(<App repo={memoryRepository({ players, trainings: [training] })} />);
     const cards = await screen.findByLabelText('Rozpis tréninku');
     expect(screen.queryByRole('table', { name: 'Rozpis tréninku' })).toBeNull();
-    await userEvent.setup().click(within(cards).getByRole('button', { name: /^19:00 1. kolo/ }));
-    expect(within(cards).getAllByRole('button', { name: /^Stůl \d/ })).toHaveLength(2);
+    // dlaždice kola ukazuje vždy všechny stoly (19. 11. 2026)
+    const tile = within(cards).getByRole('article', { name: /^1\. kolo, / });
+    expect(tile).toHaveTextContent('Stůl 1');
+    expect(tile).toHaveTextContent('Stůl 2');
   });
 });
 
 describe('telefon – žebříček', () => {
-  it('žebříček je seznam: pořadí, jméno, legy a výhry, hlavní číslo vpravo', async () => {
+  it('žebříček jen to hlavní (19. 11. 2026): #, hráč, G± a Výhry %; v Celkem G±, L+ a L−', async () => {
     const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
     window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
-    const list = await screen.findByRole('list', { name: 'Žebříček' });
-    expect(screen.queryByRole('table', { name: 'Žebříček' })).toBeNull();
+    const table = await screen.findByRole('table', { name: 'Žebříček' });
     expect(screen.getByText(/Pro umístění je potřeba zúčastnit se aspoň 3 tréninků/)).toBeInTheDocument();
-    const items = within(list).getAllByRole('listitem');
-    expect(items.length).toBeGreaterThan(0);
-    expect(items[0]).toHaveTextContent(/1 leg/);
-    expect(within(items[0]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
+    const heads = () => within(screen.getByRole('table', { name: 'Žebříček' })).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
+    expect(heads()).toEqual(['#', 'Hráč', 'G±', 'Výhry %']);
+    const row = within(table).getAllByRole('row')[1];
+    expect(within(row).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Celkem' }));
+    expect(heads()).toEqual(['#', 'Hráč', 'G±', 'L+', 'L−']);
   });
 });
 

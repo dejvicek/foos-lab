@@ -10,7 +10,7 @@ export const next = (user: UserEvent) => user.click(screen.getByRole('button', {
 
 /** Nový trénink průvodcem: zaškrtne hráče, projde kroky a zahájí ho. */
 export async function createTraining(user: UserEvent, names: string[], setup?: () => Promise<void>) {
-  await user.click(await screen.findByRole('button', { name: /Nový trénink/ }));
+  await user.click(await screen.findByRole('button', { name: /Klubový trénink/ }));
   for (const n of names) await user.click(screen.getByRole('checkbox', { name: n }));
   await next(user); // Přítomní → Kdy, kde a disciplíny
   if (setup) await setup();

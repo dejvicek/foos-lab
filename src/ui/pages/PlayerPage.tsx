@@ -4,7 +4,7 @@ import { streakTime } from '../../domain/streak';
 import type { UiPrefs } from '../../storage/prefs';
 import { rangeText } from '../components/RangeLabel';
 import { formatDate, todayIso } from '../dates';
-import { dec1, MODE_LABEL, signed } from '../format';
+import { dec1, diffCls, MODE_LABEL, signed, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 
@@ -39,11 +39,12 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
               <tr>
                 <th>Datum</th>
                 <th>Trénink</th>
-                <th className="n">Legy</th>
-                <th className="n">Výhry</th>
-                <th className="n">Rozdíl</th>
-                <th className="n">Ztráty / leg</th>
-                <th className="n">Simulace</th>
+                {/* Rozdíl a vyhrané / prohrané legy jako v souhrnu tréninku (19. 11. 2026). */}
+                <th className="n" title="Rozdíl skóre (G+ − G−)">G±</th>
+                <th className="n" title="Vyhrané legy">L+</th>
+                <th className="n" title="Prohrané legy">L−</th>
+                <th className="n" title="Ztráty na leg">Ztráty</th>
+                <th className="n" title="Simulace: výhry / zápasy">Sim.</th>
                 {metrics.map((m) => (
                   <th key={m.id} className="n" title={m.what}>
                     {m.name}
@@ -56,9 +57,9 @@ export function PlayerPage({ store, id, prefs, navigate }: { store: AppStore; id
                 <tr key={r.trainingId} className="clickable" onClick={() => navigate({ page: 'training', id: r.trainingId })}>
                   <td>{formatDate(r.date)}</td>
                   <td>{MODE_LABEL[r.mode]}</td>
-                  <td className="n">{r.legs}</td>
+                  <td className={diffCls(r.diff, r.diff >= STRONG_PER_TRAINING)}>{signed(r.diff)}</td>
                   <td className="n">{r.wins}</td>
-                  <td className={r.diff > 0 ? 'n pos' : r.diff < 0 ? 'n neg' : 'n'}>{signed(r.diff)}</td>
+                  <td className="n">{r.legs - r.wins}</td>
                   <td className="n">{r.lossPerLeg === null ? '–' : dec1(r.lossPerLeg)}</td>
                   <td className="n">{r.simM ? `${r.simW} / ${r.simM}` : '–'}</td>
                   {metrics.map((m) => (

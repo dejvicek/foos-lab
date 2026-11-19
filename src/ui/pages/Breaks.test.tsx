@@ -20,7 +20,8 @@ const setup = async (t: Training, n = 8) => {
   await screen.findByRole('table', { name: 'Rozpis tréninku' });
   return { repo, user: userEvent.setup() };
 };
-const rowOf = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}$`) }).closest('tr')!;
+// Tužka je u každého stolu (19. 11. 2026); řádek kola = řádek s tužkou stolu 1.
+const rowOf = (label: string) => screen.getAllByRole('button', { name: new RegExp(`^(Zapsat|Opravit|Zavřít): ${label}, stůl \\d+$`) })[0].closest('tr')!;
 const pauseRows = () => screen.getAllByRole('row').filter((r) => r.textContent?.includes('Pauza'));
 const saved = (repo: ReturnType<typeof memoryRepository>) => repo.snapshot().trainings[0].breaks as BreakDef[] | null | undefined;
 

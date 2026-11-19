@@ -44,7 +44,6 @@ export function explanationsFor(row: ScheduleRow): BlockExplanations {
   if (match?.type === 'match' && match.match.discipline && match.match.block !== 'sim') {
     const def = discipline(match.match.discipline);
     out.main.push(explanation(def.explain));
-    if (def.id === 'start03') out.main.push(explanation('Daň za ztrátu'));
     out.general.push(explanation('Každý gól se počítá'), explanation('Role rozhodčího'));
     return out;
   }
@@ -53,7 +52,6 @@ export function explanationsFor(row: ScheduleRow): BlockExplanations {
       out.main.push(explanation('Simulace ligového kola'));
     } else {
       out.main.push(explanation(ROUND_RULE[match.match.round - 1]));
-      if (match.match.round === 5) out.main.push(explanation('Daň za ztrátu'));
       out.general.push(explanation('Každý gól se počítá'), explanation('Role rozhodčího'));
     }
     return out;

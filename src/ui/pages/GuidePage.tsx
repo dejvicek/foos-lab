@@ -40,7 +40,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               <em>Zbytek pohlídá appka.</em>
             </h1>
             <p className="g-lead">
-              Foos Lab ti řekne, u kterého stolu hraješ, s kým a proti komu. Skóre a ztráty zapisuješ ťuknutím přímo u stolu a po tréninku vidíš, jak jsi
+              Foos Lab ti řekne, u kterého stolu hraješ, s kým a proti komu. Skóre zapisuješ ťuknutím přímo u stolu a po tréninku vidíš, jak jsi
               na tom v žebříčku.
             </p>
             <div className="g-facts">
@@ -81,20 +81,21 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={2} label="Moje hry" title="Kde hraješ, s kým a proti komu" phone={<MyGamesPhone />}>
             <p>
-              Když trénink běží a hraješ na něm, otevře se appka rovnou v <b>Moje hry</b>. Vidíš své aktuální kolo a pod ním další. Mezi koly listuješ,
-              celý rozpis je v záložce Trénink.
+              Když trénink běží a hraješ na něm, otevře se appka rovnou v <b>Moje hry</b>: kolo, které je na řadě, jinak poslední dohrané. Mezi koly
+              listuješ šipkami nebo ťuknutím na časovou osu, celý rozpis je v záložce Tréninky.
             </p>
             <ul className="g-list">
               <Li i="●">
                 <b>Červená tečka</b> u Moje hry znamená, že jsi na řadě. Volný stůl i hráči jsou připravení.
               </Li>
               <Li i="Z">
-                U kola uvidíš <b>pravidlo</b> (Zeď, Daň za ztrátu, start 0:3 …) a svoji <b>roli</b>: s kým a proti komu hraješ, nebo že jsi rozhodčí u stolu.
-                Pravidla vysvětluje krok 6.
+                Kolo vypadá jako v Rozpisu: čas, <b>název disciplíny</b>, do kolika se hraje, velké číslo tvého stolu a zápas. Pod tím proužek se stavem:
+                „Na řadě“, „Hraje se“, „Dohráno“. Časová osa nahoře má barvy druhů kol (cvičení modře, zápasy a scénáře zeleně, simulace fialově): odehraná
+                kola plnou barvou, další světle, aktuální kolo je vyšší a ▼ ukazuje, které máš otevřené. Pravidla jsou pod otazníkem v kartě.
               </Li>
               <Li i="–">
-                Když v kole nehraješ, stojí u tebe „nehraješ“. U stolu appka napíše, na co se čeká: „Trénink ještě nezačal“, „Utkání ještě není na řadě“
-                nebo „Pauza – další kolo spustí organizátor“.
+                Když v kole nehraješ, je v kartě „Volno“. Po dohraném utkání je nad ním karta <b>Další kolo</b> (stůl, soupeři, nápověda pod otazníkem):
+                buď „Na řadě“ s odkazem Otevřít, nebo na co se čeká – „Čeká se na stůl“, „Čeká se na soupeře (jména)“, nebo pauza s odpočtem.
               </Li>
               <Li i="?">
                 Nevidíš Moje hry? Ukáže se, jen když běží trénink a jsi mezi přítomnými. Trénink zahajuje organizátor.
@@ -103,35 +104,37 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </Step>
 
           <h2 className="g-group">U stolu</h2>
-          <Step n={3} label="Hra" title="Zahájit, zapisovat, potvrdit konec" phone={<FinishPhone />}>
+          <Step n={3} label="Hra" title="Připraven, zapisovat, potvrdit konec" phone={<FinishPhone />}>
             <p>
               Každé utkání má stejný průběh. Když je ťukaný výsledek dohraný, máš 15 s na kontrolu: potvrď konec hned, nebo výsledek oprav. Jinak utkání
               skončí samo. Rozcvička a výsledek zadaný číslem na notebooku samy neskončí, tam konec potvrď vždy.
             </p>
             <div className="g-flow">
               <div>
-                <b>Zahájit</b>Jakmile stojíte u stolu. Rozjedou se stopky.
+                <b>Připraven</b>Jakmile tvoje strana stojí u stolu – velké tlačítko pod kartou kola. Proužek ukáže, na koho se ještě čeká; až jsou připravení
+                oba týmy, objeví se zrcadlo.
               </div>
               <div>
-                <b>Ťukat</b>Góly a ztráty, kdo z vás zrovna má ruku volnou.
+                <b>Ťukat</b>Góly (v Dani za ztrátu i ztráty), kdo z vás zrovna má ruku volnou.
               </div>
               <div>
                 <b>Potvrdit konec</b>Hned, nebo samo po 15 s.
               </div>
               <div>
-                <b>Na další kolo</b>Až po potvrzeném konci.
+                <b>Otevřít</b>Po konci zůstane dohrané kolo s výsledkem a Průběhem; karta Další kolo nabídne Otevřít. Samo se nic nepřepne.
               </div>
             </div>
             <ul className="g-list">
               <Li i="!" red>
-                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Zahájit</span> se počítá do <b>Zdržovačů</b> (krok 11). Nezdržuj, jdi hrát.
+                Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 10). Kdo je
+                připravený dřív, nečeká na úkor sebe. U cvičení se hlásí každý hráč sám za sebe; rozhodčí může ohlásit kteroukoli stranu.
               </Li>
             </ul>
           </Step>
 
           <Step n={4} label="Rozcvička" title="Timer vede rozcvičku za tebe" phone={<WarmupPhone />}>
             <p>
-              Když je Rozcvička v tréninku, bývá prvním kolem. Po Zahájit běží odpočet 8:35 na všech telefonech stejně. Před každou ze sedmi fází máš 5 s
+              Když je Rozcvička v tréninku, bývá prvním kolem. Až jsou všichni u stolu připravení, běží odpočet 8:35 na všech telefonech stejně. Před každou ze sedmi fází máš 5 s
               na přípravu a appka ukáže, co přijde dál. Nic se nezapisuje.
             </p>
             <ul className="g-list">
@@ -152,6 +155,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Ťukl jsi vedle? <b>Zpět</b> vrátí poslední vlastní ťuknutí.
               </Li>
               <Li i="2">Ve dvojici se rozdělí obrazovka na dvě poloviny, každý hráč má svou.</Li>
+              <Li i="20">Po konci cvičení je u stolu (v Moje hry i v rozpisu) výsledek každého hráče, třeba „14/20“.</Li>
             </ul>
           </Step>
 
@@ -162,7 +166,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="D">
-                <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám.
+                <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám. Jen tady se zapisují ztráty a u stolu je vždy rozhodčí.
               </Li>
               <Li i="Z">
                 <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“, soupeř
@@ -173,12 +177,12 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 odehrané góly. Ze 5:5 se hraje o 2 góly, nejvýš do 10.
               </Li>
               <Li i="S">
-                <b>Simulace</b> ligového kola: dva týmy, zápas na dva vítězné sety (do 6, třetí o 2 góly, nejvýš do 10). Ťukají se vyhrané sety, ztráty se
-                nezapisují.
+                <b>Simulace</b> ligového kola: dva týmy, zápas na dva vítězné legy do 6 (BO3, třetí o 2 góly, nejvýš do 10), nebo na tři vítězné do 5
+                (BO5, pátý o 2 góly, nejvýš do 8). Ťukají se góly v každém legu, ztráty se nezapisují.
               </Li>
               <Li i="R">
-                <b>Rozhodčí</b> je ten, kdo v kole nehraje: čárkuje ztráty, hlídá Zeď a čas a rozhoduje sporné ztráty. Bez rozhodčího si ztráty zapisují
-                hráči sami.
+                <b>Rozhodčí</b> je ten, kdo v kole nehraje: hlídá Zeď a čas. <b>Daň za ztrátu</b> má rozhodčího u každého stolu vždy – čárkuje ztráty
+                a rozhoduje sporné. Ztráty se zapisují jen v Dani.
               </Li>
               <Li i="▤">
                 Celá pravidla kol i cvičení najdeš v záložce <b>Disciplíny</b>.
@@ -187,75 +191,64 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
           </Step>
 
           <h2 className="g-group">Přehled a výsledky</h2>
-          <Step n={7} label="Živě" title="Co se hraje u všech stolů" phone={<LivePhone />}>
+          <Step n={7} label="Trénink" title="Celý trénink na jedné stránce" phone={<TrainingPhone />}>
             <p>
-              Záložka <b>Živě</b> ukazuje stoly a utkání na nich, se stopkami. Pod tím je „Další v pořadí“ a proč se na ně čeká: obsazený stůl, hráči, kteří
-              ještě hrají, nebo pauza.
-            </p>
-            <ul className="g-list">
-              <Li i="⏱">Plánované časy v rozpisu jsou jen orientační. Další utkání se pustí, jakmile jsou volní hráči i stůl.</Li>
-              <Li i="›">
-                Zahájit se v Živě nedá. U svého utkání máš odkaz <b>Zahájit v Moje hry</b>.
-              </Li>
-            </ul>
-          </Step>
-
-          <Step n={8} label="Trénink" title="Celý trénink na jedné stránce" phone={<TrainingPhone />}>
-            <p>
-              V záložce <b>Trénink</b> je seznam tréninků, dnešní nahoře se štítkem „Hraješ – kolo 3 právě běží“. Po otevření vidíš celý rozpis, pod ním
-              souhrn tréninku a Zdržovače.
+              Když trénink probíhá, záložka <b>Tréninky</b> ho otevře rovnou; jinak ukáže seznam. Přepínač <b>Klubové / Vlastní</b> nahoře: vlastní trénink
+              (sám nebo ve dvou) založíš v části Vlastní tlačítkem <b>+ Vlastní trénink</b>. V tréninku je nahoře souhrn (Pořadí, Zdržovači, Simulace), pod ním
+              celý rozpis kol.
             </p>
             <ul className="g-list">
               <Li i="✓">
-                <b>Časová osa kol:</b> plná tečka s ✓ je odehrané kolo, kroužek kolo, které se hraje („hraje se 7 min · 1 ze 2 stolů hotovo“), prázdná tečka
-                kolo, které přijde.
+                <b>Časová osa kol:</b> v kolečku je číslo kola v barvě druhu kola (cvičení, zápasy a scénáře, simulace); odehrané je plné s ✓, kolo, které se
+                hraje, má kroužek, další jsou světlé. Pauza má ❚❚ a šrafovaný pruh. Během tréninku se odehraná kola sbalí do řádku „Odehráno 3 kola“,
+                ťuknutím je zase uvidíš.
               </Li>
               <Li i="▣">
-                <b>Tvůj stůl</b> je podbarvený. Zapisovat můžeš jen u stolu, kde hraješ nebo jsi rozhodčí. U odehrané hry rozbalíš <b>Průběh</b> (krok 9).
+                <b>Tvoje jméno</b> je tučně zlatě; odehraná a právě hraná kola, kde hraješ nebo rozhoduješ, mají vlevo žlutý pruh. Rozpis je jen ke čtení, výsledky zapisuješ v Moje
+                hry. Na telefonu má každé kolo dlaždici se všemi stoly; velké číslo vlevo je číslo stolu.
               </Li>
               <Li i="Σ">
-                <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre, pak výhry, góly a výhry v simulaci.
+                <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre (G±), pak vyhrané legy (L+), góly (G+) a výhry v simulaci. L− jsou
+                prohrané legy; od +10 je rozdíl zeleně.
               </Li>
             </ul>
           </Step>
 
-          <Step n={9} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
+          <Step n={8} label="Průběh" title="Jak šel leg gól po gólu" phone={<ProgressPhone />}>
             <p>
-              Každá ťuknutá hra má <b>Průběh</b>. V Moje hry je rozbalený rovnou, v rozpisu ho rozbalíš u stolu. Nahoře přepínáš <b>Sloupec</b> a{' '}
-              <b>Křivku</b>, telefon si volbu pamatuje.
+              Každá ťuknutá hra má <b>Průběh</b> jako křivku. V Moje hry je rozbalený rovnou.
             </p>
             <ul className="g-list">
-              <Li i="≡">
-                <b>Sloupec:</b> řádek na každý gól a ztrátu s časem. Góly levé strany vlevo, pravé vpravo, uprostřed stav po gólu. Podbarvení ukazuje, kdo
-                zrovna vede.
-              </Li>
               <Li i="↗">
-                <b>Křivka:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Nad nulou vede levá, pod nulou pravá, takže obrat poznáš na
-                první pohled.
+                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Tečka má barvu strany, která skórovala.
+                V Dani je gól ze ztráty soupeře červený čárkovaný schod.
               </Li>
               <Li i="✓">
-                <b>Cvičení</b> ukáže ve sloupci pokusy každého hráče (číslo = kolikátý povedený, ✗ nepovedený), v křivce porovná hráče u stolu.
+                <b>Cvičení</b> porovná hráče u stolu: čára roste s každým povedeným pokusem (tečka v barvě hráče), nepovedený je červené kolečko.
               </Li>
             </ul>
           </Step>
 
-          <Step n={10} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
+          <Step n={9} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Žebříček má tři části: <b>Zápasy</b>, <b>Stanoviště</b> a <b>Zdržovači</b> (krok 11). Výchozí období je <b>forma</b>: tréninky za posledních
+              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
               28 dní.
             </p>
             <ul className="g-list">
               <Li i="1">
-                <b>Zápasy</b> řadí rozdíl skóre, pak výhry, góly a výhry v simulaci. První tři mají zlatou, stříbrnou a bronzovou medaili.
+                <b>Zápasy</b> řadí rozdíl skóre (G±), pak vyhrané legy, góly a výhry v simulaci. První tři mají zlatou, stříbrnou a bronzovou medaili.
+                Rozdíl je zeleně při výrazném náskoku (od +1,5 na leg, v Celkem od +10 na trénink), jinak v plusu zlatě a v minusu červeně.
               </Li>
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá legy, rozdíl a výhry.
+                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ / L−). Na
+                telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
               </Li>
               <Li i={<Progress have={2} need={MIN} />}>
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Stanoviště</b> mají žebříček pro každé cvičení zvlášť.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, počítají se vyhrané
+                zápasy a legy.
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
@@ -263,20 +256,20 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={11} label="Zdržovači" title="Kdo nechá ostatní čekat" phone={<LadderPhone start="delays" label="Ukázka: Zdržovači" />}>
+          <Step n={10} label="Zdržovači" title="Kdo nechá ostatní čekat" phone={<LadderPhone start="delays" label="Ukázka: Zdržovači" />}>
             <p>
-              Zdržovači měří, jak dlouho se čeká na zahájení utkání: od chvíle, kdy jsou volní hráči i stůl a utkání je na řadě, do ťuknutí na 
-              <b>Zahájit</b>. Čekání se připíše všem hráčům utkání.
+              Zdržovači měří, jak dlouho kdo nechá ostatní čekat: od chvíle, kdy jsou volní hráči i stůl a utkání je na řadě, do ťuknutí na{' '}
+              <b>Připraven</b>. Každý hráč dostane čekání své strany (u cvičení svoje), takže připravený tým nepyká za soupeře.
             </p>
             <ul className="g-list">
               <Li i="Σ">
                 Najdeš je pod souhrnem tréninku a jako třetí část žebříčku. V Průměru se řadí podle čekání na utkání, v Celkem podle součtu čekání.
               </Li>
               <Li i={<Snail />} red>
-                První tři dostanou červený kroužek a šneka, ten úplně první ještě štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
+                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
               </Li>
               <Li i="⏱">
-                Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Zahájit</b> v Moje hry.
+                Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Připraven</b> v Moje hry.
               </Li>
             </ul>
           </Step>
@@ -317,7 +310,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 const TOC: [string, [number, string][]][] = [
   ['Než začneš', [[1, 'Přihlášení'], [2, 'Moje hry']]],
   ['U stolu', [[3, 'Hra'], [4, 'Rozcvička'], [5, 'Cvičení'], [6, 'Zápasy']]],
-  ['Přehled a výsledky', [[7, 'Živě'], [8, 'Trénink'], [9, 'Průběh'], [10, 'Žebříček'], [11, 'Zdržovači']]],
+  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříček'], [10, 'Zdržovači']]],
 ];
 
 /** Posun na krok bez změny adresy (adresy appky jsou v #, kotva by otevřela „Stránka nenalezena“). */
@@ -425,11 +418,10 @@ function Li({ i, red, children }: { i: React.ReactNode; red?: boolean; children:
   );
 }
 
-type Tab = 'live' | 'my' | 'trainings' | 'ladder' | 'disciplines';
+type Tab = 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
-  ['live', 'Živě'],
   ['my', 'Moje hry'],
-  ['trainings', 'Trénink'],
+  ['trainings', 'Tréninky'],
   ['ladder', 'Žebříček'],
   ['disciplines', 'Disciplíny'],
 ];
@@ -468,9 +460,11 @@ function Phone({ time, title, sub, tab, dot, label, fixed, children }: { time: s
 }
 
 /* ── Ukázka: zápis legu (zrcadlo stolu) ── */
-type Scen = 'normal' | 's44' | 's55';
+type Scen = 'normal' | 'tax' | 's44' | 's55';
 const SCEN: Record<Scen, { a: number; b: number; rule: string; label: string }> = {
   normal: { a: 0, b: 0, rule: 'Normální leg · do 6 gólů', label: 'Normální leg' },
+  // Ztráty jen v Dani za ztrátu (18. 11. 2026): ztráta = gól soupeře, u stolu rozhodčí.
+  tax: { a: 0, b: 0, rule: 'Daň za ztrátu · ztráta = gól soupeře', label: 'Daň' },
   s44: { a: 4, b: 4, rule: 'Start 4:4 · do 6 gólů', label: 'Start 4:4' },
   s55: { a: 5, b: 5, rule: 'Start 5:5 · o 2 góly, strop 10', label: 'Start 5:5' },
 };
@@ -500,9 +494,13 @@ function MirrorDemo() {
     return () => clearTimeout(t);
   }, [locked, confirmed, left]);
   const reset = (s: Scen) => (setScen(s), setM(fresh(s)), setHist([]), setLocked(false), setConfirmed(false), setLeft(END_WAIT));
+  const tax = scen === 'tax';
+  // Daň: ztráta strany je hned gól soupeře.
+  const taxed = (k: Key): Key | null => (tax ? (k === 'la' ? 'b' : k === 'lb' ? 'a' : null) : null);
   const tap = (k: Key) => {
     if (locked) return;
-    const next = { ...m, [k]: m[k] + 1 };
+    const g = taxed(k);
+    const next = { ...m, [k]: m[k] + 1, ...(g ? { [g]: m[g] + 1 } : {}) };
     setM(next);
     setHist([...hist, k]);
     if (legDone(scen, next.a, next.b)) setLocked(true);
@@ -510,7 +508,8 @@ function MirrorDemo() {
   const undo = () => {
     const k = hist.at(-1);
     if (!k) return;
-    setM({ ...m, [k]: m[k] - 1 });
+    const g = taxed(k);
+    setM({ ...m, [k]: m[k] - 1, ...(g ? { [g]: m[g] - 1 } : {}) });
     setHist(hist.slice(0, -1));
     setLocked(false);
     setConfirmed(false);
@@ -536,9 +535,11 @@ function MirrorDemo() {
             <b>{m.a}</b>
             <small>+1 gól</small>
           </button>
-          <button type="button" className="g-loss" aria-label="Ztráta vlevo" disabled={locked} onClick={() => tap('la')}>
-            +1 ztráta<b>{m.la}</b>
-          </button>
+          {tax && (
+            <button type="button" className="g-loss" aria-label="Ztráta vlevo" disabled={locked} onClick={() => tap('la')}>
+              +1 ztráta<b>{m.la}</b>
+            </button>
+          )}
         </div>
         <div className="g-side g-r">
           <div className="g-who">
@@ -550,9 +551,11 @@ function MirrorDemo() {
             <b>{m.b}</b>
             <small>+1 gól</small>
           </button>
-          <button type="button" className="g-loss" aria-label="Ztráta vpravo" disabled={locked} onClick={() => tap('lb')}>
-            +1 ztráta<b>{m.lb}</b>
-          </button>
+          {tax && (
+            <button type="button" className="g-loss" aria-label="Ztráta vpravo" disabled={locked} onClick={() => tap('lb')}>
+              +1 ztráta<b>{m.lb}</b>
+            </button>
+          )}
         </div>
       </div>
       {locked && (
@@ -568,7 +571,7 @@ function MirrorDemo() {
             </button>
             {confirmed ? (
               <button type="button" className="g-go" onClick={() => reset(scen)}>
-                Na další kolo
+                Otevřít další kolo
               </button>
             ) : (
               <button type="button" className="g-go" onClick={() => setConfirmed(true)}>
@@ -630,24 +633,22 @@ function DrillDemo() {
   );
 }
 
-/* ── Ukázka: průběh legu (skutečná komponenta, přepínač Sloupec / Křivka) ── */
+/* ── Ukázka: průběh legu (skutečná komponenta – křivka) ── */
 const DEMO_NAMES = { dejv: 'Dejv', milan: 'Milan', osky: 'Osky', denys: 'Denys' };
 const DEMO_MATCH = { id: 'guide', kind: 'doubles', block: 'league', sideA: ['dejv', 'milan'], sideB: ['osky', 'denys'] } as unknown as Match;
-// Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení, l = ztráta).
+// Obrat: Osky + Denys vedou 0:2, Dejv + Milan vyhrají 6:4 (čas v s od zahájení).
 const DEMO_EVENTS: GameEvent[] = (
-  [['B', 35], ['B', 80], ['A', 125], ['lB', 150], ['A', 190], ['A', 230], ['B', 270], ['A', 315], ['B', 350], ['lA', 375], ['A', 410], ['A', 455]] as const
-).map(([k, t], i) => ({ id: `g${i}`, itemId: 'guide', at: t * 1000, kind: k.length > 1 ? 'loss' : 'goal', side: k.slice(-1) as 'A' | 'B', delta: 1 }));
+  [['B', 35], ['B', 80], ['A', 125], ['A', 190], ['A', 230], ['B', 270], ['A', 315], ['B', 350], ['A', 410], ['A', 455]] as const
+).map(([k, t], i) => ({ id: `g${i}`, itemId: 'guide', at: t * 1000, kind: 'goal', side: k, delta: 1 }));
 
 function ProgressPhone() {
   return (
     <Phone time="19:06" title="Stůl 2 · Normální leg" sub="Dejv + Milan vs Osky + Denys · 6:4" tab="my" label="Ukázka: průběh legu" fixed>
-      {/* Telefon má pevnou výšku, delší sloupec se posouvá uvnitř karty. */}
       <div className="g-card g-progress">
         <TimelineBox count={DEMO_EVENTS.length} open>
           <MatchTimeline match={DEMO_MATCH} events={DEMO_EVENTS} from={0} to={470_000} names={DEMO_NAMES} />
         </TimelineBox>
       </div>
-      <p className="g-hint">Sloupcem posouvej prstem, pak přepni na Křivku.</p>
     </Phone>
   );
 }
@@ -662,7 +663,7 @@ function RulesPhone() {
     ['Start 0:3', 'levá začíná pozadu'],
     ['Start 4:4', 'do 6 gólů'],
     ['Start 5:5', 'o 2 góly, nejvýš 10'],
-    ['Simulace', '2 vítězné sety'],
+    ['Simulace', 'BO3 do 6 / BO5 do 5'],
   ];
   return (
     <Phone time="18:30" title="Disciplíny" sub="zápasy · pravidla kol" tab="disciplines">
@@ -712,7 +713,7 @@ function MyGamesPhone() {
         <span>
           <span className="g-pill g-blue">Zeď</span> drží tvoje strana
         </span>
-        <span className="g-bigbtn">Zahájit</span>
+        <span className="g-bigbtn">Připraven</span>
       </div>
       <div className="g-card">
         <span className="g-k">
@@ -720,10 +721,10 @@ function MyGamesPhone() {
           <span>potom</span>
         </span>
         <span className="g-vs" style={{ fontSize: 13 }}>
-          Rozhodčí: Luky + Ondra <span>proti</span> David K + Lavi
+          Luky + Ondra <span>proti</span> David K + Lavi
         </span>
         <span>
-          <span className="g-pill g-red">rozhodčí</span> čárkuješ ztráty
+          <span className="g-pill g-red">rozhodčí</span> Daň za ztrátu – čárkuješ ztráty
         </span>
       </div>
     </Phone>
@@ -731,25 +732,21 @@ function MyGamesPhone() {
 }
 
 function FinishPhone() {
-  const side = (cls: string, who: string, goals: number, losses: number) => (
+  // 3. kolo je Zeď – ztráty se zapisují jen v Dani (18. 11. 2026).
+  const side = (cls: string, who: string, goals: number) => (
     <div className={`g-side ${cls}`}>
       <div className="g-who">{who}</div>
       <div className="g-goal" style={{ minHeight: 120 }}>
         <b>{goals}</b>
         <small>gólů</small>
       </div>
-      <div className="g-loss" style={{ display: 'grid', placeItems: 'center' }}>
-        <span>
-          ztráty <b>{losses}</b>
-        </span>
-      </div>
     </div>
   );
   return (
     <Phone time="18:51" title="3. kolo · stůl 2" sub="hraje se 7:12">
       <div className="g-mirror" style={{ flex: 'none' }}>
-        {side('g-l', 'Dejv + Milan', 6, 2)}
-        {side('g-r', 'Osky + Denys', 4, 3)}
+        {side('g-l', 'Dejv + Milan', 6)}
+        {side('g-r', 'Osky + Denys', 4)}
       </div>
       <div className="g-done">Leg dohrán 6:4 · skončí samo za 12 s</div>
       <span className="g-bigbtn">Potvrdit konec</span>
@@ -781,73 +778,63 @@ function WarmupPhone() {
   );
 }
 
-function LivePhone() {
-  const table = (n: number, who: React.ReactNode, t: React.ReactNode, wait = false) => (
-    <div className={wait ? 'g-tbl g-wait' : 'g-tbl'}>
-      <b>{n}</b>
-      <span className="g-w">{who}</span>
-      <span className="g-t">{t}</span>
-    </div>
-  );
-  return (
-    <Phone time="18:55" title="Živě" sub="kolo 3 · 2 ze 4 stolů hraje" tab="live">
-      {table(1, <>Luky + Ondra<br />vs David K + Lavi</>, <>hraje<br />4:10</>)}
-      {table(2, <>Dejv + Milan<br />vs Osky + Denys</>, <>hraje<br />7:12</>)}
-      {table(3, 'volný', 'čeká na hráče', true)}
-      {table(4, 'volný', 'čeká na hráče', true)}
-      <div className="g-card">
-        <span className="g-k">Další v pořadí</span>
-        <span>4. kolo, stůl 1 · čeká na Luky, Ondra</span>
-      </div>
-    </Phone>
-  );
-}
-
 function TrainingPhone() {
   return (
     <Phone time="18:58" title="Úterý 10. 11." sub="18:00 · 8 hráčů · 4 stoly · kolo 3 z 14" tab="trainings">
+      {/* Rozpis jako v appce (18. 11. 2026): číslo kola na ose, odehraná sbalená, moje kola se žlutým pruhem, jméno zlatě. */}
       <ol className="g-tl">
         <li className="g-past">
           <span className="g-dot">✓</span>
-          <span className="g-rw">
-            <b>1. kolo · Rozcvička</b>
-            <small>18:00</small>
-          </span>
-        </li>
-        <li className="g-past">
-          <span className="g-dot">✓</span>
-          <span className="g-rw">
-            <b>2. kolo · Penalta proti brankáři</b>
-            <small>18:10</small>
+          <span className="g-rw g-fold">
+            <b>Odehráno 2 kola</b>
+            <small>zobrazit</small>
           </span>
         </li>
         <li className="g-now">
-          <span className="g-dot" />
-          <span className="g-rw">
-            <b>3. kolo · Normální leg</b>
-            <small>hraje se 7 min · 1 ze 2 stolů hotovo</small>
-            <span className="g-tt">
-              <span>Stůl 1 · Luky + Ondra vs David K + Lavi</span>
-              <b>3:2</b>
+          <span className="g-dot">3</span>
+          <span className="g-rw g-tile g-mine">
+            <span className="g-ttop">
+              <b>Normální leg</b>
+              <b>18:20</b>
             </span>
-            <span className="g-tt g-mine">
-              <span>Stůl 2 · Dejv + Milan vs Osky + Denys</span>
-              <b>6:4 ✓</b>
+            <small>8 min</small>
+            <span className="g-tt">
+              <span>
+                Stůl 2 · <em>Dejv</em> + Milan vs Osky + Denys
+              </span>
+              <b>6:4</b>
+            </span>
+          </span>
+        </li>
+        <li className="g-pz">
+          <span className="g-dot">❚❚</span>
+          <span className="g-rw g-pause">
+            <span className="g-ttop">
+              <b>Pauza 10 min</b>
+              <b>18:29</b>
             </span>
           </span>
         </li>
         <li>
-          <span className="g-dot" />
-          <span className="g-rw">
-            <b>4. kolo · Daň za ztrátu</b>
-            <small>kolem 19:05</small>
+          <span className="g-dot">4</span>
+          <span className="g-rw g-tile g-mine">
+            <span className="g-ttop">
+              <b>Daň za ztrátu</b>
+              <b>18:39</b>
+            </span>
+            <small>8 min</small>
+            <span className="g-tt">
+              <span>
+                Stůl 1 · Luky + Ondra vs David K + Lavi · rozhodčí <em>Dejv</em>
+              </span>
+            </span>
           </span>
         </li>
       </ol>
       <div className="g-card">
         <span className="g-k">
           <span>Souhrn tréninku</span>
-          <span>rozdíl · výhry</span>
+          <span>G± · L+</span>
         </span>
         {(
           [
@@ -870,7 +857,7 @@ function TrainingPhone() {
 type LadderPart = 'matches' | 'solo' | 'delays';
 const LADDER_PARTS: [LadderPart, string][] = [
   ['matches', 'Zápasy'],
-  ['solo', 'Stanoviště'],
+  ['solo', 'Cvičení'],
   ['delays', 'Zdržovači'],
 ];
 
@@ -924,7 +911,7 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
     <Phone
       time="21:10"
       title="Žebříček"
-      sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na zahájení' : 'forma · průměr · 14. 10. – 10. 11.'}
+      sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na připravenost' : 'forma · průměr · 14. 10. – 10. 11.'}
       tab="ladder"
       label={label}
     >
@@ -949,12 +936,12 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
                 <span className="g-n">
                   <span className="delay-who">
                     {n}
-                    {shamed && <Snail big={i === 0} />}
-                    {shamed && i === 0 && <span className="shame-tag">Brzda</span>}
+                    {shamed && <Snail big />}
+                    {shamed && <span className="shame-tag">Brzda</span>}
                   </span>
                   <small>{sub}</small>
                 </span>
-                <span className={i === 0 ? 'g-v g-bad' : 'g-v'}>{v}</span>
+                <span className={shamed ? 'g-v g-bad' : 'g-v'}>{v}</span>
               </div>
             );
           })}

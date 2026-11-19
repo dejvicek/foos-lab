@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { markReady } from '../domain/queue';
 import { isEmptyScore, setAttempts, setSolo } from '../domain/training';
 import { tapDelta, tapDrill } from '../domain/drillTap';
 import { streakLimitSec, streakTap, trainingStreak } from '../domain/streak';
@@ -51,6 +52,11 @@ export interface AppStore {
   /** Zahájení utkání (teď). Čas se zapíše, jen když ještě není – dohrané utkání znovu neotevře. */
   startItem(trainingId: string, itemId: string): void;
   /**
+   * Připravenost (18. 11. 2026): přihlásí / odhlásí stranu zápasu (`A` / `B`) nebo hráče cvičení. Až jsou
+   * připravení všichni `keys`, utkání začne. Po zahájení se nic nemění.
+   */
+  readyItem(trainingId: string, itemId: string, key: string, ready: boolean, keys: string[]): void;
+  /**
    * Konec utkání (výchozí teď). `startedAt` se použije, když utkání zahájené nebylo
    * (organizátor potvrzuje bez zahájení). Už zapsaný konec ani zahájení se nepřepíšou.
    */
@@ -87,7 +93,7 @@ export const SCORE_DEBOUNCE_MS = 400;
 /** Zapíše / smaže čas utkání v tréninku (prázdný seznam časů se neuchovává). */
 function withPlayTime(t: Training, itemId: string, p: PlayTime | null): Training {
   const times = { ...t.playTimes };
-  if (!p || (p.startedAt === undefined && p.endedAt === undefined)) delete times[itemId];
+  if (!p || (p.startedAt === undefined && p.endedAt === undefined && !p.ready)) delete times[itemId];
   else times[itemId] = p;
   const { playTimes: _, ...rest } = t;
   return Object.keys(times).length ? { ...rest, playTimes: times } : rest;
@@ -572,6 +578,11 @@ export function useAppState(
         );
         enqueue({ kind: 'startItem', trainingId, itemId, at });
       },
+      readyItem: (trainingId: string, itemId: string, key: string, ready: boolean, keys: string[]) => {
+        const at = Date.now();
+        update((d) => inTraining(d, trainingId, (t) => withPlayTime(t, itemId, markReady(t.playTimes?.[itemId], key, ready, keys, at))));
+        enqueue({ kind: 'readyItem', trainingId, itemId, key, ready, keys, at });
+      },
       endItem: (trainingId: string, itemId: string, times: { startedAt?: number; endedAt?: number } = {}) => {
         const endedAt = times.endedAt ?? Date.now();
         const fallback = times.startedAt === undefined ? undefined : Math.min(times.startedAt, endedAt);
@@ -579,7 +590,7 @@ export function useAppState(
           inTraining(d, trainingId, (t) => {
             const cur = t.playTimes?.[itemId] ?? {};
             const startedAt = cur.startedAt ?? fallback;
-            return withPlayTime(t, itemId, { ...(startedAt !== undefined ? { startedAt } : {}), endedAt: cur.endedAt ?? endedAt });
+            return withPlayTime(t, itemId, { ...cur, ...(startedAt !== undefined ? { startedAt } : {}), endedAt: cur.endedAt ?? endedAt });
           }),
         );
         enqueue({ kind: 'endItem', trainingId, itemId, ...(fallback !== undefined ? { startedAt: fallback } : {}), endedAt });

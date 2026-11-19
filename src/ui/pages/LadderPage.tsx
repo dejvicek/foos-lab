@@ -1,16 +1,17 @@
 import { Fragment } from 'react';
+import { Seg } from '../components/Seg';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
-import { computePracticeMatchLadder, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
+import { computeMatchLadder, type MatchKindFilter, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
 import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
-import type { PlayerId } from '../../domain/types';
-import type { LadderPart, UiPrefs } from '../../storage/prefs';
+import type { DisciplineId, PlayerId } from '../../domain/types';
+import type { LadderDrills, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
 import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
-import { dec1, pct, plural, signed } from '../format';
+import { dec1, diffTone, pct, signed, STRONG_PER_LEG, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { Route } from '../useHashRoute';
 import { computeDelayLadder } from '../../domain/queue';
@@ -19,6 +20,7 @@ import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
 import { Medal, podiumRow, Progress } from '../components/Rank';
+import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol } from '../components/SortTable';
 
 interface Props {
   store: AppStore;
@@ -28,18 +30,6 @@ interface Props {
 }
 
 const dash = (v: number | null, f: (v: number) => string) => (v === null ? '–' : f(v));
-
-function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange(v: T): void; label: string }) {
-  return (
-    <div className="segmented" role="group" aria-label={label}>
-      {options.map(([v, text]) => (
-        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
-          {text}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function LadderTable({
   ranked,
@@ -58,78 +48,112 @@ function LadderTable({
 }) {
   const avg = view === 'avg';
   const mobile = useMobile();
-  const rows = [...ranked, ...lowData];
-  const cut = ranked.length;
-  if (mobile)
+  const [sort, setSort] = useSort();
+  // Sloupce (18. 11. 2026: řazení podle libovolného sloupce); hodnoty podle Průměr / Celkem jako v buňkách.
+  // Krátká záhlaví (G±, G+, L−, Sim.) mají plný název v nápovědě (19. 11. 2026).
+  const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
+    // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
+    ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
+    // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    avg
+      ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
+      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
+    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
+    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>G+</span>, className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>G−</span>, className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+    { key: 'loss', label: <span title="Ztráty na leg">Ztráty</span>, className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
+    {
+      key: 'sim',
+      label: <span title={avg ? 'Výhry v simulaci' : 'Simulace: výhry / zápasy'}>{avg ? 'Sim. %' : 'Sim.'}</span>,
+      className: 'n',
+      value: (r) => (avg ? r.simRate : r.simM ? r.simW : null),
+      show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
+    },
+  ];
+  const items = placeAndSort(ranked, lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
+  const tone = (r: LadderRow) =>
+    diffTone(avg ? r.diffPerLeg : r.diff, avg ? r.diffPerLeg >= STRONG_PER_LEG : r.trainings > 0 && r.diff / r.trainings >= STRONG_PER_TRAINING);
+  // Telefon: jen to hlavní (19. 11. 2026, *rozhodnutí uživatele*, návrh D) – G± a výhry (Průměr: Výhry %, Celkem: L+ / L−);
+  // ostatní na notebooku a v detailu hráče. Řadí se klepnutím na záhlaví.
+  if (mobile) {
+    const keys = avg ? ['name', 'diff', 'wins'] : ['name', 'diff', 'wins', 'lost'];
+    const few = cols.filter((c) => keys.includes(c.key));
+    const rows = placeAndSort(ranked, lowData, few, sort);
+    const low = rows.findIndex((x) => !x.ranked);
     return (
-      <ol aria-label={label} className="ladder-list">
-        {rows.map((r, i) => {
-          const d = avg ? r.diffPerLeg : r.diff;
-          const isRanked = i < cut;
-          return (
-            <Fragment key={r.playerId}>
-              {i === cut && (
-                <li role="presentation" aria-hidden="true" className="cutoff" />
-              )}
-              <li className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                <span className="ll-rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</span>
-                <span className="ll-who">
-                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                    {name(r.playerId)}
-                  </button>
-                  <small>
-                    {r.legs} {plural(r.legs, 'leg', 'legy', 'legů')}, {avg ? `výhry ${pct(r.winRate)}` : `${r.wins} ${plural(r.wins, 'výhra', 'výhry', 'výher')}`}
-                  </small>
-                </span>
-                <span className={d > 0 ? 'll-main pos' : d < 0 ? 'll-main neg' : 'll-main'}>
-                  {avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}
-                  <small>{avg ? 'rozdíl / leg' : 'rozdíl'}</small>
-                </span>
-              </li>
-            </Fragment>
-          );
-        })}
-      </ol>
+      <div className="wrap">
+        <table aria-label={label} className="ladder-table ladder-mobile">
+          <thead>
+            <tr>
+              <RankTh sort={sort} onReset={() => setSort(null)} />
+              {few.map((c) => (
+                <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ r, place, ranked: isRanked }, i) => (
+              <Fragment key={r.playerId}>
+                {i === low && <Cutoff cols={few.length + 1} />}
+                <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  {few.map((c) =>
+                    c.key === 'name' ? (
+                      <td key={c.key} className={sortedCls(sort, 'name')}>
+                        <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                          {name(r.playerId)}
+                        </button>
+                      </td>
+                    ) : (
+                      <td key={c.key} className={sortedCls(sort, c.key, ['n', c.key === 'diff' ? `main ${tone(r)}` : ''].filter(Boolean).join(' '))}>
+                        {c.show(r)}
+                      </td>
+                    ),
+                  )}
+                </tr>
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
+  }
   return (
     <div className="wrap">
       <table aria-label={label}>
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            <th className="n">Legy</th>
-            <th className="n">{avg ? 'Rozdíl / leg' : 'Rozdíl'}</th>
-            <th className="n">{avg ? 'Výhry %' : 'Výhry'}</th>
-            <th className="n">{avg ? 'Góly + / leg' : 'Góly +'}</th>
-            <th className="n">{avg ? 'Góly − / leg' : 'Góly −'}</th>
-            <th className="n">Ztráty / leg</th>
-            <th className="n">{avg ? 'Simulace %' : 'Simulace (výhry / zápasy)'}</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const d = avg ? r.diffPerLeg : r.diff;
-            const isRanked = i < cut;
+          {items.map(({ r, place, ranked: isRanked }, i) => {
             return (
               <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={10} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
+                {i === firstLow && <Cutoff cols={10} />}
+                <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                  <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                  <td className={sortedCls(sort, 'name')}>
                     <button type="button" className="player-link" onClick={() => open(r.playerId)}>
                       {name(r.playerId)}
                     </button>
                   </td>
-                  <td className="n">{r.trainings}</td>
-                  <td className="n">{r.legs}</td>
-                  <td className={d > 0 ? 'n pos' : d < 0 ? 'n neg' : 'n'}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
-                  <td className="n">{avg ? pct(r.winRate) : r.wins}</td>
-                  <td className="n">{avg ? dec1(r.gfPerLeg) : r.gf}</td>
-                  <td className="n">{avg ? dec1(r.gcPerLeg) : r.gc}</td>
-                  <td className="n">{dash(r.lossPerLeg, (v) => dec1(v))}</td>
-                  <td className="n">{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
+                  <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                  {avg && <td className={sortedCls(sort, 'legs', 'n')}>{r.legs}</td>}
+                  <td className={sortedCls(sort, 'diff', ['n', tone(r)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
+                  <td className={sortedCls(sort, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
+                  {!avg && <td className={sortedCls(sort, 'lost', 'n')}>{r.legs - r.wins}</td>}
+                  <td className={sortedCls(sort, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
+                  <td className={sortedCls(sort, 'gc', 'n')}>{avg ? dec1(r.gcPerLeg) : r.gc}</td>
+                  <td className={sortedCls(sort, 'loss', 'n')}>{dash(r.lossPerLeg, (v) => dec1(v))}</td>
+                  <td className={sortedCls(sort, 'sim', 'n')}>{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
                 </tr>
               </Fragment>
             );
@@ -140,7 +164,6 @@ function LadderTable({
   );
 }
 
-/** Čára mezi řazenými a neřazenými hráči (méně než MIN_TRAININGS tréninků); vysvětlení je jednou pod obdobím. */
 function Cutoff({ cols }: { cols: number }) {
   return (
     <tr className="cutoff" aria-hidden="true">
@@ -167,93 +190,107 @@ function SoloTable({
   max: number;
   name(id: PlayerId): string;
   open(id: PlayerId): void;
-  /** Sloupec Pokusy (žebříček Vlastní). */
+  /** Sloupec Pokusy (Cvičení → Solo/Duo). */
   attempts?: boolean;
   /** Čistá desítka: splněné série a nejlepší čas místo průměru / celku. */
   streak?: boolean;
 }) {
-  const rows = [...ranked, ...lowData];
-  const cut = ranked.length;
+  const [sort, setSort] = useSort();
   const showAttempts = attempts && !streak;
-  const cols = showAttempts || streak ? 5 : 4;
+  const cols: SortCol<SoloLadderRow>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
+    ...(showAttempts ? [{ key: 'attempts', label: 'Pokusy', className: 'n', value: (r: SoloLadderRow) => r.sumMax }] : []),
+    ...(streak ? [{ key: 'done', label: 'Splněno', className: 'n', value: (r: SoloLadderRow) => r.sum }] : []),
+    streak
+      ? { key: 'best', label: <span title="Nejlepší čas">Čas</span>, className: 'n', value: (r) => r.best || null, first: 'asc' as const }
+      : { key: 'value', label: view === 'avg' ? 'Průměr' : 'Celkem', className: 'n', value: (r) => (view === 'avg' ? r.avg : r.sum) },
+  ];
+  const items = placeAndSort(ranked, lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
       <table aria-label={label} className="solo-table">
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            {showAttempts && <th className="n">Pokusy</th>}
-            {streak && <th className="n">Splněno</th>}
-            <th className="n">{streak ? 'Nejlepší čas' : view === 'avg' ? 'Průměr' : 'Celkem'}</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const isRanked = i < cut;
-            return (
-              <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={cols} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                      {name(r.playerId)}
-                    </button>
-                  </td>
-                  <td className="n">{r.trainings}</td>
-                  {showAttempts && <td className="n">{r.sumMax}</td>}
-                  {streak && <td className="n">{`${r.sum} / ${r.sumMax}`}</td>}
-                  <td className="n">{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
-                </tr>
-              </Fragment>
-            );
-          })}
+          {items.map(({ r, place, ranked: isRanked }, i) => (
+            <Fragment key={r.playerId}>
+              {i === firstLow && <Cutoff cols={cols.length + 1} />}
+              <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                <td className={sortedCls(sort, 'name')}>
+                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    {name(r.playerId)}
+                  </button>
+                </td>
+                <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                {showAttempts && <td className={sortedCls(sort, 'attempts', 'n')}>{r.sumMax}</td>}
+                {streak && <td className={sortedCls(sort, 'done', 'n')}>{`${r.sum} / ${r.sumMax}`}</td>}
+                <td className={sortedCls(sort, streak ? 'best' : 'value', 'n')}>{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
+              </tr>
+            </Fragment>
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
 
-/** Žebříček Vlastní – zápasy (12. 11. 2026): vyhrané zápasy, legy a rozdíl skóre. */
+/** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
+const matchTableName = (id: DisciplineId) => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);
+
+/** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({ table, name, open }: { table: PracticeMatchTableData; name(id: PlayerId): string; open(id: PlayerId): void }) {
-  const rows = [...table.ranked, ...table.lowData];
-  const cut = table.ranked.length;
+  const [sort, setSort] = useSort();
+  const cols: SortCol<PracticeMatchRow>[] = [
+    { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
+    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
+    // Jen výhry z odehraných zápasů; remízy (BO2 1:1) se neukazují ani nepočítají (19. 11. 2026, *rozhodnutí uživatele*).
+    { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => r.wins },
+    // Legy jako L+ / L− (vyhrané / prohrané) jako v souhrnu tréninku (19. 11. 2026).
+    { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.legWins },
+    { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.legWins, first: 'asc' },
+    { key: 'diff', label: <span title="Rozdíl skóre (G+ − G−)">G±</span>, className: 'n', value: (r) => r.gf - r.gc },
+  ];
+  const items = placeAndSort(table.ranked, table.lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
-      <table aria-label={discipline(table.discipline).name} className="solo-table">
+      <table aria-label={matchTableName(table.discipline)} className="solo-table">
         <thead>
           <tr>
-            <th className="n rank">#</th>
-            <th>Hráč</th>
-            <th className="n">Tréninky</th>
-            <th className="n">Zápasy</th>
-            <th className="n">Legy</th>
-            <th className="n">Rozdíl</th>
+            <RankTh sort={sort} onReset={() => setSort(null)} />
+            {cols.map((c) => (
+              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const isRanked = i < cut;
-            return (
-              <Fragment key={r.playerId}>
-                {i === cut && <Cutoff cols={6} />}
-                <tr className={isRanked ? podiumRow(i + 1) : 'low-data'}>
-                  <td className="n rank">{isRanked ? <Medal place={i + 1} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
-                  <td>
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
-                      {name(r.playerId)}
-                    </button>
-                  </td>
-                  <td className="n">{r.trainings}</td>
-                  <td className="n">{`${r.wins}${r.draws ? ` (+${r.draws} rem.)` : ''} / ${r.matches}`}</td>
-                  <td className="n">{`${r.legWins} / ${r.legs}`}</td>
-                  <td className={r.gf - r.gc > 0 ? 'n pos' : r.gf - r.gc < 0 ? 'n neg' : 'n'}>{signed(r.gf - r.gc)}</td>
-                </tr>
-              </Fragment>
-            );
-          })}
+          {items.map(({ r, place, ranked: isRanked }, i) => (
+            <Fragment key={r.playerId}>
+              {i === firstLow && <Cutoff cols={7} />}
+              <tr className={isRanked ? podiumRow(place) : 'low-data'}>
+                <td className="n rank">{isRanked ? <Medal place={place} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
+                <td className={sortedCls(sort, 'name')}>
+                  <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    {name(r.playerId)}
+                  </button>
+                </td>
+                <td className={sortedCls(sort, 'trainings', 'n')}>{r.trainings}</td>
+                <td className={sortedCls(sort, 'matches', 'n')}>{`${r.wins} / ${r.matches}`}</td>
+                <td className={sortedCls(sort, 'legs', 'n')}>{r.legWins}</td>
+                <td className={sortedCls(sort, 'lost', 'n')}>{r.legs - r.legWins}</td>
+                <td className={sortedCls(sort, 'diff', ['n', diffTone(r.gf - r.gc, r.legs > 0 && (r.gf - r.gc) / r.legs >= STRONG_PER_LEG)].filter(Boolean).join(' '))}>{signed(r.gf - r.gc)}</td>
+              </tr>
+            </Fragment>
+          ))}
         </tbody>
       </table>
     </div>
@@ -270,7 +307,7 @@ function DelayLadder({ store, prefs, today, open }: { store: AppStore; prefs: Ui
   if (!rows.length) return <p className="note">V tomhle období zatím nejsou změřená žádná utkání.</p>;
   return (
     <>
-      <DelayTable rows={rows} names={names} showTrainings open={open} />
+      <DelayTable rows={rows} names={names} showTrainings open={open} rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'} />
       <p className="note">
         Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání; připisuje se všem hráčům utkání.{' '}
         {prefs.ladderView === 'avg' ? 'Řazeno podle průměrného čekání na utkání.' : 'Řazeno podle čekání celkem.'}
@@ -296,14 +333,12 @@ function SoloLadder({
   source?: SoloSource;
 }) {
   const tables = computeSoloLadder(store.data.trainings, prefs.ladderRange, prefs.ladderView, today, source);
-  const range = resolveRange(prefs.ladderRange, today);
-  const matchTables = source === 'practice' ? computePracticeMatchLadder(store.data.trainings, range.from ?? null, range.to ?? null, MIN_TRAININGS) : [];
-  if (!tables.length && !matchTables.length)
+  if (!tables.length)
     return (
       <p className="note">
         {source === 'practice'
-          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení, Čisté desítky ani zápasů 1 na 1.'
-          : 'V tomhle období zatím nejsou žádné výsledky ze sólové části.'}
+          ? 'V tomhle období zatím nejsou žádné výsledky solo cvičení ani Čisté desítky.'
+          : 'V tomhle období zatím nejsou žádné výsledky týmových cvičení.'}
       </p>
     );
   return (
@@ -320,13 +355,6 @@ function SoloLadder({
           </section>
         );
       })}
-      {matchTables.map((t) => (
-        <section key={t.discipline} className="solo-block">
-          <h3>{discipline(t.discipline).name}</h3>
-          <p className="note">zápasy 1 na 1 (duo i singly v klubu), víc vyhraných je lépe</p>
-          <PracticeMatchTable table={t} name={name} open={open} />
-        </section>
-      ))}
     </div>
   );
 }
@@ -342,6 +370,13 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
   };
   const open = (id: PlayerId) => navigate({ page: 'player', id });
 
+  // Cvičení: Týmové (klub + duo stejných cvičení) / Solo/Duo (jen vlastní tréninky), 18. 11. 2026.
+  const drills: LadderDrills | null = prefs.ladderPart === 'solo' || prefs.ladderPart === 'practice' ? prefs.ladderPart : null;
+  const resolved = resolveRange(range, today);
+  // Zápasy podle disciplín: 1 na 1 / 2 na 2 / vše (19. 11. 2026, *rozhodnutí uživatele*).
+  const matchKind: MatchKindFilter = prefs.ladderMatchKind ?? 'all';
+  const matchTables = prefs.ladderPart === 'matches' ? computeMatchLadder(store.data.trainings, resolved.from ?? null, resolved.to ?? null, MIN_TRAININGS, matchKind) : [];
+
   const setRangeKind = (kind: 'form' | 'all' | 'custom') => {
     if (kind === 'custom') {
       const from = range.kind === 'custom' ? range.from : addDays(today, -(FORM_DAYS - 1));
@@ -353,17 +388,27 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
   return (
     <section>
       <h1>Žebříček</h1>
-      <Seg<LadderPart>
+      <Seg<'matches' | 'drills' | 'delays'>
         label="Část"
-        value={prefs.ladderPart}
-        onChange={(v) => setPrefs({ ...prefs, ladderPart: v })}
+        value={drills ? 'drills' : (prefs.ladderPart as 'matches' | 'delays')}
+        onChange={(v) => setPrefs({ ...prefs, ladderPart: v === 'drills' ? (drills ?? prefs.ladderDrills ?? 'solo') : v })}
         options={[
           ['matches', 'Zápasy'],
-          ['solo', 'Stanoviště'],
-          ['practice', 'Vlastní'],
+          ['drills', 'Cvičení'],
           ['delays', 'Zdržovači'],
         ]}
       />
+      {drills && (
+        <Seg<LadderDrills>
+          label="Cvičení"
+          value={drills}
+          onChange={(v) => setPrefs({ ...prefs, ladderPart: v, ladderDrills: v })}
+          options={[
+            ['solo', 'Týmové'],
+            ['practice', 'Solo/Duo'],
+          ]}
+        />
+      )}
       <div>
         <Seg
           label="Období"
@@ -392,10 +437,10 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
             <Progress have={MIN_TRAININGS - 1} need={MIN_TRAININGS} />
           </span>
           {prefs.ladderPart === 'practice'
-            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka) a zápasy 1 na 1 – z dua i singly z klubu. Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
+            ? `Cvičení jen pro vlastní trénink (solo, Čistá desítka). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
             : prefs.ladderPart === 'solo'
               ? `Cvičení z klubových tréninků i z vlastních tréninků duo (stejné podmínky). Pro umístění je potřeba aspoň ${MIN_TRAININGS} tréninků se záznamem v období.`
-              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období.`}{' '}
+              : `Pro umístění je potřeba zúčastnit se aspoň ${MIN_TRAININGS} tréninků v období (u zápasů podle disciplín tréninků s takovým zápasem).`}{' '}
           Kdo jich má méně, je pod čárou a tečky ukazují, kolik už má.
         </p>
       )}
@@ -409,7 +454,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
       ) : (
         <>
       {ranked.length === 0 && lowData.length === 0 ? (
-        <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
+        !matchTables.length && <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
       ) : (
         <>
           <LadderTable ranked={ranked} lowData={lowData} view={view} label="Žebříček" name={name} open={open} />
@@ -419,6 +464,38 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
               : 'Celkem: pořadí dělá součet rozdílu skóre, pak výhry, góly a výhry v simulaci.'}{' '}
             Počítají se jen zapsané legy ze scénářové ligy a jedniček; simulace kola zvlášť.
           </p>
+        </>
+      )}
+      {prefs.ladderPart === 'matches' && (ranked.length > 0 || lowData.length > 0 || matchTables.length > 0 || matchKind !== 'all') && (
+        <>
+          <h2>Zápasy podle disciplín</h2>
+          <Seg<MatchKindFilter>
+            label="Typ zápasu"
+            value={matchKind}
+            onChange={(v) => setPrefs({ ...prefs, ladderMatchKind: v })}
+            options={[
+              ['all', 'Vše'],
+              ['singles', '1 na 1'],
+              ['doubles', '2 na 2'],
+            ]}
+          />
+          <p className="note">
+            {matchKind === 'singles'
+              ? 'Singly z klubu (i simulace) a z vlastních tréninků ve dvou.'
+              : matchKind === 'doubles'
+                ? 'Čtyřhry z klubu (i simulace); výhra se počítá oběma hráčům dvojice.'
+                : 'Singly i čtyřhry z klubu (i simulace) a zápasy z vlastních tréninků ve dvou.'}{' '}
+            Normální leg (i Jedničky) v singlu je 1v1, ve čtyřhře 2v2. Víc vyhraných je lépe.
+          </p>
+          {!matchTables.length && <p className="note">V tomhle období žádné takové zápasy nejsou.</p>}
+          <div className="solo-grid">
+            {matchTables.map((t) => (
+              <section key={t.discipline} className="solo-block">
+                <h3>{matchTableName(t.discipline)}</h3>
+                <PracticeMatchTable table={t} name={name} open={open} />
+              </section>
+            ))}
+          </div>
         </>
       )}
         </>

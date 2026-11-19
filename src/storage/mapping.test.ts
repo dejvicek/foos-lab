@@ -88,10 +88,18 @@ describe('mapping', () => {
 describe('časy utkání (Zdržovači)', () => {
   it('řádek ↔ PlayTime: ISO čas v databázi, ms v doméně; trénink je dostane podle ID', () => {
     const row = playTimeToRow('t1', 'league|1|1|a+bvc+d', { startedAt: Date.parse('2026-11-02T18:01:30Z') });
-    expect(row).toEqual({ training_id: 't1', item_id: 'league|1|1|a+bvc+d', started_at: '2026-11-02T18:01:30.000Z', ended_at: null });
+    expect(row).toEqual({ training_id: 't1', item_id: 'league|1|1|a+bvc+d', started_at: '2026-11-02T18:01:30.000Z', ended_at: null, ready: null });
     expect(playTimeFromRow(row)).toEqual({ startedAt: Date.parse('2026-11-02T18:01:30Z') });
     const t = trainingFromRow(trainingToRow({ ...training, scores: {} }), [], [], [row, { ...row, training_id: 'jiny' }]);
     expect(t.playTimes).toEqual({ 'league|1|1|a+bvc+d': { startedAt: Date.parse('2026-11-02T18:01:30Z') } });
+  });
+
+  it('připravenost (migrace 31): klíč → ISO čas v databázi, ms v doméně; starší řádek bez ní', () => {
+    const p = { ready: { A: Date.parse('2026-11-18T10:00:10Z'), B: Date.parse('2026-11-18T10:01:00Z') }, startedAt: Date.parse('2026-11-18T10:01:00Z') };
+    const row = playTimeToRow('t1', 'm', p);
+    expect(row.ready).toEqual({ A: '2026-11-18T10:00:10.000Z', B: '2026-11-18T10:01:00.000Z' });
+    expect(playTimeFromRow(row)).toEqual(p);
+    expect(playTimeFromRow({ training_id: 't1', item_id: 'm', started_at: null, ended_at: null })).toEqual({});
   });
 });
 

@@ -22,7 +22,7 @@ export const ROUNDS: RoundDef[] = [
   { name: 'Daň za ztrátu', min: 8, lossTax: true },
   { name: 'Zeď', min: 8, lossTax: false, wall: 'A' },
   { name: 'Zeď, otočené role', min: 8, lossTax: false, wall: 'B' },
-  { name: 'Start 0:3 + daň (levá strana začíná 0:3)', min: 5, lossTax: true, start: [0, 3] },
+  { name: 'Start 0:3 (levá strana začíná 0:3)', min: 5, lossTax: false, start: [0, 3] },
   { name: 'Start 4:4', min: 3, lossTax: false, start: [4, 4] },
   { name: 'Start 5:5, o 2 góly, strop 10', min: 3, lossTax: false, start: [5, 5] },
 ];
@@ -413,7 +413,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Daň za ztrátu",
         "parts": [
           {
-            "text": "Ztracený míč z kontrolované pozice = gól pro soupeře. Pětka: máš míč na pětce a soupeř ho získá, aniž bys vystřelil. Zadní tyče: míč byl v brance nebo na dvojce zastavený aspoň 1 sekundu a cokoli z něj vznikne skončí u soupeře bez tvé střely. Nepočítá se odražený míč hned po bloku. Ztráty jsou už v gólech a navíc se zapisují i zvlášť (pro ztráty na leg)."
+            "text": "Ztracený míč z kontrolované pozice = gól pro soupeře. Pětka: máš míč na pětce a soupeř ho získá, aniž bys vystřelil. Zadní tyče: míč byl v brance nebo na dvojce zastavený aspoň 1 sekundu a cokoli z něj vznikne skončí u soupeře bez tvé střely. Nepočítá se odražený míč hned po bloku. Hraje se vždy s rozhodčím u stolu, který ztráty čárkuje; ztráty jsou už v gólech a navíc se zapisují i zvlášť (pro ztráty na leg). Ztráty se zapisují jen v této disciplíně."
           }
         ]
       },
@@ -429,7 +429,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Start 0:3",
         "parts": [
           {
-            "text": "Leg začíná za stavu 0:3, pozadu je strana uvedená v rozpisu vlevo. Trénuje nehrát odevzdaně, když prohráváme. Hraje se s Daní za ztrátu. Zapisuje se stav na stole (konec 6:4), appka sama započítá jen odehrané góly (6:1)."
+            "text": "Leg začíná za stavu 0:3, pozadu je strana uvedená v rozpisu vlevo. Trénuje nehrát odevzdaně, když prohráváme. Zapisuje se stav na stole (konec 6:4), appka sama započítá jen odehrané góly (6:1)."
           }
         ]
       },
@@ -461,7 +461,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Simulace ligového kola",
         "parts": [
           {
-            "text": "Dva týmy, pevná nominace předem, každý zápas 2 sety do 6, třetí o 2 góly se stropem 10. Zapisuje se výsledek v setech (2:0, 2:1). Vyhrává tým s více vyhranými zápasy."
+            "text": "Dva týmy, pevná nominace předem. Každý zápas na dva vítězné legy do 6, třetí o 2 góly se stropem 10 (BO3), nebo podle nastavení tréninku na tři vítězné legy do 5, pátý o 2 góly se stropem 8 (BO5). Zapisuje se skóre každého legu. Vyhrává tým s více vyhranými zápasy."
           }
         ]
       },
@@ -469,7 +469,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Role rozhodčího",
         "parts": [
           {
-            "text": "Kdo zrovna nehraje, je rozhodčí: první čekající u stolu 1, druhý u stolu 2 a tak dál. Rozhodčí čárkuje ztráty, hlídá kolo Zeď a čas kola, rozhoduje sporné ztráty. Rozhodnutí platí, nediskutuje se. U stolu bez rozhodčího si ztráty zapisují hráči sami; v kolech s Daní jsou ztráty navíc i v gólech."
+            "text": "Kdo zrovna nehraje, je rozhodčí: první čekající u stolu 1, druhý u stolu 2 a tak dál. Rozhodčí hlídá kolo Zeď a čas kola a v Dani za ztrátu čárkuje ztráty a rozhoduje sporné ztráty. Rozhodnutí platí, nediskutuje se. Daň se hraje vždy s rozhodčím u každého stolu; ztráty se jinde nezapisují."
           },
           {
             "text": "Kolo končí dohraným legem, čas je jen pojistka, aby trénink držel čas: když vyprší, zapíše se aktuální stav a jde se dál. Aby se nedalo hrát na čas, rozhodčí vymáhá limity držení míče (10 s na pětce, 15 s na trojce). Pomalá hra je záměr jen v kole Zeď."

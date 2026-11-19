@@ -1,4 +1,5 @@
 import { clubTrainings } from '../../domain/practice';
+import { catalogBallSec } from '../../domain/ballTime';
 import { useState } from 'react';
 import { canCreateTraining, canManage, type Viewer } from '../../domain/my';
 import { TRAINING_ITEM, trainingStarted } from '../../domain/queue';
@@ -65,11 +66,11 @@ export function EditTrainingPage({ store, id, navigate, viewer }: { store: AppSt
   if (!training) return <p>Trénink nenalezen.</p>;
   if (!canManage(viewer, training)) return <p>Nastavení tréninku může měnit jen admin nebo organizátor, který trénink založil.</p>;
   // Běžící trénink jde upravit, ale uložená změna přegeneruje celý rozpis (10. 11. 2026): náhled bez
-  // zamčených kol, délky kol tréninku zůstávají. Nezahájený si vezme aktuální délky kol z katalogu (PRD 4.6).
+  // zamčených kol, délky kol tréninku zůstávají. Nezahájený si vezme aktuální délky kol a doby míčků z katalogu (PRD 4.6).
   const running = trainingStarted(training);
   return (
     <TrainingWizard
-      initial={running ? { ...training, lockedRounds: [] } : { ...training, disciplineMin: catalogMins() }}
+      initial={running ? { ...training, lockedRounds: [] } : { ...training, disciplineMin: catalogMins(), ballSec: catalogBallSec() }}
       mode="edit"
       running={running}
       players={store.data.players}

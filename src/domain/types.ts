@@ -12,7 +12,7 @@ export interface Player {
   organizer?: boolean;
 }
 
-/** Skóre zápasu: ga/gb góly (u simulace sety 0..2), la/lb ztráty. */
+/** Skóre zápasu: ga/gb góly (u starší simulace bez BO formátu sety 0..2), la/lb ztráty. */
 export interface Score {
   ga?: number | null;
   gb?: number | null;
@@ -112,6 +112,11 @@ export interface Training {
    * vycházela – když ji mezitím změnilo jiné zařízení, uložení se odmítne. Chybí = ještě neuloženo.
    */
   version?: number;
+  /**
+   * Doba míčku v sekundách pro zápasy a simulaci (snímek katalogu při založení / úpravě, goalTime.ts, 18. 11. 2026):
+   * délka kola = doba míčku × nejvíc gólů ve formátu. Chybí = délka kola z `disciplineMin` jako dřív.
+   */
+  ballSec?: Partial<Record<DisciplineId, number>> | null;
   /** BO formát zápasových disciplín (matchFormat.ts); chybí = BO1 do 6. */
   matchFormats?: Partial<Record<DisciplineId, { bestOf: number; legTo: number; finalWinBy2?: boolean; cap?: number }>> | null;
   /** Hráč, který trénink založil – má u něj práva admina (PRD 4.7); null = starší trénink. */
@@ -132,7 +137,7 @@ export interface Match {
   sideB: PlayerId[];
   /** Rozhodčí u stolu (čekající hráči popořadě ke stolům 1, 2, …). */
   referee?: PlayerId;
-  /** Zapisují se ztráty: jen mimo Daň a jen u stolu s rozhodčím. */
+  /** Zapisují se ztráty: jen v Dani za ztrátu (18. 11. 2026); starší tréninky se srovnají v buildSchedule. */
   trackLosses?: boolean;
   /** Kolo s Daní za ztrátu. */
   lossTax?: boolean;
@@ -162,6 +167,11 @@ export type Cell =
 export interface PlayTime {
   startedAt?: number;
   endedAt?: number;
+  /**
+   * Připravenost (18. 11. 2026, PRD 4.8): kdy se kdo přihlásil „Připraven“ – u zápasu strana `A` / `B`,
+   * u cvičení ID hráče. Utkání začne (`startedAt`), až jsou připravení všichni. Chybí = nikdo.
+   */
+  ready?: Record<string, number>;
 }
 /** Klíč: ID zápasu, u cvičení `drill|kolo|stůl|hráči`. */
 export type PlayTimes = Record<string, PlayTime>;

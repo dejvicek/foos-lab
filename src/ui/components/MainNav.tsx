@@ -59,7 +59,7 @@ interface Item {
 }
 
 /**
- * Hlavní navigace: Živě (běžící trénink, na kterém hráč hraje nebo který organizuje) · Moje hry (jen když hraje) · Trénink · Žebříček
+ * Hlavní navigace: Moje hry (běžící trénink, na kterém hráč hraje) · Tréninky (probíhající trénink, jinak seznam) · Žebříček
  * · Disciplíny · Šablony a Hráči (jen admin). Na telefonu dole s ikonami.
  */
 export function MainNav({
@@ -72,13 +72,16 @@ export function MainNav({
   mine = live,
   myTurn = false,
   admin = true,
+  running = null,
 }: {
+  /** Probíhající trénink: „Tréninky“ ho rovnou otevře (19. 11. 2026); záložka Živě zrušena. */
+  running?: string | null;
   route: Route;
   navigate: (r: Route) => void;
   myName?: string | null;
   onChangePassword?(): void;
   onSignOut?(): void;
-  /** Běží trénink, na kterém jsem → Živě a Moje hry. */
+  /** Běží trénink, na kterém jsem → Moje hry. */
   live?: boolean;
   /** Hraju na běžícím tréninku → Moje hry (organizátor, který nehraje, ji nemá). */
   mine?: boolean;
@@ -86,13 +89,8 @@ export function MainNav({
   admin?: boolean;
 }) {
   const items: Item[] = [
-    ...(live
-      ? [
-          { key: 'live', label: 'Živě', route: { page: 'live' } as Route, match: ['live'] as Route['page'][] },
-          ...(mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
-        ]
-      : []),
-    { key: 'trainings', label: 'Trénink', route: { page: 'trainings' }, match: ['trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
+    ...(live && mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
+    { key: 'trainings', label: 'Tréninky', route: running ? { page: 'training', id: running } : { page: 'trainings' }, match: ['live', 'trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
     { key: 'ladder', label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
     { key: 'disciplines', label: 'Disciplíny', route: { page: 'disciplines' }, match: ['disciplines'] },
     ...(admin ? [{ key: 'templates', label: 'Šablony', route: { page: 'templates' } as Route, match: ['templates'] as Route['page'][] }] : []),
@@ -124,11 +122,11 @@ export function MainNav({
       })}
       {onSignOut && (
         <span className="nav-user">
-          {/* Na telefonu je logo dole skryté – verze je tady (jen tam) */}
-          <span className="nav-brand-mobile" aria-hidden="true">
+          {/* Na telefonu je logo dole skryté – tady (jen tam) s verzí; klik vede na úvod jako na notebooku (19. 11. 2026). */}
+          <a className="nav-brand-mobile" href={toHash({ page: 'trainings' })} aria-label="Úvodní stránka">
             <BrandMark />
             <VersionTag />
-          </span>
+          </a>
           {myName && <span className="nav-name">{myName}</span>}
           <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>

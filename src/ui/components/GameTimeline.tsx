@@ -1,27 +1,9 @@
-import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { drillTimeline, leader, matchProgress, type DrillRow, type MatchProgress } from '../../domain/timeline';
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { drillTimeline, matchProgress, type DrillRow, type MatchProgress } from '../../domain/timeline';
+import { setScores } from '../../domain/legState';
 import type { GameEvent, Match, PlayerId } from '../../domain/types';
-import { loadTimelineView, saveTimelineView, subscribeTimelineView, type TimelineView } from '../../storage/prefs';
 import { fmtDur } from '../queue';
 
-const MIN = 60_000;
-
-/** Zobrazení Průběhu – společné pro všechny karty, pamatuje si ho zařízení. */
-function useTimelineView(): TimelineView {
-  return useSyncExternalStore(subscribeTimelineView, loadTimelineView, () => 'column');
-}
-
-function ViewSwitch({ view }: { view: TimelineView }) {
-  return (
-    <div className="segmented tl-switch" role="group" aria-label="Zobrazení průběhu">
-      {(['column', 'curve'] as const).map((v) => (
-        <button key={v} type="button" aria-pressed={view === v} onClick={() => saveTimelineView(v)}>
-          {v === 'column' ? 'Sloupec' : 'Křivka'}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /** Šířka prvku (pro SVG křivky); ve sbaleném Průběhu nebo bez ResizeObserver výchozí. */
 function useWidth(fallback = 320) {
@@ -44,124 +26,60 @@ function useWidth(fallback = 320) {
 
 const sideCls = (s: 'A' | 'B') => (s === 'A' ? 'side-a' : 'side-b');
 
-/** Stav skóre; vedoucí číslo tučně. */
-function Score({ score: [a, b] }: { score: [number, number] }) {
+/**
+ * Zápas – křivka vedení (PRD 4.9, podoba z 19. 11. 2026): rozdíl skóre v čase, nad nulou vede levá, pod nulou pravá.
+ * Legenda jen se jmény stran (barva), body v barvě strany, která dala gól, osa +N / 0 / −N, 
+ * čas po čtvrtinách (obrat se nevyznačuje, 19. 11. 2026). Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
+ */
+function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
+  const [ref, width] = useWidth();
+  const W = Math.max(220, width);
+  const L = 28, R = 38, T = 10, PH = 138, B = 22;
+  const H = T + PH + B;
+  const pw = W - L - R, ph = PH;
+  const x = (pos: number) => L + pw * pos;
+  const mid = T + ph / 2;
+  const max = p.maxLead;
+  const y = (d: number) => mid - (d * (ph / 2)) / (max + 0.4);
+  const diff = (s: [number, number]) => s[0] - s[1];
+  const d0 = diff(p.initial);
+  const goals = p.steps.filter((s) => s.kind === 'goal');
+  // Ztráta bez gólu soupeře hned po ní (starší data): jen značka na spodní ose.
+  const loose = p.steps.filter((s, i) => s.kind === 'loss' && !p.steps[i + 1]?.fromLoss);
+  // Plocha bez přerušení; čára přeruší schody gólů ze ztráty, ty se kreslí zvlášť červeně čárkovaně.
+  let prevD = d0;
+  let line = `M${x(0)},${y(d0)}`;
+  let area = `M${x(0)},${mid} V${y(d0)}`;
+  const tax: { x: number; y1: number; y2: number }[] = [];
+  for (const g of goals) {
+    const gx = x(g.pos).toFixed(1), gy = y(diff(g.score)).toFixed(1);
+    area += ` H${gx} V${gy}`;
+    if (g.fromLoss) {
+      line += ` H${gx} M${gx},${gy}`;
+      tax.push({ x: x(g.pos), y1: y(prevD), y2: y(diff(g.score)) });
+    } else line += ` H${gx} V${gy}`;
+    prevD = diff(g.score);
+  }
+  line += ` H${x(1)}`;
+  area += ` H${x(1)} V${mid} Z`;
+  const id = `tl${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const total = p.end - p.start;
+  // Osa času po čtvrtinách celku (19. 11. 2026): 0, 25 %, 50 %, 75 %, konec.
+  const quarters = [0, 0.25, 0.5, 0.75, 1];
+  const nameOf = (s: 'A' | 'B') => (s === 'A' ? nameA : nameB);
+  const what = unit === 'gól' ? 'Gól' : 'Set';
   return (
-    <>
-      {a > b ? <b>{a}</b> : a}
-      <span className="tl-colon">:</span>
-      {b > a ? <b>{b}</b> : b}
-    </>
-  );
-}
-
-const leadCls = (s: [number, number]) => {
-  const l = leader(s);
-  return l === 'A' ? ' lead-a' : l === 'B' ? ' lead-b' : '';
-};
-
-/** Zápas – sloupec (PRD 4.9): řádek na událost, góly levé vlevo, pravé vpravo, uprostřed stav podbarvený podle vedoucího. */
-function MatchColumn({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
-  const scen = p.initial[0] > 0 || p.initial[1] > 0;
-  const Unit = unit === 'gól' ? 'Gól' : 'Set';
-  let current = p.initial;
-  return (
-    <div className="tl-col" role="table" aria-label="Průběh po událostech">
-      <div className="tl-col-row tl-col-head" role="row">
-        <span role="columnheader">Čas</span>
-        <span role="columnheader" className="tl-col-a">
-          {nameA}
+    <div ref={ref} className="tl-curve">
+      <div className="tl-legend">
+        <span>
           <i className="tl-dot side-a" />
+          {nameA}
         </span>
-        <span role="columnheader" className="tl-col-s">
-          stav
-        </span>
-        <span role="columnheader" className="tl-col-b">
+        <span>
           <i className="tl-dot side-b" />
           {nameB}
         </span>
       </div>
-      <div className="tl-col-row" role="row" aria-label={`${scen ? 'Start' : 'Začátek'} ${p.initial.join(':')}`}>
-        <span role="cell" className="tl-col-t">
-          {scen ? 'start' : '0:00'}
-        </span>
-        <span role="cell" className="tl-col-a" />
-        <span role="cell" className={`tl-col-s${leadCls(p.initial)}`}>
-          <Score score={p.initial} />
-        </span>
-        <span role="cell" className="tl-col-b" />
-      </div>
-      {p.steps.map((s, i) => {
-        const t = fmtDur(s.at - p.start);
-        const name = s.side === 'A' ? nameA : nameB;
-        const mark =
-          s.kind === 'goal' ? (
-            <span className={`tl-pill ${sideCls(s.side)}`}>{unit}</span>
-          ) : s.side === 'A' ? (
-            <>
-              <span className="tl-loss-lbl">ztráta</span>
-              <i className="tl-ring side-a" />
-            </>
-          ) : (
-            <>
-              <i className="tl-ring side-b" />
-              <span className="tl-loss-lbl">ztráta</span>
-            </>
-          );
-        if (s.kind === 'goal') current = s.score;
-        return (
-          <div
-            key={i}
-            className="tl-col-row"
-            role="row"
-            aria-label={s.kind === 'goal' ? `${Unit}: ${name}, ${s.score.join(':')} v ${t}` : `Ztráta: ${name} v ${t}`}
-          >
-            <span role="cell" className="tl-col-t">
-              {t}
-            </span>
-            <span role="cell" className="tl-col-a">
-              {s.side === 'A' && mark}
-            </span>
-            <span role="cell" className={`tl-col-s${leadCls(current)}`}>
-              {s.kind === 'goal' && <Score score={s.score} />}
-            </span>
-            <span role="cell" className="tl-col-b">
-              {s.side === 'B' && mark}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Zápas – křivka vedení (PRD 4.9): rozdíl skóre na časové ose, nad nulou vede levá, pod nulou pravá. */
-function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
-  const [ref, width] = useWidth();
-  const W = Math.max(220, width);
-  // Nahoře popisek levé strany, pod grafem popisek pravé, řada ztrát a čas.
-  const H = 222, L = 4, R = 38, T = 26, B = 58;
-  const pw = W - L - R, ph = H - T - B;
-  const x = (pos: number) => L + pw * pos;
-  const mid = T + ph / 2;
-  // Rezerva nad krajním náskokem, aby se popisky stavu vešly do grafu.
-  const y = (d: number) => mid - (d * (ph / 2)) / (p.maxLead + 0.6);
-  const d0 = p.initial[0] - p.initial[1];
-  const goals = p.steps.filter((s) => s.kind === 'goal');
-  const losses = p.steps.filter((s) => s.kind === 'loss');
-  const diff = (s: [number, number]) => s[0] - s[1];
-  const steps = goals.map((g) => ` H${x(g.pos).toFixed(1)} V${y(diff(g.score)).toFixed(1)}`).join('') + ` H${x(1)}`;
-  const line = `M${x(0)},${y(d0)}${steps}`;
-  const area = `M${x(0)},${mid} V${y(d0)}${steps} V${mid} Z`;
-  const id = `tl${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const total = p.end - p.start;
-  const ticks: number[] = [];
-  for (let m = MIN; m < total; m += MIN) ticks.push(m / total);
-  const grid: number[] = [];
-  for (let d = -p.maxLead; d <= p.maxLead; d++) if (d) grid.push(d);
-  const ly = T + ph + 30;
-  return (
-    <div ref={ref} className="tl-curve">
       <svg width={W} height={H} role="img" aria-label={`Křivka vedení, konečný stav ${p.score.join(':')}`}>
         <defs>
           <clipPath id={`${id}u`}>
@@ -171,149 +89,63 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
             <rect x={0} y={mid} width={W} height={H - mid} />
           </clipPath>
         </defs>
-        {grid.map((d) => (
-          <line key={d} className="tl-grid" x1={L} x2={L + pw} y1={y(d)} y2={y(d)} />
+        {[max, 0, -max].map((v) => (
+          <text key={v} className="tl-time" textAnchor="end" x={L - 6} y={y(v) + 3}>
+            {v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0'}
+          </text>
         ))}
         <path className="tl-area-a" d={area} clipPath={`url(#${id}u)`} />
         <path className="tl-area-b" d={area} clipPath={`url(#${id}d)`} />
         <line className="tl-axis-line" x1={L} x2={L + pw} y1={mid} y2={mid} />
-        <text className="tl-side-lbl side-a" x={L} y={12}>
-          ▲ vede {nameA}
-        </text>
-        <text className="tl-side-lbl side-b" x={L} y={T + ph + 14}>
-          ▼ vede {nameB}
-        </text>
         <path className="tl-step" d={line} />
+        {tax.map((s, i) => (
+          <line key={i} className="tl-tax-step" x1={s.x} x2={s.x} y1={s.y1} y2={s.y2} />
+        ))}
         {goals.map((g, i) => {
-          const up = g.side === 'A';
-          const cy = y(diff(g.score));
+          const cx = x(g.pos), cy = y(diff(g.score));
+          const who = `${nameOf(g.side)} v ${fmtDur(g.at - p.start)} → ${g.score.join(':')}`;
           return (
             <g key={i}>
-              <circle className={`tl-pt ${sideCls(g.side)}`} cx={x(g.pos)} cy={cy} r={5}>
-                <title>{`${unit === 'gól' ? 'Gól' : 'Set'}: ${up ? nameA : nameB} v ${fmtDur(g.at - p.start)} → ${g.score.join(':')}`}</title>
+              {g.fromLoss && <circle className="tl-tax-ring" cx={cx} cy={cy} r={8.5} />}
+              <circle className={`tl-pt ${sideCls(g.side)}`} cx={cx} cy={cy} r={5}>
+                <title>{g.fromLoss ? `${what} ze ztráty soupeře: ${who}` : `${what}: ${who}`}</title>
               </circle>
-              <text className="tl-pt-lbl" textAnchor="middle" x={x(g.pos)} y={up ? cy - 9 : cy + 17}>
-                {g.score.join(':')}
-              </text>
             </g>
           );
         })}
         <text className="tl-end-lbl" x={x(1) + 5} y={y(diff(p.score)) + 5}>
           {p.score.join(':')}
         </text>
-        {losses.map((l, i) => (
-          <g key={i}>
-            <circle className="tl-loss-pt" cx={x(l.pos)} cy={ly} r={5}>
-              <title>{`Ztráta: ${l.side === 'A' ? nameA : nameB} v ${fmtDur(l.at - p.start)}`}</title>
-            </circle>
-            <circle className={`tl-fill ${sideCls(l.side)}`} cx={x(l.pos)} cy={ly} r={2} />
+        {loose.map((l, i) => (
+          <circle key={i} className="tl-loss-pt" cx={x(l.pos)} cy={T + ph + 5} r={3.5}>
+            <title>{`Ztráta: ${nameOf(l.side)} v ${fmtDur(l.at - p.start)}`}</title>
+          </circle>
+        ))}
+        {quarters.map((q) => (
+          <g key={q}>
+            <line className="tl-tick" x1={x(q)} x2={x(q)} y1={H - 14} y2={H - 10} />
+            <text className="tl-time" textAnchor={q === 0 ? 'start' : q === 1 ? 'end' : 'middle'} x={x(q)} y={H - 1}>
+              {fmtDur(total * q)}
+            </text>
           </g>
         ))}
-        {ticks.map((t) => (
-          <line key={t} className="tl-tick" x1={x(t)} x2={x(t)} y1={H - 14} y2={H - 10} />
-        ))}
-        <text className="tl-time" x={L} y={H - 1}>
-          0:00
-        </text>
-        <text className="tl-time" textAnchor="end" x={x(1)} y={H - 1}>
-          {fmtDur(total)}
-        </text>
       </svg>
     </div>
   );
 }
 
-/** Zápas (PRD 4.9): přepínač Sloupec / Křivka. U simulace jsou „góly“ sety. */
+/** Zápas (PRD 4.9): křivka vedení (od 18. 11. 2026 jediné zobrazení, Sloupec zrušen). U starší simulace jsou „góly“ sety. */
 export function MatchTimeline({ match: m, events, from, to, names }: { match: Match; events: GameEvent[]; from: number; to: number; names: Record<PlayerId, string> }) {
-  const view = useTimelineView();
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
-  const sim = m.block === 'sim';
-  const p = matchProgress(events, from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
+  const sim = setScores(m);
+  // Ztráty jen u Daně za ztrátu (18. 11. 2026); starší ťuknuté ztráty jinde se nezobrazují.
+  const p = matchProgress(m.trackLosses ? events : events.filter((e) => e.kind !== 'loss'), from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
   const props = { p, nameA: nm(m.sideA), nameB: nm(m.sideB), unit: sim ? ('set' as const) : ('gól' as const) };
-  return (
-    <>
-      <ViewSwitch view={view} />
-      {view === 'column' ? <MatchColumn {...props} /> : <MatchCurve {...props} />}
-    </>
-  );
+  return <MatchCurve {...props} />;
 }
-
-const drillSummary = (r: DrillRow) =>
-  `${r.marks.filter(Boolean).length}/${r.marks.length}` +
-  (r.streak && r.streak.length > 1 ? ` · nejdelší série ${r.streak.length}` : '') +
-  (r.marks.length >= 4 ? ` · 1. půlka ${r.halves[0]}, 2. půlka ${r.halves[1]}` : '');
-
-const inStreak = (r: DrillRow, i: number) => !!r.streak && r.streak.length > 1 && i >= r.streak.start && i < r.streak.start + r.streak.length;
 
 /** Barva hráče v cvičení: 1. zlatá, 2. tmavá, další černá (čárkovaně v křivce). */
 const playerCls = (i: number) => `pl-${Math.min(i, 2)}`;
-
-/** Cvičení – sloupec (PRD 4.9): řádek = pokus, sloupec = hráč; nad 10 pokusů dvě půlky vedle sebe. */
-function DrillColumn({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: number }[]; names: Record<PlayerId, string> }) {
-  const n = Math.max(...rows.map((x) => x.r.marks.length));
-  const half = n > 10 ? Math.ceil(n / 2) : n;
-  const blocks: [number, number][] = half < n ? [[0, half], [half, n]] : [[0, n]];
-  return (
-    <div className="tl-dcol">
-      {blocks.map(([from, to]) => (
-        <div
-          key={from}
-          className="tl-dcol-b"
-          role="table"
-          aria-label={blocks.length > 1 ? `Pokusy ${from + 1}–${to}` : 'Pokusy'}
-          style={{ gridTemplateColumns: `auto repeat(${rows.length}, minmax(0, 1fr))` }}
-        >
-          <div className="tl-col-row" role="row">
-            <span role="columnheader" className="tl-dh">
-              pokus
-            </span>
-            {rows.map(({ p, i }) => (
-              <span key={p} role="columnheader" className="tl-dh">
-                <i className={`tl-dot ${playerCls(i)}`} />
-                {names[p] ?? '?'}
-              </span>
-            ))}
-          </div>
-          {Array.from({ length: to - from }, (_, k) => from + k).map((a) => (
-            <div key={a} className="tl-col-row" role="row">
-              <span role="cell" className="tl-dn">
-                {a + 1}
-              </span>
-              {rows.map(({ p, r, i }) => {
-                const ok = r.marks[a];
-                const name = names[p] ?? '?';
-                return (
-                  <span key={p} role="cell" aria-label={ok === undefined ? undefined : `${name}, ${a + 1}. pokus ${ok ? 'povedený' : 'nepovedený'}`}>
-                    {ok !== undefined && (
-                      <span className={['tl-try', ok ? `ok ${playerCls(i)}` : 'ko', inStreak(r, a) ? 'streak' : ''].filter(Boolean).join(' ')}>
-                        {ok ? r.running[a] : '✗'}
-                      </span>
-                    )}
-                  </span>
-                );
-              })}
-            </div>
-          ))}
-          {blocks.length > 1 && (
-            <div className="tl-col-row tl-dsum" role="row">
-              <span role="cell" className="tl-dn">
-                {from + 1}–{to}
-              </span>
-              {rows.map(({ p, r }) => {
-                const part = r.marks.slice(from, to);
-                return (
-                  <span key={p} role="cell">
-                    {part.filter(Boolean).length}/{part.length}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /** Cvičení – křivky (PRD 4.9): vodorovně pokus, svisle povedené celkem; čárkovaně „vše povedené“. */
 function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: number }[]; names: Record<PlayerId, string> }) {
@@ -355,13 +187,12 @@ function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: numb
               className={`tl-pline ${playerCls(i)}`}
               points={[[x(0), y(0)], ...r.running.map((h, a) => [x(a + 1), y(h)])].map((pt) => pt.map((v) => v.toFixed(1)).join(',')).join(' ')}
             />
-            {r.marks.map((ok, a) =>
-              ok ? null : (
-                <circle key={a} className="tl-loss-pt" cx={x(a + 1)} cy={y(r.running[a])} r={3.5}>
-                  <title>{`${names[p] ?? '?'}, ${a + 1}. pokus nepovedený`}</title>
-                </circle>
-              ),
-            )}
+            {/* Povedený pokus = tečka v barvě hráče, nepovedený = červené kolečko (19. 11. 2026). */}
+            {r.marks.map((ok, a) => (
+              <circle key={a} className={ok ? `tl-pt ${playerCls(i)}` : 'tl-loss-pt'} cx={x(a + 1)} cy={y(r.running[a])} r={ok ? 3 : 3.5}>
+                <title>{`${names[p] ?? '?'}, ${a + 1}. pokus ${ok ? 'povedený' : 'nepovedený'}`}</title>
+              </circle>
+            ))}
           </g>
         ))}
         {ends.map((e) => (
@@ -369,47 +200,42 @@ function DrillCurve({ rows, names }: { rows: { p: PlayerId; r: DrillRow; i: numb
             {e.hits}
           </text>
         ))}
-        <text className="tl-time" textAnchor="middle" x={x(1)} y={H - 6}>
-          1
-        </text>
-        <text className="tl-time" textAnchor="middle" x={x(n)} y={H - 6}>
-          {n}
-        </text>
-        {n >= 6 && (
-          <text className="tl-time" textAnchor="middle" x={x((n + 1) / 2)} y={H - 6}>
-            pokus
+        {/* Pokusy po čtvrtinách celku (19. 11. 2026): např. 5 · 10 · 15 · 20. */}
+        {[...new Set([0.25, 0.5, 0.75, 1].map((q) => Math.max(1, Math.round(n * q))))].map((a) => (
+          <text key={a} className="tl-time" textAnchor={a === n ? 'end' : 'middle'} x={x(a)} y={H - 6}>
+            {a}
           </text>
-        )}
+        ))}
+        <text className="tl-time" textAnchor="start" x={x(0)} y={H - 6}>
+          pokus
+        </text>
       </svg>
     </div>
   );
 }
 
-/** Cvičení (PRD 4.9): přepínač Sloupec / Křivka, pod tím souhrn každého hráče. */
+/** Cvičení (PRD 4.9): křivky povedených pokusů (jediné zobrazení od 18. 11. 2026), bez legendy. */
 export function DrillTimeline({ players, events, names }: { players: PlayerId[]; events: GameEvent[]; names: Record<PlayerId, string> }) {
-  const view = useTimelineView();
   const all = drillTimeline(events, players);
   const rows = players.map((p, i) => ({ p, r: all[p], i })).filter((x) => x.r.marks.length > 0);
   if (!rows.length) return null;
-  return (
-    <>
-      <ViewSwitch view={view} />
-      {view === 'column' ? <DrillColumn rows={rows} names={names} /> : <DrillCurve rows={rows} names={names} />}
-      <div className="tl-sums">
-        {rows.map(({ p, r, i }) => (
-          <p key={p} className="tl-sum">
-            <i className={`tl-dot ${playerCls(i)}`} />
-            <b>{names[p] ?? '?'}</b> <span>{drillSummary(r)}</span>
-          </p>
-        ))}
-      </div>
-    </>
-  );
+  // Bez legendy pod grafem (19. 11. 2026, *rozhodnutí uživatele*): jména a „12/20“ ukazuje tabule cvičení nad grafem.
+  return <DrillCurve rows={rows} names={names} />;
 }
 
-/** Rozbalitelný „Průběh“ – jen když má hra ťukané události. */
+/**
+ * „Průběh“ – jen když má hra ťukané události. V Moje hry vždy rozbalený bez sbalení (18. 11. 2026),
+ * jinde rozbalitelný.
+ */
 export function TimelineBox({ count, children, open }: { count: number; children: ReactNode; open?: boolean }) {
   if (!count) return null;
+  if (open)
+    return (
+      <section className="tl-box" role="group" aria-label="Průběh">
+        <h4 className="tl-h">Průběh</h4>
+        {children}
+      </section>
+    );
   return (
     <details className="tl-box" open={open} role="group" aria-label="Průběh">
       <summary>Průběh</summary>

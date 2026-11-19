@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { roundMinutes } from '../../domain/ballTime';
 import { discipline, roundMin } from '../../domain/disciplines';
 import { fairness, fairnessAdvice } from '../../domain/fairness';
 import { buildSchedule, canBuildSchedule } from '../../domain/schedule';
@@ -88,7 +89,7 @@ export function FairnessReport({ training, names, onAddRounds, hl }: Props) {
     if (add === null) return <li>{label}: {pairs} a ani s 20 koly navíc se to nepodaří – na tolik hráčů a stolů je kol málo.</li>;
     return (
       <li>
-        {label}: {pairs}. Přidej {def.name} ještě {add}× (asi {add * (roundMin(def.id, training.disciplineMin) + 1)} min).
+        {label}: {pairs}. Přidej {def.name} ještě {add}× (asi {add * (roundMin(def.id, roundMinutes(training.disciplineMin, training.matchFormats, training.ballSec)) + 1)} min).
         {onAddRounds && advice.selected && (
           <button type="button" className="ghost" onClick={() => onAddRounds(def.id, add)}>
             Přidat {add}× {def.name} ({label === 'Spolu' ? 'spolu' : 'proti'})

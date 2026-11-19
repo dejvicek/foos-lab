@@ -6,6 +6,13 @@ export const MAX_LOSSES = 30;
 
 const isFiveFive = (m: Match) => !!m.start && m.start[0] === 5 && m.start[1] === 5;
 
+/**
+ * Starší simulace se zapisuje v setech (ga/gb = vyhrané sety 0..2). Od 18. 11. 2026 nese zápas simulace
+ * BO formát a zapisuje se po legech jako ostatní zápasy; v setech zůstává simulace bez formátu
+ * (klasický trénink, kolo zamčené před změnou).
+ */
+export const setScores = (m: Match): boolean => m.block === 'sim' && m.bestOf === undefined;
+
 /** Stav na stole: odehrané góly + scénářový start. */
 export function tableScore(m: Match, s: Score | undefined): [number, number] {
   const [sa, sb] = m.start ?? [0, 0];
@@ -16,27 +23,28 @@ export function tableScore(m: Match, s: Score | undefined): [number, number] {
 /** Góly na vyhraný leg (BO formát, jinak 6). */
 export const legTarget = (m: Match): number => m.legTo ?? LEG_TO;
 /** Leg o 2 góly: scénář 5:5, nebo rozhodující leg s nastavením „o 2“. */
-const byTwo = (m: Match) => isFiveFive(m) || !!m.winBy2;
+export const winsByTwo = (m: Match): boolean => isFiveFive(m) || !!m.winBy2;
+const byTwo = winsByTwo;
 /** Strop legu o 2 góly. */
 export const legCap = (m: Match): number => (isFiveFive(m) ? LEG_CAP : (m.cap ?? LEG_CAP));
 
-/** PRD 7.1: konec legu – do 6 (BO formát: do legTo); 5:5 a rozhodující leg o 2 se stropem; simulace do 2 setů. */
+/** PRD 7.1: konec legu – do 6 (BO formát: do legTo); 5:5 a rozhodující leg o 2 se stropem; starší simulace do 2 setů. */
 export function legOver(m: Match, s: Score | undefined): { over: boolean; winner: 'A' | 'B' | null } {
-  const [a, b] = m.block === 'sim' ? [s?.ga ?? 0, s?.gb ?? 0] : tableScore(m, s);
+  const [a, b] = setScores(m) ? [s?.ga ?? 0, s?.gb ?? 0] : tableScore(m, s);
   let over: boolean;
-  if (m.block === 'sim') over = a >= 2 || b >= 2;
+  if (setScores(m)) over = a >= 2 || b >= 2;
   else if (byTwo(m)) over = (Math.max(a, b) >= legTarget(m) && Math.abs(a - b) >= 2) || Math.max(a, b) >= legCap(m);
   else over = Math.max(a, b) >= legTarget(m);
   return { over, winner: over ? (a > b ? 'A' : b > a ? 'B' : null) : null };
 }
 
 /**
- * Nejvyšší hodnota pole při ťukání: góly do 6 na stole (5:5 do stropu 10), sety ≤ 2, ztráty ≤ 30.
+ * Nejvyšší hodnota pole při ťukání: góly do 6 na stole (5:5 do stropu 10), sety starší simulace ≤ 2, ztráty ≤ 30.
  * Stejný strop dostane i databáze, takže dva telefony, které ťuknou poslední gól, neudělají 7:4.
  */
 export function bumpLimit(m: Match, field: keyof Score): number {
   if (field === 'la' || field === 'lb') return MAX_LOSSES;
-  if (m.block === 'sim') return 2;
+  if (setScores(m)) return 2;
   const offset = field === 'ga' ? (m.start?.[0] ?? 0) : (m.start?.[1] ?? 0);
   return (byTwo(m) ? legCap(m) : legTarget(m)) - offset;
 }
@@ -57,10 +65,10 @@ export function bump(m: Match, s: Score, field: keyof Score, delta: number): Sco
 /**
  * Předvyplnění při zápisu kliknutím: když jedna strana skončila na `v` (stav na stole),
  * jaký stav má vítěz? Do 6 → 6; 5:5 o 2 góly se stropem 10 → v + 2, nejvýš 10;
- * simulace → 2 sety. Když `v` samo je vítězné, vrací null (poraženého neznáme).
+ * starší simulace → 2 sety. Když `v` samo je vítězné, vrací null (poraženého neznáme).
  */
 export function winnerFor(m: Match, v: number): number | null {
-  if (m.block === 'sim') return v < 2 ? 2 : null;
+  if (setScores(m)) return v < 2 ? 2 : null;
   if (byTwo(m)) return v >= legCap(m) ? null : Math.min(legCap(m), Math.max(legTarget(m), v + 2));
   return v < legTarget(m) ? legTarget(m) : null;
 }

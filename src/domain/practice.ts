@@ -11,6 +11,7 @@ import { TRAINING_ITEM } from './queue';
 import { buildSchedule, canBuildSchedule } from './schedule';
 import { parseSoloKey, soloKey, soloMetric } from './solo';
 import { cleanFormats, formatOf, matchState, withFormat, type MatchFormats } from './matchFormat';
+import { ballRoundMin, ballSecOf, roundMinutes, usesBalls } from './ballTime';
 import type { DisciplineId, Match, PlayerId, SoloKey, SoloMetric, Training } from './types';
 
 export const PRACTICE_MAX_PLAYERS = 2;
@@ -39,8 +40,8 @@ export function practicesFor(ts: Training[], playerId: PlayerId | null, all = fa
  */
 export const roundsOf = (d: DisciplineDef): number => (d.kind === 'match' ? (d.paired ? 2 : 1) : (d.variants?.length ?? 1));
 
-/** Délka kola v plánu: zápas s BO = délka legu × nejvyšší počet legů. */
-const planMin = (d: DisciplineDef, formats?: MatchFormats | null) => d.min * (d.kind === 'match' ? formatOf(formats, d.id).bestOf : 1);
+/** Délka kola v plánu: zápas z doby míčku × nejvíc gólů ve formátu (18. 11. 2026), cvičení z katalogu. */
+const planMin = (d: DisciplineDef, formats?: MatchFormats | null) => (usesBalls(d.id) ? ballRoundMin(d.id, formatOf(formats, d.id), ballSecOf(d.id)) : d.min);
 
 /**
  * Nový vlastní trénink s plánem: vybraná cvičení v pořadí `drills`, kola podle roundsOf, délky kol
@@ -76,6 +77,7 @@ export function newPractice(
     plan: Object.fromEntries(list.map((d) => [d, roundsOf(discipline(d))])),
     disciplineOrder: list,
     disciplineMin: Object.fromEntries(list.map((d) => [d, discipline(d).min])),
+    ballSec: Object.fromEntries(list.filter(usesBalls).map((d) => [d, ballSecOf(d)])),
     lockedRounds: [],
     createdBy: me,
     ...(matchFormats ? { matchFormats } : {}),
@@ -167,6 +169,7 @@ export const roundItem = (n: number): string => `round|${n}`;
 /** Kola plánu vlastního tréninku v pořadí (cvičení podle disciplineOrder, varianty po sobě). */
 export function practiceRounds(t: Training): PracticeRound[] {
   const out: PracticeRound[] = [];
+  const mins = roundMinutes(t.disciplineMin, t.matchFormats, t.ballSec);
   for (const id of t.disciplineOrder ?? []) {
     const d = DISCIPLINES.find((x) => x.id === id);
     if (!d) continue; // cvičení z novější verze appky
@@ -174,11 +177,10 @@ export function practiceRounds(t: Training): PracticeRound[] {
       const n = out.length + 1;
       if (d.kind === 'match') {
         if (t.attendees.length < 2) continue;
-        const f = formatOf(t.matchFormats, id);
-        out.push({ n, drill: id, match: practiceMatch(t, d, n, v), min: roundMin(id, t.disciplineMin) * f.bestOf, item: roundItem(n) });
+        out.push({ n, drill: id, match: practiceMatch(t, d, n, v), min: roundMin(id, mins), item: roundItem(n) });
         continue;
       }
-      out.push({ n, drill: id, metric: practiceMetric(d, t.attendees.length), variant: d.variants?.[v], min: roundMin(id, t.disciplineMin), item: roundItem(n) });
+      out.push({ n, drill: id, metric: practiceMetric(d, t.attendees.length), variant: d.variants?.[v], min: roundMin(id, mins), item: roundItem(n) });
     }
   }
   return out;
@@ -190,7 +192,7 @@ export function practiceRounds(t: Training): PracticeRound[] {
  */
 function practiceMatch(t: Training, d: DisciplineDef, n: number, k: number): Match {
   const [a, b] = k % 2 ? [t.attendees[1], t.attendees[0]] : [t.attendees[0], t.attendees[1]];
-  const m: Match = { id: `practice|${n}|${a}v${b}`, block: 'league', round: n, table: 1, kind: 'singles', sideA: [a], sideB: [b], discipline: d.id, lossTax: !!d.lossTax, trackLosses: true };
+  const m: Match = { id: `practice|${n}|${a}v${b}`, block: 'league', round: n, table: 1, kind: 'singles', sideA: [a], sideB: [b], discipline: d.id, lossTax: !!d.lossTax, trackLosses: !!d.lossTax };
   if (d.wall) m.wall = 'A';
   if (d.start) m.start = d.start;
   return withFormat(m, formatOf(t.matchFormats, d.id));
@@ -266,14 +268,17 @@ export function practiceMinutes(t: Training): number | null {
   return s !== undefined && e !== undefined ? Math.max(0, Math.round((e - s) / 60_000)) : null;
 }
 
+/** Které zápasy berou tabulky podle disciplín v žebříčku (19. 11. 2026): 1 na 1, 2 na 2, nebo vše. */
+export type MatchKindFilter = 'singles' | 'doubles' | 'all';
+
 /**
- * Zápasy 1 na 1 tréninku (12. 11. 2026) pro tabulky zápasů v žebříčku Vlastní: vlastní trénink duo
- * i singly klubového (konfigurovatelného) tréninku – stejné podmínky. Klubový Normální leg v singlu
- * se počítá jako Jedničky. Jen zápasy, kde je něco zapsané.
+ * Zápasy tréninku pro tabulky podle disciplín v žebříčku (12. 11. 2026, od 19. 11. 2026 *rozhodnutí uživatele*
+ * i čtyřhry, klasický trénink a simulace): vlastní trénink duo (vždy 1 na 1) i zápasy klubového tréninku.
+ * Jen zápasy, kde je něco zapsané.
  */
-export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match: Match; state: ReturnType<typeof matchState> }[] {
+export function ladderMatches(t: Training): { discipline: DisciplineId; match: Match; state: ReturnType<typeof matchState> }[] {
   if (isPractice(t)) return practiceMatches(t).map((x) => ({ discipline: x.match.discipline!, match: x.match, state: x.state }));
-  if (t.format !== 'custom' || !canBuildSchedule(t)) return [];
+  if (!canBuildSchedule(t)) return [];
   let matches: Match[];
   try {
     matches = buildSchedule(t).matches;
@@ -281,11 +286,26 @@ export function oneOnOneMatches(t: Training): { discipline: DisciplineId; match:
     return [];
   }
   return matches.flatMap((m) => {
-    if (m.block !== 'league' || m.kind !== 'singles' || !m.discipline) return [];
+    const discipline = matchDiscipline(m);
+    if (!discipline) return [];
     const state = matchState(m, t.scores);
     if (!state.legs.some((l) => l.score?.ga !== undefined && l.score?.gb !== undefined)) return [];
-    return [{ discipline: m.discipline === 'normal' ? ('singles' as const) : m.discipline, match: m, state }];
+    return [{ discipline, match: m, state }];
   });
+}
+
+/**
+ * Disciplína zápasu pro tabulky: Normální leg a simulace = Jedničky v singlu, Normální leg ve čtyřhře;
+ * konfigurovatelný trénink podle disciplíny kola, klasický podle pravidel kola (Daň, Zeď, scénářový start).
+ */
+function matchDiscipline(m: Match): DisciplineId | null {
+  const plain: DisciplineId = m.kind === 'singles' ? 'singles' : 'normal';
+  if (m.block === 'sim') return plain;
+  if (m.discipline) return m.discipline === 'normal' ? plain : m.discipline;
+  if (m.lossTax) return 'lossTax';
+  if (m.wall) return 'wall';
+  if (m.start) return DISCIPLINES.find((d) => d.start && d.start[0] === m.start![0] && d.start[1] === m.start![1])?.id ?? null;
+  return plain;
 }
 
 /** Zápasy vlastního tréninku: kolo, zápas a stav po legech (jen kola, kde je něco zapsané). */
@@ -310,7 +330,7 @@ export interface PracticeMatchRow {
   legWins: number;
   gf: number;
   gc: number;
-  /** (výhry + ½ remízy) / zápasy */
+  /** výhry / zápasy (remíza se nepočítá, 19. 11. 2026) */
   rate: number;
 }
 
@@ -321,15 +341,17 @@ export interface PracticeMatchTable {
 }
 
 /**
- * Žebříček Vlastní – zápasy 1 na 1 (12. 11. 2026): pro každou zápasovou disciplínu vyhrané zápasy (BO2
- * remíza = půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
+ * Zápasy podle disciplín (12. 11. 2026 jako 1 na 1; od 19. 11. 2026 s filtrem 1 na 1 / 2 na 2 / vše): pro každou
+ * zápasovou disciplínu vyhrané zápasy (remíza
+ * BO2 1:1 se od 19. 11. 2026 nepočítá jako výhra ani půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
  * vyhraných zápasů → rozdíl skóre na leg → tréninky; pod 3 tréninky „málo dat“ jako jinde.
  */
-export function computePracticeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number): PracticeMatchTable[] {
+export function computeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number, kind: MatchKindFilter = 'singles'): PracticeMatchTable[] {
   const acc = new Map<DisciplineId, Map<PlayerId, PracticeMatchRow & { seen: Set<string> }>>();
   for (const t of trainings) {
     if ((from && t.date < from) || (to && t.date > to)) continue;
-    for (const { discipline: id, match, state } of oneOnOneMatches(t)) {
+    for (const { discipline: id, match, state } of ladderMatches(t)) {
+      if (kind !== 'all' && match.kind !== kind) continue;
       const table = acc.get(id) ?? new Map();
       acc.set(id, table);
       const sides: [PlayerId[], 'A' | 'B'][] = [
@@ -361,11 +383,12 @@ export function computePracticeMatchLadder(trainings: Training[], from: string |
         }
     }
   }
-  const order = DISCIPLINES.map((d) => d.id);
+  // Jedničky (singl Normálního legu) nahoře hned před 2v2 – v 1 na 1 i 2 na 2 stejné pořadí disciplín (19. 11. 2026).
+  const order: DisciplineId[] = ['singles', ...DISCIPLINES.map((d) => d.id).filter((id) => id !== 'singles')];
   return [...acc.entries()]
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([discipline, table]) => {
-      const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? (r.wins + r.draws / 2) / r.matches : 0 }));
+      const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? r.wins / r.matches : 0 }));
       const perLeg = (r: PracticeMatchRow) => (r.legs ? (r.gf - r.gc) / r.legs : 0);
       rows.sort((a, b) => b.rate - a.rate || perLeg(b) - perLeg(a) || b.trainings - a.trainings || (a.playerId < b.playerId ? -1 : 1));
       return { discipline, ranked: rows.filter((r) => r.trainings >= minTrainings), lowData: rows.filter((r) => r.trainings < minTrainings) };

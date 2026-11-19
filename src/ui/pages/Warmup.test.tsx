@@ -57,23 +57,20 @@ it('Moje hry: po doběhnutí timeru se Ukončit už neptá', async () => {
   await vi.waitFor(() => expect(ended(repo, id)).toBeDefined());
 });
 
-it('Živě: u Rozcvičky organizátor nezadává výsledek, jen potvrdí konec; běžící ukazuje fázi', async () => {
-  window.location.hash = '#/live';
+it('Rozpis: organizátor potvrdí konec Rozcvičky tužkou u stolu (dřív v Živě, 19. 11. 2026); běžící se zeptá', async () => {
+  window.location.hash = '#/trainings/t1';
   const id = warmupItemOf('id1');
   const repo = memoryRepository({ players: roster, trainings: [{ ...base, playTimes: { training: { startedAt: Date.now() - 120_000 }, [id]: { startedAt: Date.now() - 70_000 } } }] });
   render(<App repo={repo} auth={authAs('id9')} />);
   const user = userEvent.setup();
-  const board = await screen.findByRole('region', { name: 'Aktivní utkání' });
-  const tables = within(board).getAllByRole('group', { name: /^Stůl / });
-  for (const tb of tables) expect(within(tb).queryByRole('button', { name: 'Zadat výsledek' })).toBeNull();
-  const running = tables.find((tb) => tb.textContent?.includes('H1'))!;
-  expect(running).toHaveTextContent(/Rozcvička – fáze 2 \/ 7, zbývá/);
-  const idle = tables.find((tb) => tb !== running)!;
-  expect(within(idle).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
-  const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
-  await user.click(within(running).getByRole('button', { name: 'Potvrdit konec' }));
+  await screen.findByRole('table', { name: 'Rozpis tréninku' });
+  const table = buildSchedule(base).sections[0].rows[0].cells.findIndex((c) => c?.type === 'group' && c.players.includes('id1')) + 1;
+  await user.click(screen.getByRole('button', { name: `Zapsat: 1. kolo, stůl ${table}` }));
+  const card = screen.getByRole('group', { name: `1. kolo, stůl ${table}` });
+  const ask = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await user.click(within(card).getByRole('button', { name: 'Potvrdit konec' }));
   expect(ask).toHaveBeenCalledWith('Rozcvička ještě běží – opravdu ukončit?');
-  expect(ended(repo, id)).toBeUndefined();
+  await vi.waitFor(() => expect(ended(repo, id)).toBeDefined());
 });
 
 it('Moje hry: u Rozcvičky jen odpočet (bez stopek „Doba hry“) a po konci bez „zkontroluj výsledek“', async () => {

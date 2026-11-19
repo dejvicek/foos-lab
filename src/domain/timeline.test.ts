@@ -24,6 +24,17 @@ describe('průběh hry z událostí', () => {
     expect(p.score).toEqual([2, 1]);
   });
 
+  it('zápas, Daň: gól hned po ztrátě soupeře je gól ze ztráty; jinak ne', () => {
+    const list = [ev(1, 'loss', { side: 'B' }), ev(1.01, 'goal', { side: 'A' }), ev(2, 'goal', { side: 'B' }), ev(3, 'loss', { side: 'A' }), ev(4, 'goal', { side: 'A' }), ev(5, 'loss', { side: 'A' }), ev(5.01, 'goal', { side: 'B' })];
+    const p = matchProgress(list, 0, 6 * M);
+    expect(p.steps.filter((s) => s.kind === 'goal').map((s) => [s.side, s.score, !!s.fromLoss])).toEqual([
+      ['A', [1, 0], true],
+      ['B', [1, 1], false],
+      ['A', [2, 1], false], // ztráta vlastní strany gól neplatí
+      ['B', [2, 2], true],
+    ]);
+  });
+
   it('zápas: scénářový start – stav počítá od startu (5:5 → 6:5 …)', () => {
     const list = [ev(1, 'goal', { side: 'A' }), ev(2, 'goal', { side: 'B' }), ev(3, 'goal', { side: 'B' })];
     const p = matchProgress(list, 0, 4 * M, [5, 5]);

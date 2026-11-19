@@ -168,12 +168,16 @@ export function supabaseRepository(client: SupabaseClient): Repository {
       return { value: row.value, attempts: row.attempts ?? null };
     },
     async savePlayTime(trainingId, itemId, p) {
-      if (!p || (p.startedAt === undefined && p.endedAt === undefined))
+      if (!p || (p.startedAt === undefined && p.endedAt === undefined && !p.ready))
         check(await client.from('play_times').delete().eq('training_id', trainingId).eq('item_id', itemId));
       else check(await client.from('play_times').upsert(playTimeToRow(trainingId, itemId, p), { onConflict: 'training_id,item_id' }));
     },
     async startItem(trainingId, itemId, at) {
       const res = await client.rpc('start_item', { p_training: trainingId, p_item: itemId, p_at: new Date(at).toISOString() });
+      return playTimeFromRow(check<PlayTimeRow>(res));
+    },
+    async readyItem(trainingId, itemId, key, ready, keys, at) {
+      const res = await client.rpc('ready_item', { p_training: trainingId, p_item: itemId, p_key: key, p_ready: ready, p_keys: keys, p_at: new Date(at).toISOString() });
       return playTimeFromRow(check<PlayTimeRow>(res));
     },
     async endItem(trainingId, itemId, startedAt, endedAt) {

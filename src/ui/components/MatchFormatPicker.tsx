@@ -1,4 +1,5 @@
-import { BEST_OF_OPTIONS, defaultFormat, fixedLegRule, MAX_CAP, MAX_LEG_TO, minLegTo, normalizeFormat, type MatchFormat } from '../../domain/matchFormat';
+import { discipline } from '../../domain/disciplines';
+import { BEST_OF_OPTIONS, defaultFormat, fixedLegRule, MAX_CAP, MAX_LEG_TO, minLegTo, normalizeFormat, SIM_FORMATS, type MatchFormat } from '../../domain/matchFormat';
 import type { DisciplineId } from '../../domain/types';
 
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
@@ -7,8 +8,22 @@ const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a +
  * BO formát zápasové disciplíny (12. 11. 2026): BO1 / BO2 / BO3 / BO5, gólů na leg a rozhodující
  * leg o 2 góly se stropem. Výběry místo políček – hodnota je vždy platná.
  */
-export function MatchFormatPicker({ id, name, value, onChange }: { id: DisciplineId; name: string; value: MatchFormat; onChange(f: MatchFormat): void }) {
+export function MatchFormatPicker({ id, name, value, onChange, disabled }: { id: DisciplineId; name: string; value: MatchFormat; onChange(f: MatchFormat): void; disabled?: boolean }) {
   const f = normalizeFormat(id, value);
+  // Simulace (18. 11. 2026): jen dva ligové formáty – BO3 do 6 (rozhodující o 2, strop 10), BO5 do 5 (o 2, strop 8).
+  if (discipline(id)?.kind === 'sim')
+    return (
+      <span className="mf" role="group" aria-label={`Formát: ${name}`}>
+        <select aria-label={`Formát zápasu: ${name}`} value={f.bestOf} disabled={disabled} onChange={(e) => onChange(normalizeFormat(id, { bestOf: Number(e.target.value) }))}>
+          {SIM_FORMATS.map((x) => (
+            <option key={x.bestOf} value={x.bestOf}>
+              BO{x.bestOf} do {x.legTo}
+            </option>
+          ))}
+        </select>
+        <span className="mf-note">rozhodující leg o 2, strop {f.cap}</span>
+      </span>
+    );
   const set = (p: Partial<MatchFormat>) => onChange(normalizeFormat(id, { ...f, ...p }));
   const fixed = fixedLegRule(id);
   return (

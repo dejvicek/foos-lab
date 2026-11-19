@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { cleanFormats, formatMins, formatOf } from '../../domain/matchFormat';
+import { cleanFormats, formatOf } from '../../domain/matchFormat';
+import { roundMinutes } from '../../domain/ballTime';
 import { MatchFormatPicker } from './MatchFormatPicker';
 import { addBreakAt, anchorBreaks, breakMovable, disciplineStepTarget, freeSlots, moveBreak, removeBreak, setBreakMin } from '../../domain/breaks';
 import { currentTemplates, matchingTemplate, templateRounds } from '../../domain/catalog';
@@ -49,7 +50,7 @@ export function DisciplineStep({
   const t = training;
   const n = t.attendees.length;
   // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
-  const mins = formatMins(t.disciplineMin ?? null, t.matchFormats);
+  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.ballSec);
   const tl = planTimeline(roundSequence(t), t.breaks, mins);
   const over = tl.total - t.durationMin;
   const fmt = (m: number) => clockAt(t.startTime, m);
@@ -275,7 +276,7 @@ function DisciplineTable({
 
   const n = t.attendees.length;
   // Zápas s BO: kolo = délka legu × nejvyšší počet legů.
-  const mins = formatMins(t.disciplineMin ?? null, t.matchFormats);
+  const mins = roundMinutes(t.disciplineMin ?? null, t.matchFormats, t.ballSec);
   const locked = lockedCounts(t);
   const seq = roundSequence(t);
   const free = new Set(freeSlots(t));
@@ -332,10 +333,12 @@ function DisciplineTable({
           <span>{d.name}</span>
         </label>
         {note}
-        {checked && d.kind === 'match' && (
+        {checked && (d.kind === 'match' || d.kind === 'sim') && (
           <MatchFormatPicker
             id={id}
             name={d.name}
+            // Zahájená simulace si formát nese v zamčeném kole – změna by se už neprojevila.
+            disabled={d.kind === 'sim' && (locked[id] ?? 0) > 0}
             value={formatOf(t.matchFormats, id)}
             onChange={(f) => onChange({ ...t, matchFormats: cleanFormats({ ...t.matchFormats, [id]: f }) ?? null })}
           />

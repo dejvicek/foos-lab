@@ -57,6 +57,19 @@ export function canWriteMatch(v: Viewer, m: Match, t: Training): boolean {
   return t.format === 'custom' && m.referee === v.playerId;
 }
 
+/**
+ * Smí přihlásit připravenost (18. 11. 2026, zrcadlí can_mark_ready)? Zápas: hráč své strany, rozhodčí
+ * a organizátor kteroukoli stranu. Cvičení: hráč za sebe, organizátor za kohokoli.
+ */
+export function canMarkReady(v: Viewer, t: Training, e: { match?: Match; players: PlayerId[] }, key: string): boolean {
+  if (canManage(v, t)) return true;
+  if (!attends(v, t)) return false;
+  if (!e.match) return key === v.playerId && e.players.includes(key);
+  const side = key === 'A' ? e.match.sideA : key === 'B' ? e.match.sideB : null;
+  if (!side) return false;
+  return side.includes(v.playerId!) || (t.format === 'custom' && e.match.referee === v.playerId);
+}
+
 /** Smí zapsat výsledek cvičení hráče `playerId` ve skupině `group`? (zrcadlí can_write_solo) */
 export function canWriteSolo(v: Viewer, group: PlayerId[], playerId: PlayerId, t: Training): boolean {
   if (canManage(v, t)) return true;

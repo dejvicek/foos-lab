@@ -74,9 +74,13 @@ describe('katalog disciplín (9. 11. 2026)', () => {
   it('ukládá jen rozdíly proti výchozím; Obnovit výchozí úpravu smaže', () => {
     const form = catalogForm('clearing');
     expect(saveDiscipline({}, 'clearing', form)).toEqual({});
-    const data = saveDiscipline({}, 'clearing', { ...form, min: 5 });
-    expect(data).toEqual({ disciplines: { clearing: { min: 5 } } });
+    // cvičení s pokusy: doba míčku (18. 11. 2026), délka kola se neukládá
+    expect(saveDiscipline({}, 'clearing', { ...form, min: 5 })).toEqual({});
+    const data = saveDiscipline({}, 'clearing', { ...form, ballSec: 15 });
+    expect(data).toEqual({ disciplines: { clearing: { ballSec: 15 } } });
     expect(resetDiscipline(data, 'clearing')).toEqual({});
+    // Rozcvička (timer) má dál délku kola
+    expect(saveDiscipline({}, 'warmup', { ...catalogForm('warmup'), min: 12 })).toEqual({ disciplines: { warmup: { min: 12 } } });
   });
 
   it('kontrola formuláře a štítků', () => {
@@ -109,11 +113,11 @@ describe('šablony tréninku (9. 11. 2026)', () => {
   });
 
   it('disciplíny nemají povinná / volitelná: uložený příznak z katalogu se ignoruje a při uložení zmizí', () => {
-    const data = { disciplines: { wall: { optional: true, min: 9 } } } as unknown as CatalogData;
+    const data = { disciplines: { warmup: { optional: true, min: 10 } } } as unknown as CatalogData;
     applyCatalog(data);
-    expect(discipline('wall')).not.toHaveProperty('optional');
+    expect(discipline('warmup')).not.toHaveProperty('optional');
     expect(DISCIPLINES.some((d) => 'optional' in d)).toBe(false);
-    expect(saveDiscipline(data, 'wall', catalogForm('wall', data))).toEqual({ disciplines: { wall: { min: 9 } } });
+    expect(saveDiscipline(data, 'warmup', catalogForm('warmup', data))).toEqual({ disciplines: { warmup: { min: 10 } } });
   });
 
   it('nový trénink začne první šablonou (výběr, délka, počet kol), bez pauz a bez doplňování', () => {
@@ -131,11 +135,14 @@ describe('šablony tréninku (9. 11. 2026)', () => {
 
   it('šablona přesně: cvičení podle hráčů a stolů, zápasy podle počtu kol v šabloně, nic se nedoplňuje', () => {
     const t = (selection: DisciplineId[], rounds = {}) => ({ id: 'x', name: 'X', durationMin: 60, selection, rounds });
-    // 8 hráčů / 4 stoly: cvičení 1 vystřídání; Penalta (2 varianty) = 2 kola
-    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(9 + 2 * 9 + 9);
-    expect(templateTimeline(t(['warmupPasses']), 12, 4).total).toBe(2 * 9);
+    // 8 hráčů / 4 stoly: cvičení 1 vystřídání; Penalta (2 varianty) = 2 kola; doba míčku: cvičení ve dvojici 20 s × 40 = 14 min,
+    // Normální leg 40 s × 11 = 8 min
+    expect(templateTimeline(t(['warmupPasses', 'penaltyKeeper', 'normal']), 8, 4).total).toBe(15 + 2 * 15 + 9);
+    expect(templateTimeline(t(['warmupPasses']), 12, 4).total).toBe(2 * 15);
     expect(templateTimeline(t(['normal'], { normal: 3 }), 8, 4).total).toBe(3 * 9);
-    expect(templateTimeline(t(['normal']), 8, 4, { normal: 10 }).total).toBe(11);
+    expect(templateTimeline(t(['warmup']), 8, 4, { warmup: 10 }).total).toBe(11);
+    // délka zápasu se z délek kol nebere (doba míčku)
+    expect(templateTimeline(t(['normal']), 8, 4, { normal: 10 }).total).toBe(9);
     // simulace pod 4 hráči se nehraje
     expect(templateTimeline(t(['sim', 'normal']), 3, 2).total).toBe(9);
     expect(templatePlan(t(['wall', 'normal', 'sim'], { normal: 2 }), 8, 4)).toEqual({ normal: 2, wall: 2, sim: 1 });
@@ -148,11 +155,13 @@ describe('šablony tréninku (9. 11. 2026)', () => {
 
   it('uložení šablon a délek kol; kontrola', () => {
     const tpls = [{ id: 's', name: 'Krátký', durationMin: 60, selection: ['normal'] as DisciplineId[] }];
-    const data = saveTemplates({}, tpls, { ...catalogMins(), normal: 7 });
-    expect(data).toEqual({ templates: tpls, disciplines: { normal: { min: 7 } } });
+    const data = saveTemplates({}, tpls, { ...catalogMins(), warmup: 7 });
+    expect(data).toEqual({ templates: tpls, disciplines: { warmup: { min: 7 } } });
     applyCatalog(data);
-    expect(saveTemplates(data, tpls, catalogMins())).toEqual({ templates: tpls, disciplines: { normal: { min: 7 } } });
-    expect(saveTemplates(data, tpls, { ...catalogMins(), normal: 8 })).toEqual({ templates: tpls });
+    expect(saveTemplates(data, tpls, catalogMins())).toEqual({ templates: tpls, disciplines: { warmup: { min: 7 } } });
+    expect(saveTemplates(data, tpls, { ...catalogMins(), warmup: 9 })).toEqual({ templates: tpls });
+    // zápasy, simulace a cvičení s pokusy: délka z doby míčku, délka kola se neukládá
+    expect(saveTemplates(data, tpls, { ...catalogMins(), normal: 7, clearing: 5 })).toEqual({ templates: tpls, disciplines: { warmup: { min: 7 } } });
     expect(validateTemplates(tpls, catalogMins())).toBeNull();
     expect(validateTemplates([], catalogMins())).toBe('Musí zůstat aspoň jedna šablona.');
     expect(validateTemplates([{ ...tpls[0], name: ' ' }], catalogMins())).toBe('Šablona musí mít název.');
@@ -192,7 +201,7 @@ describe('pauzy v šabloně (9. 11. 2026): po disciplíně', () => {
 
   it('šablona s pauzou: odhad ji započítá, nový trénink i použití šablony ji převezmou; víc hráčů = pauza dál za cvičeními', () => {
     const tpl = { id: 'k', name: 'Krátký', durationMin: 60, selection: ['warmupPasses', 'normal'] as DisciplineId[], breaks: [{ after: 'warmupPasses' as DisciplineId, min: 10 }] };
-    expect(templateTimeline(tpl, 8, 4).total).toBe(9 + 10 + 9);
+    expect(templateTimeline(tpl, 8, 4).total).toBe(15 + 10 + 9);
     const t = newTraining('t', '2026-11-09', null, null, tpl);
     expect(t.breaks).toEqual({ afterDisciplines: [{ after: 'warmupPasses', min: 10 }] });
     expect(breaksOf({ ...t, attendees: ['a', 'b', 'c', 'd'] })).toEqual([{ after: 1, min: 10 }]);
