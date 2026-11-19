@@ -81,21 +81,21 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 
           <Step n={2} label="Moje hry" title="Kde hraješ, s kým a proti komu" phone={<MyGamesPhone />}>
             <p>
-              Když trénink běží a hraješ na něm, otevře se appka rovnou v <b>Moje hry</b>. Vidíš své aktuální kolo a pod ním další. Mezi koly listuješ,
-              celý rozpis je v záložce Trénink.
+              Když trénink běží a hraješ na něm, otevře se appka rovnou v <b>Moje hry</b>: kolo, které je na řadě, jinak poslední dohrané. Mezi koly
+              listuješ šipkami nebo ťuknutím na časovou osu, celý rozpis je v záložce Trénink.
             </p>
             <ul className="g-list">
               <Li i="●">
                 <b>Červená tečka</b> u Moje hry znamená, že jsi na řadě. Volný stůl i hráči jsou připravení.
               </Li>
               <Li i="Z">
-                Nahoře je velký <b>název disciplíny</b> (Zeď, Daň za ztrátu, Start 4:5 …), pravidlo jednou větou a tvoje <b>role</b>: s kým a proti komu
-                hraješ, nebo že jsi rozhodčí u stolu. Čára nad tím ukazuje průběh tréninku: odehraná kola, kde jsi teď (▼), pauzu a co ještě zbývá. Pravidla
-                vysvětluje krok 6.
+                Kolo vypadá jako v Rozpisu: čas, <b>název disciplíny</b>, do kolika se hraje, velké číslo tvého stolu a zápas. Pod tím proužek se stavem:
+                „Na řadě“, „Hraje se“, „Dohráno“. Časová osa nahoře ukazuje odehraná kola, kde jsi (▼), pauzu a zlatým rámečkem kolo, které je na řadě.
+                Pravidla jsou pod otazníkem v kartě.
               </Li>
               <Li i="–">
-                Když v kole nehraješ, stojí u tebe „nehraješ“. U stolu appka napíše, na co se čeká: „Trénink ještě nezačal“, „Utkání ještě není na řadě“
-                nebo „Pauza – další kolo spustí organizátor“.
+                Když v kole nehraješ, je v kartě „Volno“. Po dohraném utkání ukáže lišta <b>Další kolo</b>, co tě čeká: buď „Na řadě“ s tlačítkem
+                Otevřít, nebo na co se čeká – „Čeká se na stůl“, „Čeká se na soupeře (jména)“, nebo pauza s odpočtem.
               </Li>
               <Li i="?">
                 Nevidíš Moje hry? Ukáže se, jen když běží trénink a jsi mezi přítomnými. Trénink zahajuje organizátor.
@@ -111,7 +111,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <div className="g-flow">
               <div>
-                <b>Připraven</b>Jakmile tvoje strana stojí u stolu – velké tlačítko uprostřed šedého zrcadla. Až jsou připravení oba týmy, zrcadlo se odemkne.
+                <b>Připraven</b>Jakmile tvoje strana stojí u stolu – velké tlačítko pod kartou kola. Až jsou připravení oba týmy, objeví se zrcadlo.
               </div>
               <div>
                 <b>Ťukat</b>Góly (v Dani za ztrátu i ztráty), kdo z vás zrovna má ruku volnou.
@@ -120,7 +120,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Potvrdit konec</b>Hned, nebo samo po 15 s.
               </div>
               <div>
-                <b>Otevřít</b>Po konci uvidíš výsledek a kartu dalšího kola. Samo se nic nepřepne.
+                <b>Otevřít</b>Po konci zůstane dohrané kolo s výsledkem a Průběhem; lišta Další kolo nabídne Otevřít. Samo se nic nepřepne.
               </div>
             </div>
             <ul className="g-list">
@@ -215,8 +215,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="↗">
-                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Tečka má barvu strany, která skórovala, a obrat je
-                vyznačený. V Dani je gól ze ztráty soupeře červený čárkovaný schod.
+                <b>Zápas:</b> čára jde nahoru, když dá gól levá strana, a dolů, když pravá. Tečka má barvu strany, která skórovala.
+                V Dani je gól ze ztráty soupeře červený čárkovaný schod.
               </Li>
               <Li i="✓">
                 <b>Cvičení</b> porovná hráče u stolu: čára roste s každým povedeným pokusem, nepovedený je tečka.

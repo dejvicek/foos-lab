@@ -309,6 +309,7 @@ export function TrainingPage({
             tap={mobile ? tap : undefined}
             timing={itemTiming}
             onTapSolo={onTapSolo}
+            pause={pauseList.find((p) => p.state !== 'over') ?? null}
           />
         ) : (
           <p className="note">V tomhle tréninku nehraješ.</p>

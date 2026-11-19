@@ -136,6 +136,13 @@ interface Props {
    * Organizátor v Rozpisu (bez stopek): potvrdí konec utkání bez výsledku – Rozcvičky (19. 11. 2026; dřív v Živě).
    */
   onEnd?(id: string): void;
+  /**
+   * Moje hry (19. 11. 2026): jen samotný zápis – bez stopek, Připraven, překryvu „Dohráno“ a Průběhu;
+   * stav, Připraven, Potvrdit konec a Průběh má karta kola a akční zóna v MyTable.
+   */
+  bare?: boolean;
+  /** Oprava výsledku (Moje hry): zrcadlo rovnou v úpravách. */
+  fix?: boolean;
 }
 
 /** Jedna nápověda – stejný formát pro všechny bloky (nadpis + odstavce se štítky). */
@@ -162,8 +169,11 @@ const legText = (m: Match, s: Score | undefined) => {
  * Skóre utkání: ťukání (telefon) nebo výběr (notebook). Zápas s BO (12. 11. 2026) má legy po sobě –
  * zapisuje se do hraného legu, předchozí jde otevřít a opravit; nahoře stav v legech.
  */
-export function MatchScore({ m, training, names, label, tap, disabled, note, onScore, timelineOpen, lock, done, ended }: {
+export function MatchScore({ m, training, names, label, tap, disabled, note, onScore, timelineOpen, lock, done, ended, noTimeline, editInit }: {
   ended?: boolean;
+  editInit?: boolean;
+  /** Bez Průběhu (Moje hry: graf ukazuje akční zóna po konci). */
+  noTimeline?: boolean;
   lock?: Parameters<typeof ScoreMirror>[0]['lock'];
   done?: Parameters<typeof ScoreMirror>[0]['done'];
   m: Match;
@@ -210,12 +220,12 @@ export function MatchScore({ m, training, names, label, tap, disabled, note, onS
         </div>
       )}
       {tap ? (
-        <ScoreMirror key={leg.id} match={leg} score={training.scores[leg.id]} names={names} me={tap.me} disabled={disabled} note={note} lock={lock} done={done} ended={ended} onBump={(f, d) => tap.onBumpScore(leg, f, d)} />
+        <ScoreMirror key={leg.id} match={leg} score={training.scores[leg.id]} names={names} me={tap.me} disabled={disabled} note={note} lock={lock} done={done} ended={ended} editInit={editInit} onBump={(f, d) => tap.onBumpScore(leg, f, d)} />
       ) : (
         <ScorePicker label={multi ? `${label}, leg ${leg.legNo}` : label} match={leg} score={training.scores[leg.id]} names={names} disabled={disabled} onChange={(sc) => onScore(leg.id, sc)} />
       )}
       {/* Moje hry: Průběh až po dohrání utkání (19. 11. 2026); během hry jen zápis. */}
-      <TimelineBox count={timelineOpen && !ended ? 0 : evs.length} open={timelineOpen}>
+      <TimelineBox count={noTimeline || (timelineOpen && !ended) ? 0 : evs.length} open={timelineOpen}>
         <MatchTimeline match={leg} events={evs} from={(leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first)} to={to} names={names} />
       </TimelineBox>
     </>
@@ -304,9 +314,10 @@ export function RoundHelp({ row, untitledMain }: { row: ScheduleRow; untitledMai
   );
 }
 
-export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only, noHelp, onEnd }: Props) {
+export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo, canMatch = () => true, canSolo = () => true, tap, timing, onTapSolo, timelineOpen = false, only, noHelp, onEnd, bare = false, fix = false }: Props) {
   /** Průběh cvičení u stolu (sloupec / křivky pokusů). */
   const drillBox = (players: PlayerId[], r: ScheduleRow, j: number) => {
+    if (bare) return null;
     const id = drillItemId(r, j + 1, players);
     const evs = (training.events ?? []).filter((e) => e.itemId === id);
     // Moje hry: Průběh až po dohrání (19. 11. 2026).
@@ -323,7 +334,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
     // Zapisovat jde až po zahájení (všichni připravení) – nikdo, ani organizátor, dřív (19. 11. 2026, *rozhodnutí
     // uživatele*). Ukončené utkání jde opravit. Celkový výsledek bez stopek (tužka v rozpisu) timing nemá → bez omezení.
     const open = !timing || !st || st.startedAt !== undefined || st.endedAt !== undefined;
-    const bar = timing && st && (
+    const bar = !bare && timing && st && (
       <TimingBar
         state={st}
         now={timing.now}
@@ -384,13 +395,13 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             const tmr = timer(m.id, players, legIds(m).some((id) => !isEmptyScore(training.scores[id])), st.over, m, false, inMirror && canMatch(m));
             const can = canMatch(m) && tmr.open;
             const ist = timing?.state(m.id);
-            const gate = readyGate(m.id, players, tmr.open, canMatch(m), m);
+            const gate = bare ? null : readyGate(m.id, players, tmr.open, canMatch(m), m);
             // Dohráno, nepotvrzeno a smím potvrdit (hráč po zahájení, organizátor vždy).
             const mayEnd =
               !!ist && ist.endedAt === undefined && timing!.canWrite(m.id, players, m) && (timing!.manage || (timing!.allowStart && ist.startedAt !== undefined));
             const tsc = st.legs[st.legs.length - 1];
             const done =
-              inMirror && st.over && mayEnd
+              !bare && inMirror && st.over && mayEnd
                 ? {
                     text: (m.bestOf ?? 1) > 1 ? `Dohráno ${st.legsA}:${st.legsB} na legy ✓` : `Dohráno ${legText(tsc.leg, tsc.score)} ✓`,
                     autoEndIn: timing!.autoEndIn?.(m.id) ?? null,
@@ -421,6 +432,8 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   ended={ist?.endedAt !== undefined}
                   onScore={onScore}
                   timelineOpen={timelineOpen}
+                  noTimeline={bare}
+                  editInit={fix}
                 />
                   </>
                 )}
@@ -465,7 +478,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
             c.players.every((p) => drillCount({ value: training.soloResults[p]?.[gkey], attempts: training.soloAttempts?.[p]?.[gkey] }, def).done),
           );
           const canP = (p: PlayerId) => canSolo(c.players, p) && gtmr.open;
-          const dgate = readyGate(drillItemId(row, j + 1, c.players), c.players, gtmr.open, c.players.some((p) => canSolo(c.players, p)));
+          const dgate = bare ? null : readyGate(drillItemId(row, j + 1, c.players), c.players, gtmr.open, c.players.some((p) => canSolo(c.players, p)));
           if (dgate)
             return (
               <div key={j} className="entry-card" role="group" aria-label={label}>
@@ -509,6 +522,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   names={names}
                   canSolo={canP}
                   onTap={(p, ok, d) => (tap.onTapSolo ?? onTapSolo)?.(p, key, def, ok, d)}
+                  editInit={fix}
                 />
                 {drillBox(c.players, row, j)}
               </div>

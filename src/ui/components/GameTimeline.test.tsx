@@ -30,10 +30,11 @@ it('zápas: jen křivka vedení (Sloupec zrušen 18. 11. 2026), bez přepínače
   expect([...container.querySelectorAll('svg text.tl-time')].slice(-5).map((x) => x.textContent)).toHaveLength(5);
 });
 
-it('zápas: obrat – první gól, po kterém vede strana, která prohrávala', () => {
+it('zápas: obrat se nevyznačuje – jen křivka (19. 11. 2026)', () => {
   const events = [ev(1, 'goal', { side: 'B' }), ev(2, 'goal', { side: 'A' }), ev(3, 'goal', { side: 'A' })];
   const { container } = render(<MatchTimeline match={match()} events={events} from={0} to={5000} names={names} />);
-  expect(container.querySelector('.tl-turn')).toHaveTextContent('obrat 2:1');
+  expect(container.querySelector('.tl-turn')).toBeNull();
+  expect(container).not.toHaveTextContent('obrat');
 });
 
 it('Daň (19. 11. 2026): gól ze ztráty soupeře má čárkovaný schod a kroužek; legenda jen jména', () => {

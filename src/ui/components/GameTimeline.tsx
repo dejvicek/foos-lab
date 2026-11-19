@@ -26,22 +26,10 @@ function useWidth(fallback = 320) {
 
 const sideCls = (s: 'A' | 'B') => (s === 'A' ? 'side-a' : 'side-b');
 
-/** Obrat: první gól, po kterém vede strana, která předtím prohrávala (i proti scénářovému startu). */
-function turnOf(p: MatchProgress) {
-  let prev = p.initial[0] - p.initial[1];
-  for (const s of p.steps) {
-    if (s.kind !== 'goal') continue;
-    const d = s.score[0] - s.score[1];
-    if (prev !== 0 && d !== 0 && Math.sign(d) !== Math.sign(prev)) return s;
-    if (d !== 0) prev = d;
-  }
-  return null;
-}
-
 /**
  * Zápas – křivka vedení (PRD 4.9, podoba z 19. 11. 2026): rozdíl skóre v čase, nad nulou vede levá, pod nulou pravá.
- * Legenda jen se jmény stran (barva), body v barvě strany, která dala gól, osa +N / 0 / −N, vyznačený obrat,
- * čas po čtvrtinách. Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
+ * Legenda jen se jmény stran (barva), body v barvě strany, která dala gól, osa +N / 0 / −N, 
+ * čas po čtvrtinách (obrat se nevyznačuje, 19. 11. 2026). Daň: gól ze ztráty soupeře má červený čárkovaný schod a bod v červeném kroužku.
  */
 function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string; nameB: string; unit: 'gól' | 'set' }) {
   const [ref, width] = useWidth();
@@ -78,8 +66,6 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
   const total = p.end - p.start;
   // Osa času po čtvrtinách celku (19. 11. 2026): 0, 25 %, 50 %, 75 %, konec.
   const quarters = [0, 0.25, 0.5, 0.75, 1];
-  const turn = turnOf(p);
-  const tx = turn ? x(turn.pos) : 0;
   const nameOf = (s: 'A' | 'B') => (s === 'A' ? nameA : nameB);
   const what = unit === 'gól' ? 'Gól' : 'Set';
   return (
@@ -111,14 +97,6 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
         <path className="tl-area-a" d={area} clipPath={`url(#${id}u)`} />
         <path className="tl-area-b" d={area} clipPath={`url(#${id}d)`} />
         <line className="tl-axis-line" x1={L} x2={L + pw} y1={mid} y2={mid} />
-        {turn && (
-          <g className="tl-turn">
-            <line x1={tx} x2={tx} y1={T} y2={T + ph} />
-            <text x={tx > L + pw * 0.72 ? tx - 4 : tx + 4} y={T + 9} textAnchor={tx > L + pw * 0.72 ? 'end' : 'start'}>
-              obrat {turn.score.join(':')}
-            </text>
-          </g>
-        )}
         <path className="tl-step" d={line} />
         {tax.map((s, i) => (
           <line key={i} className="tl-tax-step" x1={s.x} x2={s.x} y1={s.y1} y2={s.y2} />

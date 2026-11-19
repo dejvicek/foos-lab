@@ -68,6 +68,7 @@ export function progressLabel(segs: ProgressSeg[], current: number, startTime: s
 export function MyTimeline({
   segs,
   current,
+  upcoming,
   startTime,
   onPick,
   prev,
@@ -75,6 +76,8 @@ export function MyTimeline({
 }: {
   segs: ProgressSeg[];
   current: number;
+  /** Kolo, které je na řadě (zlatě orámované), když se díváš jinam (19. 11. 2026). */
+  upcoming?: number;
   startTime: string;
   onPick(index: number): void;
   prev: { disabled: boolean; onClick(): void };
@@ -93,7 +96,7 @@ export function MyTimeline({
             <button
               key={i}
               type="button"
-              className={`seg t-${x.type}${x.index! < current ? ' done' : x.index === current ? ' cur' : ''}`}
+              className={`seg t-${x.type}${x.index! < current ? ' done' : x.index === current ? ' cur' : ''}${x.index === upcoming ? ' upnext' : ''}`}
               style={{ flexGrow: x.min }}
               aria-label={`${x.index! + 1}. kolo: ${roundName({ row: x.row, role: 'wait' })}, ${clockAt(startTime, x.time)}`}
               aria-current={x.index === current ? 'step' : undefined}

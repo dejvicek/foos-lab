@@ -147,25 +147,24 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const { repo, mine, user } = await openMine();
     expect(screen.getByRole('button', { name: 'Moje hry – jsi na řadě' })).toHaveAttribute('aria-current', 'page');
     // před zahájením jen velké Připraven a stav stran, bez zrcadla skóre (19. 11. 2026)
+    const card = () => mine.querySelector('.my-card') as HTMLElement;
+    // před zahájením (19. 11. 2026): v kartě „● Na řadě“, v akční zóně jen Připraven (za soupeře ne)
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
-    expect(mine).toHaveTextContent('Skóre zapíšete, až budou připravené obě strany.');
+    expect(within(card()).getByRole('status')).toHaveTextContent('● Na řadě');
     expect(within(mine).queryByRole('button', { name: /^Potvrdit/ })).toBeNull();
+    expect(within(mine).queryByRole('button', { name: /^Připraven: / })).toBeNull();
     expect(mine).not.toHaveTextContent('aktivní od');
-    // připravenost: soupeři už jsou připravení, moje strana čeká
-    const ready = within(mine).getByRole('group', { name: 'Připravenost' });
-    expect(ready).toHaveTextContent('H2 + H3 ✓ připraveni 18:01');
-    expect(ready).toHaveTextContent('H4 + H1 čeká');
-    expect(within(ready).queryByRole('button', { name: 'Připraven: H2 + H3' })).toBeNull(); // za soupeře ne
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    // hraje se: v kartě „● Hraje se“ a čas, zrcadlo; konec jde potvrdit i předčasně
+    expect(within(card()).getByRole('status')).toHaveTextContent('● Hraje se');
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
-    expect(within(mine).queryByRole('group', { name: 'Připravenost' })).toBeNull();
     expect(within(mine).queryByLabelText('Zahájeno')).toBeNull(); // časy se ručně neupravují
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    // dohráno: přes zrcadlo výsledek, odpočet, Potvrdit konec a Opravit výsledek
-    expect(mine).toHaveTextContent('Dohráno 6:0 ✓');
+    // dohráno: v kartě „Dohráno“ + Opravit, v zóně jen Potvrdit konec s odpočtem
+    expect(within(card()).getByRole('status')).toHaveTextContent(/^DohránoOpravit$/);
     expect(mine).toHaveTextContent('Utkání skončí samo za 15 s.');
     expect(within(mine).getAllByRole('button', { name: 'Potvrdit konec' })).toHaveLength(1);
-    expect(within(mine).getByRole('button', { name: 'Opravit výsledek' })).toBeInTheDocument();
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]?.endedAt).toBeUndefined();
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     await vi.waitFor(() => {
@@ -184,8 +183,9 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    expect(within(mine).getByRole('group', { name: 'Připravenost' })).toHaveTextContent('H4 + H1 ✓ připraveni 18:03');
-    expect(mine).toHaveTextContent('Jste připravení. Skóre půjde zapsat, jakmile bude připravený i soupeř.');
+    // v kartě „● Na řadě · čeká se na soupeře“ a ✓ zrušit; akční zóna prázdná (19. 11. 2026)
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Na řadě · čeká se na soupeře✓ zrušit');
+    expect(within(mine).queryByRole('button', { name: /^Připraven/ })).toBeNull();
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Moje hry' })).toBeInTheDocument(); // tečka zmizela, čeká se na soupeře
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[ids[0]]).toEqual({ ready: { B: at(18, 3) } }));
@@ -197,8 +197,9 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const { repo, mine, user } = await openMine();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    // oprava (−1 gól přes Zpět): leg už není dohraný, odpočet zmizí
-    await user.click(within(mine).getByRole('button', { name: '↶ Zpět' }));
+    // oprava přes „Opravit“ v kartě (19. 11. 2026), −1 gól přes Zpět: leg už není dohraný, odpočet zmizí
+    await user.click(within(mine.querySelector('.my-card') as HTMLElement).getByRole('button', { name: 'Opravit' }));
+    await user.click(within(mine).getAllByRole('button', { name: /^Ubrat gól/ })[0]); // levá strana
     expect(mine).not.toHaveTextContent('skončí samo');
     vi.setSystemTime(at(18, 4)); // poslední ťuknutí v 18:04
     await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
@@ -240,34 +241,36 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeEnabled();
   });
 
-  it('po konci se Moje hry samy nepřepnou: dohráno + karta dalšího kola „Otevřít“; Opravit výsledek ukáže zrcadlo', async () => {
+  it('po konci zůstane dohrané kolo (výsledek, Průběh) a lišta Další kolo nabídne Otevřít (19. 11. 2026)', async () => {
     const { mine, user } = await openMine();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
-    const fin = await within(mine).findByRole('status');
-    expect(fin).toHaveTextContent('1. kolo dohráno · 0:6 · prohráli jste'); // H1 hraje vpravo
-    const open = within(mine).getByRole('button', { name: /^Otevřít 2\. kolo: Normální leg/ });
-    expect(open).toHaveTextContent('Další kolo · na řadě');
+    const card = () => mine.querySelector('.my-card') as HTMLElement;
+    expect(within(card()).getByRole('status')).toHaveTextContent('✓ Dohráno · prohráli jste'); // H1 hraje vpravo
+    expect(within(mine).getByRole('group', { name: /^Kolo 1 z 3,/ })).toBeInTheDocument();
+    // lišta Další kolo pod osou: na řadě → Otevřít
+    const bar = mine.querySelector('.next-bar.ready') as HTMLElement;
+    expect(bar).toHaveTextContent('Na řadě');
+    const open = within(bar).getByRole('button', { name: /^Otevřít 2\. kolo: Normální leg/ });
     expect(open).toHaveTextContent('Otevřít ›');
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
-    // Průběh dohrané hry je v přechodu rovnou rozbalený (18. 11. 2026), jen křivka
+    // Průběh dohrané hry rovnou rozbalený, jen křivka
     const prog = within(mine).getByRole('group', { name: 'Průběh' });
     expect(within(prog).getByRole('img', { name: 'Křivka vedení, konečný stav 6:0' })).toBeInTheDocument();
-    expect(prog.tagName).not.toBe('DETAILS');
-    await user.click(within(mine).getByRole('button', { name: 'Opravit výsledek' }));
+    // Opravit v kartě ukáže zrcadlo; lišta zůstává
+    await user.click(within(card()).getByRole('button', { name: 'Opravit' }));
     expect(within(mine).getByRole('button', { name: /^Gól vlevo/ })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ })).toBeInTheDocument();
     await user.click(within(mine).getByRole('button', { name: /^Otevřít 2\. kolo/ }));
     expect(within(mine).getByRole('group', { name: /^Kolo 2 z 3,/ })).toBeInTheDocument();
     expect(within(mine).getByRole('button', { name: 'Připraven' })).toBeInTheDocument();
-    // šipkou zpět: dohrané kolo normálně – výsledek, Průběh, bez přechodu a karty Otevřít
+    expect(mine.querySelector('.next-bar')).toBeNull();
+    // šipkou zpět: dohrané kolo s výsledkem a Průběhem; lišta ukazuje kolo na řadě
     await user.click(within(mine).getByRole('button', { name: 'Předchozí kolo' }));
     expect(within(mine).getByRole('group', { name: /^Kolo 1 z 3,/ })).toBeInTheDocument();
-    expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
     expect(within(mine).getByRole('group', { name: 'Průběh' })).toBeInTheDocument();
-    expect(mine).toHaveTextContent('Leg dohrán 6 : 0 ✓');
-    expect(mine).not.toHaveTextContent('zkontroluj a potvrď konec');
+    expect(within(card()).getByRole('status')).toHaveTextContent('✓ Dohráno');
   });
 });
 
@@ -362,7 +365,7 @@ describe('hráč hlásí připravenost jen v Moje hry', () => {
     await user.click(screen.getByRole('button', { name: /^Moje hry/ }));
     const mine = screen.getByRole('region', { name: 'Moje kolo' });
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    expect(within(mine).getByRole('group', { name: 'Připravenost' })).toHaveTextContent('H2 + H3 ✓ připraveni');
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('čeká se na soupeře');
   });
 });
 
@@ -375,13 +378,11 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
-    const ready = within(mine).getByRole('group', { name: 'Připravenost' });
-    expect(within(ready).getAllByRole('listitem')).toHaveLength(2); // dvojice u stolu
-    expect(within(ready).getAllByRole('button')).toHaveLength(1); // jen za sebe
+    expect(within(mine).getAllByRole('button', { name: /^Připraven/ })).toHaveLength(1); // jen za sebe
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    expect(ready).toHaveTextContent('H1 ✓ připraven 18:03');
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('čeká se na soupeře');
     await othersReady(repo);
-    await vi.waitFor(() => expect(within(mine).queryByRole('group', { name: 'Připravenost' })).toBeNull());
+    await vi.waitFor(() => expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Hraje se'));
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
   });
 });
@@ -397,7 +398,7 @@ describe('Moje hry otevře rozehranou hru', () => {
     expect(within(mine).getByRole('button', { name: 'Připraven' })).toBeInTheDocument();
   });
 
-  it('nic není na řadě (pauza) a podle hodin je už po konci: otevře se další moje kolo, ne poslední (19. 11. 2026)', async () => {
+  it('nic není na řadě (pauza), podle hodin po konci: otevře se poslední dohrané kolo a lišta Další kolo čeká na pauzu (19. 11. 2026)', async () => {
     vi.setSystemTime(new Date(2026, 10, 2, 21, 30)); // plánovaný rozpis dávno skončil, reálně se hraje pozadu
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     const paused: Training = {
@@ -408,7 +409,8 @@ describe('Moje hry otevře rozehranou hru', () => {
     window.location.hash = '#/my-games';
     render(<App repo={memoryRepository({ players, trainings: [paused] })} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
-    expect(within(mine).getByRole('group', { name: /^Kolo 2 z 3/ })).toBeInTheDocument();
+    expect(within(mine).getByRole('group', { name: /^Kolo 1 z 3/ })).toBeInTheDocument();
+    expect(mine.querySelector('.next-bar.wait')).toHaveTextContent('Čeká se na pauzu – spustí ji organizátor');
   });
 });
 

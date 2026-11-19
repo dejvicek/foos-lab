@@ -607,7 +607,6 @@ input:disabled { background: var(--bg); color: var(--muted); border-color: var(-
 
 /* Můj stůl */
 .my-table { background: var(--felt-soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-width: 640px; }
-.my-role { margin: 10px 0 6px; font-size: 16px; }
 .my-table .entry-cards { grid-template-columns: 1fr; }
 
 @media (max-width: 767px) {
@@ -694,28 +693,6 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .rh-type::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--dc); flex: none; }
 .round-head .rh-name { display: block; margin: 0; font-size: 26px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; color: var(--ink); text-wrap: balance; }
 .round-head .rh-rule { display: block; margin: 2px 0 0; font-size: 14px; font-weight: 600; color: var(--ink); }
-.my-finished { display: grid; gap: 2px; background: var(--surface); border: 2px solid var(--felt); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
-.my-finished b { font-size: 16px; }
-.my-finished span { font-size: 13px; color: var(--muted); }
-.my-finished button.link, .mirror-over-card button.link, .ready-lock button.link {
-  background: none; border: 0; padding: 0; min-height: 0; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer;
-}
-.my-transition { display: grid; gap: 10px; }
-.my-transition .my-finished { margin: 0; }
-button.my-nextcard {
-  display: grid; gap: 8px; width: 100%; text-align: left; font: inherit; font-weight: 400; color: var(--ink);
-  background: var(--surface); border: 2px solid var(--gold); border-radius: 16px; padding: 12px; margin-top: 10px;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 25%, transparent);
-}
-.my-transition button.my-nextcard { margin-top: 0; }
-button.my-nextcard:active { transform: scale(0.98); }
-button.my-nextcard .k { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-button.my-nextcard .rh-nav { min-height: 0; }
-button.my-nextcard .vs { font-size: 15px; font-weight: 700; }
-button.my-nextcard .open {
-  display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 12px;
-  background: var(--action); color: var(--action-ink); font-size: 18px; font-weight: 800;
-}
 
 /* Moje hry jako dlaždice kola v Rozpisu (19. 11. 2026): klikací časová osa s ‹ ›, karta kola, zápis bez hlavičky stolu. */
 .my-tl { display: flex; align-items: center; gap: 6px; }
@@ -745,8 +722,39 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .my-help .skill-tags { margin: 0 0 8px; }
 /* Název cvičení a co se počítá je v hlavičce kola – nad počítadlem se neopakuje (19. 11. 2026). */
 .my-table .mirror-metric, .my-table .entry-metric { display: none; }
-button.my-nextcard .tile-head { padding: 0; }
 
+/* Moje hry: stav v kartě, lišta Další kolo, akční zóna (19. 11. 2026, návrh „Moje hry od Připraven po další utkání“). */
+.my-tl .prog > button.seg.upnext:not(.cur) { height: 9px; background: var(--surface); box-shadow: inset 0 0 0 2px var(--gold); }
+.c-state { margin: 0 12px 10px 16px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.c-state.live { background: var(--felt-soft); color: var(--felt); }
+.c-state.ok { background: color-mix(in srgb, var(--ok, #2f6b45) 12%, transparent); color: var(--ok, #2f6b45); }
+.c-state.wait { background: var(--bg); color: var(--ink); }
+.c-state button.link { color: inherit; font-weight: 600; min-height: 0; padding: 0; }
+.c-state .count { font-variant-numeric: tabular-nums; }
+.next-bar { border-radius: 12px; padding: 10px 12px; margin: 8px 0 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; }
+.next-bar > .k, .next-bar > .w, .next-bar > .why { grid-column: 1; min-width: 0; }
+.next-bar .k { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.next-bar .w { font-weight: 800; font-size: 15px; }
+.next-bar .why { font-size: 12.5px; }
+.next-bar.ready { background: var(--gold); color: var(--gold-ink); }
+.next-bar.ready .k, .next-bar.ready .why { opacity: 0.8; }
+.next-bar.wait { background: var(--surface); border: 2px dashed var(--gold); }
+.next-bar.wait .k { color: var(--muted); }
+.next-bar > button.go, .next-bar > .left { grid-column: 2; grid-row: 1 / span 3; }
+.next-bar > button.go { background: var(--gold-ink); color: var(--gold); border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 800; font-size: 15px; white-space: nowrap; min-height: 44px; }
+.next-bar > .left { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.my-zone { display: grid; gap: 8px; margin-top: 8px; }
+.my-zone > .big-action { min-height: 56px; border-radius: 12px; font-size: 18px; font-weight: 800; background: var(--gold); color: var(--gold-ink); border: 0; }
+.my-zone > .note { margin: 0; text-align: center; }
+.my-zone > .end-early { justify-self: end; }
+@media (max-width: 767px) {
+  /* Hraje se: zrcadlo vyplní obrazovku (velké plochy na ťukání). */
+  .my-table.playing .mirror-halves { min-height: 46vh; }
+}
+
+.mirror-over-card button.link, .ready-lock button.link {
+  background: none; border: 0; padding: 0; min-height: 0; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer;
+}
 /* Zamčené / dohrané zrcadlo (18. 11. 2026): proč nejde zapisovat a co udělat. */
 .mirror-stage { position: relative; }
 .mirror-stage.locked .mirror-half { filter: grayscale(1); opacity: 0.4; }
@@ -1298,8 +1306,6 @@ button.pr-ic[aria-expanded='true'] { color: var(--felt); }
 .tl-loss-pt { fill: var(--surface); stroke: var(--warn); stroke-width: 2; }
 .tl-tax-step { stroke: var(--warn); stroke-width: 2.6; stroke-dasharray: 3 2; }
 .tl-tax-ring { fill: none; stroke: var(--warn); stroke-width: 1.6; }
-.tl-turn line { stroke: var(--ink); stroke-dasharray: 3 3; opacity: 0.5; }
-.tl-turn text { font-size: 9.5px; font-weight: 800; fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
 .tl-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 2px 0 4px; font-size: 12px; font-weight: 700; }
 .tl-legend > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
 .tl-pline { fill: none; stroke-width: 2.5; stroke-linejoin: round; }

@@ -37,7 +37,8 @@ beforeEach(() => {
 
 /** Moje hry: přejít na kolo se zápasem (před zahájením je v kartě jen Připraven, 19. 11. 2026). */
 const toMatchRound = async (user: ReturnType<typeof userEvent.setup>, mine: HTMLElement) => {
-  while (!/Stůl \d+, (dvojice|singl)/.test(mine.textContent ?? '')) await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
+  // kolo se zápasem = v kartě je výsledková tabule (19. 11. 2026)
+  for (let k = 0; k < 30 && !mine.querySelector('.my-card .mb'); k++) await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
 };
 
 describe('přihlášení', () => {
@@ -165,17 +166,22 @@ describe('přihlášení', () => {
       expect(Object.values(t.scores)).toEqual([{ ga: 2, gb: 0 }]);
       expect(t.lockedRounds.length).toBeGreaterThan(0);
     });
-    // dohraný leg: přes zrcadlo Dohráno a Potvrdit konec; pak přechod s kartou dalšího kola (18. 11. 2026)
+    // dohraný leg (19. 11. 2026): proužek „Dohráno“ s Opravit, akční zóna jen Potvrdit konec; pak lišta Další kolo
     expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
     const count = within(mine).getByRole('group', { name: /^Kolo \d+ z/ }).getAttribute('aria-label');
     for (let i = 0; i < 4; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
-    expect(within(mine).getByText('Dohráno 6:0 ✓')).toBeInTheDocument();
+    const card = mine.querySelector('.my-card') as HTMLElement;
+    expect(within(card).getByRole('status')).toHaveTextContent(/^DohránoOpravit$/);
+    expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull(); // nejdřív potvrdit konec
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
-    // nic se nepřepne samo: dohráno + karta dalšího kola
-    expect(within(mine).getByRole('status')).toHaveTextContent(/dohráno · 6:0 · vyhráli jste/);
+    // nic se nepřepne samo: dohrané kolo s výsledkem a lišta Další kolo
+    expect(within(card).getByRole('status')).toHaveTextContent('✓ Dohráno · vyhráli jste');
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
-    await user.click(within(mine).getByRole('button', { name: /^Otevřít/ }));
+    // další kolo ještě nejde hrát (hráči z něj dohrávají jiný stůl): lišta s důvodem, bez Otevřít
+    expect(mine.querySelector('.next-bar.wait')).toHaveTextContent(/Čeká se na (hráče|soupeře) \(/);
+    expect(within(mine).queryByRole('button', { name: /^Otevřít/ })).toBeNull();
+    await user.click(within(mine).getByRole('button', { name: 'Další kolo' }));
     expect(within(mine).getByRole('group', { name: /^Kolo \d+ z/ }).getAttribute('aria-label')).not.toBe(count);
   });
 

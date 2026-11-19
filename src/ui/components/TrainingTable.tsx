@@ -120,7 +120,7 @@ export function Names({ ids, names, me, sep = ' + ' }: { ids: PlayerId[]; names:
 }
 
 /** `roundName`: název kola – stanoviště se stejným názvem se pod hráči neopakuje (19. 11. 2026). */
-export function CompactCell({ cell, t, names, me = null, roundName }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null; roundName?: string }) {
+export function CompactCell({ cell, t, names, me = null, roundName, noLive }: { cell: Cell; t: Training; names: Record<PlayerId, string>; me?: PlayerId | null; roundName?: string; noLive?: boolean }) {
   if (cell.type === 'group') {
     return (
       <>
@@ -132,7 +132,7 @@ export function CompactCell({ cell, t, names, me = null, roundName }: { cell: Ce
       </>
     );
   }
-  return <MatchBoard m={cell.match} t={t} names={names} me={me} />;
+  return <MatchBoard m={cell.match} t={t} names={names} me={me} noLive={noLive} />;
 }
 
 /**
@@ -141,7 +141,8 @@ export function CompactCell({ cell, t, names, me = null, roundName }: { cell: Ce
  * Vítěz tučně, poražený výsledek šedě, rozehraný leg zlatě; pod tím drobně start, Zeď, rozhodčí, „hraje se“.
  * Rozehranost podle zahájení utkání (ne podle skóre – starší legy na čas nekončily na 6).
  */
-function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<PlayerId, string>; me: PlayerId | null }) {
+/** `noLive`: bez štítku „hraje se“ (Moje hry: stav je v proužku karty, 19. 11. 2026). */
+function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names: Record<PlayerId, string>; me: PlayerId | null; noLive?: boolean }) {
   const pt = t.playTimes?.[m.id];
   const playing = pt?.startedAt !== undefined && pt.endedAt === undefined;
   const st = m.start ?? [0, 0];
@@ -199,7 +200,7 @@ function MatchBoard({ m, t, names, me }: { m: Match; t: Training; names: Record<
         rozhodčí <Names ids={[m.referee]} names={names} me={me} />
       </>,
     );
-  if (playing) foot.push(<span className="mb-live">hraje se</span>);
+  if (playing && !noLive) foot.push(<span className="mb-live">hraje se</span>);
   const label = `${plain(m.sideA)} vs ${plain(m.sideB)}${tot ? ` ${tot[0]}:${tot[1]}` : ''}`;
   return (
     <span className="mb" role="group" aria-label={label}>
