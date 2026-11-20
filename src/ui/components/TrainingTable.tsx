@@ -347,7 +347,9 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
             <th className="c-time">Čas</th>
             <th className="c-block">Disciplína</th>
             {visible.map((j) => (
-              <th key={j}>Stůl {j + 1}</th>
+              <th key={j} className="c-table">
+                Stůl {j + 1}
+              </th>
             ))}
             <th className="c-wait">Volno</th>
           </tr>
@@ -501,7 +503,7 @@ export function TrainingTable({ schedule: s, training, names, rounds = null, pau
                         const has = !!c && hasProgress(training, id, c.type === 'match' ? c.match : undefined);
                         const pk = `${key}|${j}`;
                         return (
-                          <td key={j} className={c ? (has || manage ? 'has-prog' : undefined) : 'free'}>
+                          <td key={j} className={['c-table', c ? (has || manage ? 'has-prog' : '') : 'free'].filter(Boolean).join(' ')}>
                             {c && <CompactCell cell={c} t={training} names={names} me={me} roundName={rowName(row, sec.id)} itemId={id} />}
                             {c && (has || manage) && (
                               <span className="cell-ics">

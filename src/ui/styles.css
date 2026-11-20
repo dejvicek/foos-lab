@@ -371,6 +371,8 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan thead .c-time { font-size: 12px; }
 .plan .c-block { width: 190px; }
 .plan .c-wait { width: 150px; color: var(--muted); }
+/* Oddělovací čára mezi stoly (zápasy kola vedle sebe), 20. 11. 2026. */
+.plan .c-table + .c-table { border-left: 1px solid var(--line); }
 .plan .section-row th {
   background: var(--bg); color: var(--ink); font-size: 13px; font-weight: 700; padding: 8px 10px;
   border-top: 1px solid var(--line-strong);
