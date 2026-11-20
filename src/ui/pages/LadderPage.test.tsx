@@ -294,7 +294,8 @@ describe('posun v pořadí a moje jméno (20. 11. 2026)', () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'X', isAdmin: false, mustChangePassword: false } });
     render(<App repo={memoryRepository({ players, trainings: [t1, t2, t2b, t3, t4] })} auth={auth} />);
     await screen.findByRole('table', { name: 'Žebříček' });
-    await user.click(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('button', { name: 'Xaver' }));
+    await user.click(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('button', { name: 'Účet: Xaver' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Můj profil' }));
     expect(window.location.hash).toBe('#/ladder/player/X');
     const places = await screen.findByRole('region', { name: 'Umístění v žebříčcích' });
     const main = within(places).getByRole('button', { name: /Zápasy/ });

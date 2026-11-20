@@ -33,11 +33,12 @@ describe('Návod pro hráče (landing page, 10. 11. 2026)', () => {
     expect(await screen.findByRole('heading', { name: 'Přihlášení' })).toBeInTheDocument();
   });
 
-  it('přihlášený: Návod v horní liště, Zpět do appky', async () => {
+  it('přihlášený: Návod v menu účtu (21. 11. 2026), Zpět do appky', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/trainings';
     render(<App repo={memoryRepository()} />);
-    await user.click(await screen.findByRole('button', { name: 'Návod' }));
+    await user.click(await screen.findByRole('button', { name: /^Účet: / }));
+    await user.click(screen.getByRole('menuitem', { name: 'Návod' }));
     const guide = await screen.findByRole('main', { name: 'Návod pro hráče' });
     // cvičení: po 20 pokusech hotovo
     const drill = within(guide).getByLabelText('Ukázka: zápis cvičení');

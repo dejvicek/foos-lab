@@ -59,7 +59,7 @@ describe('přihlášení', () => {
     await user.type(screen.getByLabelText('Nové heslo'), 'tajne123');
     await user.type(screen.getByLabelText('Nové heslo znovu'), 'tajne123');
     await user.click(screen.getByRole('button', { name: 'Uložit heslo' }));
-    expect(await screen.findByRole('button', { name: 'Odhlásit' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^Účet: / })).toBeInTheDocument(); // přihlášen: menu účtu v liště
     expect(auth.passwords.get('id2')).toBe('tajne123');
   });
 

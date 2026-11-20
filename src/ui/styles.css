@@ -2131,8 +2131,6 @@ button.pn-more:hover { color: var(--ink); }
 }
 
 /* ── Můj profil a odstup (20. 11. 2026) ── */
-.main-nav .nav-user button.nav-name { color: var(--ink); font-weight: 700; text-decoration: none; }
-.main-nav .nav-user button.nav-name:hover { color: var(--felt); text-decoration: underline; }
 .pp-h { font-size: 15px; margin: 18px 0 8px; }
 .pp-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 button.pp-place {
@@ -2185,3 +2183,46 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
 .pp-row-num.pos { color: var(--felt); }
 .pp-row-num.neg { color: var(--warn); }
 .pp-row-num.great { color: var(--good); }
+
+/* ── Menu účtu v liště (21. 11. 2026, varianta A) ── */
+.acct-box { position: relative; display: inline-flex; }
+.main-nav button.acct {
+  display: inline-flex; flex-direction: row; align-items: center; gap: 8px; height: 38px; padding: 0 10px 0 4px; margin: 0; font-size: 14px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 700;
+}
+.main-nav button.acct:hover, .main-nav button.acct[aria-expanded='true'] { border-color: var(--line-strong); }
+.main-nav button.acct.active { border-color: var(--action-edge); }
+.acct-av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--felt-soft); color: var(--felt); font-weight: 800; font-size: 13px; }
+.acct-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-chev { font-size: 11px; color: var(--muted); }
+.acct-backdrop { display: none; }
+.acct-menu {
+  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 240px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px;
+  box-shadow: 0 10px 30px color-mix(in srgb, #000 16%, transparent);
+}
+.acct-who { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.acct-who span { font-size: 12px; color: var(--muted); }
+.acct-menu button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; height: auto; min-height: 40px; margin: 0;
+  padding: 8px 10px; background: none; color: var(--ink); border: 0; border-radius: 8px; font-weight: 600; text-align: left;
+}
+.acct-menu button:hover, .acct-menu button:focus-visible { background: var(--bg); }
+.acct-menu button.danger { color: var(--warn); }
+.acct-sep { border-top: 1px solid var(--line); margin: 4px 0; }
+.acct-switch { width: 30px; height: 18px; border-radius: 999px; background: var(--line-strong); position: relative; flex: none; }
+.acct-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); transition: transform 120ms; }
+.acct-switch.on { background: var(--action-edge); }
+.acct-switch.on::after { transform: translateX(12px); }
+@media (max-width: 767px) {
+  /* Vizuálně 34 px v liště 45 px; plocha pro prst zůstává 44 px (neviditelný okraj kolem). */
+  .main-nav button.acct { height: 34px; min-height: 0; }
+  .main-nav button.acct::after { content: ''; position: absolute; inset: -5px -2px; }
+  .acct-backdrop { display: block; position: fixed; inset: 0; z-index: 59; background: color-mix(in srgb, #000 35%, transparent); }
+  .acct-menu {
+    position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; border-radius: 16px 16px 0 0;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+  }
+  .acct-menu button { min-height: 48px; font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .acct-switch::after { transition: none; } }
