@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
+/** Klik na jméno v tabulce disciplíny: zápasy disciplíny, nebo cvičení (metrika). */
+export type PlayerFocus = { kind: 'match'; discipline: string } | { kind: 'drill'; metric: string };
+
 export type Route =
   | { page: 'trainings' }
   | { page: 'training'; id: string }
@@ -11,7 +14,8 @@ export type Route =
   | { page: 'live' }
   | { page: 'my' }
   | { page: 'ladder' }
-  | { page: 'player'; id: string }
+  /** Stránka hráče; `focus` = výsledky jedné disciplíny / cvičení po trénincích (20. 11. 2026). */
+  | { page: 'player'; id: string; focus?: PlayerFocus }
   | { page: 'disciplines' }
   | { page: 'templates' }
   | { page: 'players' }
@@ -23,7 +27,7 @@ export type Route =
 /** Adresy jsou anglicky (10. 11. 2026); staré české ani jiné neznámé se nepodporují → „Stránka nenalezena“. */
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
-  const [a, b, c] = parts;
+  const [a, b, c, d, e] = parts;
   const n = parts.length;
   if (n === 0) return { page: 'trainings' };
   if (a === 'trainings') {
@@ -35,6 +39,8 @@ export function parseHash(hash: string): Route {
   if (a === 'ladder') {
     if (n === 1) return { page: 'ladder' };
     if (n === 3 && b === 'player') return { page: 'player', id: c };
+    if (n === 5 && b === 'player' && d === 'match') return { page: 'player', id: c, focus: { kind: 'match', discipline: e } };
+    if (n === 5 && b === 'player' && d === 'drill') return { page: 'player', id: c, focus: { kind: 'drill', metric: e } };
   }
   if (n === 1) {
     if (a === 'live') return { page: 'live' };
@@ -68,7 +74,9 @@ export function toHash(r: Route): string {
     case 'ladder':
       return '#/ladder';
     case 'player':
-      return `#/ladder/player/${encodeURIComponent(r.id)}`;
+      return `#/ladder/player/${encodeURIComponent(r.id)}${
+        !r.focus ? '' : r.focus.kind === 'match' ? `/match/${encodeURIComponent(r.focus.discipline)}` : `/drill/${encodeURIComponent(r.focus.metric)}`
+      }`;
     case 'disciplines':
       return '#/disciplines';
     case 'templates':

@@ -223,7 +223,7 @@ function SignedIn({
   else if (route.page === 'disciplines') body = <DisciplinesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'templates') body = <TemplatesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} me={viewer.playerId} />;
-  else if (route.page === 'player') body = <PlayerPage store={store} id={route.id} prefs={prefs} navigate={navigate} />;
+  else if (route.page === 'player') body = <PlayerPage store={store} id={route.id} focus={route.focus} prefs={prefs} navigate={navigate} />;
   else if (route.page === 'not-found')
     body = (
       <div className="empty-live not-found">

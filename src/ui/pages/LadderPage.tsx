@@ -2,18 +2,17 @@ import { Fragment } from 'react';
 import { Seg } from '../components/Seg';
 import { computeLadder, FORM_DAYS, MIN_TRAININGS, resolveRange, type LadderRow, type LadderView } from '../../domain/ladder';
 import { computeMatchLadder, type MatchKindFilter, type PracticeMatchRow, type PracticeMatchTable as PracticeMatchTableData } from '../../domain/practice';
-import { discipline } from '../../domain/disciplines';
 import { addDays } from '../../domain/dates';
-import type { DisciplineId, PlayerId } from '../../domain/types';
+import type { PlayerId } from '../../domain/types';
 import type { LadderDrills, UiPrefs } from '../../storage/prefs';
 import { computeSoloLadder, hasSoloFor, type SoloLadderRow, type SoloSource } from '../../domain/soloLadder';
 import { soloMetric } from '../../domain/solo';
 import { streakTime } from '../../domain/streak';
 import { rangeText } from '../components/RangeLabel';
 import { todayIso } from '../dates';
-import { dec1, diffTone, pct, signed, STRONG_PER_LEG } from '../format';
+import { dec1, diffTone, matchTableName, pct, signed, STRONG_PER_LEG } from '../format';
 import type { AppStore } from '../useAppState';
-import type { Route } from '../useHashRoute';
+import type { PlayerFocus, Route } from '../useHashRoute';
 import { computeDelayLadder } from '../../domain/queue';
 import { canBuildSchedule } from '../../domain/schedule';
 import { DelayTable } from '../components/Timing';
@@ -279,8 +278,6 @@ function SoloTable({
   );
 }
 
-/** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
-const matchTableName = (id: DisciplineId) => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);
 
 /** Zápasy 1 na 1 (12. 11. 2026, od 18. 11. 2026 v části Zápasy): vyhrané zápasy, legy a rozdíl skóre. */
 function PracticeMatchTable({
@@ -390,7 +387,7 @@ function SoloLadder({
   prefs: UiPrefs;
   today: string;
   name(id: PlayerId): string;
-  open(id: PlayerId): void;
+  open(id: PlayerId, focus?: PlayerFocus): void;
   /** practice = žebříček Vlastní (PRD 5.11). */
   source?: SoloSource;
   me: PlayerId | null;
@@ -426,7 +423,7 @@ function SoloLadder({
               label={def.name}
               max={def.max}
               name={name}
-              open={open}
+              open={(id) => open(id, { kind: 'drill', metric: t.metric })}
               attempts={source === 'practice'}
               streak={!!def.streak}
               lowerIsBetter={!!def.lowerIsBetter}
@@ -454,7 +451,8 @@ export function LadderPage({ store, prefs, setPrefs, navigate, me }: Props) {
     const p = byId.get(id);
     return p ? (p.archived ? `${p.name} (archiv)` : p.name) : '?';
   };
-  const open = (id: PlayerId) => navigate({ page: 'player', id });
+  // Klik na jméno: z hlavní tabulky celkový přehled, z tabulky disciplíny / cvičení jen její výsledky (20. 11. 2026).
+  const open = (id: PlayerId, focus?: PlayerFocus) => navigate({ page: 'player', id, ...(focus ? { focus } : {}) });
 
   // Cvičení: Týmové (klub + duo stejných cvičení) / Solo/Duo (jen vlastní tréninky), 18. 11. 2026.
   const drills: LadderDrills | null = prefs.ladderPart === 'solo' || prefs.ladderPart === 'practice' ? prefs.ladderPart : null;
@@ -587,7 +585,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate, me }: Props) {
                   table={t}
                   view={view}
                   name={name}
-                  open={open}
+                  open={(id) => open(id, { kind: 'match', discipline: t.discipline })}
                   moves={rankMoves(prevMatchTables ? ids(prevMatchTables.find((x) => x.discipline === t.discipline)?.ranked ?? []) : null, ids(t.ranked))}
                   since={matchDay && formatDayMonth(matchDay)}
                   me={me}

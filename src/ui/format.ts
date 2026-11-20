@@ -1,3 +1,5 @@
+import { discipline } from '../domain/disciplines';
+import type { DisciplineId } from '../domain/types';
 /** České tvary: 1 hráč, 2–4 hráči, 5+ hráčů. */
 export function plural(n: number, one: string, few: string, many: string): string {
   if (n === 1) return one;
@@ -29,3 +31,6 @@ export const STRONG_PER_TRAINING = 10;
 export const diffTone = (diff: number, strong: boolean): string => (diff > 0 ? (strong ? 'great' : 'pos') : diff < 0 ? 'neg' : '');
 /** Třídy buňky s rozdílem: `n` + barva. */
 export const diffCls = (diff: number, strong: boolean): string => ['n', diffTone(diff, strong)].filter(Boolean).join(' ');
+
+/** Název tabulky zápasů podle disciplín (19. 11. 2026): Jedničky / Normální leg v singlu = „1v1“, ve čtyřhře „2v2“. */
+export const matchTableName = (id: DisciplineId): string => (id === 'singles' ? '1v1' : id === 'normal' ? '2v2' : discipline(id).name);

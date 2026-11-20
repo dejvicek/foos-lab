@@ -50,7 +50,7 @@ export function clubMetric(m: SoloMetric): boolean {
  * klubové tréninky + z vlastních tréninků cvičení, která jsou i v klubu; Vlastní = z vlastních tréninků
  * jen cvičení pouze pro vlastní trénink (solo, Čistá desítka).
  */
-function sourceSolo(t: Training, source: SoloSource): SoloResults {
+export function sourceSolo(t: Training, source: SoloSource): SoloResults {
   const all = validSolo(t);
   if (!isPractice(t)) return source === 'club' ? all : {};
   const out: SoloResults = {};

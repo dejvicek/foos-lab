@@ -2077,3 +2077,14 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .move.new { color: var(--felt); font-size: 10px; text-transform: uppercase; letter-spacing: .02em; }
 .wrap .player-link.me-name, .wrap tr.low-data .player-link.me-name { color: var(--felt); font-weight: 800; }
 .rank-cell .rank-n + .move { margin-left: 4px; }
+
+/* ── Stránka hráče: výsledky jedné disciplíny po trénincích (20. 11. 2026) ── */
+.player-detail .pm-matches { white-space: normal; }
+.pm-line { display: block; line-height: 1.45; }
+.pm-who { color: var(--muted); }
+.pm-legs { font-variant-numeric: tabular-nums; font-weight: 600; }
+.pm-res { font-size: 12px; font-weight: 700; color: var(--muted); }
+.pm-res.pos { color: var(--felt); }
+.pm-res.neg { color: var(--warn); }
+.pm-place { display: block; color: var(--muted); font-size: 11px; }
+.player-detail tfoot th, .player-detail tfoot td { font-weight: 800; border-top: 2px solid var(--line, currentColor); }
