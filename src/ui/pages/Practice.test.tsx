@@ -288,7 +288,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     // Pořadí podle rozdílu skóre jako hlavní žebříček (20. 11. 2026): H2 má méně výher (1 / 4), ale skóre 40:36 → +0,4 na leg
     // notebook: Hráč, Z+, Z−, L+, L−, G± (20. 11. 2026: bez Tréninků; remíza BO2 se nepočítá ani do Z−)
     expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(1)).toEqual(['H2', '1', '2', '4', '5', '+0,4']);
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+', 'Z−', 'L+', 'L−', 'G±']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+', 'Z−', 'L+', 'L−', 'G±/leg']); // Průměr (výchozí): na leg
     expect([...rows[1].querySelectorAll('td')].map((x) => x.textContent).slice(1, 3)).toEqual(['H1', '2']);
     // 2 na 2: vlastní trénink je jen 1 na 1 → žádná tabulka; volba se pamatuje
     await userEvent.setup().click(within(screen.getByRole('group', { name: 'Typ zápasu' })).getByRole('button', { name: '2 na 2' }));

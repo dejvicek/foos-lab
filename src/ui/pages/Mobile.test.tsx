@@ -39,14 +39,14 @@ describe('telefon – žebříček', () => {
     const table = await screen.findByRole('table', { name: 'Žebříček' });
     expect(screen.getByText(/Pro umístění je potřeba zúčastnit se aspoň 3 tréninků/)).toBeInTheDocument();
     const heads = () => within(screen.getByRole('table', { name: 'Žebříček' })).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
-    expect(heads()).toEqual(['#', 'Hráč', 'Výhry %', 'G±']);
+    expect(heads()).toEqual(['#', 'Hráč', 'Výhry %', 'G±/leg']);
     const row = within(table).getAllByRole('row')[1];
     expect(within(row).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
     await userEvent.setup().click(screen.getByRole('button', { name: 'Celkem' }));
     expect(heads()).toEqual(['#', 'Hráč', 'L+/L−', 'G±']);
     // zápasy podle disciplín: na telefonu vyhrané / prohrané v jednom sloupci (20. 11. 2026)
     const d = screen.getAllByRole('table').find((x) => x.getAttribute('aria-label') !== 'Žebříček')!;
-    expect(within(d).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+/Z−', 'L+/L−', 'G±']);
+    expect(within(d).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+/Z−', 'L+/L−', 'G±']); // Celkem
     expect(within(d).getAllByRole('row')[1]).toHaveTextContent('1 / 01 / 0');
   });
 });

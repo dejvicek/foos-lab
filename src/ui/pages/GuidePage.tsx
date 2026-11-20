@@ -240,7 +240,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Rozdíl je v Průměru zeleně při výrazném náskoku (od +1,5 na leg), jinak v plusu zlatě a v minusu červeně.
               </Li>
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ a L−, na telefonu v jednom sloupci „6 / 4“). Na
+                <b>Průměr</b> přepočítá na leg (záhlaví G±/leg, např. +0,4) a výhry na procenta – G± v souhrnu tréninku je naproti tomu rozdíl gólů za celý trénink; <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ a L−, na telefonu v jednom sloupci „6 / 4“). Na
                 telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
               </Li>
               <Li i="▲">
