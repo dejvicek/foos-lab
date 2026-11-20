@@ -1,4 +1,4 @@
-import { mergeHead, runOp, type Op } from './ops';
+import { mergeHead, opKey, runOp, type Op } from './ops';
 import { memoryRepository } from './memoryRepository';
 import type { Training } from '../domain/types';
 
@@ -54,5 +54,30 @@ describe('ťuknutí se zahájením (20. 11. 2026)', () => {
     expect(repo.snapshot().trainings[0].playTimes).toEqual({ m1: { startedAt: 1000 } });
     await runOp(repo, { kind: 'tapScore', trainingId: 't1', matchId: 'm1', taps: [{ id: 'y', at: 2000, field: 'ga', delta: 1, max: 6 }], start: { itemId: 'm1', at: 2000 } });
     expect(repo.snapshot().trainings[0].playTimes).toEqual({ m1: { startedAt: 1000 } });
+  });
+});
+
+describe('setAvatar – fotka hráče', () => {
+  const honza = { id: 'p1', name: 'Honza', archived: false, order: 0 };
+
+  it('nastaví a smaže fotku; úprava hráče ji nepřepíše', async () => {
+    const repo = memoryRepository({ players: [honza], trainings: [] });
+    await runOp(repo, { kind: 'setAvatar', playerId: 'p1', image: 'data:image/webp;base64,AA==' });
+    await runOp(repo, { kind: 'savePlayer', player: { ...honza, name: 'Honzík' } });
+    expect((await repo.loadAll()).players[0]).toEqual({ ...honza, name: 'Honzík', avatar: 'data:image/webp;base64,AA==' });
+    await runOp(repo, { kind: 'setAvatar', playerId: 'p1', image: null });
+    expect((await repo.loadAll()).players[0]).toEqual({ ...honza, name: 'Honzík' });
+  });
+
+  it('jde opakovat se stejným výsledkem', async () => {
+    const repo = memoryRepository({ players: [honza], trainings: [] });
+    const op: Op = { kind: 'setAvatar', playerId: 'p1', image: 'data:image/webp;base64,AA==' };
+    await runOp(repo, op);
+    await runOp(repo, op);
+    expect((await repo.loadAll()).players[0].avatar).toBe('data:image/webp;base64,AA==');
+  });
+
+  it('patří k hráčům (ozvěna soupisky nepřepíše čekající fotku)', () => {
+    expect(opKey({ kind: 'setAvatar', playerId: 'p1', image: null })).toBe('players');
   });
 });

@@ -40,7 +40,8 @@ export function memorySnapshot(initial: Snapshot | null = null): SnapshotStore {
 const DB = 'foos-lab';
 const STORE = 'snapshots';
 /** Zvyš, když se změní tvar uložených dat – starší uložený stav se pak nepoužije. */
-const SHAPE = 1;
+// 2 (21. 11. 2026): starší verze zahazovala fotky hráčů a kurzor by je po aktualizaci už nedorovnal.
+const SHAPE = 2;
 
 const valid = (x: unknown): x is Snapshot & { shape: number } => {
   const s = x as (Snapshot & { shape?: number }) | undefined;

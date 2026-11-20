@@ -112,8 +112,18 @@ export function memoryRepository(
     },
     savePlayer: (p) =>
       write(() => {
+        // Jako v databázi: úprava hráče fotku nemění (ta jde přes setAvatar).
+        const { avatar: _a, ...rest } = copy(p);
         const i = data.players.findIndex((x) => x.id === p.id);
-        data.players = i < 0 ? [...data.players, copy(p)] : data.players.map((x) => (x.id === p.id ? copy(p) : x));
+        data.players = i < 0 ? [...data.players, rest] : data.players.map((x) => (x.id === p.id ? { ...rest, ...(x.avatar ? { avatar: x.avatar } : {}) } : x));
+      }),
+    setAvatar: (playerId, image) =>
+      write(() => {
+        data.players = data.players.map((x) => {
+          if (x.id !== playerId) return x;
+          const { avatar: _a, ...rest } = x;
+          return image ? { ...rest, avatar: image } : rest;
+        });
       }),
     saveCatalog: (c) =>
       write(() => {

@@ -21,6 +21,8 @@ export const pendingKey = {
 export type Op =
   | { kind: 'savePlayer'; player: Player }
   | { kind: 'deletePlayer'; id: PlayerId }
+  /** Profilová fotka (null = smazat); savePlayer ji nenese. */
+  | { kind: 'setAvatar'; playerId: PlayerId; image: string | null }
   | { kind: 'saveCatalog'; catalog: CatalogData }
   /** Jen konfigurace – skóre, výsledky, časy a události se v tréninku neposílají. */
   | { kind: 'saveTraining'; training: Training; /** Verze, ze které úprava vycházela (chybí = nový trénink). */ expected?: number }
@@ -55,6 +57,7 @@ export function opKey(op: Op): string {
   switch (op.kind) {
     case 'savePlayer':
     case 'deletePlayer':
+    case 'setAvatar':
       return pendingKey.players;
     case 'saveCatalog':
       return pendingKey.catalog;
@@ -129,6 +132,8 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
       return void (await repo.savePlayer(op.player));
     case 'deletePlayer':
       return void (await repo.deletePlayer(op.id));
+    case 'setAvatar':
+      return void (await repo.setAvatar(op.playerId, op.image));
     case 'saveCatalog':
       return void (await repo.saveCatalog(op.catalog));
     case 'saveTraining':

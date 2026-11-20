@@ -36,6 +36,8 @@ export interface AppStore {
   reload(): void;
   savePlayer(p: Player): void;
   deletePlayer(id: PlayerId): void;
+  /** Profilová fotka (data URL) nebo null = smazat; hned na obrazovce, do databáze frontou. */
+  setAvatar(playerId: PlayerId, image: string | null): void;
   /** Katalog disciplín a štítků (admin). */
   saveCatalog(c: CatalogData): void;
   /** Jen konfigurace tréninku; skóre nemění. */
@@ -511,7 +513,20 @@ export function useAppState(
       dismissSaveError: () => setSaveError(null),
       savePlayer: (p: Player) => {
         update((d) => ({ ...d, players: upsert(d.players, p) }));
-        enqueue({ kind: 'savePlayer', player: p });
+        // Fotka se ukládá zvlášť (setAvatar) – ve frontě by jen zabírala místo.
+        const { avatar: _a, ...player } = p;
+        enqueue({ kind: 'savePlayer', player });
+      },
+      setAvatar: (playerId: PlayerId, image: string | null) => {
+        update((d) => ({
+          ...d,
+          players: d.players.map((x) => {
+            if (x.id !== playerId) return x;
+            const { avatar: _a, ...rest } = x;
+            return image ? { ...rest, avatar: image } : rest;
+          }),
+        }));
+        enqueue({ kind: 'setAvatar', playerId, image });
       },
       saveCatalog: (c: CatalogData) => {
         update((d) => ({ ...d, catalog: c }));

@@ -99,6 +99,8 @@ export interface Repository {
   loadBackup(): Promise<AppData>;
   savePlayer(p: Player): Promise<void>;
   deletePlayer(id: PlayerId): Promise<void>;
+  /** Profilová fotka (data URL) nebo null = smazat; jen hráč sám nebo admin. savePlayer fotku nemění. */
+  setAvatar(playerId: PlayerId, image: string | null): Promise<void>;
   /**
    * Uloží konfiguraci tréninku; skóre nemění. `expected` = verze, ze které úprava vycházela: když je
    * v úložišti jiná (trénink mezitím změnilo jiné zařízení), uložení se odmítne. Bez ní (nový trénink)

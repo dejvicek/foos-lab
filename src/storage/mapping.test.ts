@@ -20,6 +20,13 @@ describe('mapping', () => {
     expect(playerFromRow(playerToRow(player))).toEqual(player);
   });
 
+  it('fotka (migrace 33): přijde z databáze, ale při úpravě hráče se neposílá', () => {
+    const row = { ...playerToRow(player), avatar: 'data:image/webp;base64,AA==' };
+    expect(playerFromRow(row)).toEqual({ ...player, avatar: 'data:image/webp;base64,AA==' });
+    expect(playerFromRow({ ...row, avatar: null })).toEqual(player);
+    expect('avatar' in playerToRow({ ...player, avatar: 'data:image/webp;base64,AA==' })).toBe(false);
+  });
+
   it('trénink tam a zpět včetně skóre jen svého tréninku', () => {
     const rows = [
       scoreToRow('t1', 'league|1|1|p1+p2vp3+p4', { ga: 6, gb: 2, la: 1, lb: 0 }),

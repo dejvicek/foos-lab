@@ -10,6 +10,8 @@ export interface Player {
   order: number;
   /** Organizátor (10. 11. 2026): smí zakládat tréninky a spravovat ty své; nastavuje admin. */
   organizer?: boolean;
+  /** Profilová fotka (21. 11. 2026): výřez 160 × 160 jako data URL (WebP / JPEG); chybí = písmeno. Zapisuje se jen přes setAvatar. */
+  avatar?: string;
 }
 
 /** Skóre zápasu: ga/gb góly (u starší simulace bez BO formátu sety 0..2), la/lb ztráty. */
