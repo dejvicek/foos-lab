@@ -289,6 +289,8 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
                     <button type="button" className={r.playerId === me ? 'player-link me-name' : 'player-link'} onClick={() => open(r.playerId)}>
                       {names[r.playerId] ?? '?'}
                     </button>
+                  ) : r.playerId === me ? (
+                    <b className="me-name">{names[r.playerId] ?? '?'}</b>
                   ) : (
                     names[r.playerId] ?? '?'
                   )}
