@@ -11,12 +11,13 @@ Plán podle **počtu odehraných klubových tréninků**, ne podle dat. Další 
 - Žebříčky: zvýrazněný sloupec pořadí, posun ▲▼ od posledního tréninku, moje jméno zlatě, „⌀“ v Průměru, Z+ · Z− · L+ · L−.
 - #1 Tvůj trénink, #2 vibrace a nezhasínající displej, #3 Připraven za spoluhráče u cvičení, #4 Můj profil, #6 rekordy, #11 Zdržovači s prahem 2 min a od 3 tréninků, #15 moje jméno zlatě v souhrnu tréninku.
 - Zahájení zápasu prvním gólem, výsledky jedné disciplíny po trénincích, stránka Co je nového.
+- Menu účtu v horní liště, profilová fotka s výběrem výřezu (v žebříčcích, souhrnu tréninku a Moje hry).
 
 ## Plán
 
 | Kdy | Co | Proč tady |
 |---|---|---|
-| **Před T4** | **Vydat 1.4.0** se vším z `develop`. Předtím nasadit migraci 32 (`can_mark_ready`). | Po T3 budou mít první hráči 3 tréninky, takže poprvé vznikne pořadí a ▲▼ bude mít smysl. Ne těsně před T3, aby nikdo nové věci nezkoumal během tréninku. |
+| **Před T4** | **Vydat 1.4.0** se vším z `develop`. Předtím nasadit migrace 32 (`can_mark_ready`) a 33 (`players.avatar`, `set_avatar`). | Po T3 budou mít první hráči 3 tréninky, takže poprvé vznikne pořadí a ▲▼ bude mít smysl. Ne těsně před T3, aby nikdo nové věci nezkoumal během tréninku. |
 | **Na T4** | Kontrolní trénink bez nových změn: neobtěžují vibrace a displej? Používá se Připraven za spoluhráče? Vidí lidé Tvůj trénink? | První ostré použití 1.4.0. |
 | **Po T4** | #14 stav simulace v Moje hry („Tým A 3 : 2“), #12 docházka na profilu. | Levné a bez rizika, data už existují. |
 | **Po T5** | Vyhodnotit práh Zdržovačů (2 min) na reálných časech, případně doplnit větu „dnes se čekáním ztratilo X min“ (zbytek #11). #13 štítek Skokan. | Práh jde posoudit až po několika trénincích s připraveností. Skokan potřebuje víc posunů, aby nebyl náhodný. |
