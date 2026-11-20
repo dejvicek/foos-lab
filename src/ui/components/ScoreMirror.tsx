@@ -104,7 +104,6 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
           onClick={() => tap(g)}
         >
           <span className="mirror-num">{value}</span>
-          {m.start && !sim && <span className="mirror-from">start {m.start[side === 'A' ? 0 : 1]}</span>}
           <span className="mirror-lbl">{sim ? 'ťukni = set' : 'ťukni = gól'}</span>
         </button>
         {editing && !disabled && (

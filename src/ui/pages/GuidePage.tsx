@@ -172,7 +172,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“.
               </Li>
               <Li i="0:3">
-                <b>Scénářové starty</b> 0:3, 4:4 a 5:5: leg nezačíná od nuly, u 0:3 je pozadu strana vlevo. Ťukáš stav na stole, appka započítá jen
+                <b>Scénářové starty</b> 0:3, 4:4 a 5:5: leg nezačíná od nuly. Ťukáš stav na stole, appka započítá jen
                 odehrané góly. Ze 5:5 se hraje o 2 góly, nejvýš do 10.
               </Li>
               <Li i="S">
@@ -661,7 +661,7 @@ function RulesPhone() {
     ['Normální leg', 'do 6 gólů'],
     ['Daň za ztrátu', 'ztráta = gól soupeře'],
     ['Zeď', 'jeden drží, druhý láme'],
-    ['Start 0:3', 'levá začíná pozadu'],
+    ['Start 0:3', 'do 6 gólů'],
     ['Start 4:4', 'do 6 gólů'],
     ['Start 5:5', 'o 2 góly, nejvýš 10'],
     ['Simulace', 'BO3 do 6 / BO5 do 5'],

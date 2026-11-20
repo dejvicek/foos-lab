@@ -38,10 +38,7 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   const parts: string[] = [];
   if (a.role === 'referee') parts.push(m.trackLosses ? 'Jsi rozhodčí: čárkuješ ztráty' : 'Jsi rozhodčí');
   const mine: 'A' | 'B' = m.sideA.includes(me) ? 'A' : 'B';
-  if (m.start && a.role === 'play') {
-    const [x, y] = mine === 'A' ? m.start : [m.start[1], m.start[0]];
-    parts.push(`Začínáte za stavu ${x}:${y} (vy ${x}, soupeř ${y})`);
-  }
+  // Kdo začíná s kolika, je vidět ze skóre – u scénářových startů se neříká (20. 11. 2026, *rozhodnutí uživatele*).
   if (m.wall && a.role === 'play') parts.push(m.wall === mine ? 'Vaše strana drží zeď' : 'Soupeř drží zeď, vy ji lámete');
   if (m.lossTax && a.role === 'play') parts.push('Ztráta = gól soupeře, ztráty čárkuje rozhodčí');
   // Do kolika se hraje, je v hlavičce kola vpravo („do 6“, „BO3 do 6“) – tady se neopakuje (19. 11. 2026).

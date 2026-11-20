@@ -758,7 +758,6 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .ready-lock .ready-list li { justify-content: space-between; }
 .mirror-nudge { margin: 0; padding: 6px 10px; border-radius: 99px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
 .mirror-lock-card.shake { animation: mirror-shake 380ms; }
-.mirror-from { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; opacity: 0.8; }
 @media (prefers-reduced-motion: reduce) { .mirror-halves.shake, .mirror-lock-card.shake { animation: none; } }
 @media (max-width: 767px) {
   .mirror-halves.cols-3 .mirror-num { font-size: 48px; }

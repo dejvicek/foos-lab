@@ -22,7 +22,7 @@ export const ROUNDS: RoundDef[] = [
   { name: 'Daň za ztrátu', min: 8, lossTax: true },
   { name: 'Zeď', min: 8, lossTax: false, wall: 'A' },
   { name: 'Zeď, otočené role', min: 8, lossTax: false, wall: 'B' },
-  { name: 'Start 0:3 (levá strana začíná 0:3)', min: 5, lossTax: false, start: [0, 3] },
+  { name: 'Start 0:3', min: 5, lossTax: false, start: [0, 3] },
   { name: 'Start 4:4', min: 3, lossTax: false, start: [4, 4] },
   { name: 'Start 5:5, o 2 góly, strop 10', min: 3, lossTax: false, start: [5, 5] },
 ];
@@ -429,7 +429,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Start 0:3",
         "parts": [
           {
-            "text": "Leg začíná za stavu 0:3, pozadu je strana uvedená v rozpisu vlevo. Trénuje nehrát odevzdaně, když prohráváme. Zapisuje se stav na stole (konec 6:4), appka sama započítá jen odehrané góly (6:1)."
+            "text": "Leg začíná za stavu 0:3. Trénuje nehrát odevzdaně, když prohráváme. Zapisuje se stav na stole (konec 6:4), appka sama započítá jen odehrané góly (6:1)."
           }
         ]
       },
@@ -445,7 +445,7 @@ export const EXPLANATIONS: ExplanationGroup[] = [
         "name": "Start 4:5",
         "parts": [
           {
-            "text": "Koncovka, kdy jeden gól rozhoduje: leg začíná za stavu 4:5, pozadu je strana uvedená v rozpisu vlevo. Vepředu stačí jeden gól, pozadu se musí ubránit a dvakrát skórovat. Hrají se 2 kola, ve druhém si strany role prohodí. Zapisuje se stav na stole (konec 6:5), appka započítá jen odehrané góly (2:0)."
+            "text": "Koncovka, kdy jeden gól rozhoduje: leg začíná za stavu 4:5. Vepředu stačí jeden gól, pozadu se musí ubránit a dvakrát skórovat. Hrají se 2 kola, ve druhém si strany role prohodí. Zapisuje se stav na stole (konec 6:5), appka započítá jen odehrané góly (2:0)."
           }
         ]
       },
