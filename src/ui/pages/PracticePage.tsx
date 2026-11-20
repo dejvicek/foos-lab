@@ -531,7 +531,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         )}
         <div className="actions-row">
           <button type="button" onClick={() => navigate({ page: 'ladder' })}>
-            Žebříček
+            Žebříčky
           </button>
           {canDelete && (
             <button type="button" className="danger" onClick={remove}>

@@ -387,7 +387,7 @@ export function LadderPage({ store, prefs, setPrefs, navigate }: Props) {
 
   return (
     <section>
-      <h1>Žebříček</h1>
+      <h1>Žebříčky</h1>
       <Seg<'matches' | 'drills' | 'delays'>
         label="Část"
         value={drills ? 'drills' : (prefs.ladderPart as 'matches' | 'delays')}

@@ -91,7 +91,7 @@ export function MainNav({
   const items: Item[] = [
     ...(live && mine ? [{ key: 'my', label: 'Moje hry', route: { page: 'my' } as Route, match: ['my'] as Route['page'][], dot: myTurn }] : []),
     { key: 'trainings', label: 'Tréninky', route: running ? { page: 'training', id: running } : { page: 'trainings' }, match: ['live', 'trainings', 'training', 'training-new', 'training-edit', 'practice-new', 'practice'] },
-    { key: 'ladder', label: 'Žebříček', route: { page: 'ladder' }, match: ['ladder', 'player'] },
+    { key: 'ladder', label: 'Žebříčky', route: { page: 'ladder' }, match: ['ladder', 'player'] },
     { key: 'disciplines', label: 'Disciplíny', route: { page: 'disciplines' }, match: ['disciplines'] },
     ...(admin ? [{ key: 'templates', label: 'Šablony', route: { page: 'templates' } as Route, match: ['templates'] as Route['page'][] }] : []),
     ...(admin ? [{ key: 'players', label: 'Hráči', route: { page: 'players' } as Route, match: ['players'] as Route['page'][] }] : []),

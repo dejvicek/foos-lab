@@ -229,9 +229,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={9} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
+          <Step n={9} label="Žebříčky" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
+              Žebříčky mají tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
               28 dní.
             </p>
             <ul className="g-list">
@@ -310,7 +310,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 const TOC: [string, [number, string][]][] = [
   ['Než začneš', [[1, 'Přihlášení'], [2, 'Moje hry']]],
   ['U stolu', [[3, 'Hra'], [4, 'Rozcvička'], [5, 'Cvičení'], [6, 'Zápasy']]],
-  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříček'], [10, 'Zdržovači']]],
+  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříčky'], [10, 'Zdržovači']]],
 ];
 
 /** Posun na krok bez změny adresy (adresy appky jsou v #, kotva by otevřela „Stránka nenalezena“). */
@@ -422,7 +422,7 @@ type Tab = 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
   ['my', 'Moje hry'],
   ['trainings', 'Tréninky'],
-  ['ladder', 'Žebříček'],
+  ['ladder', 'Žebříčky'],
   ['disciplines', 'Disciplíny'],
 ];
 
@@ -910,7 +910,7 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
   return (
     <Phone
       time="21:10"
-      title="Žebříček"
+      title="Žebříčky"
       sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na připravenost' : 'forma · průměr · 14. 10. – 10. 11.'}
       tab="ladder"
       label={label}
