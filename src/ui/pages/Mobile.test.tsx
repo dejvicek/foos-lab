@@ -32,7 +32,7 @@ describe('telefon', () => {
 });
 
 describe('telefon – žebříček', () => {
-  it('žebříček jen to hlavní (19. 11. 2026): #, hráč, G± a Výhry %; v Celkem G±, L+ a L−', async () => {
+  it('žebříček jen to hlavní (19. 11. 2026): #, hráč, Výhry % a G±; v Celkem L+/L− a G±', async () => {
     const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
     window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
@@ -43,7 +43,11 @@ describe('telefon – žebříček', () => {
     const row = within(table).getAllByRole('row')[1];
     expect(within(row).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
     await userEvent.setup().click(screen.getByRole('button', { name: 'Celkem' }));
-    expect(heads()).toEqual(['#', 'Hráč', 'L+', 'L−', 'G±']);
+    expect(heads()).toEqual(['#', 'Hráč', 'L+/L−', 'G±']);
+    // zápasy podle disciplín: na telefonu vyhrané / prohrané v jednom sloupci (20. 11. 2026)
+    const d = screen.getAllByRole('table').find((x) => x.getAttribute('aria-label') !== 'Žebříček')!;
+    expect(within(d).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+/Z−', 'L+/L−', 'G±']);
+    expect(within(d).getAllByRole('row')[1]).toHaveTextContent('1 / 01 / 0');
   });
 });
 

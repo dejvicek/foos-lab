@@ -46,6 +46,9 @@ interface MoveProps {
   me: PlayerId | null;
 }
 
+/** Vyhrané / prohrané v jednom sloupci (Z+/Z−, L+/L−; 20. 11. 2026). */
+const wl = (won: number, lost: number) => `${won} / ${lost}`;
+
 const ids = (rows: { playerId: PlayerId }[]) => rows.map((r) => r.playerId);
 const DESC = (key: string): Sort => ({ key, dir: 'desc' });
 
@@ -78,12 +81,14 @@ function LadderTable({
   const cols: (SortCol<LadderRow> & { show(r: LadderRow): string })[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc', show: (r) => name(r.playerId) },
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
-    // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
+    // Celkem: místo Legů a Výher vyhrané / prohrané legy (19. 11. 2026); na telefonu v jednom sloupci L+/L− (20. 11. 2026, *rozhodnutí uživatele*).
     ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
-      : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
-    ...(avg ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
+      : mobile
+        ? { key: 'wins', label: <span title="Vyhrané / prohrané legy">L+/L−</span>, className: 'n', value: (r) => r.wins, show: (r) => wl(r.wins, r.legs - r.wins) }
+        : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
+    ...(avg || mobile ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
     { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>G+</span>, className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
     { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>G−</span>, className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
     { key: 'loss', label: <span title="Ztráty na leg">Ztráty</span>, className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
@@ -105,7 +110,7 @@ function LadderTable({
   // Telefon: jen to hlavní (19. 11. 2026, *rozhodnutí uživatele*, návrh D) – G± a výhry (Průměr: Výhry %, Celkem: L+ / L−);
   // ostatní na notebooku a v detailu hráče. Řadí se klepnutím na záhlaví.
   if (mobile) {
-    const keys = avg ? ['name', 'diff', 'wins'] : ['name', 'diff', 'wins', 'lost'];
+    const keys = ['name', 'wins', 'diff'];
     const few = cols.filter((c) => keys.includes(c.key));
     const rows = placeAndSort(ranked, lowData, few, sort);
     const low = rows.findIndex((x) => !x.ranked);
@@ -162,7 +167,7 @@ function LadderTable({
           {items.map(({ r, place, ranked: isRanked }, i) => {
             return (
               <Fragment key={r.playerId}>
-                {i === firstLow && <Cutoff cols={10} />}
+                {i === firstLow && <Cutoff cols={cols.length + 1} />}
                 <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                   <td className="n rank">{isRanked ? <RankCell place={place} move={moves?.get(r.playerId)} since={since} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                   <td className={sortedCls(shown, 'name')}>
@@ -230,8 +235,8 @@ function SoloTable({
   const shown = shownSort(sort, official);
   const showAttempts = attempts && !streak;
   const cols: SortCol<SoloLadderRow>[] = [
+    // Sloupec Tréninky jen v hlavní tabulce Zápasů (20. 11. 2026, *rozhodnutí uživatele*); kolik jich kdo má, ukazují tečky pod čarou.
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
-    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
     ...(showAttempts ? [{ key: 'attempts', label: 'Pokusy', className: 'n', value: (r: SoloLadderRow) => r.sumMax }] : []),
     ...(streak ? [{ key: 'done', label: 'Splněno', className: 'n', value: (r: SoloLadderRow) => r.sum }] : []),
     streak
@@ -262,7 +267,6 @@ function SoloTable({
                     {name(r.playerId)}
                   </button>
                 </td>
-                <td className={sortedCls(shown, 'trainings', 'n')}>{r.trainings}</td>
                 {showAttempts && <td className={sortedCls(shown, 'attempts', 'n')}>{r.sumMax}</td>}
                 {streak && <td className={sortedCls(shown, 'done', 'n')}>{`${r.sum} / ${r.sumMax}`}</td>}
                 <td className={sortedCls(shown, streak ? 'best' : 'value', 'n')}>{streak ? (r.best ? streakTime(r.best) : '–') : view === 'avg' ? `${dec1(r.avg)} / ${max}` : `${r.sum} / ${r.sumMax}`}</td>
@@ -293,15 +297,24 @@ function PracticeMatchTable({
   const [sort, setSort] = useSort(official);
   const shown = shownSort(sort, official);
   const avg = view === 'avg';
+  const mobile = useMobile();
   const perLeg = (r: PracticeMatchRow) => (r.legs ? (r.gf - r.gc) / r.legs : 0);
-  const cols: SortCol<PracticeMatchRow>[] = [
+  const lostMatches = (r: PracticeMatchRow) => r.matches - r.wins - r.draws;
+  const cols: (SortCol<PracticeMatchRow> & { show?(r: PracticeMatchRow): string })[] = [
     { key: 'name', label: 'Hráč', value: (r) => name(r.playerId), first: 'asc' },
-    { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings },
-    // Jen výhry z odehraných zápasů; remízy (BO2 1:1) se neukazují ani nepočítají (19. 11. 2026, *rozhodnutí uživatele*).
-    { key: 'matches', label: 'Zápasy', className: 'n', value: (r) => (avg ? r.rate : r.wins) },
-    // Legy jako L+ / L− (vyhrané / prohrané) jako v souhrnu tréninku (19. 11. 2026).
-    { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.legWins },
-    { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r) => r.legs - r.legWins, first: 'asc' },
+    // Vyhrané / prohrané zápasy a legy (20. 11. 2026, *rozhodnutí uživatele*; bez sloupce Tréninky): na notebooku Z+ · Z− · L+ · L−,
+    // na telefonu sloučené Z+/Z− a L+/L−. Remízy (BO2 1:1) se neukazují ani nepočítají (19. 11. 2026).
+    ...(mobile
+      ? [
+          { key: 'matches', label: <span title="Vyhrané / prohrané zápasy">Z+/Z−</span>, className: 'n', value: (r: PracticeMatchRow) => (avg ? r.rate : r.wins), show: (r: PracticeMatchRow) => wl(r.wins, lostMatches(r)) },
+          { key: 'legs', label: <span title="Vyhrané / prohrané legy">L+/L−</span>, className: 'n', value: (r: PracticeMatchRow) => r.legWins, show: (r: PracticeMatchRow) => wl(r.legWins, r.legs - r.legWins) },
+        ]
+      : [
+          { key: 'matches', label: <span title="Vyhrané zápasy">Z+</span>, className: 'n', value: (r: PracticeMatchRow) => (avg ? r.rate : r.wins), show: (r: PracticeMatchRow) => String(r.wins) },
+          { key: 'matchesLost', label: <span title="Prohrané zápasy">Z−</span>, className: 'n', value: (r: PracticeMatchRow) => lostMatches(r), show: (r: PracticeMatchRow) => String(lostMatches(r)), first: 'asc' as const },
+          { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r: PracticeMatchRow) => r.legWins, show: (r: PracticeMatchRow) => String(r.legWins) },
+          { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: PracticeMatchRow) => r.legs - r.legWins, show: (r: PracticeMatchRow) => String(r.legs - r.legWins), first: 'asc' as const },
+        ]),
     { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, className: 'n', value: (r) => (avg ? perLeg(r) : r.gf - r.gc) },
   ];
   const items = placeAndSort(table.ranked, table.lowData, cols, sort);
@@ -320,7 +333,7 @@ function PracticeMatchTable({
         <tbody>
           {items.map(({ r, place, ranked: isRanked }, i) => (
             <Fragment key={r.playerId}>
-              {i === firstLow && <Cutoff cols={7} />}
+              {i === firstLow && <Cutoff cols={cols.length + 1} />}
               <tr className={isRanked ? podiumRow(place) : 'low-data'}>
                 <td className="n rank">{isRanked ? <RankCell place={place} move={moves?.get(r.playerId)} since={since} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                 <td className={sortedCls(shown, 'name')}>
@@ -328,10 +341,11 @@ function PracticeMatchTable({
                     {name(r.playerId)}
                   </button>
                 </td>
-                <td className={sortedCls(shown, 'trainings', 'n')}>{r.trainings}</td>
-                <td className={sortedCls(shown, 'matches', 'n')}>{`${r.wins} / ${r.matches}`}</td>
-                <td className={sortedCls(shown, 'legs', 'n')}>{r.legWins}</td>
-                <td className={sortedCls(shown, 'lost', 'n')}>{r.legs - r.legWins}</td>
+                {cols.slice(1, -1).map((c) => (
+                  <td key={c.key} className={sortedCls(shown, c.key, 'n')}>
+                    {c.show?.(r)}
+                  </td>
+                ))}
                 <td className={sortedCls(shown, 'diff', ['n', avg ? diffTone(perLeg(r), perLeg(r) >= STRONG_PER_LEG) : diffTone(r.gf - r.gc, false)].filter(Boolean).join(' '))}>
                   {avg ? dec1(perLeg(r), true) : signed(r.gf - r.gc)}
                 </td>
@@ -354,7 +368,7 @@ function DelayLadder({ store, prefs, today, open, me }: { store: AppStore; prefs
   if (!rows.length) return <p className="note">V tomhle období zatím nejsou změřená žádná utkání.</p>;
   return (
     <>
-      <DelayTable rows={rows} names={names} showTrainings open={open} me={me} rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'} />
+      <DelayTable rows={rows} names={names} open={open} me={me} rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'} />
       <p className="note">
         Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání; připisuje se všem hráčům utkání.{' '}
         {prefs.ladderView === 'avg' ? 'Řazeno podle průměrného čekání na utkání.' : 'Řazeno podle čekání celkem.'}

@@ -80,14 +80,12 @@ describe('stránka Žebříček', () => {
     expect(diffCell(total, 'Yvona')).toHaveClass('pos');
     expect(total.querySelector('td.great')).toBeNull();
     expect(diffCell(total, 'Xaver')).toHaveClass('pos');
-    // Celkem: místo Legů a Výher L+ / L− (19. 11. 2026); Průměr má dál Legy a Výhry %
+    // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ · L− (na notebooku zvlášť, 20. 11. 2026); Průměr má dál Legy a Výhry %
     const heads = (t: HTMLElement) => within(t).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
-    expect(heads(total)).toEqual(expect.arrayContaining(['L+', 'L−']));
-    expect(heads(total)).not.toContain('Legy');
-    // krátká záhlaví G+ / G− / Sim. (19. 11. 2026)
-    expect(heads(total)).toEqual(expect.arrayContaining(['G+', 'G−', 'Sim.']));
+    // Tréninky jen v hlavní tabulce; rozhodující sloupec G± poslední (20. 11. 2026)
+    expect(heads(total)).toEqual(['#', 'Hráč', 'Tréninky', 'L+', 'L−', 'G+', 'G−', 'Ztráty', 'Sim.', 'G±']);
     await user.click(screen.getByRole('button', { name: 'Průměr' }));
-    expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(expect.arrayContaining(['Legy', 'Výhry %']));
+    expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(['#', 'Hráč', 'Tréninky', 'Legy', 'Výhry %', 'G+', 'G−', 'Ztráty', 'Sim. %', 'G±']);
   });
 
   it('stará česká adresa: Stránka nenalezena, tlačítko vede na úvod', async () => {

@@ -97,6 +97,8 @@ describe('Zdržovači', () => {
     const table = screen.getByRole('table', { name: 'Zdržovači' });
     expect(within(table).getAllByRole('row')).toHaveLength(5);
     expect(table).toHaveTextContent('H1');
+    // Tréninky jen v hlavní tabulce Zápasů (20. 11. 2026)
+    expect(within(table).queryByRole('columnheader', { name: /Tréninky/ })).toBeNull();
   });
 
   it('řazení podle sloupce (18. 11. 2026): Brzda zůstává u oficiálního prvního, # vrátí pořadí', async () => {

@@ -134,6 +134,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.click(screen.getByRole('button', { name: 'Solo/Duo' }));
     const table = screen.getByRole('table', { name: 'Penalta z místa bez brankáře' });
     expect(within(table).getByRole('columnheader', { name: 'Pokusy' })).toBeInTheDocument();
+    expect(within(table).queryByRole('columnheader', { name: /Tréninky/ })).toBeNull(); // jen v hlavní tabulce Zápasů (20. 11. 2026)
     expect(within(table).getByRole('row', { name: /H2/ })).toHaveTextContent('7,0 / 20');
     expect(screen.queryByRole('table', { name: 'Přihrávky na pětce' })).toBeNull(); // klubový trénink ne
   });
@@ -253,8 +254,10 @@ describe('vlastní trénink (PRD 5.11)', () => {
     expect(within(table).queryByRole('columnheader', { name: /Remízy/ })).toBeNull();
     expect(table).not.toHaveTextContent('rem.');
     // Pořadí podle rozdílu skóre jako hlavní žebříček (20. 11. 2026): H2 má méně výher (1 / 4), ale skóre 40:36 → +0,4 na leg
-    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(1, 7)).toEqual(['H2', '4', '1 / 4', '4', '5', '+0,4']); // Hráč, Tréninky, Zápasy, L+, L−, G± (19. 11. 2026)
-    expect(rows[1]).toHaveTextContent(/H1.*4.*2 \/ 4/);
+    // notebook: Hráč, Z+, Z−, L+, L−, G± (20. 11. 2026: bez Tréninků; remíza BO2 se nepočítá ani do Z−)
+    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(1)).toEqual(['H2', '1', '2', '4', '5', '+0,4']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+', 'Z−', 'L+', 'L−', 'G±']);
+    expect([...rows[1].querySelectorAll('td')].map((x) => x.textContent).slice(1, 3)).toEqual(['H1', '2']);
     // 2 na 2: vlastní trénink je jen 1 na 1 → žádná tabulka; volba se pamatuje
     await userEvent.setup().click(within(screen.getByRole('group', { name: 'Typ zápasu' })).getByRole('button', { name: '2 na 2' }));
     expect(screen.queryByRole('table', { name: 'Goalie war' })).toBeNull();

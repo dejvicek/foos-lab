@@ -240,7 +240,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Rozdíl je v Průměru zeleně při výrazném náskoku (od +1,5 na leg), jinak v plusu zlatě a v minusu červeně.
               </Li>
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ / L−). Na
+                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ a L−, na telefonu v jednom sloupci „6 / 4“). Na
                 telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
               </Li>
               <Li i="▲">
@@ -250,7 +250,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, pořadí stejně jako nahoře podle rozdílu skóre, pak vyhraných zápasů.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, pořadí stejně jako nahoře podle rozdílu skóre, pak vyhraných zápasů; Z+ / Z− a L+ / L− jsou vyhrané / prohrané zápasy a legy (na telefonu vždy v jednom sloupci).
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
