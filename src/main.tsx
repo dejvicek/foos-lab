@@ -8,6 +8,7 @@ import type { Repository } from './storage/repository';
 import { localOutbox, type Outbox } from './storage/outbox';
 import { fetchLatestVersion } from './storage/appVersion';
 import { idbSnapshot, type SnapshotStore } from './storage/snapshot';
+import { localSeenVersion } from './storage/prefs';
 import './ui/styles.css';
 import { applyTheme } from './ui/theme';
 import { loadTheme } from './storage/prefs';
@@ -32,7 +33,7 @@ const backend = createBackend();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {backend ? (
-      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} snapshotFor={backend.snapshotFor} latestVersion={import.meta.env.PROD ? fetchLatestVersion : undefined} />
+      <App repo={backend.repo} auth={backend.auth} outboxFor={backend.outboxFor} snapshotFor={backend.snapshotFor} seenVersion={localSeenVersion()} latestVersion={import.meta.env.PROD ? fetchLatestVersion : undefined} />
     ) : (
       <main className="page">
         <p>Chybí nastavení Supabase. Doplň .env.local podle .env.example.</p>

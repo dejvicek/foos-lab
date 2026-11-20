@@ -105,9 +105,11 @@ describe('stránka Žebříček', () => {
     await screen.findByRole('table', { name: 'Žebříček' });
     const logo = within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('link', { name: 'Foos Lab – úvodní stránka' });
     expect(logo).toHaveAttribute('href', '#/trainings');
-    expect(logo).toHaveTextContent(`Foos Lab${APP_VERSION}`); // verze vedle názvu
+    expect(logo).toHaveTextContent('Foos Lab');
+    // verze vedle názvu je tlačítko s patch notes (20. 11. 2026), ne součást odkazu
+    expect(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getAllByRole('button', { name: `Verze appky ${APP_VERSION} – co je nového` })).toHaveLength(2);
     // na telefonu je logo nahoře zvlášť a vede taky na úvod (19. 11. 2026)
-    const mobile = document.querySelector('a.nav-brand-mobile');
+    const mobile = document.querySelector('.nav-brand-mobile a');
     expect(mobile).toHaveAttribute('href', '#/trainings');
     await user.click(logo);
     expect(window.location.hash).toBe('#/trainings');

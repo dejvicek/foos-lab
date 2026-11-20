@@ -1,6 +1,7 @@
 import { APP_VERSION } from '../../storage/appVersion';
 import { ThemeSwitch } from './ThemeSwitch';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { PATCH_NOTES, PatchNotesDialog } from './PatchNotes';
 import { toHash, type Route } from '../useHashRoute';
 
 /** Ikony záložek (i v Návodu – stejné jako v appce). */
@@ -98,11 +99,14 @@ export function MainNav({
   ];
   return (
     <nav className="main-nav" aria-label="Hlavní navigace" style={{ ['--nav-items' as string]: items.length }}>
-      <a className="brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
-        <BrandMark />
-        Foos Lab
+      {/* Číslo verze je tlačítko (patch notes) – vedle odkazu na úvod, ne v něm (20. 11. 2026). */}
+      <span className="brand-group">
+        <a className="brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
+          <BrandMark />
+          Foos Lab
+        </a>
         <VersionTag />
-      </a>
+      </span>
       {items.map((it) => {
         const active = it.match.includes(route.page);
         return (
@@ -123,10 +127,12 @@ export function MainNav({
       {onSignOut && (
         <span className="nav-user">
           {/* Na telefonu je logo dole skryté – tady (jen tam) s verzí; klik vede na úvod jako na notebooku (19. 11. 2026). */}
-          <a className="nav-brand-mobile" href={toHash({ page: 'trainings' })} aria-label="Úvodní stránka">
-            <BrandMark />
+          <span className="nav-brand-mobile">
+            <a href={toHash({ page: 'trainings' })} aria-label="Úvodní stránka">
+              <BrandMark />
+            </a>
             <VersionTag />
-          </a>
+          </span>
           {myName && <span className="nav-name">{myName}</span>}
           <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
@@ -144,12 +150,16 @@ export function MainNav({
   );
 }
 
-/** Číslo verze vedle názvu Foos Lab (hlavička). */
+/** Číslo verze vedle názvu Foos Lab (hlavička); klik ukáže patch notes všech verzí (20. 11. 2026). */
 export function VersionTag() {
+  const [open, setOpen] = useState(false);
   return (
-    <span className="brand-version" title="Verze appky">
-      {APP_VERSION}
-    </span>
+    <>
+      <button type="button" className="brand-version" title="Verze appky – co je nového" aria-label={`Verze appky ${APP_VERSION} – co je nového`} onClick={() => setOpen(true)}>
+        {APP_VERSION}
+      </button>
+      {open && <PatchNotesDialog entries={PATCH_NOTES} title="Co je nového" onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

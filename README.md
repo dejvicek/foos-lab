@@ -51,7 +51,7 @@ Když nová verze nesmí běžet vedle starší (jiný rozpis nebo smlouva s dat
 
 Vydává se jen z tagu `vX.Y.Z` na `main`, a jen na pokyn správce.
 
-1. Na `develop`: zvýšit verzi (`npm version X.Y.Z --no-git-tag-version`) a do `CHANGELOG.md` přidat záznam `## X.Y.Z – datum` – srozumitelně pro hráče, co je nového a co se opravilo (z commitů od posledního tagu). Commit `chore(release): X.Y.Z`.
+1. Na `develop`: zvýšit verzi (`npm version X.Y.Z --no-git-tag-version`) a do `CHANGELOG.md` přidat záznam `## X.Y.Z – datum` – srozumitelně pro hráče, co je nového a co se opravilo (z commitů od posledního tagu). Záznam appka sama ukáže jako patch notes (klik na číslo verze a jednou po aktualizaci), takže formát nadpisu musí zůstat `## X.Y.Z – den. měsíc. rok`. Commit `chore(release): X.Y.Z`.
 2. Migrace databáze, které verze potřebuje, nasadit do Supabase **před** vydáním appky (musí fungovat i se starší verzí, která běží v telefonech).
 3. Pull request `develop` → `main`, po projití testů merge commitem.
 4. Na merge commitu v `main` vytvořit tag `vX.Y.Z` (anotovaný, zpráva = záznam z changelogu) a pushnout ho.

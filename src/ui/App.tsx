@@ -26,6 +26,10 @@ import { TrainingPage } from './pages/TrainingPage';
 import { TrainingsPage } from './pages/TrainingsPage';
 import { useAppState } from './useAppState';
 import { useHashRoute } from './useHashRoute';
+import { PATCH_NOTES, PatchNotesDialog } from './components/PatchNotes';
+import { compareVersions, notesSince } from './patchNotes';
+import { APP_VERSION } from '../storage/appVersion';
+import type { SeenVersionStore } from '../storage/prefs';
 
 const defaultAuth = memoryAuth();
 
@@ -36,9 +40,12 @@ export function App({
   outboxFor,
   latestVersion,
   snapshotFor,
+  seenVersion,
 }: {
   repo: Repository;
   auth?: AuthService;
+  /** Naposledy viděná verze patch notes v zařízení; bez ní se po aktualizaci nic neukazuje (testy). */
+  seenVersion?: SeenVersionStore;
   /** Fronta neodeslaných zápisů v zařízení pro přihlášeného hráče; bez ní fronta zavření appky nepřežije. */
   outboxFor?: (playerId: string) => Outbox;
   /** Zjistí právě nasazenou verzi appky; bez ní se verze nekontroluje (testy, vývoj). */
@@ -96,6 +103,7 @@ export function App({
       outboxFor={outboxFor}
       latestVersion={latestVersion}
       snapshotFor={snapshotFor}
+      seenVersion={seenVersion}
       viewer={{ playerId: me.playerId, isAdmin: me.isAdmin }}
       onChangePassword={() => setChanging(true)}
       onSignOut={async () => {
@@ -115,6 +123,7 @@ function SignedIn({
   outboxFor,
   latestVersion,
   snapshotFor,
+  seenVersion,
   viewer: me,
   onChangePassword,
   onSignOut,
@@ -124,6 +133,7 @@ function SignedIn({
   outboxFor?: (playerId: string) => Outbox;
   latestVersion?: () => Promise<AppVersion | null>;
   snapshotFor?: (playerId: string) => SnapshotStore;
+  seenVersion?: SeenVersionStore;
   viewer: Viewer;
   onChangePassword(): void;
   onSignOut(): void;
@@ -132,6 +142,20 @@ function SignedIn({
   const snapshot = useMemo(() => (me.playerId ? snapshotFor?.(me.playerId) : undefined), [snapshotFor, me.playerId]);
   const store = useAppState(repo, { outbox, snapshot });
   const version = useAppVersion(latestVersion);
+  // Po aktualizaci jednou: co je nového od verze, kterou zařízení vidělo naposledy (20. 11. 2026).
+  const [news, setNews] = useState(() => {
+    const seen = seenVersion?.load() ?? null;
+    const list = seenVersion ? notesSince(PATCH_NOTES, seen, APP_VERSION) : [];
+    return { seen, list };
+  });
+  useEffect(() => {
+    // Nic k ukázání (vývojová verze bez záznamu, první spuštění bez poznámek): verze se jen zapamatuje.
+    if (seenVersion && !news.list.length && (news.seen === null || compareVersions(APP_VERSION, news.seen) > 0)) seenVersion.save(APP_VERSION);
+  }, [seenVersion, news]);
+  const closeNews = () => {
+    seenVersion?.save(APP_VERSION);
+    setNews((n) => ({ ...n, list: [] }));
+  };
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
   const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
@@ -276,6 +300,9 @@ function SignedIn({
         </div>
       )}
       <main className="page">{body}</main>
+      {news.list.length > 0 && (
+        <PatchNotesDialog entries={news.list} title={news.seen ? `Co je nového od verze ${news.seen}` : `Co je nového ve verzi ${APP_VERSION}`} onClose={closeNews} />
+      )}
     </>
   );
 }

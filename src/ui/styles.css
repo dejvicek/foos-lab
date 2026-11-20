@@ -184,7 +184,8 @@ label { font-weight: 600; font-size: 13px; }
   padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
   background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.main-nav .brand { font-weight: 800; margin-right: 20px; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; text-decoration: none; }
+.main-nav .brand-group { display: inline-flex; align-items: center; gap: 8px; margin-right: 20px; }
+.main-nav .brand { font-weight: 800; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; text-decoration: none; }
 .main-nav .brand:hover, .guide .g-brand:hover { color: var(--felt); }
 /* Logo (10. 11. 2026): baňka se zlatou náplní a míčkem */
 .brand-mark { width: 26px; height: 26px; flex: none; }
@@ -563,8 +564,9 @@ tr.clickable:hover td { background: var(--felt-soft); }
     display: grid; grid-template-columns: repeat(var(--nav-items, 3), 1fr); gap: 0;
     border-bottom: 0; border-top: 1px solid var(--line);
   }
-  .main-nav .brand { display: none; }
+  .main-nav .brand-group { display: none; }
   .main-nav .nav-brand-mobile { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; padding-left: 8px; min-height: 44px; color: inherit; text-decoration: none; }
+  .main-nav .nav-brand-mobile a { display: inline-flex; color: inherit; }
   .main-nav .nav-brand-mobile .brand-mark { width: 22px; height: 22px; }
   .main-nav button { border-bottom: 0; border-top: 3px solid transparent; }
   .main-nav button.active { border-top-color: var(--action-edge); }
@@ -2087,3 +2089,35 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .pm-res.neg { color: var(--warn); }
 .pm-place { display: block; color: var(--muted); font-size: 11px; }
 .player-detail tfoot th, .player-detail tfoot td { font-weight: 800; border-top: 2px solid var(--line, currentColor); }
+
+/* ── Patch notes: číslo verze je tlačítko, okno Co je nového (20. 11. 2026) ── */
+button.brand-version, .main-nav button.brand-version {
+  background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+  padding: 1px 6px; min-height: 0; height: auto; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: pointer;
+}
+button.brand-version:hover { color: var(--ink); border-color: var(--line-strong); }
+.g-brand-group { display: inline-flex; align-items: center; gap: 8px; }
+.pn-backdrop {
+  position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, #000 45%, transparent);
+  display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px 16px;
+}
+.pn-dialog {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px;
+  width: min(640px, 100%); max-height: calc(100dvh - 64px); display: flex; flex-direction: column;
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 25%, transparent);
+}
+.pn-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.pn-head h2 { margin: 0; font-size: 18px; }
+.pn-body { overflow-y: auto; padding: 4px 16px 16px; overscroll-behavior: contain; }
+.pn-entry { padding: 12px 0; }
+.pn-entry + .pn-entry { border-top: 1px solid var(--line); }
+.pn-entry h3 { margin: 0 0 6px; font-size: 16px; font-variant-numeric: tabular-nums; }
+.pn-entry h3 small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
+.pn-entry h4 { margin: 12px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.pn-entry p { margin: 6px 0; }
+.pn-entry ul { margin: 4px 0; padding-left: 18px; }
+.pn-entry li { margin: 3px 0; line-height: 1.45; }
+@media (max-width: 767px) {
+  .pn-backdrop { padding: 12px 8px; }
+  .pn-dialog { max-height: calc(100dvh - 24px); }
+}

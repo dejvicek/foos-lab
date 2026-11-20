@@ -17,11 +17,13 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
     <main className="guide" aria-label="Návod pro hráče">
       <div className="g-wrap">
         <header className="g-top">
-          <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
-            <BrandMark />
-            Foos Lab
+          <span className="g-brand-group">
+            <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
+              <BrandMark />
+              Foos Lab
+            </a>
             <VersionTag />
-          </a>
+          </span>
           <span className="g-top-right">
             <span className="g-tag">Návod pro hráče · telefon u stolu</span>
             <ThemeSwitch />
