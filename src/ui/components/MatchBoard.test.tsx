@@ -28,9 +28,12 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     expect([...container.querySelectorAll('.mb-sc b')].map((b) => b.textContent)).toEqual(['4', '5']);
   });
 
-  it('Zeď: štítek Zeď u strany, která ji hraje, Láme zeď u druhé; rovný start bez štítků i bez řádku pod zápasem', () => {
+  it('Zeď: štítek Zeď jen u strany, která ji hraje (Láme zeď od 20. 11. 2026 ne); start 0:3 a rovný start bez štítků i bez řádku pod zápasem', () => {
     const { container, rerender } = render(<CompactCell cell={cell(m({ wall: 'B' }))} t={t()} names={names} />);
-    expect([...container.querySelectorAll('.mb-badge')].map((b) => b.textContent)).toEqual(['Láme zeď', 'Zeď']);
+    expect([...container.querySelectorAll('.mb-badge')].map((b) => b.textContent)).toEqual(['Zeď']);
+    // start 0:3: kdo je pozadu, je vidět ze skóre (20. 11. 2026)
+    rerender(<CompactCell cell={cell(m({ start: [0, 3] }))} t={t()} names={names} />);
+    expect(container.querySelector('.mb-badge')).toBeNull();
     expect(container.querySelector('.mb-foot')).toBeNull();
     rerender(<CompactCell cell={cell(m({ start: [5, 5] }))} t={t()} names={names} />);
     expect(container.querySelector('.mb-badge')).toBeNull();
