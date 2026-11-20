@@ -1,4 +1,4 @@
-import { computeDelayLadder, delayStats, pauseId, pauseStates, queueOf, runQueue, stalePlayTimes, TRAINING_ITEM, type QueueEntry } from './queue';
+import { computeDelayLadder, delayStats, pauseId, pauseStates, queueOf, runQueue, shouldAutoStart, stalePlayTimes, TRAINING_ITEM, type QueueEntry } from './queue';
 import { buildSchedule } from './schedule';
 import type { PlayTimes, Training } from './types';
 import { H } from '../test/fixtures';
@@ -143,5 +143,14 @@ describe('přegenerování běžícího tréninku (10. 11. 2026)', () => {
     expect(stalePlayTimes(times, buildSchedule(after)).sort()).toEqual([q[0], pauseId(0)].sort());
     expect(stalePlayTimes(times, null).sort()).toEqual([q[0], pauseId(0)].sort());
     expect(stalePlayTimes(undefined, null)).toEqual([]);
+  });
+});
+
+describe('shouldAutoStart – zahájení prvním ťuknutím (20. 11. 2026)', () => {
+  it('jen nezahájené a neukončené utkání', () => {
+    expect(shouldAutoStart(undefined)).toBe(true);
+    expect(shouldAutoStart({ ready: { A: 5 } })).toBe(true); // jedna strana připravená, druhá ne – ťuká se → hraje se
+    expect(shouldAutoStart({ startedAt: 1 })).toBe(false);
+    expect(shouldAutoStart({ endedAt: 2 })).toBe(false);
   });
 });

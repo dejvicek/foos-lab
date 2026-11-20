@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { markReady } from '../domain/queue';
+import { markReady, shouldAutoStart } from '../domain/queue';
+import { baseMatchId } from '../domain/matchFormat';
+import { isClub } from '../domain/practice';
 import { isEmptyScore, setAttempts, setSolo } from '../domain/training';
 import { tapDelta, tapDrill } from '../domain/drillTap';
 import { streakLimitSec, streakTap, trainingStreak } from '../domain/streak';
@@ -545,9 +547,25 @@ export function useAppState(
         if ((next[field] ?? 0) === (cur[field] ?? 0)) return; // strop / nula: nic se nemění, nic se neposílá
         const goal = field === 'ga' || field === 'gb';
         const e: GameEvent = { id: newUuid(), itemId: match.id, at: Date.now(), kind: goal ? 'goal' : 'loss', side: field === 'ga' || field === 'la' ? 'A' : 'B', delta: delta > 0 ? 1 : -1 };
-        update((d) => inTraining(d, trainingId, (x) => withEvent({ ...x, scores: { ...x.scores, [match.id]: next } }, e)));
+        // První ťuknutí u nezahájeného klubového zápasu ho zahájí časem ťuknutí (20. 11. 2026, *rozhodnutí uživatele*):
+        // hraje se, i když nikdo nepotvrdil Připraven (organizátor ťuká za hráče). Zdržovači pak čekání do gólu.
+        const item = baseMatchId(match.id);
+        const autoStart = delta > 0 && isClub(t) && shouldAutoStart(t.playTimes?.[item]);
+        update((d) =>
+          inTraining(d, trainingId, (x) => {
+            const y = withEvent({ ...x, scores: { ...x.scores, [match.id]: next } }, e);
+            return autoStart && shouldAutoStart(y.playTimes?.[item]) ? withPlayTime(y, item, { ...y.playTimes?.[item], startedAt: e.at }) : y;
+          }),
+        );
         // Stejný strop hlídá i databáze (tap_score), takže dva telefony na posledním gólu neudělají 7:4.
-        enqueue({ kind: 'tapScore', trainingId, matchId: match.id, taps: [{ id: e.id, at: e.at, field, delta, max: bumpLimit(match, field) }] });
+        // Zahájení jde s ťuknutím jedním zápisem: odmítnuté ťuknutí nezahájí nic a série ťuknutí zůstane jednou dávkou.
+        enqueue({
+          kind: 'tapScore',
+          trainingId,
+          matchId: match.id,
+          taps: [{ id: e.id, at: e.at, field, delta, max: bumpLimit(match, field) }],
+          ...(autoStart ? { start: { itemId: item, at: e.at } } : {}),
+        });
       },
       tapSolo: (trainingId: string, playerId: PlayerId, key: SoloKey, def: SoloMetricDef, ok: boolean, delta: 1 | -1, itemId: string) => {
         const t = dataRef.current.trainings.find((x) => x.id === trainingId);
