@@ -26,6 +26,8 @@ import { TrainingPage } from './pages/TrainingPage';
 import { TrainingsPage } from './pages/TrainingsPage';
 import { useAppState } from './useAppState';
 import { useHashRoute } from './useHashRoute';
+import { useWakeLock } from './wakeLock';
+import { vibrate } from './vibrate';
 import { PATCH_NOTES, PatchNotesPage } from './components/PatchNotes';
 import { compareVersions, notesSince } from './patchNotes';
 import { APP_VERSION } from '../storage/appVersion';
@@ -191,6 +193,15 @@ function SignedIn({
   const now = useNow();
   const active = useMemo(() => activeFor(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now())), [store.data.trainings, viewer.playerId, now]);
   const running = useMemo(() => runningTraining(store.data.trainings, Math.max(now.getTime(), Date.now())), [store.data.trainings, now]);
+  // Jsem na řadě a ještě nejsem připravený (20. 11. 2026): telefon jednou zavibruje a drží displej rozsvícený,
+  // ať hráč nezdržuje. Jen s otevřenou appkou (bez notifikací); iPhone vibrace z webu neumí.
+  const myTurn = !!active?.myTurn;
+  useWakeLock(myTurn);
+  const wasMyTurn = useRef(false);
+  useEffect(() => {
+    if (myTurn && !wasMyTurn.current) vibrate([200, 100, 200]);
+    wasMyTurn.current = myTurn;
+  }, [myTurn]);
   // Otevření appky (bez adresy): rozehraná hra → Moje hry, probíhající trénink → jeho rozpis, jinak Trénink (Živě zrušeno 19. 11. 2026).
   const [openedBare] = useState(() => /^#?\/?$/.test(window.location.hash));
   const redirected = useRef(false);

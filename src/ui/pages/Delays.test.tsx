@@ -159,6 +159,25 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     return { repo, mine, user: userEvent.setup() };
   };
 
+  it('na řadě: telefon zavibruje a drží displej, dokud se nepřihlásím jako připravený (20. 11. 2026)', async () => {
+    const vibrate = vi.fn();
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release }));
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
+    try {
+      const { mine, user } = await openMine();
+      expect(vibrate).toHaveBeenCalledTimes(1);
+      expect(request).toHaveBeenCalledWith('screen');
+      await user.click(within(mine).getByRole('button', { name: /^Připraven/ }));
+      await vi.waitFor(() => expect(release).toHaveBeenCalled());
+      expect(vibrate).toHaveBeenCalledTimes(1); // jen při přechodu na „na řadě“, ne při každém překreslení
+    } finally {
+      Reflect.deleteProperty(navigator, 'vibrate');
+      Reflect.deleteProperty(navigator, 'wakeLock');
+    }
+  });
+
   it('skóre jde ťukat až po připravenosti obou stran; dohraný leg čeká na potvrzení (odpočet 15 s)', async () => {
     const { repo, mine, user } = await openMine();
     expect(screen.getByRole('button', { name: 'Moje hry – jsi na řadě' })).toHaveAttribute('aria-current', 'page');
