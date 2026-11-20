@@ -13,6 +13,7 @@ import { parseSoloKey, soloKey, soloMetric } from './solo';
 import { cleanFormats, formatOf, matchState, withFormat, type MatchFormats } from './matchFormat';
 import { ballRoundMin, ballSecOf, roundMinutes, usesBalls } from './ballTime';
 import type { DisciplineId, Match, PlayerId, SoloKey, SoloMetric, Training } from './types';
+import type { LadderView } from './ladder';
 
 export const PRACTICE_MAX_PLAYERS = 2;
 /** Neukončený vlastní trénink zahájený před víc než 12 h se bere jako skončený (zapomenuté „Ukončit“). */
@@ -334,6 +335,20 @@ export interface PracticeMatchRow {
   rate: number;
 }
 
+const perLeg = (r: PracticeMatchRow, v: number) => (r.legs ? v / r.legs : 0);
+
+/**
+ * Pořadí v tabulkách zápasů podle disciplín – stejná kritéria jako hlavní žebříček (PRD 5.6, 20. 11. 2026):
+ * Průměr rozdíl skóre na leg → podíl vyhraných zápasů → góly na leg; Celkem rozdíl → vyhrané zápasy → góly;
+ * pak víc tréninků a id.
+ */
+export function compareMatchRows(view: LadderView): (a: PracticeMatchRow, b: PracticeMatchRow) => number {
+  const tail = (a: PracticeMatchRow, b: PracticeMatchRow) => b.trainings - a.trainings || (a.playerId < b.playerId ? -1 : a.playerId > b.playerId ? 1 : 0);
+  if (view === 'total') return (a, b) => b.gf - b.gc - (a.gf - a.gc) || b.wins - a.wins || b.gf - a.gf || tail(a, b);
+  return (a, b) =>
+    perLeg(b, b.gf - b.gc) - perLeg(a, a.gf - a.gc) || b.rate - a.rate || perLeg(b, b.gf) - perLeg(a, a.gf) || tail(a, b);
+}
+
 export interface PracticeMatchTable {
   discipline: DisciplineId;
   ranked: PracticeMatchRow[];
@@ -343,10 +358,18 @@ export interface PracticeMatchTable {
 /**
  * Zápasy podle disciplín (12. 11. 2026 jako 1 na 1; od 19. 11. 2026 s filtrem 1 na 1 / 2 na 2 / vše): pro každou
  * zápasovou disciplínu vyhrané zápasy (remíza
- * BO2 1:1 se od 19. 11. 2026 nepočítá jako výhra ani půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení: podíl
- * vyhraných zápasů → rozdíl skóre na leg → tréninky; pod 3 tréninky „málo dat“ jako jinde.
+ * BO2 1:1 se od 19. 11. 2026 nepočítá jako výhra ani půl), legy a skóre z vlastních tréninků duo i ze singlů klubových tréninků. Řazení
+ * jako hlavní žebříček (20. 11. 2026, *rozhodnutí uživatele*, dřív podíl vyhraných zápasů): `compareMatchRows`;
+ * pod 3 tréninky „málo dat“ jako jinde.
  */
-export function computeMatchLadder(trainings: Training[], from: string | null, to: string | null, minTrainings: number, kind: MatchKindFilter = 'singles'): PracticeMatchTable[] {
+export function computeMatchLadder(
+  trainings: Training[],
+  from: string | null,
+  to: string | null,
+  minTrainings: number,
+  kind: MatchKindFilter = 'singles',
+  view: LadderView = 'avg',
+): PracticeMatchTable[] {
   const acc = new Map<DisciplineId, Map<PlayerId, PracticeMatchRow & { seen: Set<string> }>>();
   for (const t of trainings) {
     if ((from && t.date < from) || (to && t.date > to)) continue;
@@ -389,8 +412,7 @@ export function computeMatchLadder(trainings: Training[], from: string | null, t
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([discipline, table]) => {
       const rows = [...table.values()].map(({ seen: _, ...r }) => ({ ...r, rate: r.matches ? r.wins / r.matches : 0 }));
-      const perLeg = (r: PracticeMatchRow) => (r.legs ? (r.gf - r.gc) / r.legs : 0);
-      rows.sort((a, b) => b.rate - a.rate || perLeg(b) - perLeg(a) || b.trainings - a.trainings || (a.playerId < b.playerId ? -1 : 1));
+      rows.sort(compareMatchRows(view));
       return { discipline, ranked: rows.filter((r) => r.trainings >= minTrainings), lowData: rows.filter((r) => r.trainings < minTrainings) };
     });
 }

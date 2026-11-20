@@ -61,6 +61,9 @@ function sourceSolo(t: Training, source: SoloSource): SoloResults {
   return out;
 }
 
+/** Trénink má výsledek cvičení, který patří do žebříčku `source` (pro posun v pořadí, 20. 11. 2026). */
+export const hasSoloFor = (t: Training, source: SoloSource): boolean => Object.keys(sourceSolo(t, source)).length > 0;
+
 /** Součty jedné metriky: tréninky se záznamem, počet záznamů a součet hodnot. */
 export function aggregateSolo(
   trainings: Training[],

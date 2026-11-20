@@ -236,19 +236,21 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <ul className="g-list">
               <Li i="1">
-                <b>Zápasy</b> řadí rozdíl skóre (G±), pak vyhrané legy, góly a výhry v simulaci. První tři mají zlatou, stříbrnou a bronzovou medaili.
-                Rozdíl je zeleně při výrazném náskoku (od +1,5 na leg, v Celkem od +10 na trénink), jinak v plusu zlatě a v minusu červeně.
+                <b>Zápasy</b> řadí rozdíl skóre (G±), pak vyhrané legy, góly a výhry v simulaci; sloupec, podle kterého se řadí, je podbarvený. První tři mají zlatou, stříbrnou a bronzovou medaili.
+                Rozdíl je v Průměru zeleně při výrazném náskoku (od +1,5 na leg), jinak v plusu zlatě a v minusu červeně.
               </Li>
               <Li i="Ø">
                 <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ / L−). Na
                 telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
               </Li>
+              <Li i="▲">
+                Šipka u pořadí ukazuje <b>posun po posledním tréninku</b>: ▲2 o dvě místa výš, ▼1 o místo níž, <b>nový</b> = právě ses dostal nad čáru. Své jméno najdeš zlatě.
+              </Li>
               <Li i={<Progress have={2} need={MIN} />}>
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, počítají se vyhrané
-                zápasy a legy.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, pořadí stejně jako nahoře podle rozdílu skóre, pak vyhraných zápasů.
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.

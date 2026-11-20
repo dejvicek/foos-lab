@@ -1,3 +1,5 @@
+import type { Move } from '../../domain/moves';
+
 /**
  * Pořadí v žebříčcích: první tři dostanou medaili (zlatá / stříbrná / bronzová),
  * první Zdržovač červený kroužek, šneka a „Brzdu“ (od 18. 11. 2026 jen jeden, dřív první tři). Neřazení hráči („Málo dat“) mají pomlčku.
@@ -64,6 +66,41 @@ export function Progress({ have, need }: { have: number; need: number }) {
         <i key={i} className={i < have ? 'on' : undefined} />
       ))}
       <span className="visually-hidden">{text}</span>
+    </span>
+  );
+}
+
+const mist = (n: number) => (n === 1 ? 'místo' : n >= 2 && n <= 4 ? 'místa' : 'míst');
+
+/**
+ * Posun v pořadí po posledním tréninku (20. 11. 2026): ▲2 zeleně, ▼1 červeně, „nový“ = právě nad čarou.
+ * `since` = den posledního tréninku („12. 11.“).
+ */
+export function MoveTag({ move, since }: { move: Move | undefined; since: string | null }) {
+  if (move === undefined || move === 0 || !since) return null;
+  if (move === 'new')
+    return (
+      <span className="move new" title={`Nově v pořadí po tréninku ${since}`}>
+        nový
+      </span>
+    );
+  const n = Math.abs(move);
+  const text = `O ${n} ${mist(n)} ${move > 0 ? 'výš' : 'níž'} po tréninku ${since}`;
+  return (
+    <span className={move > 0 ? 'move up' : 'move down'} title={text}>
+      <span aria-hidden="true">{move > 0 ? '▲' : '▼'}</span>
+      {n}
+      <span className="visually-hidden">{text}</span>
+    </span>
+  );
+}
+
+/** Pořadí v buňce: medaile / číslo a posun. */
+export function RankCell({ place, move, since }: { place: number; move?: Move; since: string | null }) {
+  return (
+    <span className="rank-cell">
+      <Medal place={place} />
+      <MoveTag move={move} since={since} />
     </span>
   );
 }

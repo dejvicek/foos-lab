@@ -252,8 +252,9 @@ describe('vlastní trénink (PRD 5.11)', () => {
     // remíza (BO2 1:1) se nikde neukazuje, v zápasech jen výhry (19. 11. 2026)
     expect(within(table).queryByRole('columnheader', { name: /Remízy/ })).toBeNull();
     expect(table).not.toHaveTextContent('rem.');
-    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 6)).toEqual(['4', '2 / 4', '5', '4']); // Tréninky, Zápasy, L+, L− (19. 11. 2026)
-    expect(rows[1]).toHaveTextContent(/H2.*4.*1 \/ 4/);
+    // Pořadí podle rozdílu skóre jako hlavní žebříček (20. 11. 2026): H2 má méně výher (1 / 4), ale skóre 40:36 → +0,4 na leg
+    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(1, 7)).toEqual(['H2', '4', '1 / 4', '4', '5', '+0,4']); // Hráč, Tréninky, Zápasy, L+, L−, G± (19. 11. 2026)
+    expect(rows[1]).toHaveTextContent(/H1.*4.*2 \/ 4/);
     // 2 na 2: vlastní trénink je jen 1 na 1 → žádná tabulka; volba se pamatuje
     await userEvent.setup().click(within(screen.getByRole('group', { name: 'Typ zápasu' })).getByRole('button', { name: '2 na 2' }));
     expect(screen.queryByRole('table', { name: 'Goalie war' })).toBeNull();

@@ -3,7 +3,7 @@ import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
 import { isShamed, ShameRank, Snail } from './Rank';
-import { placeAndSort, RankTh, sortedCls, SortTh, useSort, type SortCol } from './SortTable';
+import { placeAndSort, RankTh, shownSort, sortedCls, SortTh, useSort, type Sort, type SortCol } from './SortTable';
 
 /**
  * Zahájení / konec utkání pro zápis (PRD 4.8). Od 18. 11. 2026 místo Zahájit „Připraven“: každá strana
@@ -227,11 +227,16 @@ interface TableProps {
   compact?: boolean;
   /** Podle čeho je oficiální pořadí (žebříček Celkem = součet); ten sloupec je hned za jménem (19. 11. 2026). */
   rankBy?: 'avg' | 'sum';
+  /** Přihlášený hráč – jméno zlatě (20. 11. 2026). */
+  me?: PlayerId | null;
 }
 
 /** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. Řadit jde podle sloupce (18. 11. 2026). */
-export function DelayTable({ rows, names, showTrainings, open, compact, rankBy = 'avg' }: TableProps) {
-  const [sort, setSort] = useSort();
+export function DelayTable({ rows, names, showTrainings, open, compact, rankBy = 'avg', me = null }: TableProps) {
+  // Sloupec oficiálního pořadí je zvýrazněný i bez ručního řazení (20. 11. 2026).
+  const official: Sort = { key: rankBy === 'sum' ? 'waitSum' : 'waitAvg', dir: 'desc' };
+  const [sort, setSort] = useSort(official);
+  const shown = shownSort(sort, official);
   type Row = TableProps['rows'][number];
   // Pořadí sloupců (19. 11. 2026): hned za jménem to, podle čeho se řadí, pak druhé čekání, hra a počty.
   const waitAvg: SortCol<Row> = { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg };
@@ -253,7 +258,7 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
           <tr>
             <RankTh sort={sort} onReset={() => setSort(null)} />
             {cols.map((c) => (
-              <SortTh key={c.key} col={c} sort={sort} onSort={setSort} />
+              <SortTh key={c.key} col={c} sort={shown} onSort={setSort} />
             ))}
           </tr>
         </thead>
@@ -265,10 +270,10 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
               <td className="n rank">
                 <ShameRank place={place} shamed={shamed} />
               </td>
-              <td className={sortedCls(sort, 'name', 'name')}>
+              <td className={sortedCls(shown, 'name', 'name')}>
                 <span className="delay-who">
                   {open ? (
-                    <button type="button" className="player-link" onClick={() => open(r.playerId)}>
+                    <button type="button" className={r.playerId === me ? 'player-link me-name' : 'player-link'} onClick={() => open(r.playerId)}>
                       {names[r.playerId] ?? '?'}
                     </button>
                   ) : (
@@ -286,7 +291,7 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
                   : c.key === 'items' ? r.items
                   : r.trainings;
                 return (
-                  <td key={c.key} className={sortedCls(sort, c.key, c.key === rankKey && place === 1 && r.waitSum > 0 ? 'n neg' : 'n')}>
+                  <td key={c.key} className={sortedCls(shown, c.key, c.key === rankKey && place === 1 && r.waitSum > 0 ? 'n neg' : 'n')}>
                     {text}
                   </td>
                 );

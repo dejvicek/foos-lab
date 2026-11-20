@@ -2068,3 +2068,12 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .practice-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .practice-plan-head h2 { margin-bottom: 0; }
 .practice-plan-head button { min-height: 32px; padding: 0 12px; font-size: 13px; }
+
+/* ── Žebříčky: posun v pořadí a moje jméno (20. 11. 2026) ── */
+.rank-cell { display: inline-flex; align-items: center; gap: 3px; }
+.move { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.move.up { color: var(--good); }
+.move.down { color: var(--warn); }
+.move.new { color: var(--felt); font-size: 10px; text-transform: uppercase; letter-spacing: .02em; }
+.wrap .player-link.me-name, .wrap tr.low-data .player-link.me-name { color: var(--felt); font-weight: 800; }
+.rank-cell .rank-n + .move { margin-left: 4px; }

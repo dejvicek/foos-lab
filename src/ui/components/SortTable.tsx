@@ -28,12 +28,22 @@ export interface Placed<T> {
   ranked: boolean;
 }
 
-export function useSort(): [Sort | null, (col: { key: string; first?: SortDir } | null) => void] {
+/**
+ * `official` = sloupec, podle kterého je oficiální pořadí (20. 11. 2026): bez ručního řazení je zvýrazněný
+ * (viz `shown`) a první klik na něj otočí směr.
+ */
+export function useSort(official?: Sort): [Sort | null, (col: { key: string; first?: SortDir } | null) => void] {
   const [sort, setSort] = useState<Sort | null>(null);
   const toggle = (col: { key: string; first?: SortDir } | null) =>
-    setSort((cur) => (!col ? null : cur?.key === col.key ? { key: col.key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key: col.key, dir: col.first ?? 'desc' }));
+    setSort((cur) => {
+      const base = cur ?? official;
+      return !col ? null : base?.key === col.key ? { key: col.key, dir: base.dir === 'asc' ? 'desc' : 'asc' } : { key: col.key, dir: col.first ?? 'desc' };
+    });
   return [sort, toggle];
 }
+
+/** Co ukázat jako seřazené: ruční řazení, jinak sloupec oficiálního pořadí (20. 11. 2026). */
+export const shownSort = (sort: Sort | null, official: Sort): Sort => sort ?? official;
 
 const cmp = (a: number | string | null, b: number | string | null, dir: SortDir): number => {
   if (a === null || b === null) return a === b ? 0 : a === null ? 1 : -1;
