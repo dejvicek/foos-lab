@@ -39,7 +39,7 @@ describe('telefon – žebříček', () => {
     const table = await screen.findByRole('table', { name: 'Žebříček' });
     expect(screen.getByText(/Pro umístění je potřeba zúčastnit se aspoň 3 tréninků/)).toBeInTheDocument();
     const heads = () => within(screen.getByRole('table', { name: 'Žebříček' })).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
-    expect(heads()).toEqual(['#', 'Hráč', 'Výhry %', 'G±/leg']);
+    expect(heads()).toEqual(['#', 'Hráč', 'Výhry %', 'G±\u00a0⌀']);
     const row = within(table).getAllByRole('row')[1];
     expect(within(row).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
     await userEvent.setup().click(screen.getByRole('button', { name: 'Celkem' }));

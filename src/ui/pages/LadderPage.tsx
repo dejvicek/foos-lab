@@ -88,9 +88,9 @@ function LadderTable({
         ? { key: 'wins', label: <span title="Vyhrané / prohrané legy">L+/L−</span>, className: 'n', value: (r) => r.wins, show: (r) => wl(r.wins, r.legs - r.wins) }
         : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
     ...(avg || mobile ? [] : [{ key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: LadderRow) => r.legs - r.wins, show: (r: LadderRow) => String(r.legs - r.wins), first: 'asc' as const }]),
-    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>{avg ? 'G+/leg' : 'G+'}</span>, className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
-    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>{avg ? 'G−/leg' : 'G−'}</span>, className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
-    { key: 'loss', label: <span title="Ztráty na leg">Ztráty/leg</span>, className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
+    { key: 'gf', label: <span title={avg ? 'Góly vstřelené na leg' : 'Góly vstřelené'}>{avg ? 'G+\u00a0⌀' : 'G+'}</span>, className: 'n', value: (r) => (avg ? r.gfPerLeg : r.gf), show: (r) => (avg ? dec1(r.gfPerLeg) : String(r.gf)) },
+    { key: 'gc', label: <span title={avg ? 'Góly obdržené na leg' : 'Góly obdržené'}>{avg ? 'G−\u00a0⌀' : 'G−'}</span>, className: 'n', value: (r) => (avg ? r.gcPerLeg : r.gc), show: (r) => (avg ? dec1(r.gcPerLeg) : String(r.gc)) },
+    { key: 'loss', label: <span title="Ztráty na leg">{'Ztráty\u00a0⌀'}</span>, className: 'n', value: (r) => r.lossPerLeg, show: (r) => dash(r.lossPerLeg, (v) => dec1(v)) },
     {
       key: 'sim',
       label: <span title={avg ? 'Výhry v simulaci' : 'Simulace: výhry / zápasy'}>{avg ? 'Sim. %' : 'Sim.'}</span>,
@@ -99,8 +99,8 @@ function LadderTable({
       show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
     },
     // Rozhodující sloupec vždy poslední, jako v ostatních žebříčcích (20. 11. 2026, *rozhodnutí uživatele*).
-    // Průměr je „na leg“ – od 20. 11. 2026 to říká i záhlaví (G±/leg), ať se neplete s G± v tréninku (*rozhodnutí uživatele*).
-    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>{avg ? 'G±/leg' : 'G±'}</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
+    // Průměr je „na leg“ – od 20. 11. 2026 to říká i záhlaví znakem ⌀ (G± ⌀, jako Čekání ⌀ u Zdržovačů), ať se neplete s G± v tréninku (*rozhodnutí uživatele*).
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>{avg ? 'G±\u00a0⌀' : 'G±'}</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
   ];
   const items = placeAndSort(ranked, lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);
@@ -312,7 +312,7 @@ function PracticeMatchTable({
           { key: 'legs', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r: PracticeMatchRow) => r.legWins, show: (r: PracticeMatchRow) => String(r.legWins) },
           { key: 'lost', label: <span title="Prohrané legy">L−</span>, className: 'n', value: (r: PracticeMatchRow) => r.legs - r.legWins, show: (r: PracticeMatchRow) => String(r.legs - r.legWins), first: 'asc' as const },
         ]),
-    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>{avg ? 'G±/leg' : 'G±'}</span>, className: 'n', value: (r) => (avg ? perLeg(r) : r.gf - r.gc) },
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>{avg ? 'G±\u00a0⌀' : 'G±'}</span>, className: 'n', value: (r) => (avg ? perLeg(r) : r.gf - r.gc) },
   ];
   const items = placeAndSort(table.ranked, table.lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);
