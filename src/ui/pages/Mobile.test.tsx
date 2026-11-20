@@ -51,6 +51,23 @@ describe('telefon – žebříček', () => {
   });
 });
 
+describe('telefon – profil hráče (20. 11. 2026)', () => {
+  it('umístění jako řádky, „Málo dat“ sbalené; tréninky jako seznam s krátkým datem a G±', async () => {
+    const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
+    window.location.hash = '#/ladder/player/id1';
+    render(<App repo={memoryRepository({ players, trainings: [t] })} />);
+    const places = await screen.findByRole('region', { name: 'Umístění v žebříčcích' });
+    // 1 trénink → všechno pod čarou, sbalené do jednoho řádku
+    const toggle = within(places).getByRole('button', { name: /^Málo dat \(\d+\): Zápasy/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.setup().click(toggle);
+    expect(within(places).getByRole('button', { name: /Zápasy.*málo dat/ })).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Tréninky hráče' });
+    expect(within(list).getByRole('button')).toHaveTextContent(/^1\. 11\.\s*Týmový\+4L\+ 1 · L− 0$/);
+    expect(screen.queryByRole('table', { name: 'Tréninky hráče' })).toBeNull();
+  });
+});
+
 describe('telefon – nastavení tréninku', () => {
   it('nastavení je průvodce v krocích „Krok N z 2“; úprava otevře plán', async () => {
     const custom: Training = { ...training, format: 'custom', durationMin: 180, plan: { normal: 4, sim: 1 } };

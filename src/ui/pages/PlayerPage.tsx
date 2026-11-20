@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { playerHistory, resolveRange } from '../../domain/ladder';
 import { DISCIPLINES } from '../../domain/disciplines';
 import { playerDrillHistory, playerMatchHistory, type PlayerMatch } from '../../domain/playerDetail';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
+  const mobile = useMobile();
   const today = todayIso();
   const player = store.data.players.find((p) => p.id === id);
   const back = (
@@ -70,6 +72,34 @@ export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
       <h2 className="pp-h">Tréninky</h2>
       {rows.length === 0 ? (
         <p className="note">V tomhle období hráč nebyl na žádném klubovém tréninku.</p>
+      ) : mobile ? (
+        // Telefon (20. 11. 2026): seznam místo sedmisloupcové tabulky – krátké datum, druh, G± vpravo, legy pod tím.
+        <ul className="pp-list" aria-label="Tréninky hráče">
+          {rows.map((r) => {
+            const extra = [
+              r.lossPerLeg !== null ? `ztráty ${dec1(r.lossPerLeg)} / leg` : '',
+              r.simM ? `simulace ${r.simW} / ${r.simM}` : '',
+              ...metrics.flatMap((m) => {
+                const v = r.solo[m.id];
+                return v === undefined ? [] : [`${m.name} ${m.streak ? (v > 0 ? streakTime(v) : 'nesplněno') : `${v} / ${m.max}`}`];
+              }),
+            ].filter(Boolean);
+            return (
+              <li key={r.trainingId}>
+                <button type="button" className="pp-row" onClick={() => navigate({ page: 'training', id: r.trainingId })}>
+                  <span className="pp-row-main">
+                    <b>{formatDayMonth(r.date)}</b> {MODE_SHORT[r.mode]}
+                  </span>
+                  <span className={['pp-row-num', diffCls(r.diff, r.diff >= STRONG_PER_TRAINING)].join(' ')}>{signed(r.diff)}</span>
+                  <span className="pp-row-sub">
+                    L+ {r.wins} · L− {r.legs - r.wins}
+                    {extra.length > 0 && ` · ${extra.join(' · ')}`}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <div className="wrap">
           <table aria-label="Tréninky hráče">
@@ -114,6 +144,9 @@ export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
     </section>
   );
 }
+
+/** Krátký druh tréninku na telefonu. */
+const MODE_SHORT = { team: 'Týmový', single: 'Jedničky' } as const;
 
 interface DetailProps {
   store: AppStore;
@@ -280,24 +313,55 @@ function DrillDetail({ store, playerId, prefs, today, navigate, metric }: Detail
   );
 }
 
-/** Umístění ve všech žebříčcích za období (Můj profil, 20. 11. 2026): místo, posun, nebo tečky do pořadí; klik vede na detail. */
+/**
+ * Umístění ve všech žebříčcích za období (Můj profil, 20. 11. 2026): místo, posun, nebo tečky do pořadí; klik vede na detail.
+ * Notebook čipy; telefon seznam řádků seřazený podle místa a „Málo dat“ sbalené do jednoho řádku.
+ */
 function Placements({ store, playerId, prefs, today, navigate }: { store: AppStore; playerId: PlayerId; prefs: UiPrefs; today: string; navigate(r: Route): void }) {
+  const mobile = useMobile();
+  const [lowOpen, setLowOpen] = useState(false);
   const list = placementsOf(store.data.trainings, playerId, prefs.ladderRange, prefs.ladderView, today, prefs.ladderMatchKind ?? 'all');
   if (!list.length) return null;
   const label = (p: Placement) =>
     p.ref.kind === 'main' ? 'Zápasy' : p.ref.kind === 'match' ? matchTableName(p.ref.discipline) : `${soloMetric(p.ref.metric).name}${p.ref.source === 'practice' ? ' (solo)' : ''}`;
   const go = (p: Placement) =>
     navigate(p.ref.kind === 'main' ? { page: 'ladder' } : p.ref.kind === 'match' ? { page: 'player', id: playerId, focus: { kind: 'match', discipline: p.ref.discipline } } : { page: 'player', id: playerId, focus: { kind: 'drill', metric: p.ref.metric } });
+  const rank = (p: Placement) => (p.place !== null ? <RankCell place={p.place} move={p.move} since={p.since ? formatDayMonth(p.since) : null} /> : <Progress have={p.trainings} need={MIN_TRAININGS} />);
+  if (mobile) {
+    const ranked = list.filter((p) => p.place !== null).sort((a, b) => a.place! - b.place!);
+    const low = list.filter((p) => p.place === null);
+    const row = (p: Placement, i: number) => (
+      <li key={i}>
+        <button type="button" className="pp-row pp-place-row" onClick={() => go(p)}>
+          <span className="pp-rank">{rank(p)}</span>
+          <span className="pp-what">{label(p)}</span>
+          <span className="pp-of">{p.place !== null ? `z ${p.of}` : 'málo dat'}</span>
+        </button>
+      </li>
+    );
+    return (
+      <section className="pp-places" aria-label="Umístění v žebříčcích">
+        <h2 className="pp-h">Umístění</h2>
+        {ranked.length > 0 && <ul className="pp-list">{ranked.map(row)}</ul>}
+        {low.length > 0 && (
+          <>
+            <button type="button" className="pp-low-toggle" aria-expanded={lowOpen} onClick={() => setLowOpen(!lowOpen)}>
+              <span aria-hidden="true">{lowOpen ? '▾' : '▸'}</span> Málo dat ({low.length}): {low.map(label).join(', ')}
+            </button>
+            {lowOpen && <ul className="pp-list pp-low">{low.map(row)}</ul>}
+          </>
+        )}
+      </section>
+    );
+  }
   return (
     <section className="pp-places" aria-label="Umístění v žebříčcích">
       <h2 className="pp-h">Umístění</h2>
-      <ul>
+      <ul className="pp-chips">
         {list.map((p, i) => (
           <li key={i}>
             <button type="button" className={p.place !== null && p.place <= 3 ? 'pp-place podium' : 'pp-place'} onClick={() => go(p)}>
-              <span className="pp-rank">
-                {p.place !== null ? <RankCell place={p.place} move={p.move} since={p.since ? formatDayMonth(p.since) : null} /> : <Progress have={p.trainings} need={MIN_TRAININGS} />}
-              </span>
+              <span className="pp-rank">{rank(p)}</span>
               <span className="pp-what">{label(p)}</span>
               <span className="pp-of">{p.place !== null ? `z ${p.of}` : 'málo dat'}</span>
             </button>
@@ -323,10 +387,15 @@ function Records({ store, playerId, names }: { store: AppStore; playerId: Player
           return (
             <li key={r.metric}>
               <span className="pp-what">{def.name}</span>
-              <b>{fmt(r.personal)}</b>
-              {r.club !== null && (
-                <span className={mineClub ? 'pp-club mine' : 'pp-club'}>{mineClub ? 'rekord klubu' : `klub ${fmt(r.club)} (${names.get(r.clubHolder!) ?? '?'})`}</span>
-              )}
+              <span className="pp-val">
+                <b>{fmt(r.personal)}</b>
+                {r.club !== null && (
+                  <span className={mineClub ? 'pp-club mine' : 'pp-club'}>
+                    {' · '}
+                    {mineClub ? 'rekord klubu' : `klub ${fmt(r.club)} (${names.get(r.clubHolder!) ?? '?'})`}
+                  </span>
+                )}
+              </span>
             </li>
           );
         })}
