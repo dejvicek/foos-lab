@@ -2153,3 +2153,13 @@ button.pp-place.podium { border-color: color-mix(in srgb, var(--gold) 60%, var(-
 .pp-records b { font-variant-numeric: tabular-nums; }
 .pp-club { color: var(--muted); font-size: 13px; }
 .pp-club.mine { color: var(--felt); font-weight: 700; }
+
+/* ── Tvůj trénink (20. 11. 2026) ── */
+.recap { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; padding: 12px 16px; margin: 12px 0 16px; max-width: 640px; }
+.recap h2 { margin: 0 0 6px; font-size: 18px; }
+.recap h2 small { color: var(--muted); font-weight: 600; font-size: 13px; margin-left: 6px; }
+.recap p { margin: 4px 0; line-height: 1.5; }
+.recap-main { font-size: 16px; }
+.recap-drills, .recap-ladder { color: var(--muted); }
+.recap-drills b, .recap-ladder b { color: var(--ink); }
+.recap-link { display: inline-block; margin-top: 6px; color: var(--felt); font-weight: 700; }

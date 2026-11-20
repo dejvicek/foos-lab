@@ -1,4 +1,6 @@
 import { sortTrainings } from '../../domain/training';
+import { TrainingRecap } from '../components/TrainingRecap';
+import { myFinishedToday } from '../active';
 import { clubTrainings, practiceMatches, practiceMinutes, practiceRunning, practiceSeries, practicesFor } from '../../domain/practice';
 import { formatDateLong } from '../dates';
 import { MODE_LABEL, plural } from '../format';
@@ -93,6 +95,7 @@ export function TrainingsPage({
   const names = new Map(store.data.players.map((p) => [p.id, p.name]));
   const part = prefs.trainingsPart ?? 'club';
   const own = practicesFor(store.data.trainings, viewer.playerId, viewer.isAdmin).length;
+  const finished = myFinishedToday(store.data.trainings, viewer.playerId, now.getTime());
 
   return (
     <section>
@@ -106,6 +109,8 @@ export function TrainingsPage({
           ['own', own ? `Vlastní (${own})` : 'Vlastní'],
         ]}
       />
+      {/* Tvůj trénink (20. 11. 2026): dnešní trénink, na kterém jsem odehrál všechno své – do konce dne. */}
+      {finished && viewer.playerId && <TrainingRecap training={finished} playerId={viewer.playerId} trainings={store.data.trainings} />}
       {part === 'own' ? (
         <Practices store={store} navigate={navigate} viewer={viewer} now={now.getTime()} />
       ) : (

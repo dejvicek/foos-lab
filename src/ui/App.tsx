@@ -1,4 +1,4 @@
-import { activeFor, runningTraining } from './active';
+import { activeFor, myFinishedToday, runningTraining } from './active';
 import { useNow } from './now';
 import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -29,6 +29,7 @@ import { useHashRoute } from './useHashRoute';
 import { useWakeLock } from './wakeLock';
 import { vibrate } from './vibrate';
 import { TrainingsProvider } from './records';
+import { TrainingRecap } from './components/TrainingRecap';
 import { PATCH_NOTES, PatchNotesPage } from './components/PatchNotes';
 import { compareVersions, notesSince } from './patchNotes';
 import { APP_VERSION } from '../storage/appVersion';
@@ -193,6 +194,7 @@ function SignedIn({
   // Běžící trénink, na kterém hraju → Moje hry v navigaci; probíhající trénink kohokoli → „Trénink“ ho otevře.
   const now = useNow();
   const active = useMemo(() => activeFor(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now())), [store.data.trainings, viewer.playerId, now]);
+  const finished = useMemo(() => (active ? null : myFinishedToday(store.data.trainings, viewer.playerId, Math.max(now.getTime(), Date.now()))), [active, store.data.trainings, viewer.playerId, now]);
   const running = useMemo(() => runningTraining(store.data.trainings, Math.max(now.getTime(), Date.now())), [store.data.trainings, now]);
   // Jsem na řadě a ještě nejsem připravený (20. 11. 2026): telefon jednou zavibruje a drží displej rozsvícený,
   // ať hráč nezdržuje. Jen s otevřenou appkou (bez notifikací); iPhone vibrace z webu neumí.
@@ -269,6 +271,9 @@ function SignedIn({
   else if (route.page === 'my')
     body = active ? (
       <TrainingPage key={`${route.page}-${active.training.id}`} store={store} id={active.training.id} navigate={navigate} viewer={viewer} view={route.page} />
+    ) : finished && viewer.playerId ? (
+      // Po tréninku místo prázdné hlášky „Tvůj trénink“ (20. 11. 2026).
+      <TrainingRecap training={finished} playerId={viewer.playerId} trainings={store.data.trainings} />
     ) : (
       noLive
     );

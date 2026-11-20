@@ -546,3 +546,26 @@ describe('průběh hry', () => {
     ]));
   });
 });
+
+describe('Tvůj trénink (20. 11. 2026)', () => {
+  it('po mém posledním kole: karta v Moje hry i nahoře v Trénincích s odkazem na souhrn', async () => {
+    const items = queueOf(buildSchedule(t)).flatMap((e) => (e.kind === 'item' ? [e] : []));
+    const times: Training['playTimes'] = { training: { startedAt: at(17, 0) } };
+    const scores: Training['scores'] = {};
+    items.forEach((e, i) => {
+      if (!e.players.includes('id1')) return;
+      times[e.id] = { startedAt: at(17, 1 + 2 * i), endedAt: at(17, 2 + 2 * i) };
+      if (e.match) scores[e.match.id] = { ga: 6, gb: 4 };
+    });
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+    window.location.hash = '#/trainings';
+    const { unmount } = render(<App repo={memoryRepository({ players, trainings: [{ ...t, playTimes: times, scores }] })} auth={auth} />);
+    const recap = await screen.findByRole('region', { name: 'Tvůj trénink' });
+    expect(recap).toHaveTextContent('Žebříček Zápasy (forma)');
+    expect(within(recap).getByRole('link', { name: 'Souhrn tréninku' })).toHaveAttribute('href', '#/trainings/t1');
+    unmount();
+    window.location.hash = '#/my-games';
+    render(<App repo={memoryRepository({ players, trainings: [{ ...t, playTimes: times, scores }] })} auth={auth} />);
+    expect(await screen.findByRole('region', { name: 'Tvůj trénink' })).toBeInTheDocument();
+  });
+});

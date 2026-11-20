@@ -7,6 +7,9 @@ import type { PlayerId, SoloKey, Training } from '../domain/types';
 /** Všechny tréninky pro rekordy u cvičení (20. 11. 2026); bez provideru se rekordy neukazují (testy komponent). */
 const TrainingsContext = createContext<Training[] | null>(null);
 
+/** Všechny tréninky z kontextu (null mimo appku – testy komponent). */
+export const useTrainings = (): Training[] | null => useContext(TrainingsContext);
+
 export function TrainingsProvider({ trainings, children }: { trainings: Training[]; children: ReactNode }) {
   return <TrainingsContext.Provider value={trainings}>{children}</TrainingsContext.Provider>;
 }
