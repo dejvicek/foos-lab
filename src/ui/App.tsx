@@ -11,7 +11,7 @@ import type { SnapshotStore } from '../storage/snapshot';
 import type { AppVersion } from '../storage/appVersion';
 import { useAppVersion } from './useAppVersion';
 import { reloadApp } from './reload';
-import { MainNav } from './components/MainNav';
+import { AuthHeader, MainNav } from './components/MainNav';
 import { LadderPage } from './pages/LadderPage';
 import { DisciplinesPage } from './pages/DisciplinesPage';
 import { TemplatesPage } from './pages/TemplatesPage';
@@ -26,7 +26,7 @@ import { TrainingPage } from './pages/TrainingPage';
 import { TrainingsPage } from './pages/TrainingsPage';
 import { useAppState } from './useAppState';
 import { useHashRoute } from './useHashRoute';
-import { PATCH_NOTES, PatchNotesDialog } from './components/PatchNotes';
+import { PATCH_NOTES, PatchNotesPage } from './components/PatchNotes';
 import { compareVersions, notesSince } from './patchNotes';
 import { APP_VERSION } from '../storage/appVersion';
 import type { SeenVersionStore } from '../storage/prefs';
@@ -82,6 +82,17 @@ export function App({
       />
     );
   if (me === 'loading') return <main className="page"><p className="note">Načítám…</p></main>;
+  // Co je nového jde číst i bez přihlášení (odkaz z čísla verze na přihlášení a v Návodu).
+  if (!me && route.page === 'patch-notes')
+    return (
+      <main className="page pn-public">
+        <AuthHeader />
+        <PatchNotesPage />
+        <button type="button" onClick={() => (window.location.hash = '#/trainings')}>
+          Přihlásit se
+        </button>
+      </main>
+    );
   if (!me) return <LoginPage auth={auth} onDone={(m, n) => (setNick(n), setMe(m))} />;
   if (me.mustChangePassword || changing)
     return (
@@ -142,20 +153,21 @@ function SignedIn({
   const snapshot = useMemo(() => (me.playerId ? snapshotFor?.(me.playerId) : undefined), [snapshotFor, me.playerId]);
   const store = useAppState(repo, { outbox, snapshot });
   const version = useAppVersion(latestVersion);
-  // Po aktualizaci jednou: co je nového od verze, kterou zařízení vidělo naposledy (20. 11. 2026).
+  // Po aktualizaci jednou: lišta „Nová verze“ s odkazem na Co je nového (20. 11. 2026). Verze, které zařízení
+  // ještě nevidělo, zůstanou na stránce označené „Nové pro tebe“ do zavření appky.
   const [news, setNews] = useState(() => {
     const seen = seenVersion?.load() ?? null;
-    const list = seenVersion ? notesSince(PATCH_NOTES, seen, APP_VERSION) : [];
-    return { seen, list };
+    const fresh = seenVersion ? notesSince(PATCH_NOTES, seen, APP_VERSION).map((e) => e.version) : [];
+    return { seen, fresh, banner: fresh.length > 0 };
   });
-  useEffect(() => {
-    // Nic k ukázání (vývojová verze bez záznamu, první spuštění bez poznámek): verze se jen zapamatuje.
-    if (seenVersion && !news.list.length && (news.seen === null || compareVersions(APP_VERSION, news.seen) > 0)) seenVersion.save(APP_VERSION);
-  }, [seenVersion, news]);
-  const closeNews = () => {
+  const ackNews = () => {
     seenVersion?.save(APP_VERSION);
-    setNews((n) => ({ ...n, list: [] }));
+    setNews((n) => (n.banner ? { ...n, banner: false } : n));
   };
+  useEffect(() => {
+    // Nic k ukázání (vývojová verze bez záznamu): verze se jen zapamatuje.
+    if (seenVersion && !news.fresh.length && (news.seen === null || compareVersions(APP_VERSION, news.seen) > 0)) seenVersion.save(APP_VERSION);
+  }, [seenVersion, news]);
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
   const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
@@ -165,6 +177,10 @@ function SignedIn({
     appliedCatalog.current = store.data.catalog ?? null;
   }
   const [route, navigate] = useHashRoute();
+  // Otevřená stránka Co je nového = poznámky viděné (lišta zmizí, označení „Nové pro tebe“ zůstane).
+  useEffect(() => {
+    if (route.page === 'patch-notes' && news.banner) ackNews();
+  });
   const [prefs, setPrefsState] = useState<UiPrefs>(loadPrefs);
   const setPrefs = (p: UiPrefs) => {
     setPrefsState(p);
@@ -245,6 +261,7 @@ function SignedIn({
       noLive
     );
   else if (route.page === 'disciplines') body = <DisciplinesPage store={store} admin={viewer.isAdmin} />;
+  else if (route.page === 'patch-notes') body = <PatchNotesPage fresh={news.fresh} />;
   else if (route.page === 'templates') body = <TemplatesPage store={store} admin={viewer.isAdmin} />;
   else if (route.page === 'ladder') body = <LadderPage store={store} prefs={prefs} setPrefs={setPrefs} navigate={navigate} me={viewer.playerId} />;
   else if (route.page === 'player') body = <PlayerPage store={store} id={route.id} focus={route.focus} prefs={prefs} navigate={navigate} />;
@@ -273,6 +290,17 @@ function SignedIn({
         myTurn={!!active?.myTurn}
         admin={viewer.isAdmin}
       />
+      {news.banner && route.page !== 'patch-notes' && (
+        <div className="update-banner news-banner" role="status">
+          Appka má novou verzi {APP_VERSION}.{' '}
+          <button type="button" className="ghost banner-ok" onClick={() => navigate({ page: 'patch-notes' })}>
+            Co je nového
+          </button>
+          <button type="button" className="link" onClick={ackNews}>
+            Skrýt
+          </button>
+        </div>
+      )}
       {version === 'update' && (
         <div className="update-banner" role="status">
           Je k dispozici nová verze appky.{' '}
@@ -300,9 +328,6 @@ function SignedIn({
         </div>
       )}
       <main className="page">{body}</main>
-      {news.list.length > 0 && (
-        <PatchNotesDialog entries={news.list} title={news.seen ? `Co je nového od verze ${news.seen}` : `Co je nového ve verzi ${APP_VERSION}`} onClose={closeNews} />
-      )}
     </>
   );
 }

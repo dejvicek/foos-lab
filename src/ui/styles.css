@@ -2090,34 +2090,43 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .pm-place { display: block; color: var(--muted); font-size: 11px; }
 .player-detail tfoot th, .player-detail tfoot td { font-weight: 800; border-top: 2px solid var(--line, currentColor); }
 
-/* ── Patch notes: číslo verze je tlačítko, okno Co je nového (20. 11. 2026) ── */
-button.brand-version, .main-nav button.brand-version {
-  background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
-  padding: 1px 6px; min-height: 0; height: auto; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: pointer;
-}
-button.brand-version:hover { color: var(--ink); border-color: var(--line-strong); }
+/* ── Co je nového (#/patch-notes, 20. 11. 2026): verze na ose jako kola v rozpisu ── */
+a.brand-version { text-decoration: none; }
+a.brand-version:hover { color: var(--ink); border-color: var(--line-strong); }
 .g-brand-group { display: inline-flex; align-items: center; gap: 8px; }
-.pn-backdrop {
-  position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, #000 45%, transparent);
-  display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px 16px;
-}
-.pn-dialog {
-  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px;
-  width: min(640px, 100%); max-height: calc(100dvh - 64px); display: flex; flex-direction: column;
-  box-shadow: 0 12px 40px color-mix(in srgb, #000 25%, transparent);
-}
-.pn-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
-.pn-head h2 { margin: 0; font-size: 18px; }
-.pn-body { overflow-y: auto; padding: 4px 16px 16px; overscroll-behavior: contain; }
-.pn-entry { padding: 12px 0; }
-.pn-entry + .pn-entry { border-top: 1px solid var(--line); }
-.pn-entry h3 { margin: 0 0 6px; font-size: 16px; font-variant-numeric: tabular-nums; }
-.pn-entry h3 small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
-.pn-entry h4 { margin: 12px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
-.pn-entry p { margin: 6px 0; }
-.pn-entry ul { margin: 4px 0; padding-left: 18px; }
-.pn-entry li { margin: 3px 0; line-height: 1.45; }
+.news-banner .link { margin-left: 10px; }
+
+.pn-page { max-width: 720px; }
+.pn-top h1 { font-stretch: 125%; font-weight: 800; letter-spacing: -0.03em; font-size: clamp(30px, 5vw, 44px); line-height: 1; margin: 6px 0 10px; }
+.pn-top p { color: var(--muted); margin: 0 0 32px; }
+.pn-rail { list-style: none; margin: 0; padding: 0; }
+.pn-entry { position: relative; padding: 0 0 36px 44px; }
+/* Linka osy k další verzi; u poslední není. */
+.pn-entry::before { content: ''; position: absolute; left: 10px; top: 30px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--line-strong); }
+.pn-entry:last-child::before { display: none; }
+.pn-node { position: absolute; left: 0; top: 9px; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--bg); }
+.pn-entry.is-fresh .pn-node { border-color: var(--gold); }
+.pn-entry.is-current .pn-node { background: var(--gold); border-color: var(--action-edge); box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 22%, transparent); }
+.pn-version { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 8px; }
+.pn-num { font-stretch: 125%; font-weight: 800; font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--muted); }
+.pn-entry.is-current .pn-num, .pn-entry.is-fresh .pn-num { color: var(--ink); }
+.pn-date { color: var(--muted); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pn-flag { align-self: center; font-size: 12px; font-weight: 700; color: var(--felt); background: var(--felt-soft); border-radius: 999px; padding: 2px 10px; }
+.pn-lead { font-size: 17px; line-height: 1.5; margin: 0 0 8px; max-width: 60ch; }
+.pn-body { max-width: 66ch; }
+.pn-body h3 { font-size: 15px; font-weight: 700; margin: 20px 0 6px; }
+.pn-body p { line-height: 1.6; margin: 10px 0; }
+.pn-body ul { margin: 0; padding-left: 18px; }
+.pn-body li { margin: 5px 0; line-height: 1.55; }
+.pn-body li::marker { color: var(--gold); }
+button.pn-more { background: none; border: 0; padding: 0; min-height: 0; margin-top: 8px; color: var(--felt); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+button.pn-more:hover { color: var(--ink); }
+.pn-public { max-width: 760px; }
+.pn-public > button { margin-top: 8px; }
 @media (max-width: 767px) {
-  .pn-backdrop { padding: 12px 8px; }
-  .pn-dialog { max-height: calc(100dvh - 24px); }
+  .pn-entry { padding-left: 34px; padding-bottom: 28px; }
+  .pn-entry::before { left: 8px; top: 26px; }
+  .pn-node { width: 18px; height: 18px; top: 7px; }
+  .pn-num { font-size: 25px; }
+  .pn-lead { font-size: 16px; }
 }

@@ -18,6 +18,7 @@ const routes: [Route, string][] = [
   [{ page: 'templates' }, '#/templates'],
   [{ page: 'players' }, '#/players'],
   [{ page: 'guide' }, '#/guide'],
+  [{ page: 'patch-notes' }, '#/patch-notes'],
 ];
 
 describe('adresy stránek (anglicky od 10. 11. 2026)', () => {

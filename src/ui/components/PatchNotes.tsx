@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useRef, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { Fragment, useState, type ReactNode } from 'react';
 import changelog from '../../../CHANGELOG.md?raw';
+import { APP_VERSION } from '../../storage/appVersion';
 import { parseChangelog, type PatchEntry } from '../patchNotes';
 
 /** Všechny vydané verze z CHANGELOG.md (nejnovější nahoře). */
@@ -11,73 +11,92 @@ function inline(text: string): ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*)/).map((part, i) => (part.startsWith('**') && part.endsWith('**') ? <b key={i}>{part.slice(2, -2)}</b> : <Fragment key={i}>{part}</Fragment>));
 }
 
-/** Záznam verze: odstavce, odrážky a nadpisy skupin („**U stolu**“ na samostatném řádku). */
-function Body({ md }: { md: string }) {
-  const blocks = md.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+type Block = { kind: 'p'; text: string } | { kind: 'group'; title: string | null; items: string[] };
+
+/** Záznam verze: první odstavec = shrnutí, dál skupiny odrážek (nadpis „**U stolu**“ na samostatném řádku) a odstavce. */
+function blocks(md: string): { lead: string | null; rest: Block[] } {
+  const out: Block[] = [];
+  for (const raw of md.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean)) {
+    const lines = raw.split('\n');
+    const title = /^\*\*[^*]+\*\*$/.test(lines[0]) ? lines[0].slice(2, -2) : null;
+    const rest = title ? lines.slice(1) : lines;
+    if (rest.length && rest.every((l) => l.startsWith('- '))) out.push({ kind: 'group', title, items: rest.map((l) => l.slice(2)) });
+    else {
+      if (title) out.push({ kind: 'group', title, items: [] });
+      if (rest.length) out.push({ kind: 'p', text: rest.join(' ') });
+    }
+  }
+  const lead = out[0]?.kind === 'p' ? out[0].text : null;
+  return { lead, rest: lead ? out.slice(1) : out };
+}
+
+function Entry({ e, fresh, initiallyOpen }: { e: PatchEntry; fresh: boolean; initiallyOpen: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
+  const { lead, rest } = blocks(e.body);
+  const current = e.version === APP_VERSION;
+  const id = `pn-${e.version.replace(/\./g, '-')}`;
   return (
-    <>
-      {blocks.map((b, i) => {
-        const lines = b.split('\n');
-        const head = /^\*\*[^*]+\*\*$/.test(lines[0]) ? lines[0].slice(2, -2) : null;
-        const rest = head ? lines.slice(1) : lines;
-        const items = rest.filter((l) => l.startsWith('- '));
-        return (
-          <Fragment key={i}>
-            {head && <h4>{head}</h4>}
-            {items.length === rest.length && items.length ? (
-              <ul>
-                {items.map((l, j) => (
-                  <li key={j}>{inline(l.slice(2))}</li>
-                ))}
-              </ul>
-            ) : (
-              rest.length > 0 && <p>{inline(rest.join(' '))}</p>
-            )}
-          </Fragment>
-        );
-      })}
-    </>
+    <li className={['pn-entry', current ? 'is-current' : '', fresh ? 'is-fresh' : ''].filter(Boolean).join(' ')} aria-labelledby={`${id}-h`}>
+      <span className="pn-node" aria-hidden="true" />
+      <h2 id={`${id}-h`} className="pn-version">
+        <span className="pn-num">{e.version}</span>
+        <span className="pn-date">{e.date}</span>
+        {current && <span className="pn-flag">Tvoje verze</span>}
+        {fresh && !current && <span className="pn-flag">Nové pro tebe</span>}
+      </h2>
+      {lead && <p className="pn-lead">{inline(lead)}</p>}
+      {rest.length > 0 && (
+        <>
+          {open && (
+            <div id={`${id}-body`} className="pn-body">
+              {rest.map((b, i) =>
+                b.kind === 'p' ? (
+                  <p key={i}>{inline(b.text)}</p>
+                ) : (
+                  <Fragment key={i}>
+                    {b.title && <h3>{b.title}</h3>}
+                    {b.items.length > 0 && (
+                      <ul>
+                        {b.items.map((it, j) => (
+                          <li key={j}>{inline(it)}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </Fragment>
+                ),
+              )}
+            </div>
+          )}
+          <button type="button" className="pn-more" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
+            {open ? 'Skrýt podrobnosti' : 'Celý záznam'}
+          </button>
+        </>
+      )}
+    </li>
   );
 }
 
 /**
- * Okno „Co je nového“ (20. 11. 2026): po kliknutí na číslo verze všechny verze, po aktualizaci jen ty,
- * které zařízení ještě nevidělo. Zavírá se tlačítkem, Escem nebo kliknutím mimo okno.
+ * Stránka Co je nového (`#/patch-notes`, 20. 11. 2026, *rozhodnutí uživatele*): vydané verze na ose jako kola
+ * v rozpisu, nejnovější nahoře. Běžící verze má plný zlatý uzel; verze, které zařízení ještě nevidělo, jsou
+ * „Nové pro tebe“ a rozbalené, starší jen se shrnutím.
  */
-export function PatchNotesDialog({ entries, title, onClose }: { entries: PatchEntry[]; title: string; onClose(): void }) {
-  const close = useRef<HTMLButtonElement>(null);
-  // Fokus na Zavřít jen při otevření (ne při každém překreslení appky).
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  useEffect(() => {
-    close.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCloseRef.current();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-  // Mimo navigaci (portál do body): jinak by tlačítka v okně převzala styl lišty.
-  return createPortal(
-    <div className="pn-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="pn-dialog" role="dialog" aria-modal="true" aria-labelledby="pn-title">
-        <header className="pn-head">
-          <h2 id="pn-title">{title}</h2>
-          <button ref={close} type="button" className="ghost" onClick={onClose}>
-            Zavřít
-          </button>
-        </header>
-        <div className="pn-body">
-          {entries.length === 0 && <p className="note">Zatím tu nic není.</p>}
-          {entries.map((e) => (
-            <section key={e.version} className="pn-entry" aria-label={`Verze ${e.version}`}>
-              <h3>
-                {e.version} <small>{e.date}</small>
-              </h3>
-              <Body md={e.body} />
-            </section>
+export function PatchNotesPage({ entries = PATCH_NOTES, fresh = [] }: { entries?: PatchEntry[]; fresh?: string[] }) {
+  return (
+    <section className="pn-page" aria-labelledby="pn-title">
+      <header className="pn-top">
+        <h1 id="pn-title">Co je nového</h1>
+        <p>Změny ve Foos Lab po verzích, nejnovější nahoře.</p>
+      </header>
+      {entries.length === 0 ? (
+        <p className="note">Zatím tu žádná vydaná verze není.</p>
+      ) : (
+        <ol className="pn-rail">
+          {entries.map((e, i) => (
+            <Entry key={e.version} e={e} fresh={fresh.includes(e.version)} initiallyOpen={i === 0 || fresh.includes(e.version)} />
           ))}
-        </div>
-      </div>
-    </div>,
-    document.body,
+        </ol>
+      )}
+    </section>
   );
 }

@@ -21,6 +21,8 @@ export type Route =
   | { page: 'players' }
   /** Návod pro hráče (landing page, 10. 11. 2026) – i bez přihlášení. */
   | { page: 'guide' }
+  /** Co je nového (patch notes, 20. 11. 2026) – i bez přihlášení. */
+  | { page: 'patch-notes' }
   /** Neznámá adresa (i staré české #/trenink …): „Stránka nenalezena“ s tlačítkem na úvod. */
   | { page: 'not-found' };
 
@@ -49,6 +51,7 @@ export function parseHash(hash: string): Route {
     if (a === 'templates') return { page: 'templates' };
     if (a === 'players') return { page: 'players' };
     if (a === 'guide') return { page: 'guide' };
+    if (a === 'patch-notes') return { page: 'patch-notes' };
   }
   return { page: 'not-found' };
 }
@@ -85,6 +88,8 @@ export function toHash(r: Route): string {
       return '#/players';
     case 'guide':
       return '#/guide';
+    case 'patch-notes':
+      return '#/patch-notes';
     case 'not-found':
       return '#/not-found';
   }

@@ -107,7 +107,7 @@ describe('stránka Žebříček', () => {
     expect(logo).toHaveAttribute('href', '#/trainings');
     expect(logo).toHaveTextContent('Foos Lab');
     // verze vedle názvu je tlačítko s patch notes (20. 11. 2026), ne součást odkazu
-    expect(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getAllByRole('button', { name: `Verze appky ${APP_VERSION} – co je nového` })).toHaveLength(2);
+    expect(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getAllByRole('link', { name: `Verze appky ${APP_VERSION} – co je nového` })).toHaveLength(2);
     // na telefonu je logo nahoře zvlášť a vede taky na úvod (19. 11. 2026)
     const mobile = document.querySelector('.nav-brand-mobile a');
     expect(mobile).toHaveAttribute('href', '#/trainings');

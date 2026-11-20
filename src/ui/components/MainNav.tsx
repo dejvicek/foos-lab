@@ -1,7 +1,6 @@
 import { APP_VERSION } from '../../storage/appVersion';
 import { ThemeSwitch } from './ThemeSwitch';
-import { useState, type ReactNode } from 'react';
-import { PATCH_NOTES, PatchNotesDialog } from './PatchNotes';
+import type { ReactNode } from 'react';
 import { toHash, type Route } from '../useHashRoute';
 
 /** Ikony záložek (i v Návodu – stejné jako v appce). */
@@ -150,16 +149,12 @@ export function MainNav({
   );
 }
 
-/** Číslo verze vedle názvu Foos Lab (hlavička); klik ukáže patch notes všech verzí (20. 11. 2026). */
+/** Číslo verze vedle názvu Foos Lab (hlavička); vede na stránku Co je nového (20. 11. 2026). */
 export function VersionTag() {
-  const [open, setOpen] = useState(false);
   return (
-    <>
-      <button type="button" className="brand-version" title="Verze appky – co je nového" aria-label={`Verze appky ${APP_VERSION} – co je nového`} onClick={() => setOpen(true)}>
-        {APP_VERSION}
-      </button>
-      {open && <PatchNotesDialog entries={PATCH_NOTES} title="Co je nového" onClose={() => setOpen(false)} />}
-    </>
+    <a className="brand-version" href={toHash({ page: 'patch-notes' })} title="Verze appky – co je nového" aria-label={`Verze appky ${APP_VERSION} – co je nového`}>
+      {APP_VERSION}
+    </a>
   );
 }
 
