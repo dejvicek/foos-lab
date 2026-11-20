@@ -225,7 +225,7 @@ interface TableProps {
   open?(id: PlayerId): void;
   /** Souhrn tréninku: kratší popisky a menší šnek, ať se tabulka vejde na telefon (19. 11. 2026). */
   compact?: boolean;
-  /** Podle čeho je oficiální pořadí (žebříček Celkem = součet); ten sloupec je hned za jménem (19. 11. 2026). */
+  /** Podle čeho je oficiální pořadí (žebříček Celkem = součet); ten sloupec je poslední (20. 11. 2026, dřív hned za jménem). */
   rankBy?: 'avg' | 'sum';
   /** Přihlášený hráč – jméno zlatě (20. 11. 2026). */
   me?: PlayerId | null;
@@ -238,15 +238,17 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
   const [sort, setSort] = useSort(official);
   const shown = shownSort(sort, official);
   type Row = TableProps['rows'][number];
-  // Pořadí sloupců (19. 11. 2026): hned za jménem to, podle čeho se řadí, pak druhé čekání, hra a počty.
+  // Pořadí sloupců (20. 11. 2026, *rozhodnutí uživatele*, dřív hned za jménem): to, podle čeho se řadí, je poslední
+  // jako v ostatních žebříčcích; před ním druhé čekání, hra a počty.
   const waitAvg: SortCol<Row> = { key: 'waitAvg', label: 'Čekání ⌀', className: 'n', value: (r) => r.waitAvg };
   const waitSum: SortCol<Row> = { key: 'waitSum', label: compact ? 'Celkem' : 'Čekání celkem', className: 'n', value: (r) => r.waitSum };
   const cols: SortCol<Row>[] = [
     { key: 'name', label: 'Hráč', value: (r) => names[r.playerId] ?? '?', first: 'asc' },
-    ...(rankBy === 'sum' ? [waitSum, waitAvg] : [waitAvg, waitSum]),
+    rankBy === 'sum' ? waitAvg : waitSum,
     { key: 'playAvg', label: 'Hra ⌀', className: 'n', value: (r) => r.playAvg },
     { key: 'items', label: 'Utkání', className: 'n', value: (r) => r.items },
     ...(showTrainings ? [{ key: 'trainings', label: 'Tréninky', className: 'n', value: (r: Row) => r.trainings ?? 0 }] : []),
+    rankBy === 'sum' ? waitSum : waitAvg,
   ];
   const rankKey = rankBy === 'sum' ? 'waitSum' : 'waitAvg';
   // Šnek a Brzda patří oficiálnímu prvnímu místu, i když je seřazeno jinak.

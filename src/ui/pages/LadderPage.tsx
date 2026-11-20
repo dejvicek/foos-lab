@@ -80,8 +80,6 @@ function LadderTable({
     { key: 'trainings', label: 'Tréninky', className: 'n', value: (r) => r.trainings, show: (r) => String(r.trainings) },
     // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ / L− jako v souhrnu tréninku (19. 11. 2026); Průměr beze změny.
     ...(avg ? [{ key: 'legs', label: 'Legy', className: 'n', value: (r: LadderRow) => r.legs, show: (r: LadderRow) => String(r.legs) }] : []),
-    // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
-    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
     avg
       ? { key: 'wins', label: 'Výhry %', className: 'n', value: (r) => r.winRate, show: (r) => pct(r.winRate) }
       : { key: 'wins', label: <span title="Vyhrané legy">L+</span>, className: 'n', value: (r) => r.wins, show: (r) => String(r.wins) },
@@ -96,6 +94,9 @@ function LadderTable({
       value: (r) => (avg ? r.simRate : r.simM ? r.simW : null),
       show: (r) => (avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`),
     },
+    // Rozhodující sloupec vždy poslední, jako v ostatních žebříčcích (20. 11. 2026, *rozhodnutí uživatele*).
+    // Průměr je celý „na leg“ (říká přepínač) – záhlaví bez „/ leg“, plný název v nápovědě (19. 11. 2026).
+    { key: 'diff', label: <span title={avg ? 'Rozdíl skóre na leg' : 'Rozdíl skóre (G+ − G−)'}>G±</span>, className: 'n', value: (r) => (avg ? r.diffPerLeg : r.diff), show: (r) => (avg ? dec1(r.diffPerLeg, true) : signed(r.diff)) },
   ];
   const items = placeAndSort(ranked, lowData, cols, sort);
   const firstLow = items.findIndex((x) => !x.ranked);
@@ -171,13 +172,13 @@ function LadderTable({
                   </td>
                   <td className={sortedCls(shown, 'trainings', 'n')}>{r.trainings}</td>
                   {avg && <td className={sortedCls(shown, 'legs', 'n')}>{r.legs}</td>}
-                  <td className={sortedCls(shown, 'diff', ['n', tone(r)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
                   <td className={sortedCls(shown, 'wins', 'n')}>{avg ? pct(r.winRate) : r.wins}</td>
                   {!avg && <td className={sortedCls(shown, 'lost', 'n')}>{r.legs - r.wins}</td>}
                   <td className={sortedCls(shown, 'gf', 'n')}>{avg ? dec1(r.gfPerLeg) : r.gf}</td>
                   <td className={sortedCls(shown, 'gc', 'n')}>{avg ? dec1(r.gcPerLeg) : r.gc}</td>
                   <td className={sortedCls(shown, 'loss', 'n')}>{dash(r.lossPerLeg, (v) => dec1(v))}</td>
                   <td className={sortedCls(shown, 'sim', 'n')}>{avg ? dash(r.simRate, pct) : `${r.simW} / ${r.simM}`}</td>
+                  <td className={sortedCls(shown, 'diff', ['n', tone(r)].filter(Boolean).join(' '))}>{avg ? dec1(r.diffPerLeg, true) : signed(r.diff)}</td>
                 </tr>
               </Fragment>
             );
