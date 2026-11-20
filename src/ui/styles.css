@@ -2308,3 +2308,7 @@ td .player-link:has(.av), .who-av { display: inline-flex; align-items: center; g
 @media (max-width: 600px) {
   td .player-link:has(.av), .who-av { gap: 6px; }
 }
+
+/* Moje hry: kroužky hráčů nad jménem ve zrcadle stolu */
+.mirror-who .av-stack { margin-bottom: 4px; }
+.mirror-who .av-stack .av + .av { margin-left: -8px; }

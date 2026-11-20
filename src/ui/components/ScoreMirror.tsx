@@ -1,3 +1,4 @@
+import { Avatars } from './Avatar';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { bumpLimit, legOver, setScores, tableScore, taxGoal } from '../../domain/legState';
 import type { SoloMetricDef } from '../../domain/solo';
@@ -90,6 +91,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
     return (
       <div className={`mirror-half side-${side.toLowerCase()}`}>
         <div className="mirror-who">
+          <Avatars ids={ids} size="l" />
           <strong>{nm(ids)}</strong>
           <small>
             {m.wall === side && <span className="tag tag-wall">Zeď</span>}
@@ -239,6 +241,7 @@ export function DrillMirror({ players, def, values, names, canSolo, onTap, editI
           return (
             <div key={p} role="group" aria-label={nm} className={`mirror-half side-${i % 2 ? 'b' : 'a'}`}>
               <div className="mirror-who">
+                <Avatars ids={[p]} size="l" />
                 <strong>{nm}</strong>
                 <small>
                   pokus {c.attempts} / {def.max}
@@ -346,6 +349,7 @@ export function StreakMirror({ players, def, states, names, now, limitSec, canSo
           return (
             <div key={p} role="group" aria-label={nm} className={`mirror-half side-${i % 2 ? 'b' : 'a'}`}>
               <div className="mirror-who">
+                <Avatars ids={[p]} size="l" />
                 <strong>{nm}</strong>
                 <small>
                   pokus {s.attempts}
