@@ -120,12 +120,8 @@ export function ScorePicker({ label, match: m, score, names, disabled, onChange 
     );
   };
 
-  const tags = (side: Side) => (
-    <>
-      {m.wall && <span className={m.wall === side ? 'tag tag-wall' : 'tag tag-break'}>{m.wall === side ? 'Zeď' : 'Láme zeď'}</span>}
-      {m.start && <span className="tag tag-start">začíná {start(side)}</span>}
-    </>
-  );
+  // Štítek jen „Zeď“ u strany, která ji hraje; „Láme zeď“ a „začíná N“ u startu ne – je to vidět ze skóre (20. 11. 2026).
+  const tags = (side: Side) => <>{m.wall === side && <span className="tag tag-wall">Zeď</span>}</>;
 
   const [a, b] = [table('A'), table('B')];
   const any = a !== null || b !== null || s.la != null || s.lb != null;

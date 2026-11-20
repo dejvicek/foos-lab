@@ -103,10 +103,10 @@ describe('tabulka tréninku', () => {
     const c3 = screen.getByRole('group', { name: '3. kolo, stůl 1' });
     const sides3 = c3.querySelectorAll('.pick-a, .pick-b');
     expect(sides3[0]).toHaveTextContent('Zeď');
-    expect(sides3[1]).toHaveTextContent('Láme zeď');
+    expect(sides3[1]).not.toHaveTextContent('Zeď'); // „Láme zeď“ se od 20. 11. 2026 neukazuje
     await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 4. kolo, stůl 1$/ }));
     const sides4 = screen.getByRole('group', { name: '4. kolo, stůl 1' }).querySelectorAll('.pick-a, .pick-b');
-    expect(sides4[0]).toHaveTextContent('Láme zeď');
+    expect(sides4[0]).not.toHaveTextContent('Zeď');
     expect(sides4[1]).toHaveTextContent('Zeď');
   });
 
@@ -117,8 +117,7 @@ describe('tabulka tréninku', () => {
     await screen.findByRole('table', { name: 'Rozpis tréninku' });
     await user.click(screen.getByRole('button', { name: /^(Zapsat|Opravit|Zavřít): 5. kolo, stůl 1$/ }));
     const card = screen.getByRole('group', { name: '5. kolo, stůl 1' });
-    expect(card).toHaveTextContent('začíná 0');
-    expect(card).toHaveTextContent('začíná 3');
+    expect(card).not.toHaveTextContent('začíná'); // kdo začíná s kolika, je vidět ze skóre (20. 11. 2026)
     // méně než start 3 nejde kliknout
     expect(within(card).getByRole('button', { name: '5. kolo, stůl 1: góly vpravo 2' })).toBeDisabled();
     await user.click(within(card).getByRole('button', { name: '5. kolo, stůl 1: góly vlevo 6' }));

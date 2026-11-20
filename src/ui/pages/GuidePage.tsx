@@ -169,8 +169,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám. Jen tady se zapisují ztráty a u stolu je vždy rozhodčí.
               </Li>
               <Li i="Z">
-                <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“, soupeř
-                „Láme zeď“.
+                <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“.
               </Li>
               <Li i="0:3">
                 <b>Scénářové starty</b> 0:3, 4:4 a 5:5: leg nezačíná od nuly, u 0:3 je pozadu strana vlevo. Ťukáš stav na stole, appka započítá jen
@@ -661,7 +660,7 @@ function RulesPhone() {
   const rules: [string, string][] = [
     ['Normální leg', 'do 6 gólů'],
     ['Daň za ztrátu', 'ztráta = gól soupeře'],
-    ['Zeď', 'Zeď × Láme zeď'],
+    ['Zeď', 'jeden drží, druhý láme'],
     ['Start 0:3', 'levá začíná pozadu'],
     ['Start 4:4', 'do 6 gólů'],
     ['Start 5:5', 'o 2 góly, nejvýš 10'],

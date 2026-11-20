@@ -458,7 +458,7 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .mb { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; font-variant-numeric: tabular-nums; min-width: 0; }
 .mb-nm { min-width: 0; display: flex; align-items: center; gap: 0; white-space: nowrap; }
 .mb-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Asymetrická disciplína: štítek strany u dvojice (Zeď / Láme zeď, začíná 3). */
+/* Asymetrická disciplína: štítek „Zeď“ u strany, která ji hraje (od 20. 11. 2026 bez Láme zeď a začíná N). */
 .mb-badge { flex: none; margin-left: 6px; font-size: 10.5px; font-weight: 700; line-height: 1; padding: 2px 6px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--muted); background: var(--surface); }
 .mb-badge.wall { border-color: var(--ink); color: var(--ink); }
 .mb-nm.win { font-weight: 800; }
@@ -507,8 +507,6 @@ details.help > .help-item + .help-item { margin-top: 8px; }
 /* Výsledek zápasu */
 .tag { display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
 .tag-wall { background: var(--ink); color: var(--surface); }
-.tag-break { border: 1px solid var(--ink); color: var(--ink); }
-.tag-start { background: var(--felt-soft); color: var(--felt); border: 1px solid var(--felt); }
 .entry-ref { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
 
 /* ── Tabulky souhrnu, žebříčku a hráče ──────────────────── */
@@ -794,8 +792,8 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-goal { font-weight: 700; color: var(--ink); text-align: right; }
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
-/* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026). */
-.tile-line + .tile-line { border-top: 1px solid var(--line); padding-top: 6px; }
+/* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026): průhledná zlatá. */
+.tile-line + .tile-line { border-top: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); padding-top: 6px; }
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: center; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }

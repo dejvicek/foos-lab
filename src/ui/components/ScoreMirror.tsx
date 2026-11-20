@@ -91,7 +91,7 @@ export function ScoreMirror({ match: m, score, names, me, disabled, onBump, note
         <div className="mirror-who">
           <strong>{nm(ids)}</strong>
           <small>
-            {m.wall && <span className={m.wall === side ? 'tag tag-wall' : 'tag tag-break'}>{m.wall === side ? 'Zeď' : 'Láme zeď'}</span>}
+            {m.wall === side && <span className="tag tag-wall">Zeď</span>}
             {word}
             {me && ids.includes(me) ? ', vy' : ''}
           </small>

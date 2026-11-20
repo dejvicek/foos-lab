@@ -21,8 +21,8 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     const x = m({ start: [4, 5], referee: 'r' });
     const { container, rerender } = render(<CompactCell cell={cell(x)} t={t({ scores: { m: { ga: 2, gb: 0 } } })} names={names} />);
     expect(screen.getByRole('group', { name: /6:5$/ })).toBeInTheDocument();
-    // nerovný start = asymetrická disciplína: štítek u každé dvojice, kdo začíná s kolika (19. 11. 2026)
-    expect([...container.querySelectorAll('.mb-badge')].map((b) => b.textContent)).toEqual(['začíná 4', 'začíná 5']);
+    // nerovný start bez štítků „začíná N“ (20. 11. 2026): výchozí stav je ve skóre
+    expect(container.querySelector('.mb-badge')).toBeNull();
     expect(container.querySelector('.mb-foot')).toHaveTextContent(/^rozhodčí Kuba$/);
     rerender(<CompactCell cell={cell(x)} t={t()} names={names} />);
     expect([...container.querySelectorAll('.mb-sc b')].map((b) => b.textContent)).toEqual(['4', '5']);
