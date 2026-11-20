@@ -2075,7 +2075,6 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .move { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .move.up { color: var(--good); }
 .move.down { color: var(--warn); }
-.move.new { color: var(--felt); font-size: 10px; text-transform: uppercase; letter-spacing: .02em; }
 .wrap .player-link.me-name, .wrap tr.low-data .player-link.me-name { color: var(--felt); font-weight: 800; }
 .rank-cell .rank-n + .move { margin-left: 4px; }
 
@@ -2132,7 +2131,6 @@ button.pn-more:hover { color: var(--ink); }
 }
 
 /* ── Můj profil a odstup (20. 11. 2026) ── */
-.me-gap { margin: 0 0 10px; padding: 8px 12px; background: var(--felt-soft); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; color: var(--ink); max-width: 72ch; }
 .main-nav .nav-user button.nav-name { color: var(--ink); font-weight: 700; text-decoration: none; }
 .main-nav .nav-user button.nav-name:hover { color: var(--felt); text-decoration: underline; }
 .pp-h { font-size: 15px; margin: 18px 0 8px; }

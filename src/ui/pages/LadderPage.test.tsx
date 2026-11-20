@@ -269,7 +269,7 @@ describe('žebříček stanovišť', () => {
 });
 
 describe('posun v pořadí a moje jméno (20. 11. 2026)', () => {
-  it('po posledním tréninku: nově nad čarou „nový“, kdo klesl ▼; přihlášený hráč má jméno zlatě', async () => {
+  it('po posledním tréninku: kdo klesl ▼, nově nad čarou bez štítku (20. 11. 2026); přihlášený hráč má jméno zlatě', async () => {
     // Q2–Q4 mají po tréninku 30. 10. třetí trénink → poprvé nad čarou; Q2 vysoko vyhrává
     const t4 = scoreFor(training('t4', '2026-10-30', 'single', ['Q2', 'Q3', 'Q4', 'P2'], 2), 'Q2', [[6, 0], [6, 0]]);
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'X', isAdmin: false, mustChangePassword: false } });
@@ -277,16 +277,15 @@ describe('posun v pořadí a moje jméno (20. 11. 2026)', () => {
     const table = await screen.findByRole('table', { name: 'Žebříček' });
     expect(screen.getByText(/Šipky ▲▼ ukazují posun v pořadí po posledním tréninku \(30\. 10\.\)/)).toBeInTheDocument();
     const row = (name: string) => within(table).getAllByRole('row')[rowOf(table, name)];
-    expect(within(row('Q2')).getByText('nový')).toBeInTheDocument();
+    expect(row('Q2').querySelector('.move')).toBeNull(); // nově nad čarou: bez štítku „nový“
     // X byl jediný v pořadí; Q2 a další nově před ním → X o 2 místa níž
     expect(rowOf(table, 'Xaver')).toBe(3);
     expect(within(row('Xaver')).getByTitle('O 2 místa níž po tréninku 30. 10.')).toHaveTextContent('▼2');
-    expect(row('Xaver')).not.toHaveTextContent('nový');
     // moje jméno zlatě, ostatní ne
     expect(within(row('Xaver')).getByRole('button', { name: 'Xaver' })).toHaveClass('me-name');
     expect(table.querySelectorAll('.me-name')).toHaveLength(1);
-    // odstup na sousední místa nad tabulkou (20. 11. 2026)
-    expect(document.querySelector('.me-gap')).toHaveTextContent(/^Jsi 3\. z 4\. Na 2\. místo \(Q\d\) ti chybí 0,1 G± ⌀\. Před 4\. \(Q\d\) máš náskok \d+,\d G± ⌀\.$/);
+    // řádek „Jsi 3. z 4…“ nad tabulkou zrušen (20. 11. 2026)
+    expect(document.querySelector('.me-gap')).toBeNull();
   });
 
   it('jméno v liště vede na můj profil: umístění ve všech žebříčcích s odkazem na detail (20. 11. 2026)', async () => {

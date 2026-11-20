@@ -22,7 +22,6 @@ import { podiumRow, Progress, RankCell } from '../components/Rank';
 import { placeAndSort, RankTh, shownSort, sortedCls, SortTh, useSort, type Sort, type SortCol } from '../components/SortTable';
 import { before, hasScores, lastDay, rankMoves, type Move } from '../../domain/moves';
 import { isClub } from '../../domain/practice';
-import { gapsOf } from '../../domain/placements';
 import { formatDayMonth } from '../dates';
 
 interface Props {
@@ -447,40 +446,6 @@ function SoloLadder({
   );
 }
 
-const treninky = (n: number) => (n === 1 ? 'trénink' : n >= 2 && n <= 4 ? 'tréninky' : 'tréninků');
-
-/**
- * Odstup na sousední místa nad hlavní tabulkou (20. 11. 2026, *rozhodnutí uživatele*): kolikátý jsem, kolik mi
- * chybí na hráče přede mnou a jaký mám náskok – v hlavním kritériu (G± ⌀ na leg v Průměru, G± v Celkem).
- */
-function MyGap({ ranked, lowData, view, me, name }: { ranked: LadderRow[]; lowData: LadderRow[]; view: LadderView; me: PlayerId | null; name(id: PlayerId): string }) {
-  if (!me) return null;
-  const low = lowData.find((r) => r.playerId === me);
-  if (low) {
-    const left = MIN_TRAININGS - low.trainings;
-    return <p className="me-gap">Do pořadí ti chybí {left} {treninky(left)} v období.</p>;
-  }
-  const avg = view === 'avg';
-  const g = gapsOf(ranked, me, (r) => (avg ? r.diffPerLeg : r.diff));
-  if (!g) return null;
-  const unit = avg ? 'G± ⌀' : 'G±';
-  const fmt = (v: number) => `${avg ? dec1(v) : v} ${unit}`;
-  return (
-    <p className="me-gap">
-      Jsi <b>{g.place}.</b> z {g.of}.
-      {g.ahead &&
-        (g.ahead.gap > 0 ? (
-          <> Na {g.ahead.place}. místo ({name(g.ahead.playerId)}) ti chybí <b>{fmt(g.ahead.gap)}</b>.</>
-        ) : (
-          <> S {g.ahead.place}. ({name(g.ahead.playerId)}) máš stejně {unit}, rozhodla další kritéria.</>
-        ))}
-      {g.behind && g.behind.gap > 0 && (
-        <> Před {g.behind.place}. ({name(g.behind.playerId)}) máš náskok {fmt(g.behind.gap)}.</>
-      )}
-    </p>
-  );
-}
-
 export function LadderPage({ store, prefs, setPrefs, navigate, me }: Props) {
   const today = todayIso();
   const { ladderRange: range, ladderView: view } = prefs;
@@ -589,7 +554,6 @@ export function LadderPage({ store, prefs, setPrefs, navigate, me }: Props) {
         !matchTables.length && <p className="note">V tomhle období zatím nejsou žádné zapsané legy.</p>
       ) : (
         <>
-          <MyGap ranked={ranked} lowData={lowData} view={view} me={me} name={name} />
           <LadderTable ranked={ranked} lowData={lowData} view={view} label="Žebříček" name={name} open={open} moves={mainMoves} since={mainDay && formatDayMonth(mainDay)} me={me} />
           <p className="note">
             {view === 'avg'

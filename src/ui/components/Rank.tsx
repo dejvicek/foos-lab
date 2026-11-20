@@ -76,17 +76,11 @@ export function Progress({ have, need }: { have: number; need: number }) {
 const mist = (n: number) => (n === 1 ? 'místo' : n >= 2 && n <= 4 ? 'místa' : 'míst');
 
 /**
- * Posun v pořadí po posledním tréninku (20. 11. 2026): ▲2 zeleně, ▼1 červeně, „nový“ = právě nad čarou.
- * `since` = den posledního tréninku („12. 11.“).
+ * Posun v pořadí po posledním tréninku (20. 11. 2026): ▲2 zeleně, ▼1 červeně; kdo se právě dostal nad čáru,
+ * štítek nemá (dřív „nový“, zrušeno 20. 11. 2026, *rozhodnutí uživatele*). `since` = den posledního tréninku („12. 11.“).
  */
 export function MoveTag({ move, since }: { move: Move | undefined; since: string | null }) {
-  if (move === undefined || move === 0 || !since) return null;
-  if (move === 'new')
-    return (
-      <span className="move new" title={`Nově v pořadí po tréninku ${since}`}>
-        nový
-      </span>
-    );
+  if (move === undefined || move === 0 || move === 'new' || !since) return null;
   const n = Math.abs(move);
   const text = `O ${n} ${mist(n)} ${move > 0 ? 'výš' : 'níž'} po tréninku ${since}`;
   return (

@@ -67,27 +67,3 @@ export function placementsOf(trainings: Training[], playerId: PlayerId, range: L
   }
   return out;
 }
-
-/** Soused v pořadí a rozdíl v hlavním kritériu (kladný = o kolik je lepší / horší). */
-export interface Neighbour {
-  playerId: PlayerId;
-  place: number;
-  gap: number;
-}
-
-/**
- * Odstup na sousední místa (20. 11. 2026): kolik mi v hlavním kritériu chybí na hráče přede mnou a jaký
- * mám náskok před hráčem za mnou (vždy kladně; 0 = stejně, rozhodla další kritéria). `value` = hlavní kritérium.
- */
-export function gapsOf<T extends { playerId: PlayerId }>(ranked: T[], playerId: PlayerId, value: (r: T) => number): { place: number; of: number; ahead?: Neighbour; behind?: Neighbour } | null {
-  const i = ranked.findIndex((r) => r.playerId === playerId);
-  if (i < 0) return null;
-  const v = value(ranked[i]);
-  const diff = (other: T) => Math.abs(value(other) - v);
-  return {
-    place: i + 1,
-    of: ranked.length,
-    ...(i > 0 ? { ahead: { playerId: ranked[i - 1].playerId, place: i, gap: diff(ranked[i - 1]) } } : {}),
-    ...(i < ranked.length - 1 ? { behind: { playerId: ranked[i + 1].playerId, place: i + 2, gap: diff(ranked[i + 1]) } } : {}),
-  };
-}

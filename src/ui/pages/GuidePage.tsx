@@ -245,7 +245,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
               </Li>
               <Li i="▲">
-                Šipka u pořadí ukazuje <b>posun po posledním tréninku</b>: ▲2 o dvě místa výš, ▼1 o místo níž, <b>nový</b> = právě ses dostal nad čáru. Své jméno najdeš zlatě.
+                Šipka u pořadí ukazuje <b>posun po posledním tréninku</b>: ▲2 o dvě místa výš, ▼1 o místo níž. Své jméno najdeš zlatě.
               </Li>
               <Li i={<Progress have={2} need={MIN} />}>
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
