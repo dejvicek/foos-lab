@@ -16,7 +16,7 @@ const versions = () => within(page()).getAllByRole('heading', { level: 2 }).map(
 const entry = (v: string) => within(page()).getAllByRole('listitem').find((li) => li.querySelector('.pn-num')?.textContent === v)!;
 
 describe('Co je nového – stránka #/patch-notes (20. 11. 2026)', () => {
-  it('číslo verze vede na stránku: všechny verze s daty, nejnovější nahoře; běžící verze označená', async () => {
+  it('číslo verze vede na stránku: všechny verze s daty, nejnovější nahoře; běžící verze jen plným uzlem, bez štítku', async () => {
     const user = userEvent.setup();
     render(<App repo={memoryRepository()} />);
     await screen.findByRole('heading', { name: 'Tréninky' });
@@ -26,7 +26,8 @@ describe('Co je nového – stránka #/patch-notes (20. 11. 2026)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Co je nového' })).toBeInTheDocument();
     expect(versions()).toEqual(PATCH_NOTES.map((e) => e.version));
     expect(within(entry('1.0.0')).getByText('10. 11. 2026')).toBeInTheDocument();
-    expect(within(entry(APP_VERSION)).getByText('Tvoje verze')).toBeInTheDocument();
+    expect(entry(APP_VERSION)).toHaveClass('is-current');
+    expect(within(page()).queryByText(/Tvoje verze|Aktuální verze/)).toBeNull();
   });
 
   it('nejnovější verze je rozbalená, starší jen se shrnutím; Celý záznam rozbalí', async () => {

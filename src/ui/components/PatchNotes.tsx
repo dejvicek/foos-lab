@@ -41,7 +41,6 @@ function Entry({ e, fresh, initiallyOpen }: { e: PatchEntry; fresh: boolean; ini
       <h2 id={`${id}-h`} className="pn-version">
         <span className="pn-num">{e.version}</span>
         <span className="pn-date">{e.date}</span>
-        {current && <span className="pn-flag">Tvoje verze</span>}
         {fresh && !current && <span className="pn-flag">Nové pro tebe</span>}
       </h2>
       {lead && <p className="pn-lead">{inline(lead)}</p>}
@@ -78,7 +77,7 @@ function Entry({ e, fresh, initiallyOpen }: { e: PatchEntry; fresh: boolean; ini
 
 /**
  * Stránka Co je nového (`#/patch-notes`, 20. 11. 2026, *rozhodnutí uživatele*): vydané verze na ose jako kola
- * v rozpisu, nejnovější nahoře. Běžící verze má plný zlatý uzel; verze, které zařízení ještě nevidělo, jsou
+ * v rozpisu, nejnovější nahoře. Běžící verze má plný zlatý uzel (bez štítku); verze, které zařízení ještě nevidělo, jsou
  * „Nové pro tebe“ a rozbalené, starší jen se shrnutím.
  */
 export function PatchNotesPage({ entries = PATCH_NOTES, fresh = [] }: { entries?: PatchEntry[]; fresh?: string[] }) {
