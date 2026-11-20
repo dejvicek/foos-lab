@@ -285,5 +285,25 @@ describe('posun v pořadí a moje jméno (20. 11. 2026)', () => {
     // moje jméno zlatě, ostatní ne
     expect(within(row('Xaver')).getByRole('button', { name: 'Xaver' })).toHaveClass('me-name');
     expect(table.querySelectorAll('.me-name')).toHaveLength(1);
+    // odstup na sousední místa nad tabulkou (20. 11. 2026)
+    expect(document.querySelector('.me-gap')).toHaveTextContent(/^Jsi 3\. z 4\. Na 2\. místo \(Q\d\) ti chybí 0,1 G± ⌀\. Před 4\. \(Q\d\) máš náskok \d+,\d G± ⌀\.$/);
+  });
+
+  it('jméno v liště vede na můj profil: umístění ve všech žebříčcích s odkazem na detail (20. 11. 2026)', async () => {
+    const user = userEvent.setup();
+    const t4 = scoreFor(training('t4', '2026-10-30', 'single', ['Q2', 'Q3', 'Q4', 'P2'], 2), 'Q2', [[6, 0], [6, 0]]);
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'X', isAdmin: false, mustChangePassword: false } });
+    render(<App repo={memoryRepository({ players, trainings: [t1, t2, t2b, t3, t4] })} auth={auth} />);
+    await screen.findByRole('table', { name: 'Žebříček' });
+    await user.click(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('button', { name: 'Xaver' }));
+    expect(window.location.hash).toBe('#/ladder/player/X');
+    const places = await screen.findByRole('region', { name: 'Umístění v žebříčcích' });
+    const main = within(places).getByRole('button', { name: /Zápasy/ });
+    expect(main).toHaveTextContent('3.');
+    expect(main).toHaveTextContent('z 4');
+    expect(within(main).getByTitle('O 2 místa níž po tréninku 30. 10.')).toBeInTheDocument();
+    // jedničky (singly) jako tabulka 1v1 s odkazem na detail disciplíny
+    await user.click(within(places).getByRole('button', { name: /1v1/ }));
+    expect(window.location.hash).toBe('#/ladder/player/X/match/singles');
   });
 });

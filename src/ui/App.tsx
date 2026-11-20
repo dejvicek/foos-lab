@@ -293,6 +293,7 @@ function SignedIn({
         route={route}
         navigate={navigate}
         myName={myName}
+        myId={viewer.playerId}
         onChangePassword={onChangePassword}
         onSignOut={onSignOut}
         live={!!active}

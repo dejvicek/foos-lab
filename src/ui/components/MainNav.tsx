@@ -66,6 +66,7 @@ export function MainNav({
   route,
   navigate,
   myName,
+  myId = null,
   onChangePassword,
   onSignOut,
   live = false,
@@ -79,6 +80,8 @@ export function MainNav({
   route: Route;
   navigate: (r: Route) => void;
   myName?: string | null;
+  /** Přihlášený hráč: jméno v liště vede na jeho profil (20. 11. 2026). */
+  myId?: string | null;
   onChangePassword?(): void;
   onSignOut?(): void;
   /** Běží trénink, na kterém jsem → Moje hry. */
@@ -132,7 +135,14 @@ export function MainNav({
             </a>
             <VersionTag />
           </span>
-          {myName && <span className="nav-name">{myName}</span>}
+          {myName &&
+            (myId ? (
+              <button type="button" className="link nav-name" title="Můj profil" onClick={() => navigate({ page: 'player', id: myId })}>
+                {myName}
+              </button>
+            ) : (
+              <span className="nav-name">{myName}</span>
+            ))}
           <ThemeSwitch />
           <button type="button" className="link" onClick={() => navigate({ page: 'guide' })}>
             Návod

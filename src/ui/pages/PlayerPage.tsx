@@ -6,11 +6,14 @@ import { streakTime } from '../../domain/streak';
 import type { DisciplineId, PlayerId, SoloMetric } from '../../domain/types';
 import type { UiPrefs } from '../../storage/prefs';
 import { rangeText } from '../components/RangeLabel';
-import { formatDate, todayIso } from '../dates';
+import { formatDate, formatDayMonth, todayIso } from '../dates';
 import { dec1, diffCls, matchTableName, MODE_LABEL, signed, STRONG_PER_TRAINING } from '../format';
 import type { AppStore } from '../useAppState';
 import type { PlayerFocus, Route } from '../useHashRoute';
 import { useMobile } from '../useMobile';
+import { placementsOf, type Placement } from '../../domain/placements';
+import { MIN_TRAININGS } from '../../domain/ladder';
+import { Progress, RankCell } from '../components/Rank';
 
 interface Props {
   store: AppStore;
@@ -61,6 +64,8 @@ export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
       {back}
       <h1>{player.name}</h1>
       <p className="dateline">{rangeText(prefs.ladderRange, today)}</p>
+      <Placements store={store} playerId={id} prefs={prefs} today={today} navigate={navigate} />
+      <h2 className="pp-h">Tréninky</h2>
       {rows.length === 0 ? (
         <p className="note">V tomhle období hráč nebyl na žádném klubovém tréninku.</p>
       ) : (
@@ -270,5 +275,33 @@ function DrillDetail({ store, playerId, prefs, today, navigate, metric }: Detail
         </div>
       )}
     </>
+  );
+}
+
+/** Umístění ve všech žebříčcích za období (Můj profil, 20. 11. 2026): místo, posun, nebo tečky do pořadí; klik vede na detail. */
+function Placements({ store, playerId, prefs, today, navigate }: { store: AppStore; playerId: PlayerId; prefs: UiPrefs; today: string; navigate(r: Route): void }) {
+  const list = placementsOf(store.data.trainings, playerId, prefs.ladderRange, prefs.ladderView, today, prefs.ladderMatchKind ?? 'all');
+  if (!list.length) return null;
+  const label = (p: Placement) =>
+    p.ref.kind === 'main' ? 'Zápasy' : p.ref.kind === 'match' ? matchTableName(p.ref.discipline) : `${soloMetric(p.ref.metric).name}${p.ref.source === 'practice' ? ' (solo)' : ''}`;
+  const go = (p: Placement) =>
+    navigate(p.ref.kind === 'main' ? { page: 'ladder' } : p.ref.kind === 'match' ? { page: 'player', id: playerId, focus: { kind: 'match', discipline: p.ref.discipline } } : { page: 'player', id: playerId, focus: { kind: 'drill', metric: p.ref.metric } });
+  return (
+    <section className="pp-places" aria-label="Umístění v žebříčcích">
+      <h2 className="pp-h">Umístění</h2>
+      <ul>
+        {list.map((p, i) => (
+          <li key={i}>
+            <button type="button" className={p.place !== null && p.place <= 3 ? 'pp-place podium' : 'pp-place'} onClick={() => go(p)}>
+              <span className="pp-rank">
+                {p.place !== null ? <RankCell place={p.place} move={p.move} since={p.since ? formatDayMonth(p.since) : null} /> : <Progress have={p.trainings} need={MIN_TRAININGS} />}
+              </span>
+              <span className="pp-what">{label(p)}</span>
+              <span className="pp-of">{p.place !== null ? `z ${p.of}` : 'málo dat'}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
