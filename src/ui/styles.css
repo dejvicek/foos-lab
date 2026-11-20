@@ -2192,7 +2192,7 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
 }
 .main-nav button.acct:hover, .main-nav button.acct[aria-expanded='true'] { border-color: var(--line-strong); }
 .main-nav button.acct.active { border-color: var(--action-edge); }
-.acct-av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--felt-soft); color: var(--felt); font-weight: 800; font-size: 13px; }
+.main-nav button.acct .av.me { box-shadow: none; }
 .acct-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acct-chev { font-size: 11px; color: var(--muted); }
 .acct-backdrop { display: none; }
@@ -2226,3 +2226,26 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
   .acct-menu button { min-height: 48px; font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .acct-switch::after { transition: none; } }
+
+/* ── Profilová fotka (21. 11. 2026): kroužek s fotkou, bez ní první písmeno ── */
+.av {
+  --av: 24px; width: var(--av); height: var(--av); flex: none; border-radius: 50%; overflow: hidden;
+  display: inline-grid; place-items: center; vertical-align: middle; line-height: 1;
+  background: var(--felt-soft); color: var(--felt); font-weight: 800; font-size: calc(var(--av) * 0.45);
+  user-select: none;
+}
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av-s { --av: 24px; }
+.av-m { --av: 30px; }
+.av-l { --av: 40px; }
+.av-xl { --av: 84px; }
+.av.me { box-shadow: 0 0 0 2px var(--gold); }
+.av.dim { opacity: 0.55; filter: grayscale(0.6); }
+.av-stack { display: inline-flex; align-items: center; flex: none; }
+.av-stack .av + .av { margin-left: -6px; box-shadow: 0 0 0 2px var(--surface); }
+.av-stack .av.me + .av, .av-stack .av + .av.me { box-shadow: 0 0 0 2px var(--gold); }
+@media (max-width: 600px) {
+  .av-s { --av: 22px; }
+  .av-l { --av: 36px; }
+  .av-xl { --av: 72px; }
+}

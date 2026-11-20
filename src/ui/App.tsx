@@ -29,6 +29,7 @@ import { useHashRoute } from './useHashRoute';
 import { useWakeLock } from './wakeLock';
 import { vibrate } from './vibrate';
 import { TrainingsProvider } from './records';
+import { PlayersProvider } from './components/Avatar';
 import { TrainingRecap } from './components/TrainingRecap';
 import { PATCH_NOTES, PatchNotesPage } from './components/PatchNotes';
 import { compareVersions, notesSince } from './patchNotes';
@@ -294,7 +295,7 @@ function SignedIn({
     );
 
   return (
-    <>
+    <PlayersProvider players={store.data.players} me={viewer.playerId}>
       <MainNav
         route={route}
         navigate={navigate}
@@ -348,6 +349,6 @@ function SignedIn({
       <main className="page">
         <TrainingsProvider trainings={store.data.trainings}>{body}</TrainingsProvider>
       </main>
-    </>
+    </PlayersProvider>
   );
 }

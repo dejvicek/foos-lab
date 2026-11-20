@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { createPortal } from 'react-dom';
 import { useTheme } from '../theme';
 import { toHash, type Route } from '../useHashRoute';
+import { Avatar, initialOf } from './Avatar';
 
 /** Ikony záložek (i v Návodu – stejné jako v appce). */
 export const NAV_ICONS: Record<string, ReactNode> = {
@@ -202,9 +203,13 @@ function AccountMenu({
         aria-label={`Účet: ${name}`}
         onClick={toggle}
       >
-        <span className="acct-av" aria-hidden="true">
-          {name.trim().charAt(0).toUpperCase() || '?'}
-        </span>
+        {myId ? (
+          <Avatar id={myId} size="m" />
+        ) : (
+          <span className="av av-m ini" aria-hidden="true">
+            {initialOf(name)}
+          </span>
+        )}
         <span className="acct-name">{name}</span>
         <span className="acct-chev" aria-hidden="true">
           ▾
