@@ -793,7 +793,7 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
 /* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026): průhledná zlatá. */
-.tile-line + .tile-line { border-top: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); padding-top: 6px; }
+.tile-line + .tile-line { border-top: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); padding-top: 6px; }
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: center; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
