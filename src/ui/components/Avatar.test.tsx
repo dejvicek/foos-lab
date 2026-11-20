@@ -12,9 +12,10 @@ describe('Avatar', () => {
   it('s fotkou ukáže obrázek, bez ní první písmeno, neznámý hráč otazník', () => {
     expect(inCtx(<Avatar id="a" />).querySelector('img')?.getAttribute('src')).toBe('data:image/webp;base64,AA==');
     const e = inCtx(<Avatar id="e" />).querySelector('.av')!;
-    expect(e.textContent).toBe('E');
+    expect(e.getAttribute('data-ini')).toBe('E');
+    expect(e.textContent).toBe('');
     expect(e.querySelector('img')).toBeNull();
-    expect(inCtx(<Avatar id="x" />).textContent).toBe('?');
+    expect(inCtx(<Avatar id="x" />).querySelector('.av')?.getAttribute('data-ini')).toBe('?');
   });
 
   it('přihlášený hráč má zlatý okraj, pod čarou je vybledlý; čtečka kroužek přeskočí', () => {

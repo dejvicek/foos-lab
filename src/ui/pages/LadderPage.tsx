@@ -18,6 +18,7 @@ import { canBuildSchedule } from '../../domain/schedule';
 import { DelayTable } from '../components/Timing';
 import { trainingQueue } from '../queue';
 import { useMobile } from '../useMobile';
+import { Avatar } from '../components/Avatar';
 import { podiumRow, Progress, RankCell } from '../components/Rank';
 import { placeAndSort, RankTh, shownSort, sortedCls, SortTh, useSort, type Sort, type SortCol } from '../components/SortTable';
 import { before, hasScores, lastDay, rankMoves, type Move } from '../../domain/moves';
@@ -134,6 +135,7 @@ function LadderTable({
                     c.key === 'name' ? (
                       <td key={c.key} className={sortedCls(shown, 'name')}>
                         <button type="button" className={linkCls(me, r.playerId)} onClick={() => open(r.playerId)}>
+                          <Avatar id={r.playerId} dim={!isRanked} />
                           {name(r.playerId)}
                         </button>
                       </td>
@@ -171,6 +173,7 @@ function LadderTable({
                   <td className="n rank">{isRanked ? <RankCell place={place} move={moves?.get(r.playerId)} since={since} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                   <td className={sortedCls(shown, 'name')}>
                     <button type="button" className={linkCls(me, r.playerId)} onClick={() => open(r.playerId)}>
+                      <Avatar id={r.playerId} dim={!isRanked} />
                       {name(r.playerId)}
                     </button>
                   </td>
@@ -263,6 +266,7 @@ function SoloTable({
                 <td className="n rank">{isRanked ? <RankCell place={place} move={moves?.get(r.playerId)} since={since} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                 <td className={sortedCls(shown, 'name')}>
                   <button type="button" className={linkCls(me, r.playerId)} onClick={() => open(r.playerId)}>
+                    <Avatar id={r.playerId} dim={!isRanked} />
                     {name(r.playerId)}
                   </button>
                 </td>
@@ -335,6 +339,7 @@ function PracticeMatchTable({
                 <td className="n rank">{isRanked ? <RankCell place={place} move={moves?.get(r.playerId)} since={since} /> : <Progress have={r.trainings} need={MIN_TRAININGS} />}</td>
                 <td className={sortedCls(shown, 'name')}>
                   <button type="button" className={linkCls(me, r.playerId)} onClick={() => open(r.playerId)}>
+                    <Avatar id={r.playerId} dim={!isRanked} />
                     {name(r.playerId)}
                   </button>
                 </td>

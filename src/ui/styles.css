@@ -2235,6 +2235,7 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
   user-select: none;
 }
 .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av[data-ini]::before { content: attr(data-ini); }
 .av-s { --av: 24px; }
 .av-m { --av: 30px; }
 .av-l { --av: 40px; }
@@ -2300,4 +2301,10 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
   .pp-head { gap: 14px; }
   .pp-cam { width: 30px; height: 30px; }
   .avx-backdrop { padding: 10px; }
+}
+
+/* Kroužek před jménem v žebříčcích a souhrnu tréninku; výška řádku se nemění */
+td .player-link:has(.av), .who-av { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; }
+@media (max-width: 600px) {
+  td .player-link:has(.av), .who-av { gap: 6px; }
 }

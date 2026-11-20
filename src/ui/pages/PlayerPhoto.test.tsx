@@ -40,7 +40,7 @@ describe('profilová fotka na stránce hráče (21. 11. 2026)', () => {
 
   it('na svém profilu bez fotky: písmeno a Přidat fotku', async () => {
     await show('a', 'a');
-    expect(document.querySelector('.pp-head .av')?.textContent).toBe('A');
+    expect(document.querySelector('.pp-head .av')?.getAttribute('data-ini')).toBe('A');
     expect(screen.getAllByRole('button', { name: 'Přidat fotku' })).toHaveLength(2); // fotoaparát + odkaz
     expect(screen.queryByRole('button', { name: 'Smazat fotku' })).toBeNull();
     expect(screen.getByTestId('avatar-file')).toHaveAttribute('accept', 'image/*');
@@ -55,7 +55,7 @@ describe('profilová fotka na stránce hráče (21. 11. 2026)', () => {
     expect(document.querySelector('.pp-head .av img')).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'Smazat fotku' }));
     await user.click(screen.getByRole('button', { name: 'Smazat' }));
-    expect(document.querySelector('.pp-head .av')?.textContent).toBe('B');
+    expect(document.querySelector('.pp-head .av')?.getAttribute('data-ini')).toBe('B');
     await waitFor(() => expect(repo.snapshot().players[1].avatar).toBeUndefined());
   });
 

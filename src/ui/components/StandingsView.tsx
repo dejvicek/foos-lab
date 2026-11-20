@@ -1,3 +1,4 @@
+import { Avatar } from './Avatar';
 import { useState, type ReactNode } from 'react';
 import { computeStandings } from '../../domain/standings';
 import { simSheet, type SimSheet, type SimSheetRow } from '../../domain/simSheet';
@@ -221,7 +222,12 @@ export function StandingsView({ schedule, scores, attendees, names, me = null }:
                     <td className="n rank">
                       <Medal place={place} ranked={played(x)} />
                     </td>
-                    <td className={sortedCls(sort, 'name', 'name')}>{x.playerId === me ? <b className="me-name">{names[x.playerId] ?? '?'}</b> : (names[x.playerId] ?? '?')}</td>
+                    <td className={sortedCls(sort, 'name', 'name')}>
+                      <span className="who-av">
+                        <Avatar id={x.playerId} />
+                        {x.playerId === me ? <b className="me-name">{names[x.playerId] ?? '?'}</b> : (names[x.playerId] ?? '?')}
+                      </span>
+                    </td>
                     <td className={sortedCls(sort, 'diff', diffCls(x.diff, x.diff >= STRONG_PER_TRAINING))}>{signed(x.diff)}</td>
                     <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
                     <td className={sortedCls(sort, 'lost', 'n')}>{x.legs - x.wins}</td>

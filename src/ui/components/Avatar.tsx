@@ -30,9 +30,10 @@ export function Avatar({ id, size = 's', dim = false }: { id: PlayerId; size?: A
   if (!ctx) return null;
   const p = ctx.byId.get(id);
   const cls = `av av-${size}${ctx.me === id ? ' me' : ''}${dim ? ' dim' : ''}${p?.avatar ? '' : ' ini'}`;
+  // Písmeno přes CSS (data-ini): nepřidá se do textu buňky (kopírování tabulky, testy podle textu).
   return (
-    <span className={cls} aria-hidden="true">
-      {p?.avatar ? <img src={p.avatar} alt="" draggable={false} /> : initialOf(p?.name)}
+    <span className={cls} aria-hidden="true" data-ini={p?.avatar ? undefined : initialOf(p?.name)}>
+      {p?.avatar && <img src={p.avatar} alt="" draggable={false} />}
     </span>
   );
 }

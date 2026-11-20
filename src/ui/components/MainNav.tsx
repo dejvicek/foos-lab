@@ -206,9 +206,7 @@ function AccountMenu({
         {myId ? (
           <Avatar id={myId} size="m" />
         ) : (
-          <span className="av av-m ini" aria-hidden="true">
-            {initialOf(name)}
-          </span>
+          <span className="av av-m ini" aria-hidden="true" data-ini={initialOf(name)} />
         )}
         <span className="acct-name">{name}</span>
         <span className="acct-chev" aria-hidden="true">

@@ -1,3 +1,4 @@
+import { Avatar } from './Avatar';
 import type { DelayRow } from '../../domain/queue';
 import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
@@ -287,12 +288,14 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
                 <span className="delay-who">
                   {open ? (
                     <button type="button" className={r.playerId === me ? 'player-link me-name' : 'player-link'} onClick={() => open(r.playerId)}>
+                      <Avatar id={r.playerId} dim={!ranked} />
                       {names[r.playerId] ?? '?'}
                     </button>
-                  ) : r.playerId === me ? (
-                    <b className="me-name">{names[r.playerId] ?? '?'}</b>
                   ) : (
-                    names[r.playerId] ?? '?'
+                    <span className="who-av">
+                      <Avatar id={r.playerId} dim={!ranked} />
+                      {r.playerId === me ? <b className="me-name">{names[r.playerId] ?? '?'}</b> : (names[r.playerId] ?? '?')}
+                    </span>
                   )}
                   {shamed && <Snail big={!compact} />}
                   {shamed && <span className="shame-tag">Brzda</span>}
