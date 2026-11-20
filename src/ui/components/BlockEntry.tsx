@@ -503,6 +503,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   limitSec={streakLimitSec(training, gkey)}
                   canSolo={canP}
                   onTap={(p, ok, d) => (tap?.onTapSolo ?? onTapSolo)?.(p, gkey, def, ok, d)}
+                  series={{ trainingId: training.id, key: gkey }}
                 />
                 {drillBox(c.players, row, j)}
               </div>
@@ -523,6 +524,7 @@ export function BlockEntry({ row, waitingLabel, training, names, onScore, onSolo
                   canSolo={canP}
                   onTap={(p, ok, d) => (tap.onTapSolo ?? onTapSolo)?.(p, key, def, ok, d)}
                   editInit={fix}
+                  series={{ trainingId: training.id, key }}
                 />
                 {drillBox(c.players, row, j)}
               </div>

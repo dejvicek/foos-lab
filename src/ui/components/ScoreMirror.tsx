@@ -3,7 +3,8 @@ import { bumpLimit, legOver, setScores, tableScore, taxGoal } from '../../domain
 import type { SoloMetricDef } from '../../domain/solo';
 import { drillCount, type DrillValue } from '../../domain/drillTap';
 import { streakTime, streakTimeUp, type StreakState } from '../../domain/streak';
-import type { Match, PlayerId, Score } from '../../domain/types';
+import type { Match, PlayerId, Score, SoloKey } from '../../domain/types';
+import { RecordLine } from '../records';
 
 type Side = 'A' | 'B';
 const SIDE_WORD: Record<Side, string> = { A: 'vlevo', B: 'vpravo' };
@@ -208,13 +209,15 @@ interface DrillProps {
   onTap(playerId: PlayerId, ok: boolean, delta: 1 | -1): void;
   /** Otevřít rovnou v úpravách (Moje hry: „Opravit“, 19. 11. 2026). */
   editInit?: boolean;
+  /** Trénink a klíč série – po dohrání ukáže rekord (20. 11. 2026). */
+  series?: { trainingId: string; key: SoloKey };
 }
 
 /**
  * PRD 5.8 Cvičení: po každém pokusu ✓ / ✗, appka počítá pokusy i výsledek;
  * po posledním pokusu „Hotovo“. Pole pro každého hráče skupiny (i trojice).
  */
-export function DrillMirror({ players, def, values, names, canSolo, onTap, editInit = false }: DrillProps) {
+export function DrillMirror({ players, def, values, names, canSolo, onTap, editInit = false, series }: DrillProps) {
   const [undo, setUndo] = useState<{ p: PlayerId; ok: boolean }[]>([]);
   const [editing, setEditing] = useState(editInit);
   const anyWritable = players.some(canSolo);
@@ -251,6 +254,7 @@ export function DrillMirror({ players, def, values, names, canSolo, onTap, editI
               {c.done ? (
                 <div className="drill-done">
                   Všechny pokusy: {c.value} z {def.max}
+                  {c.attempts === def.max && <RecordLine series={series} playerId={p} value={c.value} max={def.max} />}
                 </div>
               ) : (
                 <>
@@ -317,13 +321,15 @@ interface StreakProps {
   limitSec: number | null;
   canSolo(playerId: PlayerId): boolean;
   onTap(playerId: PlayerId, ok: boolean, delta: 1 | -1): void;
+  /** Trénink a klíč série – po splnění ukáže rekord (20. 11. 2026). */
+  series?: { trainingId: string; key: SoloKey };
 }
 
 /**
  * Čistá desítka: ✓ / ✗ po každém pokusu, appka drží sérii povedených po sobě (✗ ji vynuluje)
  * a po desátém povedeném zapíše čas. Zpět vrací poslední pokus hráče.
  */
-export function StreakMirror({ players, def, states, names, now, limitSec, canSolo, onTap }: StreakProps) {
+export function StreakMirror({ players, def, states, names, now, limitSec, canSolo, onTap, series }: StreakProps) {
   const len = def.streak ?? 0;
   return (
     <div className="mirror drill streak">
@@ -354,7 +360,10 @@ export function StreakMirror({ players, def, states, names, now, limitSec, canSo
                 <small>z {len} po sobě</small>
               </div>
               {s.seconds !== null ? (
-                <div className="drill-done">Splněno za {streakTime(s.seconds)}</div>
+                <div className="drill-done">
+                  Splněno za {streakTime(s.seconds)}
+                  <RecordLine series={series} playerId={p} value={s.seconds} max={0} />
+                </div>
               ) : up ? (
                 <div className="drill-done streak-over">Čas kola vypršel – nesplněno</div>
               ) : (

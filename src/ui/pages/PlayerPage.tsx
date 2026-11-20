@@ -12,6 +12,7 @@ import type { AppStore } from '../useAppState';
 import type { PlayerFocus, Route } from '../useHashRoute';
 import { useMobile } from '../useMobile';
 import { placementsOf, type Placement } from '../../domain/placements';
+import { recordsOf } from '../../domain/records';
 import { MIN_TRAININGS } from '../../domain/ladder';
 import { Progress, RankCell } from '../components/Rank';
 
@@ -65,6 +66,7 @@ export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
       <h1>{player.name}</h1>
       <p className="dateline">{rangeText(prefs.ladderRange, today)}</p>
       <Placements store={store} playerId={id} prefs={prefs} today={today} navigate={navigate} />
+      <Records store={store} playerId={id} names={new Map(store.data.players.map((p) => [p.id, p.name]))} />
       <h2 className="pp-h">Tréninky</h2>
       {rows.length === 0 ? (
         <p className="note">V tomhle období hráč nebyl na žádném klubovém tréninku.</p>
@@ -301,6 +303,33 @@ function Placements({ store, playerId, prefs, today, navigate }: { store: AppSto
             </button>
           </li>
         ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Osobní rekordy u cvičení a rekord klubu (20. 11. 2026): jen celé série, za celou dobu (ne za období). */
+function Records({ store, playerId, names }: { store: AppStore; playerId: PlayerId; names: Map<string, string> }) {
+  const list = recordsOf(store.data.trainings, playerId);
+  if (!list.length) return null;
+  return (
+    <section className="pp-records" aria-label="Rekordy">
+      <h2 className="pp-h">Rekordy</h2>
+      <ul>
+        {list.map((r) => {
+          const def = soloMetric(r.metric);
+          const fmt = (v: number) => (def.streak ? streakTime(v) : `${v} z ${def.max}`);
+          const mineClub = r.clubHolder === playerId;
+          return (
+            <li key={r.metric}>
+              <span className="pp-what">{def.name}</span>
+              <b>{fmt(r.personal)}</b>
+              {r.club !== null && (
+                <span className={mineClub ? 'pp-club mine' : 'pp-club'}>{mineClub ? 'rekord klubu' : `klub ${fmt(r.club)} (${names.get(r.clubHolder!) ?? '?'})`}</span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

@@ -28,6 +28,7 @@ import { useAppState } from './useAppState';
 import { useHashRoute } from './useHashRoute';
 import { useWakeLock } from './wakeLock';
 import { vibrate } from './vibrate';
+import { TrainingsProvider } from './records';
 import { PATCH_NOTES, PatchNotesPage } from './components/PatchNotes';
 import { compareVersions, notesSince } from './patchNotes';
 import { APP_VERSION } from '../storage/appVersion';
@@ -339,7 +340,9 @@ function SignedIn({
           </button>
         </div>
       )}
-      <main className="page">{body}</main>
+      <main className="page">
+        <TrainingsProvider trainings={store.data.trainings}>{body}</TrainingsProvider>
+      </main>
     </>
   );
 }
