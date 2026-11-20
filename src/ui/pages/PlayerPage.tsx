@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { playerHistory, resolveRange } from '../../domain/ladder';
 import { DISCIPLINES } from '../../domain/disciplines';
 import { playerDrillHistory, playerMatchHistory, type PlayerMatch } from '../../domain/playerDetail';
@@ -16,6 +16,10 @@ import { placementsOf, type Placement } from '../../domain/placements';
 import { recordsOf } from '../../domain/records';
 import { MIN_TRAININGS } from '../../domain/ladder';
 import { Progress, RankCell } from '../components/Rank';
+import { Avatar } from '../components/Avatar';
+import { AvatarEditor, type LoadedImage } from '../components/AvatarEditor';
+import { loadImage } from '../avatarImage';
+import type { Player } from '../../domain/types';
 
 interface Props {
   store: AppStore;
@@ -24,9 +28,12 @@ interface Props {
   focus?: PlayerFocus;
   prefs: UiPrefs;
   navigate(r: Route): void;
+  /** Přihlášený hráč a admin: fotku mění hráč sám, admin komukoli (21. 11. 2026). */
+  me?: PlayerId | null;
+  admin?: boolean;
 }
 
-export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
+export function PlayerPage({ store, id, focus, prefs, navigate, me = null, admin = false }: Props) {
   const mobile = useMobile();
   const today = todayIso();
   const player = store.data.players.find((p) => p.id === id);
@@ -65,7 +72,7 @@ export function PlayerPage({ store, id, focus, prefs, navigate }: Props) {
   return (
     <section>
       {back}
-      <h1>{player.name}</h1>
+      <PhotoHead store={store} player={player} canEdit={admin || me === id} own={me === id} />
       <p className="dateline">{rangeText(prefs.ladderRange, today)}</p>
       <Placements store={store} playerId={id} prefs={prefs} today={today} navigate={navigate} />
       <Records store={store} playerId={id} names={new Map(store.data.players.map((p) => [p.id, p.name]))} />
@@ -401,5 +408,106 @@ function Records({ store, playerId, names }: { store: AppStore; playerId: Player
         })}
       </ul>
     </section>
+  );
+}
+
+/** Jméno s profilovou fotkou; na svém profilu (a admin u každého) Změnit / Smazat fotku. */
+function PhotoHead({ store, player, canEdit, own }: { store: AppStore; player: Player; canEdit: boolean; own: boolean }) {
+  const file = useRef<HTMLInputElement>(null);
+  const [image, setImage] = useState<LoadedImage | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const has = !!player.avatar;
+  const choose = () => {
+    setError(null);
+    file.current?.click();
+  };
+  const picked = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      setImage(await loadImage(f));
+    } catch {
+      setError('Tenhle soubor se nepodařilo otevřít jako obrázek. Zkus fotku ve formátu JPEG nebo PNG.');
+    }
+  };
+  return (
+    <div className="pp-head">
+      <span className="pp-photo">
+        <Avatar id={player.id} size="xl" />
+        {canEdit && (
+          <button type="button" className="pp-cam" aria-label={has ? 'Změnit fotku' : 'Přidat fotku'} onClick={choose}>
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M3 6.5h3l1.5-2h5L14 6.5h3v9H3z" />
+              <circle cx="10" cy="11" r="3" />
+            </svg>
+          </button>
+        )}
+      </span>
+      <div className="pp-who">
+        <h1>{player.name}</h1>
+        {canEdit && (
+          <p className="pp-photo-actions">
+            {confirm ? (
+              <>
+                Smazat fotku?{' '}
+                <button
+                  type="button"
+                  className="link danger"
+                  onClick={() => {
+                    store.setAvatar(player.id, null);
+                    setConfirm(false);
+                  }}
+                >
+                  Smazat
+                </button>{' '}
+                <button type="button" className="link" onClick={() => setConfirm(false)}>
+                  Nechat
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="link" onClick={choose}>
+                  {has ? 'Změnit fotku' : 'Přidat fotku'}
+                </button>
+                {has && (
+                  <button type="button" className="link danger" onClick={() => setConfirm(true)}>
+                    Smazat fotku
+                  </button>
+                )}
+              </>
+            )}
+          </p>
+        )}
+        {error && (
+          <p className="pp-photo-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+      {canEdit && (
+        <input
+          ref={file}
+          type="file"
+          accept="image/*"
+          hidden
+          data-testid="avatar-file"
+          onChange={(e) => {
+            void picked(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+      )}
+      {image && (
+        <AvatarEditor
+          image={image}
+          title={own ? 'Profilová fotka' : `Profilová fotka – ${player.name}`}
+          onClose={() => setImage(null)}
+          onSave={(url) => {
+            store.setAvatar(player.id, url);
+            setImage(null);
+          }}
+        />
+      )}
+    </div>
   );
 }

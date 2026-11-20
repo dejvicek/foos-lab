@@ -2249,3 +2249,55 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
   .av-l { --av: 36px; }
   .av-xl { --av: 72px; }
 }
+
+/* Profil: fotka vedle jména, na svém profilu (admin u každého) Změnit / Smazat fotku */
+.pp-head { display: flex; align-items: center; gap: 18px; margin: 4px 0 6px; }
+.pp-head h1 { margin: 0; }
+.pp-who { min-width: 0; display: grid; gap: 2px; }
+.pp-photo { position: relative; flex: none; display: inline-grid; }
+.pp-photo .av.me { box-shadow: none; }
+.pp-cam {
+  position: absolute; right: -4px; bottom: -4px; width: 32px; height: 32px; min-height: 0; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
+}
+.pp-cam:hover { border-color: var(--ink); }
+.pp-cam svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.pp-photo-actions { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; font-size: 14px; color: var(--muted); }
+.pp-photo-actions button.link { padding-left: 0; }
+.pp-photo-actions button.link.danger { color: var(--warn); }
+.pp-photo-error { margin: 0; color: var(--warn); font-size: 14px; }
+
+/* Výběr výřezu fotky */
+.avx-backdrop {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+.avx {
+  width: min(400px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  box-shadow: 0 14px 40px color-mix(in srgb, #000 25%, transparent);
+}
+.avx h2 { margin: 0; font-size: 20px; }
+.avx .note { margin: 0; }
+.avx-stage { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--bg); }
+.avx-stage canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.avx-stage canvas:active { cursor: grabbing; }
+.avx-stage canvas:focus-visible { outline: 3px solid var(--action-edge); outline-offset: -3px; }
+.avx-mask {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 10px;
+  background: radial-gradient(circle at 50% 50%, transparent 0 calc(50% - 1px), color-mix(in srgb, #000 50%, transparent) 50%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 50%, transparent);
+}
+.avx-zoom { display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 700; }
+.avx-zoom input { flex: 1; accent-color: var(--ink); }
+.avx-preview { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+.avx-p { border-radius: 50%; background: var(--bg); }
+.avx-p.s { width: 24px; height: 24px; }
+.avx-p.l { width: 40px; height: 40px; }
+.avx-error { margin: 0; color: var(--warn); }
+.avx-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 600px) {
+  .pp-head { gap: 14px; }
+  .pp-cam { width: 30px; height: 30px; }
+  .avx-backdrop { padding: 10px; }
+}
