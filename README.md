@@ -5,6 +5,7 @@ Webová appka foosballového klubu pro trénink: vede soupisku, z přítomných 
 - **Appka:** https://dejvicek.github.io/foos-lab/
 - **Návod pro hráče:** https://dejvicek.github.io/foos-lab/#/guide
 - **Změny po verzích:** [CHANGELOG.md](CHANGELOG.md)
+- **Plán podle počtu tréninků:** [ROADMAP.md](ROADMAP.md)
 
 ## Technologie
 
