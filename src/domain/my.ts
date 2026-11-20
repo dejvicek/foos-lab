@@ -59,12 +59,13 @@ export function canWriteMatch(v: Viewer, m: Match, t: Training): boolean {
 
 /**
  * Smí přihlásit připravenost (18. 11. 2026, zrcadlí can_mark_ready)? Zápas: hráč své strany, rozhodčí
- * a organizátor kteroukoli stranu. Cvičení: hráč za sebe, organizátor za kohokoli.
+ * a organizátor kteroukoli stranu. Cvičení: hráč za sebe i za spoluhráče ze skupiny u stolu (20. 11. 2026,
+ * *rozhodnutí uživatele*; jeden telefon u stolu stačí), organizátor za kohokoli.
  */
 export function canMarkReady(v: Viewer, t: Training, e: { match?: Match; players: PlayerId[] }, key: string): boolean {
   if (canManage(v, t)) return true;
   if (!attends(v, t)) return false;
-  if (!e.match) return key === v.playerId && e.players.includes(key);
+  if (!e.match) return e.players.includes(v.playerId!) && e.players.includes(key);
   const side = key === 'A' ? e.match.sideA : key === 'B' ? e.match.sideB : null;
   if (!side) return false;
   return side.includes(v.playerId!) || (t.format === 'custom' && e.match.referee === v.playerId);

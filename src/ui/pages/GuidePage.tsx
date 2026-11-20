@@ -129,7 +129,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             <ul className="g-list">
               <Li i="!" red>
                 Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 10). Kdo je
-                připravený dřív, nečeká na úkor sebe. U cvičení se hlásí každý hráč sám za sebe; rozhodčí může ohlásit kteroukoli stranu.
+                připravený dřív, nečeká na úkor sebe. U cvičení může Připraven ťuknout kdokoli ze skupiny u stolu i za ostatní, stačí jeden telefon; rozhodčí může ohlásit kteroukoli stranu.
               </Li>
             </ul>
           </Step>

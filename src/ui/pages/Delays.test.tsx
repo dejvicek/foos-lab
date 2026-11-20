@@ -5,7 +5,6 @@ import { memoryRepository } from '../../storage/memoryRepository';
 import { buildSchedule } from '../../domain/schedule';
 import { queueOf } from '../../domain/queue';
 import type { Player, Training } from '../../domain/types';
-import { othersReady } from '../../test/ready';
 import { memoryAuth } from '../../storage/auth';
 
 // H1 je organizátor (zakládá a řídí tréninky v testech).
@@ -433,7 +432,7 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     expect(within(mine).getByRole('button', { name: `Připraven: ${other}` })).toBeInTheDocument();
   });
 
-  it('každý hráč skupiny se hlásí sám za sebe; cvičení začne, až jsou připravení všichni', async () => {
+  it('hráč skupiny hlásí za sebe i za spoluhráče u stolu (20. 11. 2026); cvičení začne, až jsou připravení všichni', async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     const drill: Training = { ...t, plan: { warmupPasses: 1 }, playTimes: { training: { startedAt: at(18, 0) } } };
     const repo = memoryRepository({ players, trainings: [drill] });
@@ -441,11 +440,13 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
-    expect(within(mine).getAllByRole('button', { name: /^Připraven/ })).toHaveLength(1); // jen za sebe
-    await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    const btns = within(mine).getAllByRole('button', { name: /^Připraven: / });
+    expect(btns).toHaveLength(2); // za sebe i za spoluhráče
+    const other = btns.map((b) => b.getAttribute('aria-label')!.slice('Připraven: '.length)).find((n) => n !== 'H1')!;
+    await user.click(within(mine).getByRole('button', { name: 'Připraven: H1' }));
     // cvičení: čeká se na ostatní hráče jménem (19. 11. 2026)
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(/^● Na řadě · čeká se na hráče \(H\d\)✓ zrušit$/);
-    await othersReady(repo);
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(`● Na řadě · čeká se na hráče (${other})`);
+    await user.click(within(mine).getByRole('button', { name: `Připraven: ${other}` }));
     await vi.waitFor(() => expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Hraje se'));
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
   });

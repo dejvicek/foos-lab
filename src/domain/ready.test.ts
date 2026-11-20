@@ -78,9 +78,10 @@ describe('kdo smí hlásit připravenost', () => {
     expect(canMarkReady(v('H6'), t, dItem, 'H1')).toBe(true);
     expect(canMarkReady(v('X', true), t, mItem, 'B')).toBe(true); // admin
   });
-  it('cvičení: hráč jen za sebe', () => {
+  it('cvičení: hráč za sebe i za spoluhráče u stolu (20. 11. 2026), hráč mimo skupinu ne', () => {
     expect(canMarkReady(v('H1'), t, dItem, 'H1')).toBe(true);
-    expect(canMarkReady(v('H1'), t, dItem, 'H2')).toBe(false);
+    expect(canMarkReady(v('H1'), t, dItem, 'H2')).toBe(true);
+    expect(canMarkReady(v('H1'), t, dItem, 'H3')).toBe(false); // H3 u stolu není
     expect(canMarkReady(v('H5'), t, dItem, 'H1')).toBe(false);
   });
 });
