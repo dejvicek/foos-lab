@@ -61,7 +61,7 @@ describe('Zdržovači', () => {
     ...t,
     playTimes: {
       [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, // první zahájení = začátek tréninku → čekání 0, hra 8:00
-      [ids[1]]: { startedAt: at(18, 12), endedAt: at(18, 19) }, // aktivní 18:10 → čekání 2:00, hra 7:00
+      [ids[1]]: { startedAt: at(18, 15), endedAt: at(18, 22) }, // aktivní 18:10 → čekání 5:00, hra 7:00
     },
   };
 
@@ -78,9 +78,9 @@ describe('Zdržovači', () => {
     // sloupec, podle kterého se řadí, je poslední jako v ostatních žebříčcích (20. 11. 2026)
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕↑↓▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Celkem', 'Hra ⌀', 'Utkání', 'Čekání ⌀']);
     const row = within(table).getAllByRole('row')[1];
-    expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
+    expect(row).toHaveTextContent('2:30'); // průměrné čekání (0 + 5:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2
-    // jen první Zdržovač: červený kroužek, šnek a „Brzda“; druhý už bez (18. 11. 2026)
+    // jen první Zdržovač (18. 11. 2026) a jen s průměrným čekáním aspoň 2 min (20. 11. 2026): červený kroužek, šnek a „Brzda“
     const rows = within(table).getAllByRole('row');
     expect(rows[1]).toHaveTextContent('Brzda');
     expect(within(rows[1]).getByTitle('1. nejdelší čekání')).toBeInTheDocument();
@@ -89,14 +89,28 @@ describe('Zdržovači', () => {
     expect(table.querySelectorAll('tr.shame')).toHaveLength(1);
   });
 
+  it('první s průměrným čekáním pod 2 min Brzdu nedostane (20. 11. 2026)', async () => {
+    window.location.hash = '#/trainings/t1';
+    const short: Training = { ...t, playTimes: { [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, [ids[1]]: { startedAt: at(18, 12), endedAt: at(18, 19) } } };
+    render(<App repo={memoryRepository({ players, trainings: [short] })} />);
+    await userEvent.setup().click(within(await screen.findByRole('region', { name: 'Souhrn' })).getByRole('button', { name: 'Zdržovači' }));
+    const table = screen.getByRole('table', { name: 'Zdržovači' });
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('1:00');
+    expect(table).not.toHaveTextContent('Brzda');
+    expect(table.querySelectorAll('tr.shame')).toHaveLength(0);
+  });
+
   it('v žebříčku jako třetí část', async () => {
     window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Zdržovači' }));
     const table = screen.getByRole('table', { name: 'Zdržovači' });
-    expect(within(table).getAllByRole('row')).toHaveLength(5);
     expect(table).toHaveTextContent('H1');
+    // 1 trénink → všichni pod čarou s tečkami, nikdo nemá pořadí ani Brzdu (min. 3 tréninky jako jinde, 20. 11. 2026)
+    expect(table.querySelectorAll('tr.low-data')).toHaveLength(4);
+    expect(table.querySelector('tr.cutoff')).not.toBeNull();
+    expect(table).not.toHaveTextContent('Brzda');
     // Tréninky jen v hlavní tabulce Zápasů (20. 11. 2026)
     expect(within(table).queryByRole('columnheader', { name: /Tréninky/ })).toBeNull();
   });

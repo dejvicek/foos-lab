@@ -29,8 +29,11 @@ export function Medal({ place, ranked = true }: { place: number; ranked?: boolea
   );
 }
 
-/** Zdržovač na čele (jen první, 18. 11. 2026): jen když opravdu čekal (čekání > 0). */
-export const isShamed = (place: number, waited: boolean) => waited && place === 1;
+/** Od jakého průměrného čekání na utkání dostane první Zdržovač šneka a Brzdu (20. 11. 2026, *rozhodnutí uživatele*). */
+export const SHAME_MIN_WAIT_MS = 2 * 60_000;
+
+/** Zdržovač na čele (jen první, 18. 11. 2026) a jen s průměrným čekáním aspoň 2 min (20. 11. 2026). */
+export const isShamed = (place: number, waitAvgMs: number, ranked = true) => ranked && place === 1 && waitAvgMs >= SHAME_MIN_WAIT_MS;
 
 export function ShameRank({ place, shamed }: { place: number; shamed: boolean }) {
   if (!shamed) return <Plain place={place} />;

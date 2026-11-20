@@ -2,7 +2,9 @@ import type { DelayRow } from '../../domain/queue';
 import type { ItemState } from '../../domain/queue';
 import type { Match, PlayerId } from '../../domain/types';
 import { clockOf, fmtDur } from '../queue';
-import { isShamed, ShameRank, Snail } from './Rank';
+import { Fragment } from 'react';
+import { MIN_TRAININGS } from '../../domain/ladder';
+import { isShamed, Progress, ShameRank, Snail } from './Rank';
 import { placeAndSort, RankTh, shownSort, sortedCls, SortTh, useSort, type Sort, type SortCol } from './SortTable';
 
 /**
@@ -229,10 +231,12 @@ interface TableProps {
   rankBy?: 'avg' | 'sum';
   /** Přihlášený hráč – jméno zlatě (20. 11. 2026). */
   me?: PlayerId | null;
+  /** Žebříček: hráči s méně než 3 tréninky pod čarou, bez pořadí a bez Brzdy (20. 11. 2026). */
+  lowData?: (DelayRow & { trainings?: number })[];
 }
 
 /** Zdržovači: kdo nejdéle čeká, než zahájí utkání, a jak dlouho hraje. Řadit jde podle sloupce (18. 11. 2026). */
-export function DelayTable({ rows, names, showTrainings, open, compact, rankBy = 'avg', me = null }: TableProps) {
+export function DelayTable({ rows, names, showTrainings, open, compact, rankBy = 'avg', me = null, lowData = [] }: TableProps) {
   // Sloupec oficiálního pořadí je zvýrazněný i bez ručního řazení (20. 11. 2026).
   const official: Sort = { key: rankBy === 'sum' ? 'waitSum' : 'waitAvg', dir: 'desc' };
   const [sort, setSort] = useSort(official);
@@ -252,7 +256,8 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
   ];
   const rankKey = rankBy === 'sum' ? 'waitSum' : 'waitAvg';
   // Šnek a Brzda patří oficiálnímu prvnímu místu, i když je seřazeno jinak.
-  const items = placeAndSort(rows, [], cols, sort);
+  const items = placeAndSort(rows, lowData, cols, sort);
+  const firstLow = items.findIndex((x) => !x.ranked);
   return (
     <div className="wrap">
       <table aria-label="Zdržovači" className={compact ? 'delay-table summary-table' : 'delay-table'}>
@@ -265,12 +270,18 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
           </tr>
         </thead>
         <tbody>
-          {items.map(({ r, place }) => {
-            const shamed = isShamed(place, r.waitSum > 0);
+          {items.map(({ r, place, ranked }, i) => {
+            const shamed = isShamed(place, r.waitAvg, ranked);
             return (
-            <tr key={r.playerId} className={shamed ? 'shame shame-1' : undefined}>
+            <Fragment key={r.playerId}>
+            {i === firstLow && (
+              <tr className="cutoff" aria-hidden="true">
+                <td colSpan={cols.length + 1} />
+              </tr>
+            )}
+            <tr className={shamed ? 'shame shame-1' : ranked ? undefined : 'low-data'}>
               <td className="n rank">
-                <ShameRank place={place} shamed={shamed} />
+                {ranked ? <ShameRank place={place} shamed={shamed} /> : <Progress have={r.trainings ?? 0} need={MIN_TRAININGS} />}
               </td>
               <td className={sortedCls(shown, 'name', 'name')}>
                 <span className="delay-who">
@@ -293,12 +304,13 @@ export function DelayTable({ rows, names, showTrainings, open, compact, rankBy =
                   : c.key === 'items' ? r.items
                   : r.trainings;
                 return (
-                  <td key={c.key} className={sortedCls(shown, c.key, c.key === rankKey && place === 1 && r.waitSum > 0 ? 'n neg' : 'n')}>
+                  <td key={c.key} className={sortedCls(shown, c.key, c.key === rankKey && shamed ? 'n neg' : 'n')}>
                     {text}
                   </td>
                 );
               })}
             </tr>
+            </Fragment>
             );
           })}
         </tbody>

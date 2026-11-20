@@ -365,7 +365,15 @@ function DelayLadder({ store, prefs, today, open, me }: { store: AppStore; prefs
   if (!rows.length) return <p className="note">V tomhle období zatím nejsou změřená žádná utkání.</p>;
   return (
     <>
-      <DelayTable rows={rows} names={names} open={open} me={me} rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'} />
+      {/* Pořadí od 3 tréninků jako v ostatních žebříčcích (20. 11. 2026); méně = pod čarou s tečkami, bez Brzdy. */}
+      <DelayTable
+        rows={rows.filter((r) => r.trainings >= MIN_TRAININGS)}
+        lowData={rows.filter((r) => r.trainings < MIN_TRAININGS)}
+        names={names}
+        open={open}
+        me={me}
+        rankBy={prefs.ladderView === 'avg' ? 'avg' : 'sum'}
+      />
       <p className="note">
         Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání; připisuje se všem hráčům utkání.{' '}
         {prefs.ladderView === 'avg' ? 'Řazeno podle průměrného čekání na utkání.' : 'Řazeno podle čekání celkem.'}

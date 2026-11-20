@@ -269,7 +269,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Najdeš je pod souhrnem tréninku a jako třetí část žebříčku. V Průměru se řadí podle čekání na utkání, v Celkem podle součtu čekání.
               </Li>
               <Li i={<Snail />} red>
-                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
+                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>, ale jen když se na něj čekalo průměrně aspoň 2 minuty. V žebříčku platí jako jinde: pořadí až od 3 tréninků.
               </Li>
               <Li i="⏱">
                 Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Připraven</b> v Moje hry.
@@ -930,7 +930,8 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
         {part === 'solo' && ranked(solo)}
         {part === 'delays' &&
           delays.map(([n, sub, v], i) => {
-            const shamed = isShamed(i + 1, v !== '0:00');
+            const [mm, ss] = v.split(':').map(Number);
+            const shamed = isShamed(i + 1, (mm * 60 + ss) * 1000);
             return (
               <div key={n} className={shamed ? 'g-rank g-shame' : 'g-rank'}>
                 <span className="g-rk">
