@@ -256,6 +256,9 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
               </Li>
+              <Li i="◉">
+                <b>Profilová fotka</b>: v menu účtu otevři Můj profil a ťukni na Přidat fotku. Vyber jakoukoli fotku, posuň a přibliž ji, aby v kroužku bylo, co chceš, a ulož. Fotka se pak ukazuje u tvého jména v žebříčcích a v Moje hry. Kdo fotku nemá, má v kroužku první písmeno jména.
+              </Li>
             </ul>
           </Step>
 
