@@ -1244,7 +1244,6 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 .tl-box { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
 .tl-box > summary { cursor: pointer; color: var(--felt); font-weight: 700; font-size: 13px; min-height: 28px; }
 .tl-box > .tl-h { margin: 2px 0 4px; color: var(--felt); font-size: 13px; font-weight: 700; }
-.tl-leg-k { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
 /* Ikonka grafu: rozbalí Průběh (bez rámečku; otevřená zlatá) */
 button.pr-ic {
   flex: none; width: 28px; height: 28px; min-height: 0; display: inline-grid; place-items: center; border-radius: 6px; cursor: pointer;
