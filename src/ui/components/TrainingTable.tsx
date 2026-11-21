@@ -205,9 +205,14 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
   }
   const winner = tot && !playing ? (tot[0] > tot[1] ? 'A' : tot[1] > tot[0] ? 'B' : null) : null;
   const plain = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
-  // Asymetrická disciplína (19. 11. 2026): štítek u dvojice, kdo hraje kterou stranu. Od 20. 11. 2026 (*rozhodnutí uživatele*)
-  // jen Zeď u strany, která ji hraje (Láme zeď je druhá); scénářové starty bez štítků – kdo začíná s kolika, je vidět ze skóre.
-  const badge = (k: 'A' | 'B'): string | null => (m.wall === k ? 'Zeď' : null);
+  // Asymetrická disciplína (19. 11. 2026): štítek u dvojice, kdo hraje kterou stranu. Zeď jen u strany, která ji hraje
+  // (Láme zeď je druhá, od 20. 11. 2026). Nerovný scénářový start (21. 11. 2026, *rozhodnutí uživatele*): „start N“ u strany,
+  // která začíná s náskokem – u dohraného zápasu (6:4) by jinak nebylo poznat, kdo začínal s kolika. Rovný start (5:5) bez štítku.
+  const unequal = !!m.start && st[0] !== st[1];
+  const badge = (k: 'A' | 'B'): string | null => {
+    const n = st[k === 'A' ? 0 : 1];
+    return m.wall === k ? 'Zeď' : unequal && n > 0 ? `start ${n}` : null;
+  };
   const side = (k: 'A' | 'B') => {
     const ids = k === 'A' ? m.sideA : m.sideB;
     const i = k === 'A' ? 0 : 1;
