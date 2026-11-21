@@ -353,7 +353,7 @@ export function TrainingPage({
         </p>
       )}
 
-      {schedule && <TrainingSummary schedule={schedule} scores={training.scores} attendees={training.attendees} names={names} delays={delays} />}
+      {schedule && <TrainingSummary schedule={schedule} scores={training.scores} attendees={training.attendees} names={names} delays={delays} me={viewer.playerId} />}
 
       {flowBar(false)}
 

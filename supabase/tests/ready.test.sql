@@ -37,13 +37,14 @@ select t.eq('rozhodčí hlásí stranu (zahájené utkání se nemění)', (sele
 select t.eq('rozhodčí smí jen svůj zápas', public.can_mark_ready(:T, 'league|1|2|10000000-0000-0000-0000-000000000003v10000000-0000-0000-0000-000000000004', 'A'), false);
 select t.eq('rozhodčí smí svůj zápas', public.can_mark_ready(:T, :M, 'B'), true);
 
--- cvičení: hráč za sebe
+-- cvičení: hráč za sebe i za spoluhráče ze skupiny u stolu (migrace 32, 20. 11. 2026)
 select t.as_player(:A);
 select t.eq('cvičení: za sebe', (select r.ready ? :A from public.ready_item(:T, :D, :A, true, array[:A, :B], now()) r), true);
-select t.fails('cvičení: za jiného ne', $q$select public.ready_item('20000000-0000-0000-0000-000000000001',
+select t.eq('cvičení: za spoluhráče ze skupiny', (select r.ready ? :B from public.ready_item(:T, :D, :B, true, array[:A, :B, 'x'], now()) r), true);
+select t.fails('cvičení: za hráče mimo skupinu ne', $q$select public.ready_item('20000000-0000-0000-0000-000000000001',
   'drill|Kolo 2|1|10000000-0000-0000-0000-000000000003+10000000-0000-0000-0000-000000000004',
-  '10000000-0000-0000-0000-000000000004', true, array['x'], now())$q$, '42501');
-select t.eq('zrušení před zahájením', (select r.ready is null from public.ready_item(:T, :D, :A, false, array[:A, :B], now()) r), true);
+  '10000000-0000-0000-0000-000000000005', true, array['x'], now())$q$, '42501');
+select t.eq('zrušení před zahájením', (select (r.ready ? :A) = false from public.ready_item(:T, :D, :A, false, array[:A, :B, 'x'], now()) r), true);
 
 -- organizátor (zakladatel) cokoli; cizí hráč nic
 select t.as_player(:ORG);

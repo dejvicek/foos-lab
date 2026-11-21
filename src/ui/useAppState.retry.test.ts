@@ -164,7 +164,9 @@ describe('useAppState – fronta zápisů přežije zavření appky', () => {
     online();
     await waitFor(() => expect(result.current.saveState).toBe('idle'));
     expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0, la: 0, lb: 1 });
-    expect(repo.writes()).toBe(2); // nepovedený první pokus + jedna dávka
+    // nepovedený první pokus + jedna dávka ťuknutí + zahájení zápasu prvním ťuknutím (20. 11. 2026)
+    expect(repo.writes()).toBe(3);
+    expect(repo.snapshot().trainings[0].playTimes?.[m.id]?.startedAt).toBe(result.current.data.trainings[0].events![0].at);
   });
 });
 

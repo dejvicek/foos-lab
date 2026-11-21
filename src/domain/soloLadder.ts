@@ -50,7 +50,7 @@ export function clubMetric(m: SoloMetric): boolean {
  * klubové tréninky + z vlastních tréninků cvičení, která jsou i v klubu; Vlastní = z vlastních tréninků
  * jen cvičení pouze pro vlastní trénink (solo, Čistá desítka).
  */
-function sourceSolo(t: Training, source: SoloSource): SoloResults {
+export function sourceSolo(t: Training, source: SoloSource): SoloResults {
   const all = validSolo(t);
   if (!isPractice(t)) return source === 'club' ? all : {};
   const out: SoloResults = {};
@@ -60,6 +60,9 @@ function sourceSolo(t: Training, source: SoloSource): SoloResults {
   }
   return out;
 }
+
+/** Trénink má výsledek cvičení, který patří do žebříčku `source` (pro posun v pořadí, 20. 11. 2026). */
+export const hasSoloFor = (t: Training, source: SoloSource): boolean => Object.keys(sourceSolo(t, source)).length > 0;
 
 /** Součty jedné metriky: tréninky se záznamem, počet záznamů a součet hodnot. */
 export function aggregateSolo(

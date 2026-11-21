@@ -19,7 +19,7 @@ import {
   practicePlanMinutes,
   practiceRounds,
   roundRemainingSec,
-  roundTimes, computeMatchLadder } from './practice';
+  roundTimes, computeMatchLadder, compareMatchRows, type PracticeMatchRow } from './practice';
 import { drillSections } from './disciplines';
 import { discipline } from './disciplines';
 import { setAttempts, setSolo } from './training';
@@ -331,6 +331,18 @@ describe('žebříček Vlastní – zápasy (12. 11. 2026)', () => {
     // nedohraný zápas (g4, jen 1 leg) se počítá do legů, ne do zápasů
     expect(gw.lowData).toEqual([expect.objectContaining({ playerId: 'C', matches: 0, legs: 1, gf: 1, gc: 6 })]);
     expect(computeMatchLadder(ts, '2026-11-11', null, 3)).toEqual([]);
+  });
+
+  it('řazení jako hlavní žebříček (20. 11. 2026): Průměr rozdíl na leg → výhry %, Celkem rozdíl → výhry', () => {
+    const row = (playerId: string, wins: number, matches: number, legs: number, gf: number, gc: number): PracticeMatchRow => ({
+      playerId, trainings: 3, matches, wins, draws: 0, legs, legWins: 0, gf, gc, rate: matches ? wins / matches : 0,
+    });
+    const p = row('P', 3, 3, 6, 36, 30); // všechny zápasy vyhrané, +1 na leg, +6
+    const q = row('Q', 2, 4, 8, 48, 24); // polovina zápasů, +3 na leg, +24
+    const r = row('R', 4, 8, 20, 120, 90); // +1,5 na leg, +30
+    const s = row('S', 1, 2, 8, 48, 24); // jako Q (+3 na leg, +24), méně výher
+    expect([p, q, r, s].sort(compareMatchRows('avg')).map((x) => x.playerId)).toEqual(['Q', 'S', 'R', 'P']);
+    expect([p, q, r, s].sort(compareMatchRows('total')).map((x) => x.playerId)).toEqual(['R', 'Q', 'S', 'P']);
   });
 });
 

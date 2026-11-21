@@ -7,6 +7,9 @@ import { bump } from '../../domain/legState';
 import { tapDrill, type DrillValue } from '../../domain/drillTap';
 import { soloMetric } from '../../domain/solo';
 import type { Match, Score } from '../../domain/types';
+import { TrainingsProvider } from '../records';
+import { newPractice } from '../../domain/practice';
+import { setAttempts, setSolo } from '../../domain/training';
 
 const names = { a: 'Milan', b: 'David K', c: 'Lavi', d: 'Luky', r: 'Osky' };
 const base: Match = { id: 'league|7|2|a+bvc+d', block: 'league', round: 7, table: 2, kind: 'doubles', sideA: ['a', 'b'], sideB: ['c', 'd'] };
@@ -250,5 +253,27 @@ describe('StreakMirror – Čistá desítka', () => {
     expect(screen.getByRole('group', { name: 'Lavi' })).toHaveTextContent('Splněno za 0:10');
     await user.click(screen.getByRole('button', { name: 'Zpět: Lavi' }));
     expect(taps).toEqual([['a', true, -1]]);
+  });
+});
+
+describe('rekordy po dohrané sérii (20. 11. 2026)', () => {
+  const def = soloMetric('penaltySolo');
+  const series = (id: string, v: number, attempts?: number) =>
+    attempts === undefined ? setSolo(newPractice(id, '2026-11-10', '17:30', 'a', null), 'a', 'penaltySolo@1', v) : setAttempts(setSolo(newPractice(id, '2026-11-10', '17:30', 'a', null), 'a', 'penaltySolo@1', v), 'a', 'penaltySolo@1', attempts);
+  const mirror = (value: number, attempts = 20) => (
+    <DrillMirror players={['a']} def={def} values={{ a: { value, attempts } }} names={{ a: 'Lavi' }} canSolo={() => true} onTap={() => {}} series={{ trainingId: 'now', key: 'penaltySolo@1' }} />
+  );
+  it('nový osobní rekord s předchozím maximem; slabší série připomene maximum', () => {
+    const ts = [series('old', 14), series('now', 15)];
+    const { rerender } = render(<TrainingsProvider trainings={ts}>{mirror(15)}</TrainingsProvider>);
+    expect(screen.getByText('Nový osobní rekord (dosud 14 z 20)')).toBeInTheDocument();
+    rerender(<TrainingsProvider trainings={[series('old', 14), series('now', 11)]}>{mirror(11)}</TrainingsProvider>);
+    expect(screen.getByText('Tvoje maximum: 14 z 20')).toBeInTheDocument();
+  });
+  it('nedohraná série ani bez provideru nic neukazuje', () => {
+    const { container, rerender } = render(mirror(15));
+    expect(container.querySelector('.record-line')).toBeNull();
+    rerender(<TrainingsProvider trainings={[series('old', 14), series('now', 9, 12)]}>{mirror(9, 12)}</TrainingsProvider>);
+    expect(container.querySelector('.record-line')).toBeNull();
   });
 });

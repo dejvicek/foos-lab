@@ -86,4 +86,19 @@ describe('barva rozdílu v Pořadí (19. 11. 2026)', () => {
     }
     expect(cells.some((c) => c.classList.contains('great'))).toBe(true);
   });
+
+  it('moje jméno zlatě v Pořadí i Zdržovačích tréninku (20. 11. 2026)', async () => {
+    const t = custom({ normal: 2 });
+    const s = buildSchedule(t);
+    const scores = Object.fromEntries(s.matches.filter((m) => m.round === 1).map((m) => [m.id, { ga: 6, gb: 2 }]));
+    const delays = [{ playerId: 'H1', items: 1, waitSum: 60_000, waitAvg: 60_000, playAvg: null, playN: 0, playSum: 0 }, { playerId: 'H2', items: 1, waitSum: 0, waitAvg: 0, playAvg: null, playN: 0, playSum: 0 }];
+    render(<TrainingSummary schedule={s} scores={scores} attendees={t.attendees} names={names} delays={delays} me="H1" />);
+    const table = screen.getByRole('table', { name: 'Souhrn tréninku' });
+    expect(table.querySelectorAll('.me-name')).toHaveLength(1);
+    expect(table.querySelector('.me-name')).toHaveTextContent('H1');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Zdržovači' }));
+    const delay = screen.getByRole('table', { name: 'Zdržovači' });
+    expect(delay.querySelectorAll('.me-name')).toHaveLength(1);
+    expect(delay.querySelector('.me-name')).toHaveTextContent('H1');
+  });
 });

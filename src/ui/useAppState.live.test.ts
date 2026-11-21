@@ -24,6 +24,29 @@ describe('useAppState – ťukání', () => {
     await waitFor(() => expect(repo.snapshot().trainings[0].scores[m.id]).toEqual({ ga: 2, gb: 0, la: 0, lb: 1 }));
   });
 
+  it('první ťuknutí u nezahájeného zápasu ho zahájí časem ťuknutí (20. 11. 2026); další ťuknutí ani Zpět začátek nemění', async () => {
+    const { repo, result } = await setup();
+    act(() => result.current.bumpScore('t1', m, 'gb', -1)); // nic se nezmění → nic nezahájí
+    expect(result.current.data.trainings[0].playTimes?.[m.id]).toBeUndefined();
+    act(() => result.current.bumpScore('t1', m, 'ga', 1));
+    const first = result.current.data.trainings[0].events![0].at;
+    expect(result.current.data.trainings[0].playTimes?.[m.id]?.startedAt).toBe(first);
+    act(() => result.current.bumpScore('t1', m, 'lb', 1));
+    act(() => result.current.bumpScore('t1', m, 'ga', -1));
+    expect(result.current.data.trainings[0].playTimes?.[m.id]?.startedAt).toBe(first);
+    await waitFor(() => expect(repo.snapshot().trainings[0].playTimes?.[m.id]?.startedAt).toBe(first));
+  });
+
+  it('ťuknutí do dalšího legu BO zápasu zahájí celý zápas; už zahájený zápas si začátek nechá', async () => {
+    const { result } = await setup({ ...t, playTimes: { 'league|1|2|e+fvg+h': { startedAt: 1000 } } });
+    act(() => result.current.bumpScore('t1', { ...m, id: `${m.id}#2` }, 'ga', 1));
+    expect(result.current.data.trainings[0].playTimes?.[m.id]?.startedAt).toBe(result.current.data.trainings[0].events![0].at);
+    expect(result.current.data.trainings[0].playTimes?.[`${m.id}#2`]).toBeUndefined();
+    const other: Match = { ...m, id: 'league|1|2|e+fvg+h', table: 2, sideA: ['e', 'f'], sideB: ['g', 'h'] };
+    act(() => result.current.bumpScore('t1', other, 'ga', 1));
+    expect(result.current.data.trainings[0].playTimes?.[other.id]?.startedAt).toBe(1000);
+  });
+
   it('bumpScore nejde pod nulu ani přes strop legu', async () => {
     const { result } = await setup();
     act(() => result.current.bumpScore('t1', m, 'gb', -1));

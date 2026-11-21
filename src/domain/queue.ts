@@ -143,6 +143,12 @@ export function runQueue(queue: QueueEntry[], times: PlayTimes, tables: number[]
 }
 
 /**
+ * Zahájit utkání prvním ťuknutím (20. 11. 2026, *rozhodnutí uživatele*): jen když ještě nezačalo ani neskončilo.
+ * Klubový zápas, gól nebo ztráta se stranou (ne Zpět); čas začátku = čas ťuknutí.
+ */
+export const shouldAutoStart = (p: PlayTime | undefined): boolean => p?.startedAt === undefined && p?.endedAt === undefined;
+
+/**
  * Připravenost (18. 11. 2026, *rozhodnutí uživatele*): místo Zahájit dá každá strana zápasu „Připraven“
  * (hráč strany, rozhodčí, organizátor), u cvičení každý hráč za sebe. Utkání začne, až jsou připravení
  * všichni – zahájení = poslední připravenost; teprve pak jde zapisovat skóre.

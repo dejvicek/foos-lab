@@ -21,6 +21,8 @@ export const pendingKey = {
 export type Op =
   | { kind: 'savePlayer'; player: Player }
   | { kind: 'deletePlayer'; id: PlayerId }
+  /** Profilová fotka (null = smazat); savePlayer ji nenese. */
+  | { kind: 'setAvatar'; playerId: PlayerId; image: string | null }
   | { kind: 'saveCatalog'; catalog: CatalogData }
   /** Jen konfigurace – skóre, výsledky, časy a události se v tréninku neposílají. */
   | { kind: 'saveTraining'; training: Training; /** Verze, ze které úprava vycházela (chybí = nový trénink). */ expected?: number }
@@ -30,7 +32,14 @@ export type Op =
   | { kind: 'replaceSolo'; trainingId: string; keep: SoloSlot[] }
   | { kind: 'saveScore'; trainingId: string; matchId: MatchId; score: Score }
   | { kind: 'saveSolo'; trainingId: string; playerId: PlayerId; key: SoloKey; value: number | null }
-  | { kind: 'tapScore'; trainingId: string; matchId: MatchId; taps: ScoreTap[] }
+  | {
+      kind: 'tapScore';
+      trainingId: string;
+      matchId: MatchId;
+      taps: ScoreTap[];
+      /** První ťuknutí nezahájeného zápasu ho zahájí (20. 11. 2026): po přičtení `start_item` s časem ťuknutí. */
+      start?: { itemId: string; at: number };
+    }
   | { kind: 'tapDrill'; trainingId: string; playerId: PlayerId; key: SoloKey; max: number; taps: DrillTap[] }
   | { kind: 'startItem'; trainingId: string; itemId: string; at: number }
   /** Připravenost strany / hráče (migrace 31). */
@@ -48,6 +57,7 @@ export function opKey(op: Op): string {
   switch (op.kind) {
     case 'savePlayer':
     case 'deletePlayer':
+    case 'setAvatar':
       return pendingKey.players;
     case 'saveCatalog':
       return pendingKey.catalog;
@@ -83,12 +93,14 @@ export function mergeHead(ops: Op[]): { op: Op; count: number } {
   let count = 1;
   if (head.kind === 'tapScore') {
     const taps = [...head.taps];
+    let start = head.start;
     for (; count < ops.length; count++) {
       const next = ops[count];
       if (next.kind !== 'tapScore' || next.trainingId !== head.trainingId || next.matchId !== head.matchId) break;
       taps.push(...next.taps);
+      if (next.start && (!start || next.start.at < start.at)) start = next.start;
     }
-    return count > 1 ? { op: { ...head, taps }, count } : { op: head, count };
+    return count > 1 ? { op: { ...head, taps, ...(start ? { start } : {}) }, count } : { op: head, count };
   }
   if (head.kind === 'tapDrill') {
     const taps = [...head.taps];
@@ -120,6 +132,8 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
       return void (await repo.savePlayer(op.player));
     case 'deletePlayer':
       return void (await repo.deletePlayer(op.id));
+    case 'setAvatar':
+      return void (await repo.setAvatar(op.playerId, op.image));
     case 'saveCatalog':
       return void (await repo.saveCatalog(op.catalog));
     case 'saveTraining':
@@ -136,8 +150,12 @@ export async function runOp(repo: Repository, op: Op): Promise<OpResult | undefi
       return void (await repo.saveScore(op.trainingId, op.matchId, op.score));
     case 'saveSolo':
       return void (await repo.saveSolo(op.trainingId, op.playerId, op.key, op.value));
-    case 'tapScore':
-      return { kind: 'score', trainingId: op.trainingId, matchId: op.matchId, score: await repo.tapScore(op.trainingId, op.matchId, op.taps) };
+    case 'tapScore': {
+      const score = await repo.tapScore(op.trainingId, op.matchId, op.taps);
+      // Zahájení až po přijatém ťuknutí (stejná práva); databáze nechá dřívější začátek, když už nějaký je.
+      if (op.start) await repo.startItem(op.trainingId, op.start.itemId, op.start.at);
+      return { kind: 'score', trainingId: op.trainingId, matchId: op.matchId, score };
+    }
     case 'tapDrill':
       return { kind: 'solo', trainingId: op.trainingId, playerId: op.playerId, key: op.key, ...(await repo.tapDrill(op.trainingId, op.playerId, op.key, op.max, op.taps)) };
     case 'startItem':

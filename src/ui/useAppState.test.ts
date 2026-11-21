@@ -52,3 +52,26 @@ describe('useAppState – sólová část', () => {
     await waitFor(() => expect(repo.snapshot().trainings[0].soloResults).toEqual({ p1: { chain: 4 } }));
   });
 });
+
+describe('useAppState – profilová fotka', () => {
+  const honza = { id: 'p1', name: 'Honza', archived: false, order: 0 };
+  const img = 'data:image/webp;base64,AA==';
+
+  it('fotka je hned na obrazovce a uloží se; admin pak hráče přejmenuje a fotka zůstane', async () => {
+    const repo = memoryRepository({ players: [honza], trainings: [] });
+    const { result } = renderHook(() => useAppState(repo));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    act(() => result.current.setAvatar('p1', img));
+    expect(result.current.data.players[0].avatar).toBe(img);
+    await waitFor(() => expect(repo.snapshot().players[0].avatar).toBe(img));
+
+    act(() => result.current.savePlayer({ ...result.current.data.players[0], name: 'Honzík' }));
+    await waitFor(() => expect(repo.snapshot().players[0].name).toBe('Honzík'));
+    expect(repo.snapshot().players[0].avatar).toBe(img);
+    expect(result.current.data.players[0].avatar).toBe(img);
+
+    act(() => result.current.setAvatar('p1', null));
+    expect(result.current.data.players[0]).toEqual({ ...honza, name: 'Honzík' });
+    await waitFor(() => expect(repo.snapshot().players[0]).toEqual({ ...honza, name: 'Honzík' }));
+  });
+});

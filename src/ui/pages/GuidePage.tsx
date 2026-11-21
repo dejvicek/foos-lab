@@ -17,11 +17,13 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
     <main className="guide" aria-label="Návod pro hráče">
       <div className="g-wrap">
         <header className="g-top">
-          <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
-            <BrandMark />
-            Foos Lab
+          <span className="g-brand-group">
+            <a className="g-brand" href={toHash({ page: 'trainings' })} aria-label="Foos Lab – úvodní stránka">
+              <BrandMark />
+              Foos Lab
+            </a>
             <VersionTag />
-          </a>
+          </span>
           <span className="g-top-right">
             <span className="g-tag">Návod pro hráče · telefon u stolu</span>
             <ThemeSwitch />
@@ -127,7 +129,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             <ul className="g-list">
               <Li i="!" red>
                 Čas od chvíle, kdy jsi na řadě, do <span className="g-kbd">Připraven</span> tvé strany se počítá do <b>Zdržovačů</b> (krok 10). Kdo je
-                připravený dřív, nečeká na úkor sebe. U cvičení se hlásí každý hráč sám za sebe; rozhodčí může ohlásit kteroukoli stranu.
+                připravený dřív, nečeká na úkor sebe. U cvičení může Připraven ťuknout kdokoli ze skupiny u stolu i za ostatní, stačí jeden telefon; rozhodčí může ohlásit kteroukoli stranu.
               </Li>
             </ul>
           </Step>
@@ -169,11 +171,10 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 <b>Daň za ztrátu:</b> ztráta z kontrolované pozice je zároveň gól soupeře. Ťukneš jen ztrátu, gól se soupeři přičte sám. Jen tady se zapisují ztráty a u stolu je vždy rozhodčí.
               </Li>
               <Li i="Z">
-                <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“, soupeř
-                „Láme zeď“.
+                <b>Zeď:</b> jeden tým nesmí riskovat (drží, nespěchá, střílí jen z jistoty), druhý ho musí prolomit. Kdo drží, má štítek „Zeď“.
               </Li>
               <Li i="0:3">
-                <b>Scénářové starty</b> 0:3, 4:4 a 5:5: leg nezačíná od nuly, u 0:3 je pozadu strana vlevo. Ťukáš stav na stole, appka započítá jen
+                <b>Scénářové starty</b> 0:3, 4:4 a 5:5: leg nezačíná od nuly. Ťukáš stav na stole, appka započítá jen
                 odehrané góly. Ze 5:5 se hraje o 2 góly, nejvýš do 10.
               </Li>
               <Li i="S">
@@ -229,29 +230,34 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </ul>
           </Step>
 
-          <Step n={9} label="Žebříček" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
+          <Step n={9} label="Žebříčky" title="Jak jsi na tom napříč tréninky" phone={<LadderPhone />}>
             <p>
-              Žebříček má tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
+              Žebříčky mají tři části: <b>Zápasy</b>, <b>Cvičení</b> a <b>Zdržovači</b> (krok 10). Výchozí období je <b>forma</b>: tréninky za posledních
               28 dní.
             </p>
             <ul className="g-list">
               <Li i="1">
-                <b>Zápasy</b> řadí rozdíl skóre (G±), pak vyhrané legy, góly a výhry v simulaci. První tři mají zlatou, stříbrnou a bronzovou medaili.
-                Rozdíl je zeleně při výrazném náskoku (od +1,5 na leg, v Celkem od +10 na trénink), jinak v plusu zlatě a v minusu červeně.
+                <b>Zápasy</b> řadí rozdíl skóre (G±), pak vyhrané legy, góly a výhry v simulaci; sloupec, podle kterého se řadí, je podbarvený. První tři mají zlatou, stříbrnou a bronzovou medaili.
+                Rozdíl je v Průměru zeleně při výrazném náskoku (od +1,5 na leg), jinak v plusu zlatě a v minusu červeně.
               </Li>
               <Li i="Ø">
-                <b>Průměr</b> přepočítá na leg (+0,4 / leg) a výhry na procenta, <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ / L−). Na
+                <b>Průměr</b> přepočítá na leg (znak ⌀ v záhlaví, např. G± ⌀ +0,4 na leg) a výhry na procenta – G± v souhrnu tréninku je naproti tomu rozdíl gólů za celý trénink; <b>Celkem</b> sčítá rozdíl a vyhrané / prohrané legy (L+ a L−, na telefonu v jednom sloupci „6 / 4“). Na
                 telefonu jsou jen G± a výhry, všechny sloupce na notebooku a na stránce hráče.
+              </Li>
+              <Li i="▲">
+                Šipka u pořadí ukazuje <b>posun po posledním tréninku</b>: ▲2 o dvě místa výš, ▼1 o místo níž. Své jméno najdeš zlatě.
               </Li>
               <Li i={<Progress have={2} need={MIN} />}>
                 Pořadí dostaneš, až se zúčastníš aspoň <b>3 tréninků</b> v období. Do té doby jsi šedě pod čárou a tečky ukazují, kolik už jich máš.
               </Li>
               <Li i="⌖">
-                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, počítají se vyhrané
-                zápasy a legy.
+                <b>Cvičení</b> mají žebříček pro každé cvičení zvlášť: <b>Týmové</b> z klubových tréninků (a stejných cvičení ve dvou), <b>Solo/Duo</b> z vlastních tréninků. <b>Zápasy podle disciplín</b> (1v1, 2v2, Zeď …) jsou v Zápasech pod hlavní tabulkou: přepínač Vše / 1 na 1 / 2 na 2, pořadí stejně jako nahoře podle rozdílu skóre, pak vyhraných zápasů; Z+ / Z− a L+ / L− jsou vyhrané / prohrané zápasy a legy (na telefonu vždy v jednom sloupci).
               </Li>
               <Li i="›">
                 Ťukni na jméno a uvidíš <b>stránku hráče</b>: jak se mu dařilo trénink po tréninku.
+              </Li>
+              <Li i="◉">
+                <b>Profilová fotka</b>: v menu účtu otevři Můj profil a ťukni na Přidat fotku. Vyber jakoukoli fotku, posuň a přibliž ji, aby v kroužku bylo, co chceš, a ulož. Fotka se pak ukazuje u tvého jména v žebříčcích a v Moje hry. Kdo fotku nemá, má v kroužku první písmeno jména.
               </Li>
             </ul>
           </Step>
@@ -266,7 +272,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
                 Najdeš je pod souhrnem tréninku a jako třetí část žebříčku. V Průměru se řadí podle čekání na utkání, v Celkem podle součtu čekání.
               </Li>
               <Li i={<Snail />} red>
-                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>. Kdo nečekal vůbec, šneka nedostane.
+                Ten úplně první dostane červený kroužek, šneka a štítek <b>Brzda</b>, ale jen když se na něj čekalo průměrně aspoň 2 minuty. V žebříčku platí jako jinde: pořadí až od 3 tréninků.
               </Li>
               <Li i="⏱">
                 Jak se šnekovi vyhnout: jakmile je tvoje utkání na řadě, jdi ke stolu a ťukni <b>Připraven</b> v Moje hry.
@@ -310,7 +316,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
 const TOC: [string, [number, string][]][] = [
   ['Než začneš', [[1, 'Přihlášení'], [2, 'Moje hry']]],
   ['U stolu', [[3, 'Hra'], [4, 'Rozcvička'], [5, 'Cvičení'], [6, 'Zápasy']]],
-  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříček'], [10, 'Zdržovači']]],
+  ['Přehled a výsledky', [[7, 'Trénink'], [8, 'Průběh'], [9, 'Žebříčky'], [10, 'Zdržovači']]],
 ];
 
 /** Posun na krok bez změny adresy (adresy appky jsou v #, kotva by otevřela „Stránka nenalezena“). */
@@ -422,7 +428,7 @@ type Tab = 'my' | 'trainings' | 'ladder' | 'disciplines';
 const TABS: [Tab, string][] = [
   ['my', 'Moje hry'],
   ['trainings', 'Tréninky'],
-  ['ladder', 'Žebříček'],
+  ['ladder', 'Žebříčky'],
   ['disciplines', 'Disciplíny'],
 ];
 
@@ -659,8 +665,8 @@ function RulesPhone() {
   const rules: [string, string][] = [
     ['Normální leg', 'do 6 gólů'],
     ['Daň za ztrátu', 'ztráta = gól soupeře'],
-    ['Zeď', 'Zeď × Láme zeď'],
-    ['Start 0:3', 'levá začíná pozadu'],
+    ['Zeď', 'jeden drží, druhý láme'],
+    ['Start 0:3', 'do 6 gólů'],
     ['Start 4:4', 'do 6 gólů'],
     ['Start 5:5', 'o 2 góly, nejvýš 10'],
     ['Simulace', 'BO3 do 6 / BO5 do 5'],
@@ -910,7 +916,7 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
   return (
     <Phone
       time="21:10"
-      title="Žebříček"
+      title="Žebříčky"
       sub={part === 'solo' ? 'Udržení míče na pětce · góly, víc je lépe' : part === 'delays' ? 'forma · čekání na připravenost' : 'forma · průměr · 14. 10. – 10. 11.'}
       tab="ladder"
       label={label}
@@ -927,7 +933,8 @@ function LadderPhone({ start = 'matches', label = 'Ukázka: žebříček' }: { s
         {part === 'solo' && ranked(solo)}
         {part === 'delays' &&
           delays.map(([n, sub, v], i) => {
-            const shamed = isShamed(i + 1, v !== '0:00');
+            const [mm, ss] = v.split(':').map(Number);
+            const shamed = isShamed(i + 1, (mm * 60 + ss) * 1000);
             return (
               <div key={n} className={shamed ? 'g-rank g-shame' : 'g-rank'}>
                 <span className="g-rk">

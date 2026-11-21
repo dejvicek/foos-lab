@@ -74,3 +74,22 @@ export function activeFor(trainings: Training[], playerId: PlayerId | null, now:
   }
   return null;
 }
+
+/**
+ * Dnešní klubový trénink, na kterém jsem odehrál všechno své (20. 11. 2026): pro kartu „Tvůj trénink“ – v Moje hry
+ * po posledním kole a nahoře v Trénincích do konce dne. Trénink musí být zahájený a já přítomný.
+ */
+export function myFinishedToday(trainings: Training[], playerId: PlayerId | null, now: number): Training | null {
+  if (!playerId) return null;
+  const d = new Date(now);
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const mine = trainings
+    .filter((t) => isClub(t) && t.date === today && t.attendees.includes(playerId) && canBuildSchedule(t) && t.playTimes?.[TRAINING_ITEM]?.startedAt !== undefined)
+    .sort((a, b) => (a.startTime < b.startTime ? 1 : -1));
+  for (const t of mine) {
+    const { queue, states } = trainingQueue(t, now);
+    const items = queue.filter((e): e is Extract<QueueEntry, { kind: 'item' }> => e.kind === 'item' && e.players.includes(playerId));
+    if (items.length && items.every((e) => states.get(e.id)?.state === 'done')) return t;
+  }
+  return null;
+}

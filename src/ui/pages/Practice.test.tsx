@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryAuth } from '../../storage/auth';
@@ -134,6 +134,7 @@ describe('vlastní trénink (PRD 5.11)', () => {
     await user.click(screen.getByRole('button', { name: 'Solo/Duo' }));
     const table = screen.getByRole('table', { name: 'Penalta z místa bez brankáře' });
     expect(within(table).getByRole('columnheader', { name: 'Pokusy' })).toBeInTheDocument();
+    expect(within(table).queryByRole('columnheader', { name: /Tréninky/ })).toBeNull(); // jen v hlavní tabulce Zápasů (20. 11. 2026)
     expect(within(table).getByRole('row', { name: /H2/ })).toHaveTextContent('7,0 / 20');
     expect(screen.queryByRole('table', { name: 'Přihrávky na pětce' })).toBeNull(); // klubový trénink ne
   });
@@ -234,6 +235,38 @@ describe('vlastní trénink (PRD 5.11)', () => {
     });
   });
 
+  it('klik na jméno v tabulce disciplíny: výsledky té disciplíny po trénincích s odkazem na trénink (20. 11. 2026)', async () => {
+    window.location.hash = '#/ladder';
+    const d = today();
+    const game = (id: string, a: string, b: string, legs: [number, number][]) => {
+      const p = newPractice(id, d, '10:00', a, b, ['goalieWar'], { goalieWar: { bestOf: 3, legTo: 6 } });
+      const mid = `practice|1|${a}v${b}`;
+      return { ...p, scores: Object.fromEntries(legs.map(([x, y], i) => [i ? `${mid}#${i + 1}` : mid, { ga: x, gb: y }])) };
+    };
+    const ts = [game('a', 'id1', 'id2', [[6, 2], [6, 4]]), game('b', 'id2', 'id1', [[6, 1], [6, 0]])];
+    render(<App repo={memoryRepository({ players, trainings: ts })} auth={asPlayer()} />);
+    const user = userEvent.setup();
+    const table = await screen.findByRole('table', { name: 'Goalie war' });
+    await user.click(within(table).getByRole('button', { name: 'H1' }));
+    expect(window.location.hash).toBe('#/ladder/player/id1/match/goalieWar');
+    expect(await screen.findByRole('heading', { name: 'Goalie war' })).toBeInTheDocument();
+    const detail = screen.getByRole('table', { name: 'Goalie war po trénincích' });
+    const rows = within(detail).getAllByRole('row');
+    // dva tréninky, zápasy ze strany H1 (v „b“ hrál jako strana B → skóre otočené)
+    expect(detail).toHaveTextContent('proti H2 6:2 · 6:4 výhra');
+    expect(detail).toHaveTextContent('proti H2 1:6 · 0:6 prohra');
+    expect(rows.at(-1)).toHaveTextContent(/Celkem\s*1\s*1\s*2\s*2\s*−5/); // 13:18
+    await user.click(screen.getByRole('button', { name: 'Všechny tréninky hráče ›' }));
+    expect(window.location.hash).toBe('#/ladder/player/id1');
+    // celkový přehled je z klubových tréninků; tady jsou jen vlastní
+    expect(await screen.findByText('V tomhle období hráč nebyl na žádném klubovém tréninku.')).toBeInTheDocument();
+    // datum je odkaz na trénink
+    act(() => void (window.location.hash = '#/ladder/player/id1/match/goalieWar'));
+    const again = await screen.findByRole('table', { name: 'Goalie war po trénincích' });
+    await user.click(within(again).getAllByRole('button')[0]);
+    expect(window.location.hash).toMatch(/^#\/trainings\/[ab]$/);
+  });
+
   it('žebříček Zápasy: tabulka zápasů 1 na 1 (vyhrané zápasy, legy, rozdíl)', async () => {
     window.location.hash = '#/ladder';
     const d = today();
@@ -252,8 +285,11 @@ describe('vlastní trénink (PRD 5.11)', () => {
     // remíza (BO2 1:1) se nikde neukazuje, v zápasech jen výhry (19. 11. 2026)
     expect(within(table).queryByRole('columnheader', { name: /Remízy/ })).toBeNull();
     expect(table).not.toHaveTextContent('rem.');
-    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(2, 6)).toEqual(['4', '2 / 4', '5', '4']); // Tréninky, Zápasy, L+, L− (19. 11. 2026)
-    expect(rows[1]).toHaveTextContent(/H2.*4.*1 \/ 4/);
+    // Pořadí podle rozdílu skóre jako hlavní žebříček (20. 11. 2026): H2 má méně výher (1 / 4), ale skóre 40:36 → +0,4 na leg
+    // notebook: Hráč, Z+, Z−, L+, L−, G± (20. 11. 2026: bez Tréninků; remíza BO2 se nepočítá ani do Z−)
+    expect([...rows[0].querySelectorAll('td')].map((x) => x.textContent).slice(1)).toEqual(['H2', '1', '2', '4', '5', '+0,4']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+', 'Z−', 'L+', 'L−', 'G±\u00a0⌀']); // Průměr (výchozí): na leg
+    expect([...rows[1].querySelectorAll('td')].map((x) => x.textContent).slice(1, 3)).toEqual(['H1', '2']);
     // 2 na 2: vlastní trénink je jen 1 na 1 → žádná tabulka; volba se pamatuje
     await userEvent.setup().click(within(screen.getByRole('group', { name: 'Typ zápasu' })).getByRole('button', { name: '2 na 2' }));
     expect(screen.queryByRole('table', { name: 'Goalie war' })).toBeNull();

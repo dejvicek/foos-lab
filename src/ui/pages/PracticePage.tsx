@@ -267,6 +267,7 @@ function RoundView({ store, t, r, now, canWrite, name, me }: { store: AppStore; 
           limitSec={null}
           canSolo={() => canWrite}
           onTap={(p, ok, delta) => store.tapSolo(t.id, p, key, soloMetric(r.metric!), ok, delta, r.item)}
+          series={{ trainingId: t.id, key }}
         />
       ) : key ? (
         <DrillMirror
@@ -277,6 +278,7 @@ function RoundView({ store, t, r, now, canWrite, name, me }: { store: AppStore; 
           names={Object.fromEntries(players.map((p) => [p, name(p)]))}
           canSolo={() => canWrite}
           onTap={(p, ok, delta) => store.tapSolo(t.id, p, key, soloMetric(r.metric!), ok, delta, r.item)}
+          series={{ trainingId: t.id, key }}
         />
       ) : (
         <WarmupTimer startedAt={startedAt} now={now} compact={false} />
@@ -531,7 +533,7 @@ export function PracticePage({ store, id, navigate, viewer }: { store: AppStore;
         )}
         <div className="actions-row">
           <button type="button" onClick={() => navigate({ page: 'ladder' })}>
-            Žebříček
+            Žebříčky
           </button>
           {canDelete && (
             <button type="button" className="danger" onClick={remove}>

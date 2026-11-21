@@ -184,7 +184,8 @@ label { font-weight: 600; font-size: 13px; }
   padding: 0 max(24px, calc((100% - var(--app-max)) / 2 + 24px));
   background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.main-nav .brand { font-weight: 800; margin-right: 20px; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; text-decoration: none; }
+.main-nav .brand-group { display: inline-flex; align-items: center; gap: 8px; margin-right: 20px; }
+.main-nav .brand { font-weight: 800; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; text-decoration: none; }
 .main-nav .brand:hover, .guide .g-brand:hover { color: var(--felt); }
 /* Logo (10. 11. 2026): baňka se zlatou náplní a míčkem */
 .brand-mark { width: 26px; height: 26px; flex: none; }
@@ -458,7 +459,7 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .mb { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; font-variant-numeric: tabular-nums; min-width: 0; }
 .mb-nm { min-width: 0; display: flex; align-items: center; gap: 0; white-space: nowrap; }
 .mb-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Asymetrická disciplína: štítek strany u dvojice (Zeď / Láme zeď, začíná 3). */
+/* Asymetrická disciplína: štítek „Zeď“ u strany, která ji hraje (od 20. 11. 2026 bez Láme zeď a začíná N). */
 .mb-badge { flex: none; margin-left: 6px; font-size: 10.5px; font-weight: 700; line-height: 1; padding: 2px 6px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--muted); background: var(--surface); }
 .mb-badge.wall { border-color: var(--ink); color: var(--ink); }
 .mb-nm.win { font-weight: 800; }
@@ -507,8 +508,6 @@ details.help > .help-item + .help-item { margin-top: 8px; }
 /* Výsledek zápasu */
 .tag { display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
 .tag-wall { background: var(--ink); color: var(--surface); }
-.tag-break { border: 1px solid var(--ink); color: var(--ink); }
-.tag-start { background: var(--felt-soft); color: var(--felt); border: 1px solid var(--felt); }
 .entry-ref { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
 
 /* ── Tabulky souhrnu, žebříčku a hráče ──────────────────── */
@@ -565,8 +564,9 @@ tr.clickable:hover td { background: var(--felt-soft); }
     display: grid; grid-template-columns: repeat(var(--nav-items, 3), 1fr); gap: 0;
     border-bottom: 0; border-top: 1px solid var(--line);
   }
-  .main-nav .brand { display: none; }
+  .main-nav .brand-group { display: none; }
   .main-nav .nav-brand-mobile { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; padding-left: 8px; min-height: 44px; color: inherit; text-decoration: none; }
+  .main-nav .nav-brand-mobile a { display: inline-flex; color: inherit; }
   .main-nav .nav-brand-mobile .brand-mark { width: 22px; height: 22px; }
   .main-nav button { border-bottom: 0; border-top: 3px solid transparent; }
   .main-nav button.active { border-top-color: var(--action-edge); }
@@ -760,7 +760,6 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .ready-lock .ready-list li { justify-content: space-between; }
 .mirror-nudge { margin: 0; padding: 6px 10px; border-radius: 99px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
 .mirror-lock-card.shake { animation: mirror-shake 380ms; }
-.mirror-from { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; opacity: 0.8; }
 @media (prefers-reduced-motion: reduce) { .mirror-halves.shake, .mirror-lock-card.shake { animation: none; } }
 @media (max-width: 767px) {
   .mirror-halves.cols-3 .mirror-num { font-size: 48px; }
@@ -794,6 +793,8 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-goal { font-weight: 700; color: var(--ink); text-align: right; }
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+/* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026): průhledná zlatá. */
+.tile-line + .tile-line { border-top: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); padding-top: 6px; }
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: center; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
@@ -2068,3 +2069,246 @@ button.dp-place:focus-visible { outline: 2px solid var(--felt); outline-offset: 
 .practice-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .practice-plan-head h2 { margin-bottom: 0; }
 .practice-plan-head button { min-height: 32px; padding: 0 12px; font-size: 13px; }
+
+/* ── Žebříčky: posun v pořadí a moje jméno (20. 11. 2026) ── */
+.rank-cell { display: inline-flex; align-items: center; gap: 3px; }
+.move { font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.move.up { color: var(--good); }
+.move.down { color: var(--warn); }
+.wrap .player-link.me-name, .wrap tr.low-data .player-link.me-name { color: var(--felt); font-weight: 800; }
+.rank-cell .rank-n + .move { margin-left: 4px; }
+
+/* ── Stránka hráče: výsledky jedné disciplíny po trénincích (20. 11. 2026) ── */
+.player-detail .pm-matches { white-space: normal; }
+.pm-line { display: block; line-height: 1.45; }
+.pm-who { color: var(--muted); }
+.pm-legs { font-variant-numeric: tabular-nums; font-weight: 600; }
+.pm-res { font-size: 12px; font-weight: 700; color: var(--muted); }
+.pm-res.pos { color: var(--felt); }
+.pm-res.neg { color: var(--warn); }
+.pm-place { display: block; color: var(--muted); font-size: 11px; }
+.player-detail tfoot th, .player-detail tfoot td { font-weight: 800; border-top: 2px solid var(--line, currentColor); }
+
+/* ── Co je nového (#/patch-notes, 20. 11. 2026): verze na ose jako kola v rozpisu ── */
+a.brand-version { text-decoration: none; }
+a.brand-version:hover { color: var(--ink); border-color: var(--line-strong); }
+.g-brand-group { display: inline-flex; align-items: center; gap: 8px; }
+.news-banner .link { margin-left: 10px; }
+
+.pn-page { max-width: 720px; }
+.pn-top h1 { font-stretch: 125%; font-weight: 800; letter-spacing: -0.03em; font-size: clamp(30px, 5vw, 44px); line-height: 1; margin: 6px 0 10px; }
+.pn-top p { color: var(--muted); margin: 0 0 32px; }
+.pn-rail { list-style: none; margin: 0; padding: 0; }
+.pn-entry { position: relative; padding: 0 0 36px 44px; }
+/* Linka osy k další verzi; u poslední není. */
+.pn-entry::before { content: ''; position: absolute; left: 10px; top: 30px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--line-strong); }
+.pn-entry:last-child::before { display: none; }
+.pn-node { position: absolute; left: 0; top: 9px; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--bg); }
+.pn-entry.is-fresh .pn-node { border-color: var(--gold); }
+.pn-entry.is-current .pn-node { background: var(--gold); border-color: var(--action-edge); box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 22%, transparent); }
+.pn-version { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 8px; }
+.pn-num { font-stretch: 125%; font-weight: 800; font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--muted); }
+.pn-entry.is-current .pn-num, .pn-entry.is-fresh .pn-num { color: var(--ink); }
+.pn-date { color: var(--muted); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pn-flag { align-self: center; font-size: 12px; font-weight: 700; color: var(--felt); background: var(--felt-soft); border-radius: 999px; padding: 2px 10px; }
+.pn-lead { font-size: 17px; line-height: 1.5; margin: 0 0 8px; max-width: 60ch; }
+.pn-body { max-width: 66ch; }
+.pn-body h3 { font-size: 15px; font-weight: 700; margin: 20px 0 6px; }
+.pn-body p { line-height: 1.6; margin: 10px 0; }
+.pn-body ul { margin: 0; padding-left: 18px; }
+.pn-body li { margin: 5px 0; line-height: 1.55; }
+.pn-body li::marker { color: var(--gold); }
+button.pn-more { background: none; border: 0; padding: 0; min-height: 0; margin-top: 8px; color: var(--felt); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+button.pn-more:hover { color: var(--ink); }
+.pn-public { max-width: 760px; }
+.pn-public > button { margin-top: 8px; }
+@media (max-width: 767px) {
+  .pn-entry { padding-left: 34px; padding-bottom: 28px; }
+  .pn-entry::before { left: 8px; top: 26px; }
+  .pn-node { width: 18px; height: 18px; top: 7px; }
+  .pn-num { font-size: 25px; }
+  .pn-lead { font-size: 16px; }
+}
+
+/* ── Můj profil a odstup (20. 11. 2026) ── */
+.pp-h { font-size: 15px; margin: 18px 0 8px; }
+.pp-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+button.pp-place {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 12px 4px 8px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 600;
+}
+button.pp-place:hover { border-color: var(--line-strong); }
+button.pp-place.podium { border-color: color-mix(in srgb, var(--gold) 60%, var(--line)); }
+.pp-place .pp-rank { display: inline-flex; align-items: center; }
+.pp-place .pp-of { color: var(--muted); font-weight: 500; font-size: 13px; }
+.record-line { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.record-line.new { color: var(--felt); font-weight: 800; }
+.pp-records ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-width: 560px; }
+.pp-records li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pp-records .pp-what { flex: 1 1 200px; }
+.pp-records b { font-variant-numeric: tabular-nums; }
+.pp-club { color: var(--muted); font-size: 13px; }
+.pp-club.mine { color: var(--felt); font-weight: 700; }
+
+/* ── Tvůj trénink (20. 11. 2026) ── */
+.recap { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; padding: 12px 16px; margin: 12px 0 16px; max-width: 640px; }
+.recap h2 { margin: 0 0 6px; font-size: 18px; }
+.recap h2 small { color: var(--muted); font-weight: 600; font-size: 13px; margin-left: 6px; }
+.recap p { margin: 4px 0; line-height: 1.5; }
+.recap-main { font-size: 16px; }
+.recap-drills, .recap-ladder { color: var(--muted); }
+.recap-drills b, .recap-ladder b { color: var(--ink); }
+.recap-link { display: inline-block; margin-top: 6px; color: var(--felt); font-weight: 700; }
+
+/* Profil na telefonu (20. 11. 2026): seznamy řádků místo čipů a tabulky. */
+.pp-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.pp-list > li + li { border-top: 1px solid var(--line); }
+button.pp-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; width: 100%;
+  background: none; border: 0; border-radius: 0; padding: 10px 12px; min-height: 44px; color: var(--ink); font-weight: 500; text-align: left;
+}
+button.pp-row:hover { background: var(--bg); }
+.pp-row-main b { font-variant-numeric: tabular-nums; margin-right: 4px; }
+.pp-row-num { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; grid-row: span 2; align-self: center; }
+.pp-row-sub { color: var(--muted); font-size: 13px; }
+button.pp-place-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+.pp-place-row .pp-what { font-weight: 600; }
+.pp-place-row .pp-of { color: var(--muted); font-size: 13px; }
+button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height: 0; color: var(--muted); font-weight: 600; text-align: left; line-height: 1.4; }
+.pp-low { margin-top: 2px; }
+.pp-records .pp-val b { font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .pp-records li { display: grid; gap: 2px; }
+}
+.pp-row-num.pos { color: var(--felt); }
+.pp-row-num.neg { color: var(--warn); }
+.pp-row-num.great { color: var(--good); }
+
+/* ── Menu účtu v liště (21. 11. 2026, varianta A) ── */
+.acct-box { position: relative; display: inline-flex; }
+.main-nav button.acct {
+  display: inline-flex; flex-direction: row; align-items: center; gap: 8px; height: 38px; padding: 0 10px 0 4px; margin: 0; font-size: 14px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 700;
+}
+.main-nav button.acct:hover, .main-nav button.acct[aria-expanded='true'] { border-color: var(--line-strong); }
+.main-nav button.acct.active { border-color: var(--action-edge); }
+.main-nav button.acct .av.me { box-shadow: none; }
+.acct-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-chev { font-size: 11px; color: var(--muted); }
+.acct-backdrop { display: none; }
+.acct-menu {
+  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 240px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px;
+  box-shadow: 0 10px 30px color-mix(in srgb, #000 16%, transparent);
+}
+.acct-who { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.acct-who span { font-size: 12px; color: var(--muted); }
+.acct-menu button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; height: auto; min-height: 40px; margin: 0;
+  padding: 8px 10px; background: none; color: var(--ink); border: 0; border-radius: 8px; font-weight: 600; text-align: left;
+}
+.acct-menu button:hover, .acct-menu button:focus-visible { background: var(--bg); }
+.acct-menu button.danger { color: var(--warn); }
+.acct-sep { border-top: 1px solid var(--line); margin: 4px 0; }
+.acct-switch { width: 30px; height: 18px; border-radius: 999px; background: var(--line-strong); position: relative; flex: none; }
+.acct-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); transition: transform 120ms; }
+.acct-switch.on { background: var(--action-edge); }
+.acct-switch.on::after { transform: translateX(12px); }
+@media (max-width: 767px) {
+  /* Vizuálně 34 px v liště 45 px; plocha pro prst zůstává 44 px (neviditelný okraj kolem). */
+  .main-nav button.acct { height: 34px; min-height: 0; }
+  .main-nav button.acct::after { content: ''; position: absolute; inset: -5px -2px; }
+  .acct-backdrop { display: block; position: fixed; inset: 0; z-index: 59; background: color-mix(in srgb, #000 35%, transparent); }
+  .acct-menu {
+    position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: auto; border-radius: 16px 16px 0 0;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+  }
+  .acct-menu button { min-height: 48px; font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .acct-switch::after { transition: none; } }
+
+/* ── Profilová fotka (21. 11. 2026): kroužek s fotkou, bez ní první písmeno ── */
+.av {
+  --av: 24px; width: var(--av); height: var(--av); flex: none; border-radius: 50%; overflow: hidden;
+  display: inline-grid; place-items: center; vertical-align: middle; line-height: 1;
+  background: var(--felt-soft); color: var(--felt); font-weight: 800; font-size: calc(var(--av) * 0.45);
+  user-select: none;
+}
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av[data-ini]::before { content: attr(data-ini); }
+.av-s { --av: 24px; }
+.av-m { --av: 30px; }
+.av-l { --av: 40px; }
+.av-xl { --av: 84px; }
+.av.me { box-shadow: 0 0 0 2px var(--gold); }
+.av.dim { opacity: 0.55; filter: grayscale(0.6); }
+.av-stack { display: inline-flex; align-items: center; flex: none; }
+.av-stack .av + .av { margin-left: -6px; box-shadow: 0 0 0 2px var(--surface); }
+.av-stack .av.me { box-shadow: 0 0 0 2px var(--gold); }
+@media (max-width: 600px) {
+  .av-s { --av: 22px; }
+  .av-l { --av: 36px; }
+  .av-xl { --av: 72px; }
+}
+
+/* Profil: fotka vedle jména, na svém profilu (admin u každého) Změnit / Smazat fotku */
+.pp-head { display: flex; align-items: center; gap: 18px; margin: 4px 0 6px; }
+.pp-head h1 { margin: 0; }
+.pp-who { min-width: 0; display: grid; gap: 2px; }
+.pp-photo { position: relative; flex: none; display: inline-grid; }
+.pp-photo .av.me { box-shadow: none; }
+.pp-cam {
+  position: absolute; right: -4px; bottom: -4px; width: 32px; height: 32px; min-height: 0; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
+}
+.pp-cam:hover { border-color: var(--ink); }
+.pp-cam svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.pp-photo-actions { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; font-size: 14px; color: var(--muted); }
+.pp-photo-actions button.link { padding-left: 0; }
+.pp-photo-actions button.link.danger { color: var(--warn); }
+.pp-photo-error { margin: 0; color: var(--warn); font-size: 14px; }
+
+/* Výběr výřezu fotky */
+.avx-backdrop {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+.avx {
+  width: min(400px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  box-shadow: 0 14px 40px color-mix(in srgb, #000 25%, transparent);
+}
+.avx h2 { margin: 0; font-size: 20px; }
+.avx .note { margin: 0; }
+.avx-stage { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--bg); }
+.avx-stage canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.avx-stage canvas:active { cursor: grabbing; }
+.avx-stage canvas:focus-visible { outline: 3px solid var(--action-edge); outline-offset: -3px; }
+.avx-mask {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 10px;
+  background: radial-gradient(circle closest-side at 50% 50%, transparent 0 calc(100% - 1px), color-mix(in srgb, #000 50%, transparent) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 50%, transparent);
+}
+.avx-zoom { display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 700; }
+.avx-zoom input { flex: 1; accent-color: var(--ink); }
+.avx-preview { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+.avx-p { border-radius: 50%; background: var(--bg); }
+.avx-p.s { width: 24px; height: 24px; }
+.avx-p.l { width: 40px; height: 40px; }
+.avx-error { margin: 0; color: var(--warn); }
+.avx-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 600px) {
+  .pp-head { gap: 14px; }
+  .pp-cam { width: 30px; height: 30px; }
+  .avx-backdrop { padding: 10px; }
+}
+
+/* Kroužek před jménem v žebříčcích a souhrnu tréninku; výška řádku se nemění */
+td .player-link:has(.av), .who-av { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; vertical-align: middle; }
+@media (max-width: 600px) {
+  td .player-link:has(.av), .who-av { gap: 6px; }
+}
+
+/* Moje hry: kroužky hráčů nad jménem ve zrcadle stolu */
+.mirror-who .av-stack { margin-bottom: 4px; }
+.mirror-who .av-stack .av + .av { margin-left: -8px; }

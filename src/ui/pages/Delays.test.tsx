@@ -5,7 +5,6 @@ import { memoryRepository } from '../../storage/memoryRepository';
 import { buildSchedule } from '../../domain/schedule';
 import { queueOf } from '../../domain/queue';
 import type { Player, Training } from '../../domain/types';
-import { othersReady } from '../../test/ready';
 import { memoryAuth } from '../../storage/auth';
 
 // H1 je organizátor (zakládá a řídí tréninky v testech).
@@ -61,7 +60,7 @@ describe('Zdržovači', () => {
     ...t,
     playTimes: {
       [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, // první zahájení = začátek tréninku → čekání 0, hra 8:00
-      [ids[1]]: { startedAt: at(18, 12), endedAt: at(18, 19) }, // aktivní 18:10 → čekání 2:00, hra 7:00
+      [ids[1]]: { startedAt: at(18, 15), endedAt: at(18, 22) }, // aktivní 18:10 → čekání 5:00, hra 7:00
     },
   };
 
@@ -75,12 +74,12 @@ describe('Zdržovači', () => {
     expect(summary.compareDocumentPosition(screen.getByRole('table', { name: /rozpis/i })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await userEvent.setup().click(within(summary).getByRole('button', { name: 'Zdržovači' }));
     const table = screen.getByRole('table', { name: 'Zdržovači' });
-    // hned za jménem sloupec, podle kterého se řadí (19. 11. 2026)
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕↑↓]/g, '').trim())).toEqual(['#', 'Hráč', 'Čekání ⌀', 'Celkem', 'Hra ⌀', 'Utkání']);
+    // sloupec, podle kterého se řadí, je poslední jako v ostatních žebříčcích (20. 11. 2026)
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕↑↓▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Celkem', 'Hra ⌀', 'Utkání', 'Čekání ⌀']);
     const row = within(table).getAllByRole('row')[1];
-    expect(row).toHaveTextContent('1:00'); // průměrné čekání (0 + 2:00) / 2
+    expect(row).toHaveTextContent('2:30'); // průměrné čekání (0 + 5:00) / 2
     expect(row).toHaveTextContent('7:30'); // průměrná hra (8 + 7) / 2
-    // jen první Zdržovač: červený kroužek, šnek a „Brzda“; druhý už bez (18. 11. 2026)
+    // jen první Zdržovač (18. 11. 2026) a jen s průměrným čekáním aspoň 2 min (20. 11. 2026): červený kroužek, šnek a „Brzda“
     const rows = within(table).getAllByRole('row');
     expect(rows[1]).toHaveTextContent('Brzda');
     expect(within(rows[1]).getByTitle('1. nejdelší čekání')).toBeInTheDocument();
@@ -89,14 +88,30 @@ describe('Zdržovači', () => {
     expect(table.querySelectorAll('tr.shame')).toHaveLength(1);
   });
 
+  it('první s průměrným čekáním pod 2 min Brzdu nedostane (20. 11. 2026)', async () => {
+    window.location.hash = '#/trainings/t1';
+    const short: Training = { ...t, playTimes: { [ids[0]]: { startedAt: at(18, 2), endedAt: at(18, 10) }, [ids[1]]: { startedAt: at(18, 12), endedAt: at(18, 19) } } };
+    render(<App repo={memoryRepository({ players, trainings: [short] })} />);
+    await userEvent.setup().click(within(await screen.findByRole('region', { name: 'Souhrn' })).getByRole('button', { name: 'Zdržovači' }));
+    const table = screen.getByRole('table', { name: 'Zdržovači' });
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('1:00');
+    expect(table).not.toHaveTextContent('Brzda');
+    expect(table.querySelectorAll('tr.shame')).toHaveLength(0);
+  });
+
   it('v žebříčku jako třetí část', async () => {
     window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [timed] })} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Zdržovači' }));
     const table = screen.getByRole('table', { name: 'Zdržovači' });
-    expect(within(table).getAllByRole('row')).toHaveLength(5);
     expect(table).toHaveTextContent('H1');
+    // 1 trénink → všichni pod čarou s tečkami, nikdo nemá pořadí ani Brzdu (min. 3 tréninky jako jinde, 20. 11. 2026)
+    expect(table.querySelectorAll('tr.low-data')).toHaveLength(4);
+    expect(table.querySelector('tr.cutoff')).not.toBeNull();
+    expect(table).not.toHaveTextContent('Brzda');
+    // Tréninky jen v hlavní tabulce Zápasů (20. 11. 2026)
+    expect(within(table).queryByRole('columnheader', { name: /Tréninky/ })).toBeNull();
   });
 
   it('řazení podle sloupce (18. 11. 2026): Brzda zůstává u oficiálního prvního, # vrátí pořadí', async () => {
@@ -142,6 +157,25 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     return { repo, mine, user: userEvent.setup() };
   };
+
+  it('na řadě: telefon zavibruje a drží displej, dokud se nepřihlásím jako připravený (20. 11. 2026)', async () => {
+    const vibrate = vi.fn();
+    const release = vi.fn(() => Promise.resolve());
+    const request = vi.fn(() => Promise.resolve({ release }));
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    Object.defineProperty(navigator, 'wakeLock', { value: { request }, configurable: true });
+    try {
+      const { mine, user } = await openMine();
+      expect(vibrate).toHaveBeenCalledTimes(1);
+      expect(request).toHaveBeenCalledWith('screen');
+      await user.click(within(mine).getByRole('button', { name: /^Připraven/ }));
+      await vi.waitFor(() => expect(release).toHaveBeenCalled());
+      expect(vibrate).toHaveBeenCalledTimes(1); // jen při přechodu na „na řadě“, ne při každém překreslení
+    } finally {
+      Reflect.deleteProperty(navigator, 'vibrate');
+      Reflect.deleteProperty(navigator, 'wakeLock');
+    }
+  });
 
   it('skóre jde ťukat až po připravenosti obou stran; dohraný leg čeká na potvrzení (odpočet 15 s)', async () => {
     const { repo, mine, user } = await openMine();
@@ -398,7 +432,7 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     expect(within(mine).getByRole('button', { name: `Připraven: ${other}` })).toBeInTheDocument();
   });
 
-  it('každý hráč skupiny se hlásí sám za sebe; cvičení začne, až jsou připravení všichni', async () => {
+  it('hráč skupiny hlásí za sebe i za spoluhráče u stolu (20. 11. 2026); cvičení začne, až jsou připravení všichni', async () => {
     const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
     const drill: Training = { ...t, plan: { warmupPasses: 1 }, playTimes: { training: { startedAt: at(18, 0) } } };
     const repo = memoryRepository({ players, trainings: [drill] });
@@ -406,11 +440,13 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     render(<App repo={repo} auth={auth} />);
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
-    expect(within(mine).getAllByRole('button', { name: /^Připraven/ })).toHaveLength(1); // jen za sebe
-    await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
+    const btns = within(mine).getAllByRole('button', { name: /^Připraven: / });
+    expect(btns).toHaveLength(2); // za sebe i za spoluhráče
+    const other = btns.map((b) => b.getAttribute('aria-label')!.slice('Připraven: '.length)).find((n) => n !== 'H1')!;
+    await user.click(within(mine).getByRole('button', { name: 'Připraven: H1' }));
     // cvičení: čeká se na ostatní hráče jménem (19. 11. 2026)
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(/^● Na řadě · čeká se na hráče \(H\d\)✓ zrušit$/);
-    await othersReady(repo);
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(`● Na řadě · čeká se na hráče (${other})`);
+    await user.click(within(mine).getByRole('button', { name: `Připraven: ${other}` }));
     await vi.waitFor(() => expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Hraje se'));
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();
   });
@@ -508,5 +544,28 @@ describe('průběh hry', () => {
     await vi.waitFor(() => expect(repo.snapshot().trainings[0].events?.map((e) => [e.kind, e.side, e.delta])).toEqual([
       ['goal', 'A', 1], ['goal', 'B', 1], ['goal', 'A', 1], ['goal', 'A', -1],
     ]));
+  });
+});
+
+describe('Tvůj trénink (20. 11. 2026)', () => {
+  it('po mém posledním kole: karta v Moje hry i nahoře v Trénincích s odkazem na souhrn', async () => {
+    const items = queueOf(buildSchedule(t)).flatMap((e) => (e.kind === 'item' ? [e] : []));
+    const times: Training['playTimes'] = { training: { startedAt: at(17, 0) } };
+    const scores: Training['scores'] = {};
+    items.forEach((e, i) => {
+      if (!e.players.includes('id1')) return;
+      times[e.id] = { startedAt: at(17, 1 + 2 * i), endedAt: at(17, 2 + 2 * i) };
+      if (e.match) scores[e.match.id] = { ga: 6, gb: 4 };
+    });
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'id1', isAdmin: false, mustChangePassword: false } });
+    window.location.hash = '#/trainings';
+    const { unmount } = render(<App repo={memoryRepository({ players, trainings: [{ ...t, playTimes: times, scores }] })} auth={auth} />);
+    const recap = await screen.findByRole('region', { name: 'Tvůj trénink' });
+    expect(recap).toHaveTextContent('Žebříček Zápasy (forma)');
+    expect(within(recap).getByRole('link', { name: 'Souhrn tréninku' })).toHaveAttribute('href', '#/trainings/t1');
+    unmount();
+    window.location.hash = '#/my-games';
+    render(<App repo={memoryRepository({ players, trainings: [{ ...t, playTimes: times, scores }] })} auth={auth} />);
+    expect(await screen.findByRole('region', { name: 'Tvůj trénink' })).toBeInTheDocument();
   });
 });

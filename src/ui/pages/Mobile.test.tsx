@@ -32,18 +32,39 @@ describe('telefon', () => {
 });
 
 describe('telefon – žebříček', () => {
-  it('žebříček jen to hlavní (19. 11. 2026): #, hráč, G± a Výhry %; v Celkem G±, L+ a L−', async () => {
+  it('žebříček jen to hlavní (19. 11. 2026): #, hráč, Výhry % a G±; v Celkem L+/L− a G±', async () => {
     const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
     window.location.hash = '#/ladder';
     render(<App repo={memoryRepository({ players, trainings: [t] })} />);
     const table = await screen.findByRole('table', { name: 'Žebříček' });
     expect(screen.getByText(/Pro umístění je potřeba zúčastnit se aspoň 3 tréninků/)).toBeInTheDocument();
     const heads = () => within(screen.getByRole('table', { name: 'Žebříček' })).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
-    expect(heads()).toEqual(['#', 'Hráč', 'G±', 'Výhry %']);
+    expect(heads()).toEqual(['#', 'Hráč', 'Výhry %', 'G±\u00a0⌀']);
     const row = within(table).getAllByRole('row')[1];
     expect(within(row).getByTitle('1 ze 3 tréninků')).toBeInTheDocument(); // 1 trénink → pod čárou
     await userEvent.setup().click(screen.getByRole('button', { name: 'Celkem' }));
-    expect(heads()).toEqual(['#', 'Hráč', 'G±', 'L+', 'L−']);
+    expect(heads()).toEqual(['#', 'Hráč', 'L+/L−', 'G±']);
+    // zápasy podle disciplín: na telefonu vyhrané / prohrané v jednom sloupci (20. 11. 2026)
+    const d = screen.getAllByRole('table').find((x) => x.getAttribute('aria-label') !== 'Žebříček')!;
+    expect(within(d).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim())).toEqual(['#', 'Hráč', 'Z+/Z−', 'L+/L−', 'G±']); // Celkem
+    expect(within(d).getAllByRole('row')[1]).toHaveTextContent('1 / 01 / 0');
+  });
+});
+
+describe('telefon – profil hráče (20. 11. 2026)', () => {
+  it('umístění jako řádky, „Málo dat“ sbalené; tréninky jako seznam s krátkým datem a G±', async () => {
+    const t: Training = { ...training, date: '2026-11-01', scores: { 'league|1|1|id1+id2vid3+id4': { ga: 6, gb: 2 } } };
+    window.location.hash = '#/ladder/player/id1';
+    render(<App repo={memoryRepository({ players, trainings: [t] })} />);
+    const places = await screen.findByRole('region', { name: 'Umístění v žebříčcích' });
+    // 1 trénink → všechno pod čarou, sbalené do jednoho řádku
+    const toggle = within(places).getByRole('button', { name: /^Málo dat \(\d+\): Zápasy/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.setup().click(toggle);
+    expect(within(places).getByRole('button', { name: /Zápasy.*málo dat/ })).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Tréninky hráče' });
+    expect(within(list).getByRole('button')).toHaveTextContent(/^1\. 11\.\s*Týmový\+4L\+ 1 · L− 0$/);
+    expect(screen.queryByRole('table', { name: 'Tréninky hráče' })).toBeNull();
   });
 });
 

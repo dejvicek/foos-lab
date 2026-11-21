@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { TrainingRecap } from './TrainingRecap';
 import { matchState } from '../../domain/matchFormat';
 import { rowKind, trainingProgress } from '../../domain/progress';
 import { MyTimeline, RoundTileHead, roundName } from './RoundHeader';
@@ -427,6 +428,8 @@ export function MyTable(props: Props) {
         next={{ disabled: i === list.length - 1, onClick: () => go(i + 1) }}
       />
       {nextBar}
+      {/* Po mém posledním kole „Tvůj trénink“ (20. 11. 2026). */}
+      {nextIdx < 0 && own.length > 0 && own.every((x) => x.s!.endedAt !== undefined) && <TrainingRecap training={training} playerId={playerId} />}
       {/* Kolo jako dlaždice v Rozpisu: hlavička, můj stůl (velké číslo + zápas) a stavový proužek. */}
       <article className={`round-card my-card mine-row rk-${rowKind(a.row)}`} aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
         <RoundTileHead

@@ -106,3 +106,39 @@ export function savePracticeDrills(ids: DisciplineId[], mode: PracticeMode = 'so
     /* bez uložení se příště začne výchozím výběrem */
   }
 }
+
+/**
+ * Naposledy viděná verze patch notes (20. 11. 2026): po aktualizaci appka jednou ukáže, co je nového od ní.
+ * Nastavení zařízení (localStorage); null = zařízení ještě nic nevidělo.
+ */
+export interface SeenVersionStore {
+  load(): string | null;
+  save(version: string): void;
+}
+
+export const SEEN_VERSION_KEY = 'foosball-practice.seen-version.v1';
+
+export function localSeenVersion(): SeenVersionStore {
+  return {
+    load: () => {
+      try {
+        const v = localStorage.getItem(SEEN_VERSION_KEY);
+        return v && /^\d+\.\d+\.\d+$/.test(v) ? v : null;
+      } catch {
+        return null;
+      }
+    },
+    save: (v) => {
+      try {
+        localStorage.setItem(SEEN_VERSION_KEY, v);
+      } catch {
+        /* bez uložení se poznámky ukážou znovu příště */
+      }
+    },
+  };
+}
+
+export function memorySeenVersion(initial: string | null = null): SeenVersionStore & { current(): string | null } {
+  let v = initial;
+  return { load: () => v, save: (x) => void (v = x), current: () => v };
+}

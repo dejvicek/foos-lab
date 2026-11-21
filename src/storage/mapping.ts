@@ -15,6 +15,8 @@ export interface PlayerRow {
   sort_order: number;
   /** Migrace 20 (10. 11. 2026). */
   is_organizer?: boolean;
+  /** Migrace 33 (21. 11. 2026): jen čtení – zapisuje se funkcí set_avatar, ne upsertem hráče. */
+  avatar?: string | null;
 }
 
 export interface TrainingRow {
@@ -79,6 +81,7 @@ export const playerFromRow = (r: PlayerRow): Player => ({
   archived: r.archived,
   order: r.sort_order,
   ...(r.is_organizer ? { organizer: true } : {}),
+  ...(r.avatar ? { avatar: r.avatar } : {}),
 });
 
 export const trainingToRow = (t: Training): TrainingRow => ({

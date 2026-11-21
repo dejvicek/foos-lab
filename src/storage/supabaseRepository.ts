@@ -104,6 +104,9 @@ export function supabaseRepository(client: SupabaseClient): Repository {
     async savePlayer(p) {
       check(await client.from('players').upsert(playerToRow(p)));
     },
+    async setAvatar(playerId, image) {
+      check(await client.rpc('set_avatar', { p_player: playerId, p_image: image }));
+    },
     async deletePlayer(id) {
       check(await client.from('players').delete().eq('id', id));
     },

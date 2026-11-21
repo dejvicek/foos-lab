@@ -45,8 +45,11 @@ describe('stránka Disciplíny', () => {
     expect(r).toHaveTextContent('2 kola po 20 pokusech, variantu si určí hráč');
     expect(within(r).queryByRole('button', { name: 'Upravit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Upravit štítky' })).toBeNull();
-    // šablony jsou jen pro admina: hráč je v navigaci nemá a na adrese dostane jen informaci
+    // šablony jsou jen pro admina: hráč je v navigaci ani v menu účtu nemá a na adrese dostane jen informaci
     expect(within(nav).queryByRole('button', { name: 'Šablony' })).toBeNull();
+    await userEvent.setup().click(within(nav).getByRole('button', { name: /^Účet: / }));
+    expect(screen.getByRole('menu', { name: 'Účet' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Šablony' })).toBeNull();
     window.location.hash = '#/templates';
     expect(await screen.findByText('Šablony tréninku spravuje admin.')).toBeInTheDocument();
     expect(screen.queryByRole('form', { name: 'Šablony tréninku' })).toBeNull();
@@ -302,7 +305,10 @@ describe('stránka Disciplíny', () => {
     await screen.findByRole('heading', { level: 1, name: 'Disciplíny' });
     expect(screen.queryByRole('button', { name: 'Šablony tréninku' })).toBeNull(); // šablony už nejsou na Disciplínách
     const nav = screen.getByRole('navigation', { name: 'Hlavní navigace' });
-    await user.click(within(nav).getByRole('button', { name: 'Šablony' }));
+    // Šablony jsou od 21. 11. 2026 v menu účtu, ne v hlavní navigaci
+    expect(within(nav).queryByRole('button', { name: 'Šablony' })).toBeNull();
+    await user.click(within(nav).getByRole('button', { name: /^Účet: / }));
+    await user.click(screen.getByRole('menuitem', { name: 'Šablony' }));
     expect(window.location.hash).toBe('#/templates');
     expect(screen.getByRole('heading', { level: 1, name: 'Šablony' })).toBeInTheDocument();
     const form = screen.getByRole('form', { name: 'Šablony tréninku' });

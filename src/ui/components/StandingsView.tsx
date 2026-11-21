@@ -1,3 +1,4 @@
+import { Avatar } from './Avatar';
 import { useState, type ReactNode } from 'react';
 import { computeStandings } from '../../domain/standings';
 import { simSheet, type SimSheet, type SimSheetRow } from '../../domain/simSheet';
@@ -14,6 +15,8 @@ interface Props {
   scores: Record<MatchId, Score>;
   attendees: PlayerId[];
   names: Record<PlayerId, string>;
+  /** Přihlášený hráč – v Pořadí a Zdržovačích jméno zlatě (20. 11. 2026). */
+  me?: PlayerId | null;
 }
 
 type Part = 'standings' | 'delays' | 'sim';
@@ -38,7 +41,7 @@ export function TrainingSummary({ delays, ...props }: Props & { delays: DelayRow
       {shown === 'standings' && <StandingsView {...props} />}
       {shown === 'delays' && (
         <div className="delays">
-          <DelayTable rows={delays} names={props.names} compact />
+          <DelayTable rows={delays} names={props.names} me={props.me} compact />
           <How>Čekání = od chvíle, kdy hráč mohl hrát (volní hráči i stůl), do zahájení utkání. Připisuje se všem hráčům utkání.</How>
         </div>
       )}
@@ -180,7 +183,7 @@ const How = ({ children }: { children: ReactNode }) => (
  * hned za jménem to, podle čeho se řadí: Rozdíl, L+ / L− (vyhrané / prohrané legy, od 19. 11. 2026 místo Výher
  * a Legů), G+ / G−; řadit jde klikem na záhlaví, „#“ vrátí oficiální pořadí. Bez ztrát.
  */
-export function StandingsView({ schedule, scores, attendees, names }: Props) {
+export function StandingsView({ schedule, scores, attendees, names, me = null }: Props) {
   const [sort, setSort] = useSort();
   const { rows, legsDone, sim } = computeStandings(schedule, scores, attendees);
   const empty = legsDone === 0 && (!sim || sim.played === 0);
@@ -219,7 +222,12 @@ export function StandingsView({ schedule, scores, attendees, names }: Props) {
                     <td className="n rank">
                       <Medal place={place} ranked={played(x)} />
                     </td>
-                    <td className={sortedCls(sort, 'name', 'name')}>{names[x.playerId] ?? '?'}</td>
+                    <td className={sortedCls(sort, 'name', 'name')}>
+                      <span className="who-av">
+                        <Avatar id={x.playerId} />
+                        {x.playerId === me ? <b className="me-name">{names[x.playerId] ?? '?'}</b> : (names[x.playerId] ?? '?')}
+                      </span>
+                    </td>
                     <td className={sortedCls(sort, 'diff', diffCls(x.diff, x.diff >= STRONG_PER_TRAINING))}>{signed(x.diff)}</td>
                     <td className={sortedCls(sort, 'wins', 'n')}>{x.wins}</td>
                     <td className={sortedCls(sort, 'lost', 'n')}>{x.legs - x.wins}</td>

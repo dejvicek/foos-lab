@@ -45,7 +45,9 @@ describe('App – rychlý start z uloženého stavu', () => {
     const snapshot = memorySnapshot({ data: { players, trainings: [t] }, cursor: null, savedAt: 1 });
     const asked: string[] = [];
     render(<App repo={repo} auth={memoryAuth({ signedIn: me })} snapshotFor={(id) => (asked.push(id), snapshot)} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Odhlásit' }));
+    // Odhlásit je v menu účtu (21. 11. 2026)
+    await userEvent.click(await screen.findByRole('button', { name: /^Účet: / }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Odhlásit' }));
     await waitFor(async () => expect(await snapshot.load()).toBeNull());
     expect(new Set(asked)).toEqual(new Set(['p1']));
   });

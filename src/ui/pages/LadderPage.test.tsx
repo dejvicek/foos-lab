@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { memoryRepository } from '../../storage/memoryRepository';
+import { memoryAuth } from '../../storage/auth';
 import type { Player } from '../../domain/types';
 import { scoreFor, training } from '../../test/fixtures';
 
@@ -60,7 +61,7 @@ describe('stránka Žebříček', () => {
     expect(within(within(total).getAllByRole('row')[rowOf(total, 'Yvona')]).getByTitle('1 ze 3 tréninků')).toBeInTheDocument();
   });
 
-  it('barva rozdílu: zelená jen výrazný náskok (+1,5 / leg, v Celkem +10 na trénink), zlatá plus, červená minus (19. 11. 2026)', async () => {
+  it('barva rozdílu: zelená jen výrazný náskok (+1,5 / leg, v Celkem už ne – barva ze součtu, 20. 11. 2026), zlatá plus, červená minus', async () => {
     const user = userEvent.setup();
     render(<App repo={repo()} />);
     const table = await screen.findByRole('table', { name: 'Žebříček' });
@@ -73,19 +74,18 @@ describe('stránka Žebříček', () => {
     expect(diffCell(table, 'Yvona')).toHaveClass('pos');
     expect(table.querySelector('td.neg')).toHaveTextContent(/^−/);
     expect(table.querySelector('td.great')).toBeNull();
-    // Celkem: Y +10 za jediný trénink → zelená; X +2 za 3 tréninky → zlatá
+    // Celkem: barva ze stejného čísla, podle kterého se řadí (součet) – jen plus zlatě, minus červeně, zelená ne
     await user.click(screen.getByRole('button', { name: 'Celkem' }));
     const total = screen.getByRole('table', { name: 'Žebříček' });
-    expect(diffCell(total, 'Yvona')).toHaveClass('great');
+    expect(diffCell(total, 'Yvona')).toHaveClass('pos');
+    expect(total.querySelector('td.great')).toBeNull();
     expect(diffCell(total, 'Xaver')).toHaveClass('pos');
-    // Celkem: místo Legů a Výher L+ / L− (19. 11. 2026); Průměr má dál Legy a Výhry %
+    // Celkem: místo Legů a Výher vyhrané / prohrané legy L+ · L− (na notebooku zvlášť, 20. 11. 2026); Průměr má dál Legy a Výhry %
     const heads = (t: HTMLElement) => within(t).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[↕▲▼]/g, '').trim());
-    expect(heads(total)).toEqual(expect.arrayContaining(['L+', 'L−']));
-    expect(heads(total)).not.toContain('Legy');
-    // krátká záhlaví G+ / G− / Sim. (19. 11. 2026)
-    expect(heads(total)).toEqual(expect.arrayContaining(['G+', 'G−', 'Sim.']));
+    // Tréninky jen v hlavní tabulce; rozhodující sloupec G± poslední (20. 11. 2026)
+    expect(heads(total)).toEqual(['#', 'Hráč', 'Tréninky', 'L+', 'L−', 'G+', 'G−', 'Ztráty\u00a0⌀', 'Sim.', 'G±']);
     await user.click(screen.getByRole('button', { name: 'Průměr' }));
-    expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(expect.arrayContaining(['Legy', 'Výhry %']));
+    expect(heads(screen.getByRole('table', { name: 'Žebříček' }))).toEqual(['#', 'Hráč', 'Tréninky', 'Legy', 'Výhry %', 'G+\u00a0⌀', 'G−\u00a0⌀', 'Ztráty\u00a0⌀', 'Sim. %', 'G±\u00a0⌀']); // Průměr: „/leg“ v záhlaví (20. 11. 2026)
   });
 
   it('stará česká adresa: Stránka nenalezena, tlačítko vede na úvod', async () => {
@@ -105,9 +105,11 @@ describe('stránka Žebříček', () => {
     await screen.findByRole('table', { name: 'Žebříček' });
     const logo = within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('link', { name: 'Foos Lab – úvodní stránka' });
     expect(logo).toHaveAttribute('href', '#/trainings');
-    expect(logo).toHaveTextContent(`Foos Lab${APP_VERSION}`); // verze vedle názvu
+    expect(logo).toHaveTextContent('Foos Lab');
+    // verze vedle názvu je tlačítko s patch notes (20. 11. 2026), ne součást odkazu
+    expect(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getAllByRole('link', { name: `Verze appky ${APP_VERSION} – co je nového` })).toHaveLength(2);
     // na telefonu je logo nahoře zvlášť a vede taky na úvod (19. 11. 2026)
-    const mobile = document.querySelector('a.nav-brand-mobile');
+    const mobile = document.querySelector('.nav-brand-mobile a');
     expect(mobile).toHaveAttribute('href', '#/trainings');
     await user.click(logo);
     expect(window.location.hash).toBe('#/trainings');
@@ -172,6 +174,10 @@ describe('řazení podle sloupce (18. 11. 2026)', () => {
     const names = () => within(table).getAllByRole('row').slice(1).map((r) => r.querySelector('.player-link')?.textContent ?? '—');
     const official = names();
     expect(official[0]).toBe('Xaver');
+    // oficiální pořadí: zvýrazněný je sloupec G±, podle kterého se řadí (20. 11. 2026)
+    const g = within(table).getAllByRole('columnheader').find((h) => /^G±/.test(h.textContent ?? ''))!;
+    expect(g).toHaveClass('sorted');
+    expect(g).toHaveAttribute('aria-sort', 'descending');
     await user.click(within(table).getByRole('button', { name: 'Legy' }));
     expect(within(table).getByRole('columnheader', { name: 'Legy' })).toHaveAttribute('aria-sort', 'descending');
     // zvýrazněný sloupec: záhlaví i všechny buňky Legy, nic jiného
@@ -191,7 +197,8 @@ describe('řazení podle sloupce (18. 11. 2026)', () => {
     expect(lowAsc).toEqual([...lowAsc].sort((a, b) => a - b));
     await user.click(within(table).getByRole('button', { name: 'Oficiální pořadí' }));
     expect(names()).toEqual(official);
-    expect(table.querySelectorAll('.sorted')).toHaveLength(0);
+    expect(table.querySelectorAll('.sorted')).toHaveLength(dataRows.length + 1);
+    expect(g).toHaveClass('sorted');
     expect(within(table).getByRole('columnheader', { name: 'Legy' })).not.toHaveAttribute('aria-sort');
   });
 
@@ -258,5 +265,45 @@ describe('žebříček stanovišť', () => {
     expect(screen.queryByRole('group', { name: 'Cvičení' })).toBeNull();
     await user.click(within(parts).getByRole('button', { name: 'Cvičení' }));
     expect(within(screen.getByRole('group', { name: 'Cvičení' })).getByRole('button', { name: 'Solo/Duo' })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('posun v pořadí a moje jméno (20. 11. 2026)', () => {
+  it('po posledním tréninku: kdo klesl ▼, nově nad čarou bez štítku (20. 11. 2026); přihlášený hráč má jméno zlatě', async () => {
+    // Q2–Q4 mají po tréninku 30. 10. třetí trénink → poprvé nad čarou; Q2 vysoko vyhrává
+    const t4 = scoreFor(training('t4', '2026-10-30', 'single', ['Q2', 'Q3', 'Q4', 'P2'], 2), 'Q2', [[6, 0], [6, 0]]);
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'X', isAdmin: false, mustChangePassword: false } });
+    render(<App repo={memoryRepository({ players, trainings: [t1, t2, t2b, t3, t4] })} auth={auth} />);
+    const table = await screen.findByRole('table', { name: 'Žebříček' });
+    expect(screen.getByText(/Šipky ▲▼ ukazují posun v pořadí po posledním tréninku \(30\. 10\.\)/)).toBeInTheDocument();
+    const row = (name: string) => within(table).getAllByRole('row')[rowOf(table, name)];
+    expect(row('Q2').querySelector('.move')).toBeNull(); // nově nad čarou: bez štítku „nový“
+    // X byl jediný v pořadí; Q2 a další nově před ním → X o 2 místa níž
+    expect(rowOf(table, 'Xaver')).toBe(3);
+    expect(within(row('Xaver')).getByTitle('O 2 místa níž po tréninku 30. 10.')).toHaveTextContent('▼2');
+    // moje jméno zlatě, ostatní ne
+    expect(within(row('Xaver')).getByRole('button', { name: 'Xaver' })).toHaveClass('me-name');
+    expect(table.querySelectorAll('.me-name')).toHaveLength(1);
+    // řádek „Jsi 3. z 4…“ nad tabulkou zrušen (20. 11. 2026)
+    expect(document.querySelector('.me-gap')).toBeNull();
+  });
+
+  it('jméno v liště vede na můj profil: umístění ve všech žebříčcích s odkazem na detail (20. 11. 2026)', async () => {
+    const user = userEvent.setup();
+    const t4 = scoreFor(training('t4', '2026-10-30', 'single', ['Q2', 'Q3', 'Q4', 'P2'], 2), 'Q2', [[6, 0], [6, 0]]);
+    const auth = memoryAuth({ players: players.map((p) => ({ id: p.id, name: p.name })), signedIn: { playerId: 'X', isAdmin: false, mustChangePassword: false } });
+    render(<App repo={memoryRepository({ players, trainings: [t1, t2, t2b, t3, t4] })} auth={auth} />);
+    await screen.findByRole('table', { name: 'Žebříček' });
+    await user.click(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('button', { name: 'Účet: Xaver' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Můj profil' }));
+    expect(window.location.hash).toBe('#/ladder/player/X');
+    const places = await screen.findByRole('region', { name: 'Umístění v žebříčcích' });
+    const main = within(places).getByRole('button', { name: /Zápasy/ });
+    expect(main).toHaveTextContent('3.');
+    expect(main).toHaveTextContent('z 4');
+    expect(within(main).getByTitle('O 2 místa níž po tréninku 30. 10.')).toBeInTheDocument();
+    // jedničky (singly) jako tabulka 1v1 s odkazem na detail disciplíny
+    await user.click(within(places).getByRole('button', { name: /1v1/ }));
+    expect(window.location.hash).toBe('#/ladder/player/X/match/singles');
   });
 });

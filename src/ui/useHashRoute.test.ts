@@ -11,10 +11,14 @@ const routes: [Route, string][] = [
   [{ page: 'my' }, '#/my-games'],
   [{ page: 'ladder' }, '#/ladder'],
   [{ page: 'player', id: 'p 1' }, '#/ladder/player/p%201'],
+  // výsledky hráče v jedné disciplíně / cvičení (20. 11. 2026)
+  [{ page: 'player', id: 'p1', focus: { kind: 'match', discipline: 'goalieWar' } }, '#/ladder/player/p1/match/goalieWar'],
+  [{ page: 'player', id: 'p1', focus: { kind: 'drill', metric: 'fiveBarControl' } }, '#/ladder/player/p1/drill/fiveBarControl'],
   [{ page: 'disciplines' }, '#/disciplines'],
   [{ page: 'templates' }, '#/templates'],
   [{ page: 'players' }, '#/players'],
   [{ page: 'guide' }, '#/guide'],
+  [{ page: 'patch-notes' }, '#/patch-notes'],
 ];
 
 describe('adresy stránek (anglicky od 10. 11. 2026)', () => {
@@ -27,6 +31,7 @@ describe('adresy stránek (anglicky od 10. 11. 2026)', () => {
     for (const h of ['#/trenink', '#/trenink/t1', '#/trenink/novy', '#/zive', '#/moje-hry', '#/zebricek', '#/zebricek/hrac/p1', '#/discipliny', '#/sablony', '#/hraci', '#/navod', '#/nic'])
       expect(parseHash(h)).toEqual({ page: 'not-found' });
     expect(parseHash('#/ladder/hrac/p1')).toEqual({ page: 'not-found' });
+    expect(parseHash('#/ladder/player/p1/nic/x')).toEqual({ page: 'not-found' });
     expect(parseHash('#/trainings/t1/nastaveni')).toEqual({ page: 'not-found' });
   });
 
