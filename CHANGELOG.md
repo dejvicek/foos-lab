@@ -9,6 +9,37 @@
 Když nová verze nesmí běžet vedle starší (jiný rozpis nebo databáze), zvyšuje se navíc `COMPAT` v `src/version.ts`.
 Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z` na `main`; z tagu se appka nasadí a vznikne GitHub Release s tímto záznamem. Postup je v README → Vydání nové verze.
 
+## 1.4.0 – 21. 11. 2026
+
+Profilové fotky, menu účtu, Můj profil s umístěními a rekordy, karta Tvůj trénink a přehlednější žebříčky.
+
+**Profil a účet**
+- **Profilová fotka**: na svém profilu ťukni na Přidat fotku, vyber jakoukoli fotku, posuň a přibliž ji, aby v kroužku bylo, co chceš, a ulož. Fotka se ukáže u tvého jména v žebříčcích, v souhrnu tréninku a v Moje hry. Kdo fotku nemá, má v kroužku první písmeno jména. Fotku jde změnit i smazat.
+- **Menu účtu** vpravo nahoře: Můj profil, Návod, Tmavý režim, Změnit heslo a Odhlásit. Admin tu najde i Šablony.
+- **Můj profil**: tvoje umístění ve všech žebříčcích s medailí a posunem, tréninky a rekordy. Na telefonu jako přehledný seznam.
+- **Rekordy u cvičení**: po celé sérii uvidíš, jestli je to nový osobní rekord nebo rekord klubu, jinak své maximum. Na profilu je sekce Rekordy.
+- Klik na jméno v tabulce disciplíny nebo cvičení ukáže výsledky hráče jen v ní, trénink po tréninku.
+
+**U stolu a v Moje hry**
+- **Tvůj trénink**: po tvém posledním kole karta s dnešním místem, rozdílem skóre, legy, cvičeními a posunem v žebříčku.
+- **Na řadě**: když je tvoje utkání na řadě, telefon jednou zavibruje a nezhasne, dokud se neohlásíš Připraven (iPhone vibrovat neumí).
+- **Připraven u cvičení** může nahlásit kdokoli ze skupiny u stolu, stačí jeden telefon.
+- Zápas, který nikdo nezahájil, začne prvním zapsaným gólem.
+- Ve zrcadle stolu jsou nad jmény fotky hráčů.
+
+**Žebříčky**
+- Stránka se jmenuje **Žebříčky**. Sloupec, podle kterého se řadí, je zvýrazněný a vždy poslední.
+- **Posun ▲▼** od posledního tréninku. Tvoje jméno je zlatě, i v souhrnu tréninku.
+- Vyhrané a prohrané zápasy **Z+ / Z−** a legy **L+ / L−**, průměry se znakem ⌀. Počet tréninků je jen v hlavní tabulce.
+- **Zdržovači**: šnek a Brzda jen pro prvního a jen při průměrném čekání aspoň 2 minuty. Pořadí od 3 tréninků jako v ostatních žebříčcích.
+
+**Rozpis**
+- Na telefonu odděluje zápasy jednoho kola tenká čára.
+- Štítky Láme zeď a „začíná N“ zmizely, stav ukáže skóre. Štítek Zeď zůstává u strany, která ji hraje.
+
+**Co je nového**
+- Klik na číslo verze v hlavičce otevře přehled všech verzí. Po aktualizaci na novinky jednou upozorní lišta.
+
 ## 1.3.0 – 19. 11. 2026
 
 Připraven místo Zahájit, nové Moje hry, přehlednější rozpis a žebříček, Živě je pryč.
