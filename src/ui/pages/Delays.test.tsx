@@ -280,8 +280,11 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     // osa: barva podle skutečnosti, vyšší dílek = kolo, které hraju / je na řadě, zobrazené kolo jen ▼
     const seg = (n: number) => within(mine).getByRole('button', { name: new RegExp(`^${n}\\. kolo:`) });
     const cls = () => [1, 2, 3].map((n) => ['done', 'cur', 'live'].filter((c) => seg(n).classList.contains(c)).join('+'));
+    // na řadě (nikdo nezačal): vyšší dílek čárkovaně (23. 11. 2026, varianta A); po zahájení plně
+    expect(seg(1)).toHaveClass('live', 'turn');
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     expect(cls()).toEqual(['cur+live', '', '']);
+    expect(seg(1)).not.toHaveClass('turn');
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     expect(cls()).toEqual(['done+cur', 'live', '']);

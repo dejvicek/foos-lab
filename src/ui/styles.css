@@ -683,6 +683,8 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 /* Vyšší dílek = aktuální kolo (hraju / na řadě plně, čeká světle); zobrazené kolo jen ▼ (19. 11. 2026, *rozhodnutí uživatele*). */
 .seg.live { background: var(--dc); height: 10px; border-radius: 3px; }
 .seg.live.waits:not(.done) { background: color-mix(in srgb, var(--dc) 35%, transparent); }
+/* Na řadě, ještě se nehraje (23. 11. 2026, *rozhodnutí uživatele*, varianta A): světlá výplň s čárkovaným obrysem; hraju plně, čekám světle. */
+.seg.live.turn:not(.done) { background: color-mix(in srgb, var(--dc) 18%, var(--surface)); outline: 2px dashed var(--dc); outline-offset: -2px; }
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;

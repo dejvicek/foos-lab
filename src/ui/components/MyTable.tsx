@@ -422,6 +422,7 @@ export function MyTable(props: Props) {
         // světle jako neodehrané (19. 11. 2026, *rozhodnutí uživatele*).
         active={activeIdx >= 0 ? activeIdx : firstOpen >= 0 ? firstOpen : undefined}
         activeWaits={activeIdx < 0}
+        activeOnTurn={activeIdx >= 0 && stOf(list[activeIdx])?.state === 'ready'}
         startTime={training.startTime}
         onPick={(j) => go(j)}
         prev={{ disabled: i === 0, onClick: () => go(i - 1) }}

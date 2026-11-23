@@ -68,6 +68,7 @@ export function MyTimeline({
   played,
   active,
   activeWaits = false,
+  activeOnTurn = false,
   startTime,
   onPick,
   prev,
@@ -81,6 +82,8 @@ export function MyTimeline({
   active?: number;
   /** Aktuální kolo ještě čeká (na stůl, hráče, pauzu): vyšší, ale světle jako neodehrané. */
   activeWaits?: boolean;
+  /** Aktuální kolo je na řadě, ale ještě se nehraje (23. 11. 2026, *rozhodnutí uživatele*, varianta A): světle s čárkovaným obrysem. */
+  activeOnTurn?: boolean;
   startTime: string;
   onPick(index: number): void;
   prev: { disabled: boolean; onClick(): void };
@@ -99,7 +102,7 @@ export function MyTimeline({
             <button
               key={i}
               type="button"
-              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === active ? (activeWaits ? ' live waits' : ' live') : ''}`}
+              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === active ? (activeWaits ? ' live waits' : activeOnTurn ? ' live turn' : ' live') : ''}`}
               style={{ flexGrow: x.min }}
               aria-label={`${x.index! + 1}. kolo: ${roundName({ row: x.row, role: 'wait' })}, ${clockAt(startTime, x.time)}`}
               aria-current={x.index === current ? 'step' : undefined}
