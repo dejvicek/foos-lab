@@ -733,12 +733,9 @@ function MyGamesPhone() {
           <span className="g-pill">na řadě</span>
         </span>
         <span className="g-vs">
-          Dejv + Milan
+          Dejv + Milan <span className="g-pill g-blue">Zeď</span>
           <br />
           <span>proti</span> Osky + Denys
-        </span>
-        <span>
-          <span className="g-pill g-blue">Zeď</span> drží tvoje strana
         </span>
       </div>
       <div className="g-mirror g-ready" style={{ flex: 'none' }}>

@@ -12,9 +12,9 @@ describe('roundRule – pravidlo kola z pohledu hráče', () => {
     expect(roundRule(play(match({ start: [4, 5] })), 'c')).toBe('');
   });
 
-  it('Zeď a Daň za ztrátu dál z pohledu hráče', () => {
-    expect(roundRule(play(match({ wall: 'A' })), 'a')).toBe('Vaše strana drží zeď.');
-    expect(roundRule(play(match({ wall: 'A' })), 'c')).toBe('Soupeř drží zeď, vy ji lámete.');
+  it('Zeď: kdo drží, ukazuje štítek u jména strany – věta se neopakuje (23. 11. 2026); Daň za ztrátu dál', () => {
+    expect(roundRule(play(match({ wall: 'A' })), 'a')).toBe('');
+    expect(roundRule(play(match({ wall: 'A' })), 'c')).toBe('');
     expect(roundRule(play(match({ lossTax: true })), 'a')).toBe('Ztráta = gól soupeře, ztráty čárkuje rozhodčí.');
   });
 });
