@@ -1,6 +1,6 @@
 import { buildSchedule } from './schedule';
 import { autoPlan } from './plan';
-import { canCreateTraining, canManage, canWriteMatch, canWriteSolo, myAssignments, viewerOf } from './my';
+import { canCreateTraining, canManage, canWriteMatch, canWriteSolo, myAssignments, viewAsRole, viewerOf } from './my';
 import type { Match, Training } from './types';
 import { H, training } from '../test/fixtures';
 
@@ -83,5 +83,21 @@ describe('organizátor a zakladatel tréninku (10. 11. 2026)', () => {
     expect(viewerOf('H2', false, players)).toEqual({ playerId: 'H2', isAdmin: false, isOrganizer: false });
     // archivovaný organizátor už nic nezakládá
     expect(viewerOf('H1', false, [{ ...players[0], archived: true }]).isOrganizer).toBe(false);
+  });
+});
+
+describe('pohled admina jako jiná role (23. 11. 2026)', () => {
+  const admin = { playerId: 'a', isAdmin: true, isOrganizer: false };
+  it('admin beze změny; organizátor bez admina; hráč bez admina i organizátora', () => {
+    expect(viewAsRole(admin, 'admin')).toEqual(admin);
+    expect(viewAsRole(admin, 'organizer')).toEqual({ playerId: 'a', isAdmin: false, isOrganizer: true });
+    expect(viewAsRole(admin, 'player')).toEqual({ playerId: 'a', isAdmin: false, isOrganizer: false });
+    expect(canCreateTraining(viewAsRole(admin, 'player'))).toBe(false);
+    expect(canCreateTraining(viewAsRole(admin, 'organizer'))).toBe(true);
+  });
+  it('kdo není admin, ten si roli nezvýší', () => {
+    const player = { playerId: 'p', isAdmin: false, isOrganizer: false };
+    expect(viewAsRole(player, 'admin')).toEqual(player);
+    expect(viewAsRole(player, 'organizer')).toEqual(player);
   });
 });

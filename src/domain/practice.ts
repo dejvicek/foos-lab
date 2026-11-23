@@ -406,8 +406,8 @@ export function computeMatchLadder(
         }
     }
   }
-  // Jedničky (singl Normálního legu) nahoře hned před 2v2 – v 1 na 1 i 2 na 2 stejné pořadí disciplín (19. 11. 2026).
-  const order: DisciplineId[] = ['singles', ...DISCIPLINES.map((d) => d.id).filter((id) => id !== 'singles')];
+  // 2v2 (Normální leg) nahoře, hned za ním Jedničky (1v1) – 21. 11. 2026, *rozhodnutí uživatele* (dřív Jedničky první).
+  const order: DisciplineId[] = ['normal', 'singles', ...DISCIPLINES.map((d) => d.id).filter((id) => id !== 'singles' && id !== 'normal')];
   return [...acc.entries()]
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([discipline, table]) => {

@@ -1,6 +1,10 @@
 /*
   Klubové barvy (10. 11. 2026): černá / grafit a zlatá.
-  Zlatá = hlavní tlačítko a zvolená položka přepínače (Žebříček), stav hry (na řadě, dohráno, plus) a tvoje strana stolu.
+  Zlatá = hlavní tlačítko, stav hry (na řadě, dohráno, plus), úspěch (vítězné skóre, graf průběhu) a tvoje strana stolu; zvolený přepínač je černý.
+  Stránka tréninku (23. 11. 2026, *rozhodnutí uživatele*, varianta B): zlatá jen pro úspěch (vítězné skóre, vyhrané legy, plus,
+  medaile, graf průběhu) a pro „tohle jsi ty“ (moje jméno, číslo mého stolu, pruh u mých kol); hlavní tlačítka zůstávají zlatá.
+  Názvy disciplín, pauzy, čáry, rámeček hraného kola a kroužky s písmenem jsou neutrální. Zvolená položka přepínače je černá
+  v celé appce; strana A má všude zlatou tečku (barva strany, ne hodnocení).
   Aktivní položka hlavního menu má zlatou linku. Značky ve formuláři (zaškrtnutí, posuvník, počet stolů) jsou černé (--ink).
   Červená (--warn) = ztráta, chyba, mazání – a utkání, které čeká na zahájení (záměrně: něco není v pořádku).
   Světlý režim: chladná světlá šedá (stejná grafitová řada jako tmavý), uhlová černá, starozlatá na text.
@@ -383,18 +387,19 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan tbody tr:not(.section-row):not(.expand):not(.break):not(.st-playing):hover td { background: var(--bg); }
 .plan tr.st-done td { color: var(--muted); }
 .plan tr.st-done .cell-score { color: var(--muted); }
-/* Hraje se: jen rámeček (podklad by se pletl s mými koly). Moje kola: zlatý pruh vlevo. */
-.plan tr.st-playing:not(.break) > td { box-shadow: inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
-.plan tr.st-playing:not(.break) > td:last-child { box-shadow: inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt), inset -2px 0 0 var(--felt); }
-/* Zlatý pruh mých kol jen u odehraných a hraných – kola, která se ještě nehrají, ho nemají (19. 11. 2026). */
-.plan tr.mine-row:not(.st-upcoming) > td:first-child { box-shadow: inset 5px 0 0 var(--gold); }
-.plan tr.mine-row.st-playing > td:first-child { box-shadow: inset 5px 0 0 var(--gold), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
-.plan tr.st-playing:not(.mine-row):not(.break) > td:first-child { box-shadow: inset 2px 0 0 var(--felt), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
+/* Stav kola (23. 11. 2026, *rozhodnutí uživatele*, varianta A): rámeček v barvě druhu kola – hraje se plně, na řadě čárkovaně
+   (jako uzel osy a karta Další kolo). „Moje kolo“ je zlatá čárka kousek uvnitř řádku, s rámečkem se v rozích nepotká. */
+.plan tr.st-playing:not(.break) > td { box-shadow: inset 0 2px 0 var(--dc), inset 0 -2px 0 var(--dc); }
+.plan tr.st-playing:not(.break) > td:last-child { box-shadow: inset 0 2px 0 var(--dc), inset 0 -2px 0 var(--dc), inset -2px 0 0 var(--dc); }
+.plan tr.st-playing:not(.break) > td:first-child { box-shadow: inset 2px 0 0 var(--dc), inset 0 2px 0 var(--dc), inset 0 -2px 0 var(--dc); }
+.plan tr.st-playing.st-next:not(.break) > td, .plan tr.st-playing.st-next:not(.break) > td:first-child, .plan tr.st-playing.st-next:not(.break) > td:last-child { box-shadow: none; }
+.plan tr.st-playing.st-next:not(.break) { outline: 2px dashed var(--dc); outline-offset: -2px; }
+.plan tr.mine-row:not(.st-upcoming) > td:first-child::after { content: ''; position: absolute; left: 4px; top: 7px; bottom: 7px; width: 3px; border-radius: 2px; background: var(--gold); }
 .me-name { font-weight: 800; color: var(--felt); }
 .row-name { display: block; font-weight: 800; font-size: 14.5px; line-height: 1.25; text-wrap: balance; }
 /* Pauza: výrazný šrafovaný pruh */
 .plan tr.pause-row > td, .round-break.pause {
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 10px, var(--surface) 10px 20px);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--muted) 12%, var(--surface)) 0 10px, var(--surface) 10px 20px);
   color: var(--ink); font-weight: 800;
 }
 .plan tr.pause-row .row-label { font-weight: 800; }
@@ -444,6 +449,8 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .rk .rail-node { border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); color: var(--dc); }
 .rk.st-done .rail-node { border-color: var(--dc); color: var(--surface); }
 .st-playing .rail-node, .rk.st-playing .rail-node { border-color: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 22%, transparent); }
+/* Na řadě (nikdo nezačal, 23. 11. 2026): jako kola, která přijdou – čárkovaný kroužek bez záře; hrané kolo plně. */
+.st-next .rail-node, .rk.st-next .rail-node { border-style: dashed; border-color: var(--dc); box-shadow: none; background: var(--surface); color: var(--dc); }
 /* Hrané kolo: kroužek bez pulzování (19. 11. 2026, *rozhodnutí uživatele*). */
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
@@ -460,24 +467,26 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .mb-nm { min-width: 0; display: flex; align-items: center; gap: 0; white-space: nowrap; }
 .mb-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Asymetrická disciplína: štítek „Zeď“ u strany, která ji hraje (od 20. 11. 2026 bez Láme zeď a začíná N). */
+/* Štítek strany (Zeď, start N) – jednotně šedý (23. 11. 2026, *rozhodnutí uživatele*) */
 .mb-badge { flex: none; margin-left: 6px; font-size: 10.5px; font-weight: 700; line-height: 1; padding: 2px 6px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--muted); background: var(--surface); }
-.mb-badge.wall { border-color: var(--ink); color: var(--ink); }
 .mb-nm.win { font-weight: 800; }
 .mb-dot { flex: none; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+/* Strana A zlatá tečka jako v grafu, zrcadle a zápisu skóre (23. 11. 2026 krátce obrys, vráceno kvůli jednotnosti). */
 .mb-dot.a { background: var(--gold); }
 .mb-dot.b { background: var(--side-b); }
 /* Cvičení: jména začínají tam, kde u zápasu za tečkou strany (7 px + 6 px). */
 .cell-names.grp, .cell-sub.grp { padding-left: 13px; }
 .mb-sc { display: flex; justify-content: flex-end; }
 .mb-sc > span { width: 20px; text-align: center; font-size: 12.5px; color: var(--muted); }
-.mb-sc > span.lw { color: var(--ink); font-weight: 700; }
-.mb-sc > span.run { color: var(--felt); font-weight: 800; }
+.mb-sc > span.lw { color: var(--felt); font-weight: 700; }
+.mb-sc > span.run { color: var(--ink); font-weight: 800; }
 .mb-sc > b { min-width: 26px; text-align: center; font-size: 15px; font-weight: 800; color: var(--ink); }
 .mb-sc > span + b { margin-left: 4px; border-left: 1px solid var(--line); }
+.mb-sc > b.win { color: var(--felt); }
 .mb-sc > b.lose, .mb-sc > b.none { color: var(--faint); }
 .mb-sc > b.none { font-weight: 500; }
 .mb-foot { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
-.mb-live { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--felt); background: var(--felt-soft); border-radius: 99px; padding: 0 7px; }
+.mb-live { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--ink); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 99px; padding: 0 7px; }
 .plan td.free { color: var(--faint); font-style: italic; }
 
 /* Rozbalený blok */
@@ -548,7 +557,8 @@ tr.clickable:hover td { background: var(--felt-soft); }
   background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 99px;
   padding: 0 11px; min-height: 28px; height: 28px; font-size: 13px; font-weight: 600;
 }
-.segmented button[aria-pressed='true'] { background: var(--action); border-color: var(--action-edge); color: var(--action-ink); font-weight: 700; }
+/* Zvolená položka přepínače: černě v celé appce (23. 11. 2026, *rozhodnutí uživatele*) – stejně jako přepínač legů; zlatá je pro úspěch, „já“ a hlavní tlačítka. */
+.segmented button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 700; }
 .range-dates { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; align-items: center; }
 .solo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 8px 24px; }
 .solo-block { margin-top: 12px; }
@@ -597,7 +607,7 @@ input:disabled { background: var(--bg); color: var(--muted); border-color: var(-
 .tabs { display: inline-flex; margin: 0 0 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
 .tabs button { background: none; color: var(--ink); border: 0; border-radius: 0; border-right: 1px solid var(--line); font-weight: 500; }
 .tabs button:last-child { border-right: 0; }
-.tabs button[aria-selected='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--action-edge); }
+.tabs button[aria-selected='true'] { background: var(--ink); color: var(--surface); font-weight: 600; box-shadow: inset 0 0 0 1px var(--ink); }
 
 /* Můj stůl */
 /* Bez béžového podkladu – karta kola na šedém pozadí stránky jako v Tréninku (19. 11. 2026, *rozhodnutí uživatele*). */
@@ -673,6 +683,16 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 /* Vyšší dílek = aktuální kolo (hraju / na řadě plně, čeká světle); zobrazené kolo jen ▼ (19. 11. 2026, *rozhodnutí uživatele*). */
 .seg.live { background: var(--dc); height: 10px; border-radius: 3px; }
 .seg.live.waits:not(.done) { background: color-mix(in srgb, var(--dc) 35%, transparent); }
+/* Na řadě, ještě se nehraje (23. 11. 2026, *rozhodnutí uživatele*, varianta A): světlá výplň s čárkovaným obrysem; hraju plně, čekám světle. */
+.seg.live.turn:not(.done) {
+  /* Čárky 3 px, mezery 2 px (outline dashed má mezery moc velké na 10px dílek). */
+  --dash: repeating-linear-gradient(90deg, var(--dc) 0 3px, transparent 3px 5px);
+  --dash-v: repeating-linear-gradient(180deg, var(--dc) 0 3px, transparent 3px 5px);
+  background:
+    var(--dash) top / 100% 2px no-repeat, var(--dash) bottom / 100% 2px no-repeat,
+    var(--dash-v) left / 2px 100% no-repeat, var(--dash-v) right / 2px 100% no-repeat,
+    color-mix(in srgb, var(--dc) 18%, var(--surface));
+}
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;
@@ -719,7 +739,11 @@ button.help-ic[aria-expanded='true'] { color: var(--felt); background: none; }
 .my-table .rk-drill { --dc: var(--k-drill); }
 .my-table .rk-match { --dc: var(--k-match); }
 .my-table .rk-sim { --dc: var(--k-sim); }
-.my-table .round-card.my-card.mine-row { box-shadow: inset 5px 0 0 var(--dc, var(--gold)); }
+/* Moje hry: karta má stav jako dlaždice v rozpisu – hraje se plný rámeček v barvě druhu, na řadě čárkovaný (varianta A, 23. 11. 2026). */
+.my-table .round-card.my-card.st-play { outline: 2px solid var(--dc); outline-offset: -2px; }
+.my-table .round-card.my-card.st-turn { outline: 2px dashed var(--dc); outline-offset: -2px; }
+.my-card .c-state.live.play { background: color-mix(in srgb, var(--dc) 14%, var(--surface)); color: var(--dc); }
+.my-card .c-state.live.turn { background: var(--surface); color: var(--dc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dc) 40%, transparent); }
 /* Karta Další kolo jako karta kola (19. 11. 2026): čárkovaný rám v barvě druhu kola – na řadě plně, čeká světle. */
 .round-card.next-bar { margin: 8px 0 0; border: 2px dashed var(--dc, var(--gold)); }
 .round-card.next-bar.wait { border-color: color-mix(in srgb, var(--dc, var(--gold)) 35%, transparent); }
@@ -780,12 +804,16 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-break .rb-slot { flex-basis: 100%; }
 .round-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .round-card.st-done .tile-name, .round-card.st-done .tile-time { color: var(--muted); }
-.round-card.st-playing { outline: 2px solid var(--felt); outline-offset: -2px; }
-.round-card.mine-row:not(.st-upcoming) { box-shadow: inset 5px 0 0 var(--gold); }
+.round-card.st-playing { outline: 2px solid var(--dc, var(--muted)); outline-offset: -2px; }
+/* Kolo na řadě: rámeček čárkovaně (hrané kolo plně). */
+.round-card.st-playing.st-next { outline-style: dashed; }
+/* Moje kolo: zlatá čárka kousek uvnitř karty (rozpis i Moje hry), s rámečkem stavu se v rozích nepotká. */
+.round-card.mine-row { position: relative; }
+.round-card.mine-row:not(.st-upcoming)::after { content: ''; position: absolute; left: 5px; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--gold); pointer-events: none; }
 .tile-head { display: grid; gap: 3px; padding: 10px 12px 6px; color: var(--ink); }
-/* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed (zlatě), formát (BO) vpravo. Číslo stolu taky zlatě. */
+/* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed, formát (BO) vpravo. Číslo mého stolu zlatě. */
 .tile-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: baseline; }
-.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--felt); text-wrap: balance; }
+.tile-name { font-weight: 800; font-size: 16px; text-align: center; min-width: 0; color: var(--ink); text-wrap: balance; }
 .tile-fmt { justify-self: end; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .tile-time { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; justify-self: start; }
 .tile-sub { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; gap: 8px; }
@@ -793,8 +821,8 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .tile-goal { font-weight: 700; color: var(--ink); text-align: right; }
 .tile-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 0 12px 10px; }
 .tile-line { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
-/* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026): průhledná zlatá. */
-.tile-line + .tile-line { border-top: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); padding-top: 6px; }
+/* Čára mezi zápasy kola pod sebou (telefon, 20. 11. 2026; od 23. 11. 2026 šedá). */
+.tile-line + .tile-line { border-top: 1px solid var(--line); padding-top: 6px; }
 .tile-line .tl-curve { overflow: hidden; }
 .tile-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; font-size: 13.5px; align-items: center; }
 .tile-row > b { color: var(--muted); font-size: 12px; font-weight: 700; padding-top: 1px; }
@@ -1243,16 +1271,18 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 /* ── Průběh hry (PRD 4.9): křivka (Sloupec zrušen 18. 11. 2026) ── */
 .tl-box { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
 .tl-box > summary { cursor: pointer; color: var(--felt); font-weight: 700; font-size: 13px; min-height: 28px; }
-.tl-box > .tl-h { margin: 2px 0 4px; color: var(--felt); font-size: 13px; font-weight: 700; }
-.tl-leg-k { display: block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
-/* Ikonka grafu: rozbalí Průběh (bez rámečku; otevřená zlatá) */
+.tl-box > .tl-h { margin: 2px 0 4px; color: var(--ink); font-size: 13px; font-weight: 700; }
+/* Ikonky u stolu: tužka (zápis) šedá bez rámečku; graf (Průběh) od 23. 11. 2026 zlatý – průběh hry hráče zajímá. */
 button.pr-ic {
   flex: none; width: 28px; height: 28px; min-height: 0; display: inline-grid; place-items: center; border-radius: 6px; cursor: pointer;
-  border: 0; background: none; color: var(--muted); padding: 0;
+  border: 1px solid transparent; background: none; color: var(--muted); padding: 0;
 }
 button.pr-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 button.pr-ic:hover { color: var(--ink); background: none; }
-button.pr-ic[aria-expanded='true'] { color: var(--felt); }
+button.pr-ic[aria-expanded='true'] { color: var(--ink); }
+button.pr-ic:not(.edit-ic) { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: var(--felt-soft); color: var(--felt); }
+button.pr-ic:not(.edit-ic):hover { border-color: var(--action-edge); }
+button.pr-ic:not(.edit-ic)[aria-expanded='true'] { background: var(--gold); border-color: var(--action-edge); color: var(--gold-ink); }
 .plan td.has-prog { position: relative; padding-right: 34px; }
 /* Ikonky u stolu (graf, tužka) vpravo nahoře vedle sebe. */
 .plan td.has-prog > .cell-ics { position: absolute; top: 4px; right: 4px; display: flex; flex-direction: row; gap: 2px; }
@@ -1836,7 +1866,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-done { border-radius: 12px; background: var(--felt-soft); color: var(--felt); font-weight: 700; font-size: 13px; padding: 8px 10px; text-align: center; }
 .guide .g-scen { display: flex; gap: 4px; flex-wrap: wrap; }
 .guide .g-scen button { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; font-size: 11px; font-weight: 600; padding: 4px 8px; }
-.guide .g-scen button[aria-pressed="true"] { border-color: var(--felt); color: var(--felt); background: var(--felt-soft); }
+.guide .g-scen button[aria-pressed="true"] { border-color: var(--ink); color: var(--surface); background: var(--ink); }
 .guide .g-hint { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; }
 
 /* ── kroky ── */
@@ -1892,6 +1922,11 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 /* obsah mini obrazovek */
 .guide .g-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .guide .g-card.g-hot { border-color: var(--felt); box-shadow: inset 0 0 0 1px var(--felt); }
+.guide .g-card.g-hot.g-turn { border: 2px dashed var(--k-match); box-shadow: none; }
+/* Připraven? ve zrcadle stolu (23. 11. 2026): klikací zlatě u obou stran, na koho se čeká, čárkovaně. */
+.guide .g-ready .g-goal { min-height: 110px; font-size: 17px; font-weight: 800; }
+.guide .g-ready .g-side .g-goal.g-go { background: var(--gold); color: var(--gold-ink); }
+.guide .g-ready .g-side .g-goal.g-wait { background: transparent; color: var(--muted); border: 2px dashed var(--line-strong); font-size: 13px; font-weight: 700; }
 .guide .g-card .g-k { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
 .guide .g-card .g-vs { font-weight: 700; font-size: 15px; line-height: 1.3; }
 .guide .g-card .g-vs span { color: var(--muted); font-weight: 500; }
@@ -1970,8 +2005,8 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tl li::before { content: ""; position: absolute; left: 9px; top: 18px; bottom: 0; width: 2px; background: var(--line); }
 .guide .g-tl li:last-child::before { display: none; }
 .guide .g-tl .g-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 11px; font-weight: 800; z-index: 1; }
-.guide .g-tl li.g-past .g-dot { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
-.guide .g-tl li.g-now .g-dot { border-color: var(--felt); border-width: 3px; }
+.guide .g-tl li.g-past .g-dot { background: var(--k-match); border-color: var(--k-match); color: var(--surface); }
+.guide .g-tl li.g-now .g-dot { border-color: var(--k-match); box-shadow: 0 0 0 4px color-mix(in srgb, var(--k-match) 22%, transparent); }
 .guide .g-tl .g-rw { display: flex; flex-direction: column; gap: 4px; font-size: 12px; min-width: 0; }
 .guide .g-tl .g-rw b { font-size: 13px; }
 .guide .g-tl .g-rw small { color: var(--muted); font-size: 11px; }
@@ -1981,17 +2016,18 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); }
 .guide .g-tt b { font-size: 13px; }
 .guide .g-tt.g-mine { background: var(--felt-soft); border-color: var(--felt); }
-.guide .g-tl li.g-now .g-dot { color: var(--felt); }
+.guide .g-tl li.g-now .g-dot { color: var(--k-match); }
 .guide .g-tl li.g-pz .g-dot { font-size: 8px; letter-spacing: -1px; }
 .guide .g-tl .g-fold { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 2px; }
 .guide .g-tl .g-fold small { text-decoration: underline; }
 .guide .g-tl .g-tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; box-shadow: 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); }
-.guide .g-tl .g-tile.g-mine { box-shadow: inset 4px 0 0 var(--gold), 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); padding-left: 12px; }
-.guide .g-tl li.g-now .g-tile { border: 2px solid var(--felt); background: var(--surface); }
+.guide .g-tl li .g-tile.g-mine { position: relative; padding-left: 14px; }
+.guide .g-tl .g-tile.g-mine::after { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--gold); }
+.guide .g-tl li.g-now .g-tile { border: 2px solid var(--k-match); background: var(--surface); }
 .guide .g-tl .g-ttop { display: flex; justify-content: space-between; gap: 6px; }
 .guide .g-tl .g-tile .g-tt { border: 0; padding: 0; }
 .guide .g-tl em { font-style: normal; font-weight: 800; color: var(--felt); }
-.guide .g-tl .g-pause { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
+.guide .g-tl .g-pause { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--muted) 12%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
 .guide .g-sum { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; font-size: 13px; }
 .guide .g-sum b { color: var(--muted); text-align: right; }
 .guide .g-sum span:last-child { font-weight: 700; }
@@ -2197,7 +2233,7 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
 .acct-chev { font-size: 11px; color: var(--muted); }
 .acct-backdrop { display: none; }
 .acct-menu {
-  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 240px; display: flex; flex-direction: column;
+  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 260px; display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px;
   box-shadow: 0 10px 30px color-mix(in srgb, #000 16%, transparent);
 }
@@ -2231,8 +2267,8 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
 .av {
   --av: 24px; width: var(--av); height: var(--av); flex: none; border-radius: 50%; overflow: hidden;
   display: inline-grid; place-items: center; vertical-align: middle; line-height: 1;
-  background: var(--felt-soft); color: var(--felt); font-weight: 800; font-size: calc(var(--av) * 0.45);
-  user-select: none;
+  background: var(--bg); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-weight: 800; font-size: calc(var(--av) * 0.45); user-select: none;
 }
 .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .av[data-ini]::before { content: attr(data-ini); }
@@ -2312,3 +2348,93 @@ td .player-link:has(.av), .who-av { display: inline-flex; align-items: center; g
 /* Moje hry: kroužky hráčů nad jménem ve zrcadle stolu */
 .mirror-who .av-stack { margin-bottom: 4px; }
 .mirror-who .av-stack .av + .av { margin-left: -8px; }
+
+/* Hráči na telefonu (23. 11. 2026, varianta A): řádek jméno + docházka, akce v menu ⋯ zespodu */
+.pl-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pl-top h1 { margin-bottom: 2px; }
+.pl-top .lead { margin-top: 0; }
+.pl-top > button { flex: none; white-space: nowrap; min-height: 40px; margin-top: 4px; }
+.player-row.pl-m { flex-wrap: nowrap; gap: 8px; min-height: 56px; padding: 6px 4px 6px 12px; }
+.pl-who { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.pl-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; }
+.pl-name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-name .role-tag { margin-left: 0; flex: none; }
+.pl-who .att-meta { overflow: hidden; text-overflow: ellipsis; }
+.player-row .pl-who .att-meta { margin-right: 0; }
+button.pl-more {
+  flex: none; width: 44px; height: 44px; min-height: 0; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); font-size: 22px; font-weight: 800; line-height: 1;
+}
+button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); color: var(--ink); }
+.pl-backdrop { position: fixed; inset: 0; z-index: 59; background: color-mix(in srgb, #000 35%, transparent); }
+.pl-menu {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; flex-direction: column;
+  background: var(--surface); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0;
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+}
+.pl-menu-who { display: grid; gap: 2px; padding: 6px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.pl-menu-who > b { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-menu button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; height: auto; min-height: 48px; margin: 0;
+  padding: 8px 10px; background: none; color: var(--ink); border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: left;
+}
+.pl-menu button:hover, .pl-menu button:focus-visible { background: var(--bg); }
+.pl-menu button.danger { color: var(--warn); }
+
+/* Krátký scénář gól po gólu (23. 11. 2026): start → stav po každém gólu v barvě strany, pod ním čas. */
+.goal-seq { list-style: none; margin: 4px 0 2px; padding: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 4px; }
+.goal-seq li { display: grid; justify-items: center; gap: 2px; min-width: 50px; position: relative; }
+.goal-seq li + li { padding-left: 18px; }
+.goal-seq li + li::before { content: '→'; position: absolute; left: 2px; top: 5px; color: var(--faint); font-size: 13px; }
+.gs-sc { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); line-height: 1.3; }
+.goal-seq li small { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal-seq .gs-start .gs-sc { color: var(--muted); font-weight: 700; border-style: dashed; background: var(--surface); }
+.goal-seq .side-a .gs-sc { background: var(--felt-soft); border-color: color-mix(in srgb, var(--gold) 60%, transparent); color: var(--ink); }
+.goal-seq .side-b .gs-sc { background: var(--side-b); border-color: var(--side-b); color: var(--side-b-ink); }
+.goal-seq .last .gs-sc { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--gold); }
+.goal-seq .side-b.last .gs-sc { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--side-b); }
+
+/* Připraven? jako první stav zrcadla (23. 11. 2026, varianta K1): stejné tlačítko jako zápis gólů; připravený zeleně. */
+/* Klikací Připraven? je zlaté u obou stran (23. 11. 2026, *rozhodnutí uživatele*): hlavní akce, ne barva strany. */
+.ready-mirror button.mirror-goal.ready-go { font-size: 21px; font-weight: 800; background: var(--gold); color: var(--gold-ink); }
+.ready-mirror button.mirror-goal.ready-go:active:not(:disabled) { background: var(--gold); color: var(--gold-ink); filter: brightness(0.92); }
+.ready-mirror .mirror-goal.ready-ok {
+  font-size: 19px; font-weight: 800; background: color-mix(in srgb, var(--good) 14%, var(--surface)); color: var(--good);
+  box-shadow: inset 0 0 0 2px var(--good);
+}
+.ready-mirror button.mirror-goal.ready-ok:active:not(:disabled) { background: color-mix(in srgb, var(--good) 22%, var(--surface)); color: var(--good); filter: none; }
+.ready-mirror button.mirror-goal.ready-ok:disabled { opacity: 1; }
+.ready-mirror .mirror-goal.ready-wait {
+  display: flex; align-items: center; justify-content: center; min-height: 150px; border-radius: 10px;
+  border: 2px dashed var(--line-strong); color: var(--muted); font-size: 15px; font-weight: 700;
+}
+.ready-mirror .mirror-half.waits { border-style: dashed; border-color: var(--line-strong); }
+.ready-mirror .mirror-half:has(.ready-ok) { border-color: var(--good); }
+
+/* Sekce Administrace v menu účtu (23. 11. 2026): vždy rozbalená – nadpis sekce, Šablony a přepínač Zobrazit jako na jednom řádku. */
+.acct-admin { display: flex; flex-direction: column; }
+.acct-sec { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 4px 10px 2px; }
+.acct-viewas { display: grid; gap: 4px; padding: 6px 10px 8px; }
+.acct-viewas-k { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.acct-seg { display: grid; grid-template-columns: repeat(3, auto); gap: 2px; padding: 2px; border-radius: 9px; background: var(--bg); border: 1px solid var(--line); }
+.acct-menu .acct-seg button {
+  min-height: 30px; padding: 4px 6px; border-radius: 7px; font-size: 12.5px; font-weight: 700; justify-content: center; color: var(--muted);
+}
+.acct-menu .acct-seg button:hover { background: var(--surface); color: var(--ink); }
+.acct-menu .acct-seg button[aria-checked='true'] { background: var(--ink); color: var(--surface); }
+@media (max-width: 767px) {
+  .acct-menu .acct-seg button { min-height: 40px; font-size: 14px; }
+}
+/* Pohled jako jiná role: nenápadný štítek vedle účtu (23. 11. 2026, místo černého pruhu) – čárkovaně jako „není to naostro“. */
+.main-nav button.viewas-chip {
+  display: inline-flex; flex-direction: row; flex: none; align-items: center; gap: 5px; height: 30px; min-height: 0; padding: 0 6px 0 9px; border-radius: 999px;
+  border: 1px dashed var(--line-strong); background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; white-space: nowrap;
+}
+.main-nav button.viewas-chip:hover { color: var(--ink); border-color: var(--muted); background: var(--bg); }
+.main-nav button.viewas-chip svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.viewas-chip .viewas-x { font-size: 15px; line-height: 1; padding: 0 2px; opacity: .7; }
+@media (max-width: 767px) {
+  /* Plocha pro prst 44 px kolem malého štítku. */
+  .main-nav button.viewas-chip { position: relative; }
+  .main-nav button.viewas-chip::after { content: ''; position: absolute; inset: -7px -2px; }
+}

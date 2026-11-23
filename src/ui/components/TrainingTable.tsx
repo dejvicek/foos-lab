@@ -7,7 +7,7 @@ import { clockAt, soloKey, soloMetric } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
-import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
+import { railClass, railLine, stateLabel, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp, type TapSolo } from './BlockEntry';
@@ -205,9 +205,14 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
   }
   const winner = tot && !playing ? (tot[0] > tot[1] ? 'A' : tot[1] > tot[0] ? 'B' : null) : null;
   const plain = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
-  // Asymetrická disciplína (19. 11. 2026): štítek u dvojice, kdo hraje kterou stranu. Od 20. 11. 2026 (*rozhodnutí uživatele*)
-  // jen Zeď u strany, která ji hraje (Láme zeď je druhá); scénářové starty bez štítků – kdo začíná s kolika, je vidět ze skóre.
-  const badge = (k: 'A' | 'B'): string | null => (m.wall === k ? 'Zeď' : null);
+  // Asymetrická disciplína (19. 11. 2026): štítek u dvojice, kdo hraje kterou stranu. Zeď jen u strany, která ji hraje
+  // (Láme zeď je druhá, od 20. 11. 2026). Nerovný scénářový start (21. 11. 2026, *rozhodnutí uživatele*): „start N“ u strany,
+  // která začíná s náskokem – u dohraného zápasu (6:4) by jinak nebylo poznat, kdo začínal s kolika. Rovný start (5:5) bez štítku.
+  const unequal = !!m.start && st[0] !== st[1];
+  const badge = (k: 'A' | 'B'): string | null => {
+    const n = st[k === 'A' ? 0 : 1];
+    return m.wall === k ? 'Zeď' : unequal && n > 0 ? `start ${n}` : null;
+  };
   const side = (k: 'A' | 'B') => {
     const ids = k === 'A' ? m.sideA : m.sideB;
     const i = k === 'A' ? 0 : 1;
@@ -220,7 +225,7 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
           <span className="mb-who">
             <Names ids={ids} names={names} me={me} />
           </span>
-          {b && <span className={m.wall === k ? 'mb-badge wall' : 'mb-badge'}>{b}</span>}
+          {b && <span className="mb-badge">{b}</span>}
         </span>
         <span className="mb-sc">
           {legs.map((l, j) => (
@@ -228,7 +233,7 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
               {k === 'A' ? l.a : l.b}
             </span>
           ))}
-          <b className={!tot ? 'none' : winner && winner !== k ? 'lose' : undefined}>{total}</b>
+          <b className={!tot ? 'none' : winner === k ? 'win' : winner ? 'lose' : undefined}>{total}</b>
         </span>
       </Fragment>
     );
@@ -298,7 +303,7 @@ export function RailNode({ st, no, pause, label }: { st: RoundStatus | undefined
   const state = st?.state ?? 'upcoming';
   const what = pause ? 'Pauza' : no ? `${no}. kolo` : (label ?? '');
   return (
-    <span className={pause ? 'rail-node pause' : 'rail-node'} role="img" aria-label={`${what} – ${STATE_LABEL[state].toLowerCase()}`}>
+    <span className={pause ? 'rail-node pause' : 'rail-node'} role="img" aria-label={`${what} – ${stateLabel(st).toLowerCase()}`}>
       {pause ? (
         <>
           <i />

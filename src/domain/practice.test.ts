@@ -394,8 +394,8 @@ describe('statistiky napříč za stejných podmínek (12. 11. 2026)', () => {
     // výhra oběma hráčům dvojice
     for (const p of plainD.sideA) expect(rows.find((r) => r.playerId === p)!.wins).toBeGreaterThan(0);
     expect(computeMatchLadder([t], null, null, 3, 'singles').map((x) => x.discipline)).toEqual(['singles']);
-    // Jedničky nahoře před 2v2, stejné pořadí jako v 1 na 1
-    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline)).toEqual(['singles', 'normal']);
+    // 2v2 nahoře, hned za ním Jedničky (1v1) – 21. 11. 2026, *rozhodnutí uživatele* (dřív obráceně)
+    expect(computeMatchLadder([t], null, null, 3, 'all').map((x) => x.discipline)).toEqual(['normal', 'singles']);
   });
 
   it('zápasy 1 na 1: Vlastní počítá duo i singly z klubu; klubový Normální leg v singlu = Jedničky', () => {

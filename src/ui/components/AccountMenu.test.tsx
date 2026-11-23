@@ -52,4 +52,33 @@ describe('menu účtu v liště (21. 11. 2026)', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Odhlásit' }));
     expect(out).toHaveBeenCalled();
   });
+
+  it('Administrace (23. 11. 2026): jen pro admina, rovnou rozbalená; Zobrazit jako Admin / Organizátor / Hráč', async () => {
+    const user = userEvent.setup();
+    const onViewAs = vi.fn();
+    render(<MainNav route={{ page: 'trainings' }} navigate={vi.fn()} myName="Adam" myId="p1" admin realAdmin viewAs="admin" onViewAs={onViewAs} onSignOut={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    // sekce Administrace je rovnou rozbalená (bez klikání navíc)
+    const admin = screen.getByRole('group', { name: 'Administrace' });
+    expect(within(admin).getByRole('menuitem', { name: 'Šablony' })).toBeInTheDocument();
+    expect(within(admin).getByRole('group', { name: 'Zobrazit jako' })).toBeInTheDocument();
+    const radios = screen.getAllByRole('menuitemradio');
+    expect(radios.map((r) => r.textContent)).toEqual(['Admin', 'Organizátor', 'Hráč']);
+    expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemradio', { name: 'Hráč' }));
+    expect(onViewAs).toHaveBeenCalledWith('player');
+  });
+
+  it('admin v pohledu hráče: Administrace zůstává (jde přepnout zpět), Šablony ne; hráč Administraci nemá', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<MainNav route={{ page: 'trainings' }} navigate={vi.fn()} myName="Adam" myId="p1" admin={false} realAdmin viewAs="player" onViewAs={vi.fn()} onSignOut={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    expect(screen.getByRole('menu', { name: 'Účet' })).toHaveTextContent('admin · jako hráč');
+    expect(screen.queryByRole('menuitem', { name: 'Šablony' })).toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Hráč' })).toHaveAttribute('aria-checked', 'true');
+    unmount();
+    nav(false);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    expect(screen.queryByRole('group', { name: 'Administrace' })).toBeNull();
+  });
 });

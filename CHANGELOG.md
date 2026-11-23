@@ -9,6 +9,32 @@
 Když nová verze nesmí běžet vedle starší (jiný rozpis nebo databáze), zvyšuje se navíc `COMPAT` v `src/version.ts`.
 Ke každé vydané verzi patří záznam tady a git tag `vX.Y.Z` na `main`; z tagu se appka nasadí a vznikne GitHub Release s tímto záznamem. Postup je v README → Vydání nové verze.
 
+## 1.5.0 – 23. 11. 2026
+
+Připraven? přímo ve zrcadle stolu, jednotné barvy kol a přehlednější průběh krátkých scénářů a legů.
+
+**U stolu a v Moje hry**
+- **Připraven?** je teď ve stejném velkém tlačítku, kterým pak zapisuješ góly. Po ťuknutí zezelená (dalším ťuknutím ohlášení zrušíš), strana, na kterou se čeká, je čárkovaně. Až jsou připravení všichni, tlačítko začne počítat góly.
+- Kolo, které je **na řadě**, má čárkovaný rámeček i dílek na časové ose, kolo, které se **hraje**, plný. Barva odpovídá druhu kola (cvičení modře, zápasy zeleně, simulace fialově), v Moje hry i v rozpisu.
+- Tvoje kolo poznáš podle zlaté čárky uvnitř karty.
+- **Průběh hry** je vidět hned po dohrání, ne až po potvrzení konce.
+- Pod názvem kola se už neopakuje, kdo drží Zeď. Ukazuje to štítek Zeď u jména strany.
+
+**Rozpis a průběh**
+- Při nerovném startu (0:3, 4:5) má strana s náskokem štítek „start 3“, takže i po dohrání je vidět, kdo začínal s kolika.
+- Krátké scénáře (4:4, 4:5, 5:5) ukazují místo křivky stav gól po gólu s časem.
+- Zápas na víc legů má v průběhu přepínač legů, vidíš vždy jeden graf.
+- Zlatě je jen to, co se týká tebe, a úspěchy: vítězné skóre, vyhrané legy a tlačítko grafu. Zvolené přepínače jsou v celé appce černé.
+
+**Žebříčky**
+- Zápasy podle disciplín začínají 2v2, pak 1v1. Stejně je seřazený i přepínač Vše / 2 na 2 / 1 na 1.
+
+**Pro admina**
+- V menu účtu je sekce Administrace se Šablonami a volbou „Zobrazit jako“: appka se ukáže tak, jak ji vidí organizátor nebo hráč.
+- Stránka Hráči na telefonu má jeden řádek na hráče a akce v menu ⋯.
+
+**Návod** je aktualizovaný podle nové podoby appky.
+
 ## 1.4.0 – 21. 11. 2026
 
 Profilové fotky, menu účtu, Můj profil s umístěními a rekordy, karta Tvůj trénink a přehlednější žebříčky.

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTheme } from '../theme';
 import { toHash, type Route } from '../useHashRoute';
 import { Avatar, initialOf } from './Avatar';
+import type { ViewAs } from '../../domain/my';
 
 /** Ikony záložek (i v Návodu – stejné jako v appce). */
 export const NAV_ICONS: Record<string, ReactNode> = {
@@ -77,8 +78,15 @@ export function MainNav({
   mine = live,
   myTurn = false,
   admin = true,
+  realAdmin = admin,
+  viewAs = 'admin',
+  onViewAs,
   running = null,
 }: {
+  /** Skutečný admin (podmenu Administrace), i když se zrovna dívá jako jiná role (23. 11. 2026). */
+  realAdmin?: boolean;
+  viewAs?: ViewAs;
+  onViewAs?(v: ViewAs): void;
   /** Probíhající trénink: „Tréninky“ ho rovnou otevře (19. 11. 2026); záložka Živě zrušena. */
   running?: string | null;
   route: Route;
@@ -138,7 +146,26 @@ export function MainNav({
             </a>
             <VersionTag />
           </span>
-          <AccountMenu name={myName ?? 'Účet'} myId={myId} admin={admin} templatesActive={route.page === 'templates'} navigate={navigate} onChangePassword={onChangePassword} onSignOut={onSignOut} />
+          {/* Pohled jako jiná role (23. 11. 2026): nenápadný štítek vedle účtu místo pruhu přes celou šířku; ťuknutí vrátí admina. */}
+          {realAdmin && viewAs !== 'admin' && onViewAs && (
+            <button
+              type="button"
+              className="viewas-chip"
+              title="Zpět na pohled admina"
+              aria-label={`Pohled: ${viewAs === 'player' ? 'hráč' : 'organizátor'} – zpět na admina`}
+              onClick={() => onViewAs('admin')}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z" />
+                <circle cx="12" cy="12" r="2.6" />
+              </svg>
+              <span>{viewAs === 'player' ? 'Hráč' : 'Organizátor'}</span>
+              <span className="viewas-x" aria-hidden="true">
+                ×
+              </span>
+            </button>
+          )}
+          <AccountMenu name={myName ?? 'Účet'} myId={myId} admin={admin} realAdmin={realAdmin} viewAs={viewAs} onViewAs={onViewAs} templatesActive={route.page === 'templates'} navigate={navigate} onChangePassword={onChangePassword} onSignOut={onSignOut} />
         </span>
       )}
     </nav>
@@ -147,13 +174,23 @@ export function MainNav({
 
 /**
  * Menu účtu vpravo v liště (21. 11. 2026, *rozhodnutí uživatele*, varianta A): tlačítko s iniciálou a jménem, menu
- * Můj profil · Návod · Tmavý režim · Šablony (admin) · Změnit heslo · Odhlásit. Na telefonu vyjede zespodu.
+ * Můj profil · Návod · Tmavý režim · sekce Administrace (admin, vždy rozbalená: Šablony, Zobrazit jako Admin | Organizátor | Hráč) · Změnit heslo · Odhlásit.
+ * Na telefonu vyjede zespodu.
  * Zavře se výběrem, Escem nebo klepnutím mimo; přepnutí režimu menu nechá otevřené, ať je změna vidět.
  */
+const VIEW_AS: [ViewAs, string][] = [
+  ['admin', 'Admin'],
+  ['organizer', 'Organizátor'],
+  ['player', 'Hráč'],
+];
+
 function AccountMenu({
   name,
   myId,
   admin,
+  realAdmin = admin,
+  viewAs = 'admin',
+  onViewAs,
   templatesActive,
   navigate,
   onChangePassword,
@@ -162,6 +199,9 @@ function AccountMenu({
   name: string;
   myId: string | null;
   admin: boolean;
+  realAdmin?: boolean;
+  viewAs?: ViewAs;
+  onViewAs?(v: ViewAs): void;
   templatesActive: boolean;
   navigate(r: Route): void;
   onChangePassword?(): void;
@@ -220,7 +260,7 @@ function AccountMenu({
           <span className="acct-menu" role="menu" aria-label="Účet" ref={menu} style={at ? ({ '--acct-top': `${at.top}px`, '--acct-right': `${at.right}px` } as CSSProperties) : undefined}>
             <span className="acct-who">
               <b>{name}</b>
-              {admin && <span>admin</span>}
+              {realAdmin && <span>{viewAs === 'admin' ? 'admin' : `admin · jako ${viewAs === 'player' ? 'hráč' : 'organizátor'}`}</span>}
             </span>
             {myId && (
               <button type="button" role="menuitem" onClick={pick(() => navigate({ page: 'player', id: myId }))}>
@@ -234,10 +274,29 @@ function AccountMenu({
               Tmavý režim
               <span className={theme === 'dark' ? 'acct-switch on' : 'acct-switch'} aria-hidden="true" />
             </button>
-            {admin && (
-              <button type="button" role="menuitem" onClick={pick(() => navigate({ page: 'templates' }))}>
-                Šablony
-              </button>
+            {realAdmin && (
+              <span className="acct-admin" role="group" aria-label="Administrace">
+                <span className="acct-sep" aria-hidden="true" />
+                <span className="acct-sec">Administrace</span>
+                {admin && (
+                  <button type="button" role="menuitem" onClick={pick(() => navigate({ page: 'templates' }))}>
+                    Šablony
+                  </button>
+                )}
+                <span className="acct-viewas">
+                  <span className="acct-viewas-k" id="acct-viewas-k">
+                    Zobrazit jako
+                  </span>
+                  <span className="acct-seg" role="group" aria-labelledby="acct-viewas-k">
+                    {VIEW_AS.map(([v, label]) => (
+                      <button key={v} type="button" role="menuitemradio" aria-checked={viewAs === v} onClick={pick(() => onViewAs?.(v))}>
+                        {label}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+                <span className="acct-sep" aria-hidden="true" />
+              </span>
             )}
             {onChangePassword && (
               <button type="button" role="menuitem" onClick={pick(onChangePassword)}>

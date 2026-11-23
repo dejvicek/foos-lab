@@ -13,6 +13,15 @@ export function viewerOf(playerId: PlayerId | null, isAdmin: boolean, players: P
   return { playerId, isAdmin, isOrganizer: !!p?.organizer && !p.archived };
 }
 
+/** Admin se může dívat jako jiná role (23. 11. 2026, *rozhodnutí uživatele*): jen zobrazení, databáze ho dál zná jako admina. */
+export type ViewAs = 'admin' | 'organizer' | 'player';
+
+/** Pohled jako zvolená role – jen snižuje oprávnění a jen adminovi; kdo admin není, zůstává beze změny. */
+export function viewAsRole(v: Viewer, as: ViewAs): Viewer {
+  if (!v.isAdmin || as === 'admin') return v;
+  return { ...v, isAdmin: false, isOrganizer: as === 'organizer' };
+}
+
 /** Zakládat tréninky smí jen admin a organizátor (10. 11. 2026, zrcadlí politiku „insert“ v databázi). */
 export const canCreateTraining = (v: Viewer): boolean => v.isAdmin || (!!v.isOrganizer && v.playerId !== null);
 

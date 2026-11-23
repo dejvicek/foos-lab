@@ -24,7 +24,7 @@ export function roundName(a: Assignment): string {
 
 
 /** Pravidlo kola jednou větou z pohledu hráče. */
-export function roundRule(a: Assignment, me: PlayerId): string {
+export function roundRule(a: Assignment, _me: PlayerId): string {
   if (a.role === 'wait') return 'Toto kolo nehraješ.';
   const m = a.match;
   if (a.group) {
@@ -37,9 +37,8 @@ export function roundRule(a: Assignment, me: PlayerId): string {
   if (m.block === 'sim') return a.row.rule ? `Simulace ligového kola, ${a.row.rule}.` : 'Simulace ligového kola.';
   const parts: string[] = [];
   if (a.role === 'referee') parts.push(m.trackLosses ? 'Jsi rozhodčí: čárkuješ ztráty' : 'Jsi rozhodčí');
-  const mine: 'A' | 'B' = m.sideA.includes(me) ? 'A' : 'B';
-  // Kdo začíná s kolika, je vidět ze skóre – u scénářových startů se neříká (20. 11. 2026, *rozhodnutí uživatele*).
-  if (m.wall && a.role === 'play') parts.push(m.wall === mine ? 'Vaše strana drží zeď' : 'Soupeř drží zeď, vy ji lámete');
+  // Co ukazuje štítek u strany, se v pravidle neopakuje: kdo začíná s kolika (start N, 20. 11. 2026) ani kdo drží Zeď
+  // (štítek Zeď u jména, 23. 11. 2026, *rozhodnutí uživatele*).
   if (m.lossTax && a.role === 'play') parts.push('Ztráta = gól soupeře, ztráty čárkuje rozhodčí');
   // Do kolika se hraje, je v hlavičce kola vpravo („do 6“, „BO3 do 6“) – tady se neopakuje (19. 11. 2026).
   if (!parts.length) return '';
@@ -68,6 +67,7 @@ export function MyTimeline({
   played,
   active,
   activeWaits = false,
+  activeOnTurn = false,
   startTime,
   onPick,
   prev,
@@ -81,6 +81,8 @@ export function MyTimeline({
   active?: number;
   /** Aktuální kolo ještě čeká (na stůl, hráče, pauzu): vyšší, ale světle jako neodehrané. */
   activeWaits?: boolean;
+  /** Aktuální kolo je na řadě, ale ještě se nehraje (23. 11. 2026, *rozhodnutí uživatele*, varianta A): světle s čárkovaným obrysem. */
+  activeOnTurn?: boolean;
   startTime: string;
   onPick(index: number): void;
   prev: { disabled: boolean; onClick(): void };
@@ -99,7 +101,7 @@ export function MyTimeline({
             <button
               key={i}
               type="button"
-              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === active ? (activeWaits ? ' live waits' : ' live') : ''}`}
+              className={`seg t-${x.type}${played?.has(x.index!) ? ' done' : ''}${x.index === current ? ' cur' : ''}${x.index === active ? (activeWaits ? ' live waits' : activeOnTurn ? ' live turn' : ' live') : ''}`}
               style={{ flexGrow: x.min }}
               aria-label={`${x.index! + 1}. kolo: ${roundName({ row: x.row, role: 'wait' })}, ${clockAt(startTime, x.time)}`}
               aria-current={x.index === current ? 'step' : undefined}

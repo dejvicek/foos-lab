@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { drillTimeline, matchProgress, type DrillRow, type MatchProgress } from '../../domain/timeline';
+import { drillTimeline, isShortLeg, matchProgress, type DrillRow, type MatchProgress } from '../../domain/timeline';
 import { setScores } from '../../domain/legState';
 import type { GameEvent, Match, PlayerId } from '../../domain/types';
 import { fmtDur } from '../queue';
@@ -70,16 +70,7 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
   const what = unit === 'gól' ? 'Gól' : 'Set';
   return (
     <div ref={ref} className="tl-curve">
-      <div className="tl-legend">
-        <span>
-          <i className="tl-dot side-a" />
-          {nameA}
-        </span>
-        <span>
-          <i className="tl-dot side-b" />
-          {nameB}
-        </span>
-      </div>
+      <SideLegend nameA={nameA} nameB={nameB} />
       <svg width={W} height={H} role="img" aria-label={`Křivka vedení, konečný stav ${p.score.join(':')}`}>
         <defs>
           <clipPath id={`${id}u`}>
@@ -134,6 +125,47 @@ function MatchCurve({ p, nameA, nameB, unit }: { p: MatchProgress; nameA: string
   );
 }
 
+/** Legenda stran (barva = strana, která dala gól). */
+function SideLegend({ nameA, nameB }: { nameA: string; nameB: string }) {
+  return (
+    <div className="tl-legend">
+      <span>
+        <i className="tl-dot side-a" />
+        {nameA}
+      </span>
+      <span>
+        <i className="tl-dot side-b" />
+        {nameB}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Krátký scénář gól po gólu (23. 11. 2026, *rozhodnutí uživatele*, varianta A bez věty): start, pak stav po každém gólu
+ * v barvě strany, která ho dala, pod ním čas od začátku legu; poslední (konečný stav) zvýrazněný.
+ */
+function GoalSequence({ p, nameA, nameB }: { p: MatchProgress; nameA: string; nameB: string }) {
+  const goals = p.steps.filter((s) => s.kind === 'goal');
+  return (
+    <div className="tl-curve">
+      <SideLegend nameA={nameA} nameB={nameB} />
+      <ol className="goal-seq" aria-label={`Gól po gólu, konečný stav ${p.score.join(':')}`}>
+        <li className="gs-start">
+          <span className="gs-sc">{p.initial.join(':')}</span>
+          <small>start</small>
+        </li>
+        {goals.map((g, i) => (
+          <li key={i} className={`${sideCls(g.side)}${i === goals.length - 1 ? ' last' : ''}`}>
+            <span className="gs-sc">{g.score.join(':')}</span>
+            <small>{fmtDur(g.at - p.start)}</small>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /** Zápas (PRD 4.9): křivka vedení (od 18. 11. 2026 jediné zobrazení, Sloupec zrušen). U starší simulace jsou „góly“ sety. */
 export function MatchTimeline({ match: m, events, from, to, names }: { match: Match; events: GameEvent[]; from: number; to: number; names: Record<PlayerId, string> }) {
   const nm = (ids: PlayerId[]) => ids.map((id) => names[id] ?? '?').join(' + ');
@@ -141,6 +173,7 @@ export function MatchTimeline({ match: m, events, from, to, names }: { match: Ma
   // Ztráty jen u Daně za ztrátu (18. 11. 2026); starší ťuknuté ztráty jinde se nezobrazují.
   const p = matchProgress(m.trackLosses ? events : events.filter((e) => e.kind !== 'loss'), from, to, sim ? [0, 0] : (m.start ?? [0, 0]));
   const props = { p, nameA: nm(m.sideA), nameB: nm(m.sideB), unit: sim ? ('set' as const) : ('gól' as const) };
+  if (!sim && isShortLeg(p)) return <GoalSequence p={p} nameA={props.nameA} nameB={props.nameB} />;
   return <MatchCurve {...props} />;
 }
 

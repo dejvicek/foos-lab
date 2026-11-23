@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useMobile } from '../useMobile';
+import type { Route } from '../useHashRoute';
 import { ActionIconButton } from '../components/ActionIcon';
 import { AttendanceMeta } from '../components/AttendanceMeta';
 import { attendance, type PlayerAttendance } from '../../domain/attendance';
@@ -33,18 +36,91 @@ function download(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
+/** „1 aktivní“, „3 aktivní“, „5 aktivních“. */
+const activeCount = (n: number) => `${n} ${n >= 1 && n <= 4 ? 'aktivní' : 'aktivních'}`;
+
+/**
+ * Telefon (23. 11. 2026, *rozhodnutí uživatele*, varianta A): akce hráče v menu ⋯, které vyjede zespodu jako menu účtu.
+ * Organizátor je přepínač (menu zůstane otevřené), ostatní položky menu zavřou.
+ */
+function PlayerMenu({
+  player,
+  att,
+  onClose,
+  onOrganizer,
+  onRename,
+  onReset,
+  onProfile,
+  onArchive,
+}: {
+  player: Player;
+  att?: PlayerAttendance;
+  onClose(): void;
+  onOrganizer(): void;
+  onRename(): void;
+  onReset(): void;
+  onProfile?: () => void;
+  onArchive(): void;
+}) {
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [onClose]);
+  const pick = (fn: () => void) => () => {
+    onClose();
+    fn();
+  };
+  return createPortal(
+    <>
+      <span className="pl-backdrop" aria-hidden="true" onClick={onClose} />
+      <div className="pl-menu" role="menu" aria-label={player.name}>
+        <div className="pl-menu-who">
+          <b>{player.name}</b>
+          <AttendanceMeta a={att} total />
+        </div>
+        <button type="button" role="menuitemcheckbox" aria-checked={!!player.organizer} onClick={onOrganizer}>
+          Organizátor
+          <span className={player.organizer ? 'acct-switch on' : 'acct-switch'} aria-hidden="true" />
+        </button>
+        <button type="button" role="menuitem" onClick={pick(onRename)}>
+          Přejmenovat
+        </button>
+        <button type="button" role="menuitem" onClick={pick(onReset)}>
+          Resetovat heslo
+        </button>
+        {onProfile && (
+          <button type="button" role="menuitem" onClick={pick(onProfile)}>
+            Profil a fotka
+          </button>
+        )}
+        <span className="acct-sep" aria-hidden="true" />
+        <button type="button" role="menuitem" className="danger" onClick={pick(onArchive)}>
+          Archivovat
+        </button>
+      </div>
+    </>,
+    document.body,
+  );
+}
+
 function PlayerRow({
   store,
   player,
   att,
   onReset,
+  mobile = false,
+  onProfile,
 }: {
   store: AppStore;
   player: Player;
   att?: PlayerAttendance;
   onReset(p: Player): void;
+  mobile?: boolean;
+  onProfile?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [menu, setMenu] = useState(false);
   const [name, setName] = useState(player.name);
   const [error, setError] = useState<string | null>(null);
   const players = store.data.players;
@@ -57,8 +133,11 @@ function PlayerRow({
     setError(null);
   };
 
+  const toggleOrganizer = () => persistPlayers(store, setOrganizer(players, player.id, !player.organizer));
+  const archive = () => persistPlayers(store, setArchived(players, player.id, true));
+
   return (
-    <li data-name={player.name} className="player-row">
+    <li data-name={player.name} className={mobile && !editing ? 'player-row pl-m' : 'player-row'}>
       {editing ? (
         <form
           className="inline-form"
@@ -74,6 +153,31 @@ function PlayerRow({
           </button>
           {error && <p className="error">{error}</p>}
         </form>
+      ) : mobile ? (
+        <>
+          <span className="pl-who">
+            <span className="pl-name">
+              <span>{player.name}</span>
+              {player.organizer && <span className="role-tag">organizátor</span>}
+            </span>
+            <AttendanceMeta a={att} total />
+          </span>
+          <button type="button" className="pl-more" aria-label={`Akce: ${player.name}`} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(true)}>
+            ⋯
+          </button>
+          {menu && (
+            <PlayerMenu
+              player={player}
+              att={att}
+              onClose={() => setMenu(false)}
+              onOrganizer={toggleOrganizer}
+              onRename={() => setEditing(true)}
+              onReset={() => onReset(player)}
+              onProfile={onProfile}
+              onArchive={archive}
+            />
+          )}
+        </>
       ) : (
         <>
           <span className="player-name">{player.name}</span>
@@ -84,14 +188,14 @@ function PlayerRow({
             aria-pressed={!!player.organizer}
             aria-label={`Organizátor: ${player.name}`}
             title={player.organizer ? 'Organizátor – zakládá tréninky a spravuje ty své. Klikni pro odebrání.' : 'Udělat organizátorem – bude zakládat tréninky a spravovat ty své.'}
-            onClick={() => persistPlayers(store, setOrganizer(players, player.id, !player.organizer))}
+            onClick={toggleOrganizer}
           >
             {player.organizer ? '✓ Organizátor' : 'Organizátor'}
           </button>
           <span className="row-actions">
             <ActionIconButton icon="rename" label={`Přejmenovat ${player.name}`} onClick={() => setEditing(true)} />
             <ActionIconButton icon="key" label={`Resetovat heslo ${player.name}`} onClick={() => onReset(player)} />
-            <ActionIconButton icon="archive" label={`Archivovat ${player.name}`} onClick={() => persistPlayers(store, setArchived(players, player.id, true))} />
+            <ActionIconButton icon="archive" label={`Archivovat ${player.name}`} onClick={archive} />
           </span>
         </>
       )}
@@ -99,8 +203,10 @@ function PlayerRow({
   );
 }
 
-export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?: Viewer; auth?: AuthService }) {
+export function PlayersPage({ store, viewer, auth, navigate }: { store: AppStore; viewer?: Viewer; auth?: AuthService; navigate?: (r: Route) => void }) {
   const isAdmin = viewer?.isAdmin ?? true;
+  const mobile = useMobile();
+  const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [backup, setBackup] = useState<'idle' | 'loading' | 'error'>('idle');
   const [name, setName] = useState('');
@@ -152,35 +258,61 @@ export function PlayersPage({ store, viewer, auth }: { store: AppStore; viewer?:
 
   return (
     <section>
-      <h1>Hráči</h1>
-      <p className="lead">Soupiska klubu. Organizátor zakládá tréninky a spravuje ty své; zapni ho tlačítkem Organizátor u hráče.</p>
+      {mobile ? (
+        <div className="pl-top">
+          <div>
+            <h1>Hráči</h1>
+            <p className="lead">
+              <span>{activeCount(active.length)}</span> · organizátor zakládá tréninky
+            </p>
+          </div>
+          <button type="button" aria-expanded={adding} onClick={() => setAdding((a) => !a)}>
+            + Přidat
+          </button>
+        </div>
+      ) : (
+        <>
+          <h1>Hráči</h1>
+          <p className="lead">Soupiska klubu. Organizátor zakládá tréninky a spravuje ty své; zapni ho tlačítkem Organizátor u hráče.</p>
+        </>
+      )}
       {notice && (
         <p className="notice" role="status">
           {notice}
         </p>
       )}
 
-      <form
-        className="add-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          add();
-        }}
-      >
-        <label htmlFor="new-player">Jméno nového hráče</label>
-        <div className="add-row">
-          <input id="new-player" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-          <button type="submit">Přidat</button>
-        </div>
-        {error && <p className="error">{error}</p>}
-      </form>
+      {(!mobile || adding) && (
+        <form
+          className="add-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <label htmlFor="new-player">Jméno nového hráče</label>
+          <div className="add-row">
+            <input id="new-player" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" autoFocus={mobile} />
+            <button type="submit">Přidat</button>
+          </div>
+          {error && <p className="error">{error}</p>}
+        </form>
+      )}
 
       {active.length === 0 ? (
         <p className="note">Soupiska je prázdná. Přidej první hráče.</p>
       ) : (
         <ul className="player-list" aria-label="Aktivní hráči">
           {active.map((p) => (
-            <PlayerRow key={p.id} store={store} player={p} att={att.get(p.id)} onReset={reset} />
+            <PlayerRow
+              key={p.id}
+              store={store}
+              player={p}
+              att={att.get(p.id)}
+              onReset={reset}
+              mobile={mobile}
+              onProfile={navigate ? () => navigate({ page: 'player', id: p.id }) : undefined}
+            />
           ))}
         </ul>
       )}

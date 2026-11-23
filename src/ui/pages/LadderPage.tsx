@@ -577,8 +577,8 @@ export function LadderPage({ store, prefs, setPrefs, navigate, me }: Props) {
             onChange={(v) => setPrefs({ ...prefs, ladderMatchKind: v })}
             options={[
               ['all', 'Vše'],
-              ['singles', '1 na 1'],
               ['doubles', '2 na 2'],
+              ['singles', '1 na 1'],
             ]}
           />
           <p className="note">

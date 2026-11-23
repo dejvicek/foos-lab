@@ -217,8 +217,11 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     const mine = await screen.findByRole('region', { name: 'Moje kolo' });
     const user = userEvent.setup();
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    // v kartě „● Na řadě · čeká se na soupeře (jména)“ a ✓ zrušit; akční zóna prázdná (19. 11. 2026)
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(/^● Na řadě · čeká se na soupeře \(H\d \+ H\d\)✓ zrušit$/);
+    // zrcadlo Připraven? (23. 11. 2026): moje strana zeleně „✓ Připraven“ (ťuknutím zrušit), soupeř „čeká se“; proužek jen „● Na řadě“
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(/^● Na řadě$/);
+    const zone = mine.querySelector('.ready-mirror') as HTMLElement;
+    expect(within(zone).getByRole('button', { name: /^Zrušit připravenost: / })).toHaveTextContent('✓ Připraven');
+    expect(zone).toHaveTextContent('čeká se');
     expect(within(mine).queryByRole('button', { name: /^Připraven/ })).toBeNull();
     expect(within(mine).queryByRole('button', { name: /^Gól vlevo/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Moje hry' })).toBeInTheDocument(); // tečka zmizela, čeká se na soupeře
@@ -280,9 +283,14 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     // osa: barva podle skutečnosti, vyšší dílek = kolo, které hraju / je na řadě, zobrazené kolo jen ▼
     const seg = (n: number) => within(mine).getByRole('button', { name: new RegExp(`^${n}\\. kolo:`) });
     const cls = () => [1, 2, 3].map((n) => ['done', 'cur', 'live'].filter((c) => seg(n).classList.contains(c)).join('+'));
+    // na řadě (nikdo nezačal): vyšší dílek čárkovaně (23. 11. 2026, varianta A); po zahájení plně
+    expect(seg(1)).toHaveClass('live', 'turn');
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
     expect(cls()).toEqual(['cur+live', '', '']);
+    expect(seg(1)).not.toHaveClass('turn');
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    // dohráno, ještě nepotvrzeno: Průběh už je vidět (23. 11. 2026, dřív až po potvrzení)
+    expect(within(mine).getByRole('group', { name: 'Průběh' })).toBeInTheDocument();
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     expect(cls()).toEqual(['done+cur', 'live', '']);
     await user.click(seg(3));
@@ -411,7 +419,7 @@ describe('hráč hlásí připravenost jen v Moje hry', () => {
     await user.click(screen.getByRole('button', { name: /^Moje hry/ }));
     const mine = screen.getByRole('region', { name: 'Moje kolo' });
     await user.click(within(mine).getByRole('button', { name: 'Připraven' }));
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('čeká se na soupeře');
+    expect(mine.querySelector('.ready-mirror')).toHaveTextContent('čeká se');
   });
 });
 
@@ -427,9 +435,9 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     expect(btns).toHaveLength(2);
     const other = btns.map((b) => b.getAttribute('aria-label')!.slice('Připraven: '.length)).find((n) => n !== 'H1')!;
     await user.click(within(mine).getByRole('button', { name: 'Připraven: H1' }));
-    const status = within(mine.querySelector('.my-card') as HTMLElement).getByRole('status');
-    expect(status).toHaveTextContent(`● Na řadě · čeká se na hráče (${other})✓ zrušit H1`);
-    expect(within(mine).getByRole('button', { name: `Připraven: ${other}` })).toBeInTheDocument();
+    // zrcadlo Připraven? (23. 11. 2026): H1 zeleně a jde zrušit, druhý hráč pořád „Připraven?“
+    expect(within(mine).getByRole('button', { name: 'Zrušit připravenost: H1' })).toHaveTextContent('✓ Připraven');
+    expect(within(mine).getByRole('button', { name: `Připraven: ${other}` })).toHaveTextContent('Připraven?');
   });
 
   it('hráč skupiny hlásí za sebe i za spoluhráče u stolu (20. 11. 2026); cvičení začne, až jsou připravení všichni', async () => {
@@ -444,8 +452,7 @@ describe('připravenost u cvičení (18. 11. 2026)', () => {
     expect(btns).toHaveLength(2); // za sebe i za spoluhráče
     const other = btns.map((b) => b.getAttribute('aria-label')!.slice('Připraven: '.length)).find((n) => n !== 'H1')!;
     await user.click(within(mine).getByRole('button', { name: 'Připraven: H1' }));
-    // cvičení: čeká se na ostatní hráče jménem (19. 11. 2026)
-    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent(`● Na řadě · čeká se na hráče (${other})`);
+    expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Na řadě');
     await user.click(within(mine).getByRole('button', { name: `Připraven: ${other}` }));
     await vi.waitFor(() => expect(within(mine.querySelector('.my-card') as HTMLElement).getByRole('status')).toHaveTextContent('● Hraje se'));
     expect(within(mine).getByRole('button', { name: 'Potvrdit konec' })).toBeInTheDocument();

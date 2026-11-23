@@ -245,6 +245,8 @@ export function hasProgress(training: Training, itemId: string, m?: Match): bool
  */
 export function ItemProgress({ itemId, match: m, players, training, names }: { itemId: string; match?: Match; players: PlayerId[]; training: Training; names: Record<PlayerId, string> }) {
   const all = training.events ?? [];
+  // Zápas na víc legů (21. 11. 2026, *rozhodnutí uživatele*): přepínač legů, vždy jen jeden graf.
+  const [picked, setPicked] = useState<number | null>(null);
   if (!m) {
     const evs = all.filter((e) => e.itemId === itemId);
     return (
@@ -257,21 +259,27 @@ export function ItemProgress({ itemId, match: m, players, training, names }: { i
   const pt = training.playTimes?.[m.id];
   const legs = st.legs.filter((l) => all.some((e) => e.itemId === l.leg.id));
   const count = legs.reduce((n, l) => n + all.filter((e) => e.itemId === l.leg.id).length, 0);
+  const shown = legs.find((l) => (l.leg.legNo ?? 1) === picked) ?? legs[0];
+  const chart = (l: (typeof legs)[number]) => {
+    const evs = all.filter((e) => e.itemId === l.leg.id);
+    const first = Math.min(...evs.map((e) => e.at));
+    const last = Math.max(...evs.map((e) => e.at));
+    const from = (l.leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first);
+    const to = pt?.endedAt ?? (pt?.startedAt !== undefined && !l.over ? Date.now() : last);
+    return <MatchTimeline key={l.leg.id} match={l.leg} events={evs} from={from} to={to} names={names} />;
+  };
   return (
     <TimelineBox count={count} open>
-      {legs.map((l) => {
-        const evs = all.filter((e) => e.itemId === l.leg.id);
-        const first = Math.min(...evs.map((e) => e.at));
-        const last = Math.max(...evs.map((e) => e.at));
-        const from = (l.leg.legNo ?? 1) > 1 ? first : (pt?.startedAt ?? first);
-        const to = pt?.endedAt ?? (pt?.startedAt !== undefined && !l.over ? Date.now() : last);
-        return (
-          <div key={l.leg.id} className="tl-leg">
-            {legs.length > 1 && <span className="tl-leg-k">Leg {l.leg.legNo} · {legText(l.leg, l.score)}</span>}
-            <MatchTimeline match={l.leg} events={evs} from={from} to={to} names={names} />
-          </div>
-        );
-      })}
+      {legs.length > 1 && (
+        <div className="legs tl-legs" role="group" aria-label="Leg průběhu">
+          {legs.map((l) => (
+            <button key={l.leg.id} type="button" className="pill" aria-pressed={l === shown} onClick={() => setPicked(l.leg.legNo ?? 1)}>
+              Leg {l.leg.legNo} · {legText(l.leg, l.score)}
+            </button>
+          ))}
+        </div>
+      )}
+      {shown && <div className="tl-leg">{chart(shown)}</div>}
     </TimelineBox>
   );
 }
