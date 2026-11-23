@@ -363,6 +363,8 @@ export function MyTable(props: Props) {
           {/* Notebook: výběr skóre zůstává (6 gólů vlevo je dohráno, ale soupeřovy góly se teprve vybírají). */}
           {!props.tap && entry}
           {confirmEnd}
+          {/* Průběh hned po dohrání, ne až po potvrzení konce (23. 11. 2026, *rozhodnutí uživatele*). */}
+          {a.table !== undefined && <GameProgress row={a.row} table={a.table} training={training} names={names} />}
         </div>
       );
     if (started)

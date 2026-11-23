@@ -289,6 +289,8 @@ describe('Můj stůl: zahájení a konec ťukáním', () => {
     expect(cls()).toEqual(['cur+live', '', '']);
     expect(seg(1)).not.toHaveClass('turn');
     for (let i = 0; i < 6; i++) await user.click(within(mine).getByRole('button', { name: /^Gól vlevo/ }));
+    // dohráno, ještě nepotvrzeno: Průběh už je vidět (23. 11. 2026, dřív až po potvrzení)
+    expect(within(mine).getByRole('group', { name: 'Průběh' })).toBeInTheDocument();
     await user.click(within(mine).getByRole('button', { name: 'Potvrdit konec' }));
     expect(cls()).toEqual(['done+cur', 'live', '']);
     await user.click(seg(3));
