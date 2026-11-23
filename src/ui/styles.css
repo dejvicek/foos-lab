@@ -1922,6 +1922,11 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 /* obsah mini obrazovek */
 .guide .g-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .guide .g-card.g-hot { border-color: var(--felt); box-shadow: inset 0 0 0 1px var(--felt); }
+.guide .g-card.g-hot.g-turn { border: 2px dashed var(--k-match); box-shadow: none; }
+/* Připraven? ve zrcadle stolu (23. 11. 2026): klikací zlatě u obou stran, na koho se čeká, čárkovaně. */
+.guide .g-ready .g-goal { min-height: 110px; font-size: 17px; font-weight: 800; }
+.guide .g-ready .g-side .g-goal.g-go { background: var(--gold); color: var(--gold-ink); }
+.guide .g-ready .g-side .g-goal.g-wait { background: transparent; color: var(--muted); border: 2px dashed var(--line-strong); font-size: 13px; font-weight: 700; }
 .guide .g-card .g-k { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
 .guide .g-card .g-vs { font-weight: 700; font-size: 15px; line-height: 1.3; }
 .guide .g-card .g-vs span { color: var(--muted); font-weight: 500; }
@@ -2000,8 +2005,8 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tl li::before { content: ""; position: absolute; left: 9px; top: 18px; bottom: 0; width: 2px; background: var(--line); }
 .guide .g-tl li:last-child::before { display: none; }
 .guide .g-tl .g-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 11px; font-weight: 800; z-index: 1; }
-.guide .g-tl li.g-past .g-dot { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
-.guide .g-tl li.g-now .g-dot { border-color: var(--felt); border-width: 3px; }
+.guide .g-tl li.g-past .g-dot { background: var(--k-match); border-color: var(--k-match); color: var(--surface); }
+.guide .g-tl li.g-now .g-dot { border-color: var(--k-match); box-shadow: 0 0 0 4px color-mix(in srgb, var(--k-match) 22%, transparent); }
 .guide .g-tl .g-rw { display: flex; flex-direction: column; gap: 4px; font-size: 12px; min-width: 0; }
 .guide .g-tl .g-rw b { font-size: 13px; }
 .guide .g-tl .g-rw small { color: var(--muted); font-size: 11px; }
@@ -2011,13 +2016,14 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); }
 .guide .g-tt b { font-size: 13px; }
 .guide .g-tt.g-mine { background: var(--felt-soft); border-color: var(--felt); }
-.guide .g-tl li.g-now .g-dot { color: var(--felt); }
+.guide .g-tl li.g-now .g-dot { color: var(--k-match); }
 .guide .g-tl li.g-pz .g-dot { font-size: 8px; letter-spacing: -1px; }
 .guide .g-tl .g-fold { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 2px; }
 .guide .g-tl .g-fold small { text-decoration: underline; }
 .guide .g-tl .g-tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; box-shadow: 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); }
-.guide .g-tl .g-tile.g-mine { box-shadow: inset 4px 0 0 var(--gold), 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line-strong); padding-left: 12px; }
-.guide .g-tl li.g-now .g-tile { border: 2px solid var(--felt); background: var(--surface); }
+.guide .g-tl li .g-tile.g-mine { position: relative; padding-left: 14px; }
+.guide .g-tl .g-tile.g-mine::after { content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--gold); }
+.guide .g-tl li.g-now .g-tile { border: 2px solid var(--k-match); background: var(--surface); }
 .guide .g-tl .g-ttop { display: flex; justify-content: space-between; gap: 6px; }
 .guide .g-tl .g-tile .g-tt { border: 0; padding: 0; }
 .guide .g-tl em { font-style: normal; font-weight: 800; color: var(--felt); }
