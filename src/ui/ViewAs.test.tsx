@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('admin se dívá jako jiná role (23. 11. 2026)', () => {
-  it('Hráč: zmizí adminské věci, lišta nahoře; Zpět na admina vše vrátí; zařízení si volbu pamatuje', async () => {
+  it('Hráč: zmizí adminské věci, v liště štítek Hráč; ťuknutí na něj vše vrátí; zařízení si volbu pamatuje', async () => {
     const user = userEvent.setup();
     const { unmount } = render(<App repo={memoryRepository({ players, trainings: [] })} auth={auth()} />);
     const nav = await screen.findByRole('navigation', { name: 'Hlavní navigace' });
@@ -28,14 +28,14 @@ describe('admin se dívá jako jiná role (23. 11. 2026)', () => {
     await user.click(screen.getByRole('menuitemradio', { name: 'Hráč' }));
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Klubový trénink/ })).toBeNull();
-    expect(screen.getByText(/Díváš se jako hráč/)).toBeInTheDocument();
+    // nenápadný štítek v liště místo pruhu (23. 11. 2026)
+    expect(screen.getByRole('button', { name: 'Pohled: hráč – zpět na admina' })).toHaveTextContent('Hráč');
 
     // po znovuotevření appky pořád pohled hráče
     unmount();
     render(<App repo={memoryRepository({ players, trainings: [] })} auth={auth()} />);
-    expect(await screen.findByText(/Díváš se jako hráč/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Zpět na admina' }));
-    expect(screen.queryByText(/Díváš se jako/)).toBeNull();
+    await user.click(await screen.findByRole('button', { name: 'Pohled: hráč – zpět na admina' }));
+    expect(screen.queryByRole('button', { name: /^Pohled: / })).toBeNull();
     expect(within(screen.getByRole('navigation', { name: 'Hlavní navigace' })).getByRole('button', { name: 'Hráči' })).toBeInTheDocument();
   });
 
@@ -46,7 +46,7 @@ describe('admin se dívá jako jiná role (23. 11. 2026)', () => {
     await screen.findByRole('button', { name: /Klubový trénink/ });
     await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
     await user.click(screen.getByRole('menuitemradio', { name: 'Organizátor' }));
-    expect(screen.getByText(/Díváš se jako organizátor/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pohled: organizátor – zpět na admina' })).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
     expect(screen.getByRole('button', { name: /Klubový trénink/ })).toBeInTheDocument();
   });

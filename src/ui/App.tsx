@@ -182,7 +182,6 @@ function SignedIn({
     saveViewAs(v);
   };
   const viewer = viewAsRole(realViewer, viewAs);
-  const viewingAs = realViewer.isAdmin && viewAs !== 'admin' ? viewAs : null;
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
   const appliedCatalog = useRef<unknown>(null);
   if (appliedCatalog.current !== (store.data.catalog ?? null)) {
@@ -320,14 +319,6 @@ function SignedIn({
         viewAs={viewAs}
         onViewAs={setViewAs}
       />
-      {viewingAs && (
-        <div className="update-banner viewas-banner" role="status">
-          Díváš se jako {viewingAs === 'player' ? 'hráč' : 'organizátor'} – vidíš jen to, co on.{' '}
-          <button type="button" className="ghost banner-ok" onClick={() => setViewAs('admin')}>
-            Zpět na admina
-          </button>
-        </div>
-      )}
       {news.banner && route.page !== 'patch-notes' && (
         <div className="update-banner news-banner" role="status">
           Appka má novou verzi {APP_VERSION}.{' '}

@@ -146,6 +146,25 @@ export function MainNav({
             </a>
             <VersionTag />
           </span>
+          {/* Pohled jako jiná role (23. 11. 2026): nenápadný štítek vedle účtu místo pruhu přes celou šířku; ťuknutí vrátí admina. */}
+          {realAdmin && viewAs !== 'admin' && onViewAs && (
+            <button
+              type="button"
+              className="viewas-chip"
+              title="Zpět na pohled admina"
+              aria-label={`Pohled: ${viewAs === 'player' ? 'hráč' : 'organizátor'} – zpět na admina`}
+              onClick={() => onViewAs('admin')}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z" />
+                <circle cx="12" cy="12" r="2.6" />
+              </svg>
+              <span>{viewAs === 'player' ? 'Hráč' : 'Organizátor'}</span>
+              <span className="viewas-x" aria-hidden="true">
+                ×
+              </span>
+            </button>
+          )}
           <AccountMenu name={myName ?? 'Účet'} myId={myId} admin={admin} realAdmin={realAdmin} viewAs={viewAs} onViewAs={onViewAs} templatesActive={route.page === 'templates'} navigate={navigate} onChangePassword={onChangePassword} onSignOut={onSignOut} />
         </span>
       )}

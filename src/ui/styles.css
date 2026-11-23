@@ -2417,5 +2417,16 @@ button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); colo
 @media (max-width: 767px) {
   .acct-menu .acct-seg button { min-height: 40px; font-size: 14px; }
 }
-.viewas-banner { background: var(--ink); color: var(--surface); }
-.viewas-banner button.banner-ok { background: var(--surface); color: var(--ink); border-color: var(--surface); }
+/* Pohled jako jiná role: nenápadný štítek vedle účtu (23. 11. 2026, místo černého pruhu) – čárkovaně jako „není to naostro“. */
+.main-nav button.viewas-chip {
+  display: inline-flex; flex-direction: row; flex: none; align-items: center; gap: 5px; height: 30px; min-height: 0; padding: 0 6px 0 9px; border-radius: 999px;
+  border: 1px dashed var(--line-strong); background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; white-space: nowrap;
+}
+.main-nav button.viewas-chip:hover { color: var(--ink); border-color: var(--muted); background: var(--bg); }
+.main-nav button.viewas-chip svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.viewas-chip .viewas-x { font-size: 15px; line-height: 1; padding: 0 2px; opacity: .7; }
+@media (max-width: 767px) {
+  /* Plocha pro prst 44 px kolem malého štítku. */
+  .main-nav button.viewas-chip { position: relative; }
+  .main-nav button.viewas-chip::after { content: ''; position: absolute; inset: -7px -2px; }
+}
