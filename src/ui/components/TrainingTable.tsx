@@ -7,7 +7,7 @@ import { clockAt, soloKey, soloMetric } from '../../domain/solo';
 import { drillCount } from '../../domain/drillTap';
 import type { BreakDef, Cell, Match, MatchId, PlayerId, Schedule, ScheduleRow, Score, SoloKey, Training } from '../../domain/types';
 import { flatRows, rowKey } from '../now';
-import { railClass, railLine, STATE_LABEL, type RoundStatus } from '../roundState';
+import { railClass, railLine, stateLabel, type RoundStatus } from '../roundState';
 import { collapsedDone, finishedBySolo, finishedByScore, placeOf, roundNumbers, rowMinutes, keepLast, rowName, rowSub, takesPart, upcomingRounds } from '../scheduleView';
 import { plural } from '../format';
 import { BlockEntry, hasProgress, hasRoundHelp, ItemProgress, RoundHelp, type TapSolo } from './BlockEntry';
@@ -303,7 +303,7 @@ export function RailNode({ st, no, pause, label }: { st: RoundStatus | undefined
   const state = st?.state ?? 'upcoming';
   const what = pause ? 'Pauza' : no ? `${no}. kolo` : (label ?? '');
   return (
-    <span className={pause ? 'rail-node pause' : 'rail-node'} role="img" aria-label={`${what} – ${STATE_LABEL[state].toLowerCase()}`}>
+    <span className={pause ? 'rail-node pause' : 'rail-node'} role="img" aria-label={`${what} – ${stateLabel(st).toLowerCase()}`}>
       {pause ? (
         <>
           <i />
