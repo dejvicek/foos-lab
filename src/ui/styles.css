@@ -2352,3 +2352,16 @@ button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); colo
 }
 .pl-menu button:hover, .pl-menu button:focus-visible { background: var(--bg); }
 .pl-menu button.danger { color: var(--warn); }
+
+/* Krátký scénář gól po gólu (23. 11. 2026): start → stav po každém gólu v barvě strany, pod ním čas. */
+.goal-seq { list-style: none; margin: 4px 0 2px; padding: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 4px; }
+.goal-seq li { display: grid; justify-items: center; gap: 2px; min-width: 50px; position: relative; }
+.goal-seq li + li { padding-left: 18px; }
+.goal-seq li + li::before { content: '→'; position: absolute; left: 2px; top: 5px; color: var(--faint); font-size: 13px; }
+.gs-sc { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); line-height: 1.3; }
+.goal-seq li small { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal-seq .gs-start .gs-sc { color: var(--muted); font-weight: 700; border-style: dashed; background: var(--surface); }
+.goal-seq .side-a .gs-sc { background: var(--felt-soft); border-color: color-mix(in srgb, var(--gold) 60%, transparent); color: var(--ink); }
+.goal-seq .side-b .gs-sc { background: var(--side-b); border-color: var(--side-b); color: var(--side-b-ink); }
+.goal-seq .last .gs-sc { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--gold); }
+.goal-seq .side-b.last .gs-sc { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--side-b); }

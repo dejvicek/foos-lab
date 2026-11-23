@@ -1,4 +1,4 @@
-import { drillTimeline, effectiveEvents, leader, matchProgress } from './timeline';
+import { drillTimeline, effectiveEvents, isShortLeg, leader, matchProgress } from './timeline';
 import type { GameEvent } from './types';
 
 const M = 60_000;
@@ -79,5 +79,19 @@ describe('průběh hry z událostí', () => {
     const d = drillTimeline(list, ['a', 'b']);
     expect(d.a.marks).toEqual([true, false]);
     expect(d.b.marks).toEqual([false, true]);
+  });
+});
+
+describe('krátký scénář – gól po gólu místo křivky (23. 11. 2026)', () => {
+  const g = (i: number, side: 'A' | 'B') => ({ id: `g${i}`, itemId: 'm', at: i * 1000, kind: 'goal' as const, side, delta: 1 as const });
+  it('scénářový start a nejvýš 4 góly = krátký leg', () => {
+    expect(isShortLeg(matchProgress([g(1, 'A'), g(2, 'A')], 0, 3000, [4, 5]))).toBe(true);
+    expect(isShortLeg(matchProgress([g(1, 'B'), g(2, 'A'), g(3, 'A')], 0, 3000, [4, 4]))).toBe(true);
+    expect(isShortLeg(matchProgress([g(1, 'B'), g(2, 'B'), g(3, 'B')], 0, 3000, [0, 3]))).toBe(true);
+    expect(isShortLeg(matchProgress([1, 2, 3, 4, 5].map((i) => g(i, 'A')), 0, 6000, [0, 3]))).toBe(false);
+    // normální leg (start 0:0) vždy křivka, i rozehraný s málo góly
+    expect(isShortLeg(matchProgress([g(1, 'A'), g(2, 'B')], 0, 3000))).toBe(false);
+    // bez gólů nic
+    expect(isShortLeg(matchProgress([], 0, 3000, [5, 5]))).toBe(false);
   });
 });

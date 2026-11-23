@@ -73,6 +73,18 @@ export function matchProgress(events: GameEvent[], from: number, to: number, ini
   return { start, end, initial: [...initial], steps, score: [a, b], maxLead };
 }
 
+/** Nejvýš tolik gólů má krátký scénář (start 4:4, 4:5, 5:5) – průběh gól po gólu místo křivky. */
+export const SHORT_LEG_GOALS = 4;
+
+/**
+ * Krátký scénář (23. 11. 2026, *rozhodnutí uživatele*): scénářový start a nejvýš 4 góly. Křivka vedení z pár schodů
+ * nic neřekne, ukazuje se řada stavů gól po gólu. Normální leg (start 0:0) má vždy křivku.
+ */
+export function isShortLeg(p: MatchProgress): boolean {
+  const goals = p.steps.filter((s) => s.kind === 'goal').length;
+  return p.initial[0] + p.initial[1] > 0 && goals > 0 && goals <= SHORT_LEG_GOALS;
+}
+
 export interface DrillRow {
   /** Pokusy po řadě: true = povedený (✓), false = nepovedený (✗). */
   marks: boolean[];
