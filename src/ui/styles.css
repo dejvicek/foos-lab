@@ -2227,7 +2227,7 @@ button.pp-low-toggle { background: none; border: 0; padding: 8px 2px; min-height
 .acct-chev { font-size: 11px; color: var(--muted); }
 .acct-backdrop { display: none; }
 .acct-menu {
-  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 240px; display: flex; flex-direction: column;
+  position: fixed; right: var(--acct-right, 16px); top: var(--acct-top, 60px); z-index: 60; width: 260px; display: flex; flex-direction: column;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px;
   box-shadow: 0 10px 30px color-mix(in srgb, #000 16%, transparent);
 }
@@ -2403,11 +2403,19 @@ button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); colo
 .ready-mirror .mirror-half.waits { border-style: dashed; border-color: var(--line-strong); }
 .ready-mirror .mirror-half:has(.ready-ok) { border-color: var(--good); }
 
-/* Podmenu Administrace v menu účtu (23. 11. 2026): Šablony a Zobrazit jako (Admin / Organizátor / Hráč). */
-.acct-sub { display: flex; flex-direction: column; margin: 0 0 4px 10px; padding-left: 8px; border-left: 2px solid var(--line); }
-.acct-sub-k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 2px; }
-.acct-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; position: relative; }
-.acct-radio.on { border-color: var(--ink); }
-.acct-radio.on::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; background: var(--ink); }
+/* Sekce Administrace v menu účtu (23. 11. 2026): vždy rozbalená – nadpis sekce, Šablony a přepínač Zobrazit jako na jednom řádku. */
+.acct-admin { display: flex; flex-direction: column; }
+.acct-sec { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 4px 10px 2px; }
+.acct-viewas { display: grid; gap: 4px; padding: 6px 10px 8px; }
+.acct-viewas-k { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.acct-seg { display: grid; grid-template-columns: repeat(3, auto); gap: 2px; padding: 2px; border-radius: 9px; background: var(--bg); border: 1px solid var(--line); }
+.acct-menu .acct-seg button {
+  min-height: 30px; padding: 4px 6px; border-radius: 7px; font-size: 12.5px; font-weight: 700; justify-content: center; color: var(--muted);
+}
+.acct-menu .acct-seg button:hover { background: var(--surface); color: var(--ink); }
+.acct-menu .acct-seg button[aria-checked='true'] { background: var(--ink); color: var(--surface); }
+@media (max-width: 767px) {
+  .acct-menu .acct-seg button { min-height: 40px; font-size: 14px; }
+}
 .viewas-banner { background: var(--ink); color: var(--surface); }
 .viewas-banner button.banner-ok { background: var(--surface); color: var(--ink); border-color: var(--surface); }

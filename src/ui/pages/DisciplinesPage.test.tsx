@@ -308,7 +308,6 @@ describe('stránka Disciplíny', () => {
     // Šablony jsou od 21. 11. 2026 v menu účtu, ne v hlavní navigaci
     expect(within(nav).queryByRole('button', { name: 'Šablony' })).toBeNull();
     await user.click(within(nav).getByRole('button', { name: /^Účet: / }));
-    await user.click(screen.getByRole('menuitem', { name: 'Administrace' })); // Šablony jsou v podmenu (23. 11. 2026)
     await user.click(screen.getByRole('menuitem', { name: 'Šablony' }));
     expect(window.location.hash).toBe('#/templates');
     expect(screen.getByRole('heading', { level: 1, name: 'Šablony' })).toBeInTheDocument();

@@ -155,7 +155,7 @@ export function MainNav({
 
 /**
  * Menu účtu vpravo v liště (21. 11. 2026, *rozhodnutí uživatele*, varianta A): tlačítko s iniciálou a jménem, menu
- * Můj profil · Návod · Tmavý režim · Administrace (admin: Šablony, Zobrazit jako Admin / Organizátor / Hráč) · Změnit heslo · Odhlásit.
+ * Můj profil · Návod · Tmavý režim · sekce Administrace (admin, vždy rozbalená: Šablony, Zobrazit jako Admin | Organizátor | Hráč) · Změnit heslo · Odhlásit.
  * Na telefonu vyjede zespodu.
  * Zavře se výběrem, Escem nebo klepnutím mimo; přepnutí režimu menu nechá otevřené, ať je změna vidět.
  */
@@ -189,8 +189,6 @@ function AccountMenu({
   onSignOut?(): void;
 }) {
   const [open, setOpen] = useState(false);
-  // Podmenu Administrace (23. 11. 2026): Šablony a pohled jako jiná role; rozbalí se v menu.
-  const [sub, setSub] = useState(false);
   // Poloha menu na notebooku (pod tlačítkem, zarovnané vpravo); menu je v portálu, mimo lištu, ať nepřebírá její styly.
   const [at, setAt] = useState<{ top: number; right: number } | null>(null);
   const [theme, toggleTheme] = useTheme();
@@ -200,7 +198,6 @@ function AccountMenu({
     const r = box.current?.getBoundingClientRect();
     if (r) setAt({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
     setOpen(!open);
-    setSub(false);
   };
   useEffect(() => {
     if (!open) return;
@@ -259,27 +256,27 @@ function AccountMenu({
               <span className={theme === 'dark' ? 'acct-switch on' : 'acct-switch'} aria-hidden="true" />
             </button>
             {realAdmin && (
-              <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={sub} className="acct-sub-toggle" onClick={() => setSub(!sub)}>
-                Administrace
-                <span className="acct-chev" aria-hidden="true">
-                  {sub ? '▴' : '▾'}
-                </span>
-              </button>
-            )}
-            {realAdmin && sub && (
-              <span className="acct-sub" role="group" aria-label="Administrace">
+              <span className="acct-admin" role="group" aria-label="Administrace">
+                <span className="acct-sep" aria-hidden="true" />
+                <span className="acct-sec">Administrace</span>
                 {admin && (
                   <button type="button" role="menuitem" onClick={pick(() => navigate({ page: 'templates' }))}>
                     Šablony
                   </button>
                 )}
-                <span className="acct-sub-k">Zobrazit jako</span>
-                {VIEW_AS.map(([v, label]) => (
-                  <button key={v} type="button" role="menuitemradio" aria-checked={viewAs === v} onClick={pick(() => onViewAs?.(v))}>
-                    {label}
-                    <span className={viewAs === v ? 'acct-radio on' : 'acct-radio'} aria-hidden="true" />
-                  </button>
-                ))}
+                <span className="acct-viewas">
+                  <span className="acct-viewas-k" id="acct-viewas-k">
+                    Zobrazit jako
+                  </span>
+                  <span className="acct-seg" role="group" aria-labelledby="acct-viewas-k">
+                    {VIEW_AS.map(([v, label]) => (
+                      <button key={v} type="button" role="menuitemradio" aria-checked={viewAs === v} onClick={pick(() => onViewAs?.(v))}>
+                        {label}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+                <span className="acct-sep" aria-hidden="true" />
               </span>
             )}
             {onChangePassword && (

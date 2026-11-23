@@ -25,7 +25,6 @@ describe('admin se dívá jako jiná role (23. 11. 2026)', () => {
     expect(within(nav).getByRole('button', { name: 'Hráči' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Administrace' }));
     await user.click(screen.getByRole('menuitemradio', { name: 'Hráč' }));
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Klubový trénink/ })).toBeNull();
@@ -46,7 +45,6 @@ describe('admin se dívá jako jiná role (23. 11. 2026)', () => {
     const nav = await screen.findByRole('navigation', { name: 'Hlavní navigace' });
     await screen.findByRole('button', { name: /Klubový trénink/ });
     await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Administrace' }));
     await user.click(screen.getByRole('menuitemradio', { name: 'Organizátor' }));
     expect(screen.getByText(/Díváš se jako organizátor/)).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: 'Hráči' })).toBeNull();
