@@ -1,9 +1,10 @@
 /*
   Klubové barvy (10. 11. 2026): černá / grafit a zlatá.
-  Zlatá = hlavní tlačítko a zvolená položka přepínače (Žebříček), stav hry (na řadě, dohráno, plus) a tvoje strana stolu.
+  Zlatá = hlavní tlačítko, stav hry (na řadě, dohráno, plus), úspěch (vítězné skóre, graf průběhu) a tvoje strana stolu; zvolený přepínač je černý.
   Stránka tréninku (23. 11. 2026, *rozhodnutí uživatele*, varianta B): zlatá jen pro úspěch (vítězné skóre, vyhrané legy, plus,
   medaile, graf průběhu) a pro „tohle jsi ty“ (moje jméno, číslo mého stolu, pruh u mých kol); hlavní tlačítka zůstávají zlatá.
-  Názvy disciplín, tečky stran, pauzy, čáry, rámeček hraného kola, kroužky s písmenem a přepínač souhrnu jsou neutrální.
+  Názvy disciplín, pauzy, čáry, rámeček hraného kola a kroužky s písmenem jsou neutrální. Zvolená položka přepínače je černá
+  v celé appce; strana A má všude zlatou tečku (barva strany, ne hodnocení).
   Aktivní položka hlavního menu má zlatou linku. Značky ve formuláři (zaškrtnutí, posuvník, počet stolů) jsou černé (--ink).
   Červená (--warn) = ztráta, chyba, mazání – a utkání, které čeká na zahájení (záměrně: něco není v pořádku).
   Světlý režim: chladná světlá šedá (stejná grafitová řada jako tmavý), uhlová černá, starozlatá na text.
@@ -467,8 +468,8 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .mb-badge { flex: none; margin-left: 6px; font-size: 10.5px; font-weight: 700; line-height: 1; padding: 2px 6px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--muted); background: var(--surface); }
 .mb-nm.win { font-weight: 800; }
 .mb-dot { flex: none; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
-/* Strana A obrys, B plná tečka (23. 11. 2026, dřív A zlatě). */
-.mb-dot.a { background: transparent; box-shadow: inset 0 0 0 1.5px var(--side-b); }
+/* Strana A zlatá tečka jako v grafu, zrcadle a zápisu skóre (23. 11. 2026 krátce obrys, vráceno kvůli jednotnosti). */
+.mb-dot.a { background: var(--gold); }
 .mb-dot.b { background: var(--side-b); }
 /* Cvičení: jména začínají tam, kde u zápasu za tečkou strany (7 px + 6 px). */
 .cell-names.grp, .cell-sub.grp { padding-left: 13px; }
@@ -553,7 +554,8 @@ tr.clickable:hover td { background: var(--felt-soft); }
   background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 99px;
   padding: 0 11px; min-height: 28px; height: 28px; font-size: 13px; font-weight: 600;
 }
-.segmented button[aria-pressed='true'] { background: var(--action); border-color: var(--action-edge); color: var(--action-ink); font-weight: 700; }
+/* Zvolená položka přepínače: černě v celé appce (23. 11. 2026, *rozhodnutí uživatele*) – stejně jako přepínač legů; zlatá je pro úspěch, „já“ a hlavní tlačítka. */
+.segmented button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 700; }
 .range-dates { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; align-items: center; }
 .solo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 8px 24px; }
 .solo-block { margin-top: 12px; }
@@ -602,7 +604,7 @@ input:disabled { background: var(--bg); color: var(--muted); border-color: var(-
 .tabs { display: inline-flex; margin: 0 0 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
 .tabs button { background: none; color: var(--ink); border: 0; border-radius: 0; border-right: 1px solid var(--line); font-weight: 500; }
 .tabs button:last-child { border-right: 0; }
-.tabs button[aria-selected='true'] { background: var(--action); color: var(--action-ink); font-weight: 600; box-shadow: inset 0 0 0 1px var(--action-edge); }
+.tabs button[aria-selected='true'] { background: var(--ink); color: var(--surface); font-weight: 600; box-shadow: inset 0 0 0 1px var(--ink); }
 
 /* Můj stůl */
 /* Bez béžového podkladu – karta kola na šedém pozadí stránky jako v Tréninku (19. 11. 2026, *rozhodnutí uživatele*). */
@@ -1074,7 +1076,6 @@ button.icon-btn:hover { color: var(--ink); background: var(--line); }
 .summary .standings, .summary .delays { margin-top: 4px; }
 /* Souhrn kompaktně (19. 11. 2026): menší odsazení, kratší popisky, vysvětlivka sbalená; na telefonu bez posouvání. */
 .summary .segmented { margin-bottom: 4px; }
-.summary .segmented button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .summary .wrap { margin: 4px 0 2px; max-width: 640px; }
 .summary-table { font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .wrap .summary-table th, .wrap .summary-table td { padding: 4px 8px; }
@@ -1844,7 +1845,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-done { border-radius: 12px; background: var(--felt-soft); color: var(--felt); font-weight: 700; font-size: 13px; padding: 8px 10px; text-align: center; }
 .guide .g-scen { display: flex; gap: 4px; flex-wrap: wrap; }
 .guide .g-scen button { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; font-size: 11px; font-weight: 600; padding: 4px 8px; }
-.guide .g-scen button[aria-pressed="true"] { border-color: var(--felt); color: var(--felt); background: var(--felt-soft); }
+.guide .g-scen button[aria-pressed="true"] { border-color: var(--ink); color: var(--surface); background: var(--ink); }
 .guide .g-hint { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; }
 
 /* ── kroky ── */
@@ -1999,7 +2000,7 @@ button.role-toggle.on { color: var(--felt); background: var(--felt-soft); border
 .guide .g-tl .g-ttop { display: flex; justify-content: space-between; gap: 6px; }
 .guide .g-tl .g-tile .g-tt { border: 0; padding: 0; }
 .guide .g-tl em { font-style: normal; font-weight: 800; color: var(--felt); }
-.guide .g-tl .g-pause { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--gold) 16%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
+.guide .g-tl .g-pause { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--muted) 12%, var(--surface)) 0 8px, var(--surface) 8px 16px); }
 .guide .g-sum { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; font-size: 13px; }
 .guide .g-sum b { color: var(--muted); text-align: right; }
 .guide .g-sum span:last-child { font-weight: 700; }
