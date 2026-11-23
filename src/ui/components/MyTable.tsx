@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TrainingRecap } from './TrainingRecap';
 import { matchState } from '../../domain/matchFormat';
 import { rowKind, trainingProgress } from '../../domain/progress';
@@ -11,6 +11,7 @@ import { keepLast, rowGoal, rowMinutes, rowName } from '../scheduleView';
 import { myAssignments, type Assignment } from '../../domain/my';
 import type { Match, MatchId, PlayerId, Schedule, Score, SoloKey, Training } from '../../domain/types';
 import { BlockEntry, GameProgress, hasRoundHelp, RoundHelp, type TapEntry, type TapSolo } from './BlockEntry';
+import { ReadyMirror, type ReadySlot } from './ScoreMirror';
 import type { ItemTiming } from './Timing';
 import { drillItemId, readyKeys, type ItemState, type PauseState } from '../../domain/queue';
 import { drillCount } from '../../domain/drillTap';
@@ -173,20 +174,6 @@ export function MyTable(props: Props) {
     const players = a.match ? [...a.match.sideA, ...a.match.sideB] : (a.group?.players ?? []);
     timing.ready(myItemId, key, on, readyKeys({ match: a.match, players }));
   };
-  const todo = slots.filter((x) => ist?.ready?.[x.key] === undefined);
-  // Kdo ještě není připravený (všechny strany / hráči utkání), když už je někdo připravený (19. 11. 2026).
-  const waitingFor = (() => {
-    if (!myItemId) return null;
-    const players = a.match ? [...a.match.sideA, ...a.match.sideB] : (a.group?.players ?? []);
-    const keys = readyKeys({ match: a.match, players });
-    const left = keys.filter((k) => ist?.ready?.[k] === undefined);
-    if (!left.length || left.length === keys.length) return null;
-    const mySide = a.match ? (a.match.sideA.includes(playerId) ? 'A' : a.match.sideB.includes(playerId) ? 'B' : null) : null;
-    const opp = !!a.match && left.every((k) => k !== mySide);
-    const who = left.map((k) => (a.match ? nm(k === 'A' ? a.match.sideA : a.match.sideB) : (names[k] ?? '?'))).join(', ');
-    return `čeká se na ${opp ? 'soupeře' : 'hráče'} (${who})`;
-  })();
-  const readySlots = slots.filter((x) => ist?.ready?.[x.key] !== undefined);
 
   const isEnded = ist?.endedAt !== undefined;
   const started = ist?.startedAt !== undefined;
@@ -231,23 +218,11 @@ export function MyTable(props: Props) {
           <span className="count">{fmtDur(now - ist.startedAt!)}</span>
         </div>
       );
+    // Kdo je připravený, ukazuje zrcadlo Připraven? pod kartou (23. 11. 2026) – proužek už jen stav.
     if (isReady)
       return (
         <div className="c-state live turn" role="status">
-          <span>● Na řadě{waitingFor ? ` · ${waitingFor}` : ''}</span>
-          {readySlots.length > 0 && (
-            <span>
-              ✓{' '}
-              {readySlots.map((x, k) => (
-                <Fragment key={x.key}>
-                  {k > 0 && ' '}
-                  <button type="button" className="link" aria-label={`Zrušit připravenost: ${x.label}`} onClick={() => ready(x.key, false)}>
-                    {readySlots.length < slots.length || readySlots.length > 1 ? `zrušit ${x.label}` : 'zrušit'}
-                  </button>
-                </Fragment>
-              ))}
-            </span>
-          )}
+          <span>● Na řadě</span>
         </div>
       );
     const w = waitWhy(a, ist);
@@ -399,16 +374,20 @@ export function MyTable(props: Props) {
           </button>
         </div>
       );
-    if (isReady && todo.length)
+    // Připraven? jako první stav zrcadla (23. 11. 2026, varianta K1): všechny strany / hráči, moje ťukací.
+    if (isReady && slots.length) {
+      const all: ReadySlot[] = a.match
+        ? (['A', 'B'] as const).map((k) => {
+            const ids = k === 'A' ? a.match!.sideA : a.match!.sideB;
+            return { key: k, label: nm(ids), ids, can: slots.some((x) => x.key === k), ready: ist.ready?.[k] !== undefined };
+          })
+        : (a.group?.players ?? []).map((p) => ({ key: p, label: names[p] ?? '?', ids: [p], can: slots.some((x) => x.key === p), ready: ist.ready?.[p] !== undefined }));
       return (
         <div className="my-zone">
-          {todo.map((x) => (
-            <button key={x.key} type="button" className="big-action" onClick={() => ready(x.key, true)} aria-label={todo.length > 1 || slots.length > 1 ? `Připraven: ${x.label}` : 'Připraven'}>
-              {todo.length > 1 || slots.length > 1 ? `Připraven – ${x.label}` : 'Připraven'}
-            </button>
-          ))}
+          <ReadyMirror slots={all} match={!!a.match} me={playerId} onToggle={ready} />
         </div>
       );
+    }
     return null;
   })();
 

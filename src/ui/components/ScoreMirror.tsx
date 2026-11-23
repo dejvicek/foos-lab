@@ -392,3 +392,57 @@ export function StreakMirror({ players, def, states, names, now, limitSec, canSo
     </div>
   );
 }
+
+/** Jedna strana zápasu / hráč cvičení na zrcadle Připraven?. */
+export interface ReadySlot {
+  key: string;
+  label: string;
+  /** Hráči strany (kroužky). */
+  ids: PlayerId[];
+  /** Smím ji ohlásit (moje strana, rozhodčí, spoluhráč u cvičení). */
+  can: boolean;
+  ready: boolean;
+}
+
+/**
+ * Připraven? jako první stav zrcadla stolu (23. 11. 2026, *rozhodnutí uživatele*, varianta K1): stejné poloviny stran
+ * a stejné velké tlačítko v barvě strany jako zápis gólů; místo čísla „Připraven?“. Připravený = zeleně „✓ Připraven“
+ * (ťuknutím se zruší), koho ohlásit nemůžu = čárkovaně „čeká se“. Až jsou připravení všichni, nastoupí zrcadlo skóre.
+ */
+export function ReadyMirror({ slots, match, me, onToggle }: { slots: ReadySlot[]; match: boolean; me?: PlayerId | null; onToggle(key: string, ready: boolean): void }) {
+  const mine = slots.filter((x) => x.can).length;
+  return (
+    <div className="mirror ready-mirror">
+      <div className={`mirror-halves cols-${slots.length}`}>
+        {slots.map((x, i) => {
+          const side: Side = i % 2 ? 'B' : 'A';
+          return (
+            <div key={x.key} role="group" aria-label={x.label} className={`mirror-half side-${side.toLowerCase()}${!x.can && !x.ready ? ' waits' : ''}`}>
+              <div className="mirror-who">
+                <Avatars ids={x.ids} size="l" />
+                <strong>{x.label}</strong>
+                {match && (
+                  <small>
+                    {SIDE_WORD[side]}
+                    {me && x.ids.includes(me) ? ', vy' : ''}
+                  </small>
+                )}
+              </div>
+              {x.ready ? (
+                <button type="button" className="mirror-goal ready-ok" aria-pressed="true" aria-label={`Zrušit připravenost: ${x.label}`} disabled={!x.can} onClick={() => onToggle(x.key, false)}>
+                  ✓ Připraven
+                </button>
+              ) : x.can ? (
+                <button type="button" className="mirror-goal ready-go" aria-label={mine > 1 ? `Připraven: ${x.label}` : 'Připraven'} onClick={() => onToggle(x.key, true)}>
+                  Připraven?
+                </button>
+              ) : (
+                <div className="mirror-goal ready-wait">čeká se</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

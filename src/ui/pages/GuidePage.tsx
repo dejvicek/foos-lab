@@ -113,8 +113,8 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
             </p>
             <div className="g-flow">
               <div>
-                <b>Připraven</b>Jakmile tvoje strana stojí u stolu – velké tlačítko pod kartou kola. Proužek ukáže, na koho se ještě čeká; až jsou připravení
-                oba týmy, objeví se zrcadlo.
+                <b>Připraven</b>Jakmile tvoje strana stojí u stolu, ťukni na „Připraven?“ ve velkém tlačítku své strany pod kartou kola – zezelená. Na koho
+                se ještě čeká, je šedě čárkovaně. Až jsou připravení všichni, stejné tlačítko začne počítat góly.
               </div>
               <div>
                 <b>Ťukat</b>Góly (v Dani za ztrátu i ztráty), kdo z vás zrovna má ruku volnou.
