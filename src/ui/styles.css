@@ -684,7 +684,15 @@ button.pill[aria-pressed='true'] { background: var(--ink); color: var(--surface)
 .seg.live { background: var(--dc); height: 10px; border-radius: 3px; }
 .seg.live.waits:not(.done) { background: color-mix(in srgb, var(--dc) 35%, transparent); }
 /* Na řadě, ještě se nehraje (23. 11. 2026, *rozhodnutí uživatele*, varianta A): světlá výplň s čárkovaným obrysem; hraju plně, čekám světle. */
-.seg.live.turn:not(.done) { background: color-mix(in srgb, var(--dc) 18%, var(--surface)); outline: 2px dashed var(--dc); outline-offset: -2px; }
+.seg.live.turn:not(.done) {
+  /* Čárky 3 px, mezery 2 px (outline dashed má mezery moc velké na 10px dílek). */
+  --dash: repeating-linear-gradient(90deg, var(--dc) 0 3px, transparent 3px 5px);
+  --dash-v: repeating-linear-gradient(180deg, var(--dc) 0 3px, transparent 3px 5px);
+  background:
+    var(--dash) top / 100% 2px no-repeat, var(--dash) bottom / 100% 2px no-repeat,
+    var(--dash-v) left / 2px 100% no-repeat, var(--dash-v) right / 2px 100% no-repeat,
+    color-mix(in srgb, var(--dc) 18%, var(--surface));
+}
 .seg.cur::before {
   content: ''; position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
   border: 5px solid transparent; border-top: 6px solid var(--ink); border-bottom: 0;
