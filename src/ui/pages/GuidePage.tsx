@@ -206,7 +206,7 @@ export function GuidePage({ signedIn, onBack }: { signedIn: boolean; onBack(): v
               </Li>
               <Li i="▣">
                 <b>Tvoje jméno</b> je tučně zlatě; odehraná a právě hraná kola, kde hraješ nebo rozhoduješ, mají vlevo žlutý pruh. Rozpis je jen ke čtení, výsledky zapisuješ v Moje
-                hry. Na telefonu má každé kolo dlaždici se všemi stoly; velké číslo vlevo je číslo stolu.
+                hry. Na telefonu má každé kolo dlaždici se všemi stoly; velké číslo vlevo je číslo stolu. <b>Zlatě</b> je jen to, co se týká tebe, a úspěchy: vítězné skóre, vyhrané legy a tlačítko grafu s průběhem hry.
               </Li>
               <Li i="Σ">
                 <b>Souhrn tréninku</b> řadí hráče jen podle tohoto tréninku: rozdíl skóre (G±), pak vyhrané legy (L+), góly (G+) a výhry v simulaci. L− jsou

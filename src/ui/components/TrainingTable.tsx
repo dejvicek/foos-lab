@@ -233,7 +233,7 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
               {k === 'A' ? l.a : l.b}
             </span>
           ))}
-          <b className={!tot ? 'none' : winner && winner !== k ? 'lose' : undefined}>{total}</b>
+          <b className={!tot ? 'none' : winner === k ? 'win' : winner ? 'lose' : undefined}>{total}</b>
         </span>
       </Fragment>
     );

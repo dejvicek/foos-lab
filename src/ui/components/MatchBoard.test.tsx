@@ -14,6 +14,8 @@ describe('zápas na stole jako výsledková tabule (19. 11. 2026)', () => {
     expect([...container.querySelectorAll('.mb-nm')].map((x) => x.textContent)).toEqual(['Ondra + Pepa', 'Dejv + Milan']);
     expect(container.querySelector('.mb-nm.win')).toHaveTextContent('Ondra + Pepa');
     expect(container.querySelector('b.lose')).toHaveTextContent('3');
+    // vítězné skóre zlatě (23. 11. 2026, varianta B): třída win
+    expect(container.querySelector('b.win')).toHaveTextContent('6');
     expect(container.querySelector('.me-name')).toHaveTextContent('Dejv');
   });
 
