@@ -397,11 +397,6 @@ details.disciplines[open] > summary::before { content: '▾'; }
 .plan tr.mine-row.st-playing:not(.break) > td:last-child { box-shadow: inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt), inset -2px 0 0 var(--felt); }
 .plan tr.mine-row.st-playing:not(.break) > td:first-child { box-shadow: inset 5px 0 0 var(--gold), inset 0 2px 0 var(--felt), inset 0 -2px 0 var(--felt); }
 .plan tr.st-playing:not(.mine-row):not(.break) > td:first-child { box-shadow: inset 2px 0 0 var(--muted), inset 0 2px 0 var(--muted), inset 0 -2px 0 var(--muted); }
-/* Kolo na řadě (23. 11. 2026): místo plného rámečku čárkovaný obrys řádku; můj pruh vlevo zůstává. */
-.plan tr.st-playing.st-next:not(.break) > td, .plan tr.st-playing.st-next:not(.break) > td:first-child, .plan tr.st-playing.st-next:not(.break) > td:last-child { box-shadow: none; }
-.plan tr.st-playing.st-next.mine-row:not(.break) > td:first-child { box-shadow: inset 5px 0 0 var(--gold); }
-.plan tr.st-playing.st-next:not(.break) { outline: 2px dashed var(--muted); outline-offset: -2px; }
-.plan tr.st-playing.st-next.mine-row:not(.break) { outline-color: var(--felt); }
 .me-name { font-weight: 800; color: var(--felt); }
 .row-name { display: block; font-weight: 800; font-size: 14.5px; line-height: 1.25; text-wrap: balance; }
 /* Pauza: výrazný šrafovaný pruh */
@@ -456,8 +451,6 @@ button.fold-toggle span { color: var(--muted); font-weight: 600; font-size: 12.5
 .rk .rail-node { border-color: color-mix(in srgb, var(--dc) 40%, var(--surface)); color: var(--dc); }
 .rk.st-done .rail-node { border-color: var(--dc); color: var(--surface); }
 .st-playing .rail-node, .rk.st-playing .rail-node { border-color: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 22%, transparent); }
-/* Na řadě (nikdo nezačal, 23. 11. 2026): jako kola, která přijdou – čárkovaný kroužek bez záře; hrané kolo plně. */
-.st-next .rail-node, .rk.st-next .rail-node { border-style: dashed; border-color: var(--dc); box-shadow: none; background: var(--surface); color: var(--dc); }
 /* Hrané kolo: kroužek bez pulzování (19. 11. 2026, *rozhodnutí uživatele*). */
 .plan tr.open td { border-bottom-color: transparent; }
 .plan tr.break td { color: var(--muted); }
@@ -799,8 +792,6 @@ button.big { min-height: 52px; border-radius: 12px; font-size: 18px; font-weight
 .round-card.st-done .tile-name, .round-card.st-done .tile-time { color: var(--muted); }
 .round-card.st-playing { outline: 2px solid var(--muted); outline-offset: -2px; }
 .round-card.st-playing.mine-row:not(.st-upcoming) { outline-color: var(--felt); }
-/* Kolo na řadě: rámeček čárkovaně (hrané kolo plně). */
-.round-card.st-playing.st-next { outline-style: dashed; }
 .round-card.mine-row:not(.st-upcoming) { box-shadow: inset 5px 0 0 var(--gold); }
 .tile-head { display: grid; gap: 3px; padding: 10px 12px 6px; color: var(--ink); }
 /* Hlavička dlaždice (19. 11. 2026): čas vlevo, název disciplíny uprostřed, formát (BO) vpravo. Číslo mého stolu zlatě. */

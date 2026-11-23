@@ -3,7 +3,7 @@ import { drillItemId, pauseId, pauseStates, queueOf, runQueue, TRAINING_ITEM } f
 import type { PlayTimes, Training } from '../domain/types';
 import { H } from '../test/fixtures';
 import { flatRows, rowKey } from './now';
-import { liveText, onTurn, playingRow, railClass, roundStates, stateLabel } from './roundState';
+import { liveText, playingRow, roundStates } from './roundState';
 import { usedTables } from './components/TrainingTable';
 
 const M = 60_000;
@@ -87,23 +87,5 @@ describe('stav kol v rozpisu (odehrané / hraje se / bude se hrát)', () => {
     const r = run({ [TRAINING_ITEM]: { startedAt: at(0) }, ...done(0, 0, 8), [pauseId(0)]: { startedAt: at(8), endedAt: at(9) } }, at(10))!;
     expect(playingRow(s, r)).toEqual(play[1].ref);
     expect(playingRow(s, null)).toBeNull();
-  });
-});
-
-describe('kolo na řadě × hraje se (23. 11. 2026)', () => {
-  const keys = flatRows(s).map(rowKey);
-  const i0 = keys.indexOf(rowKey(play[0].ref));
-  it('na řadě (nikdo nezačal): st-playing i st-next, štítek „na řadě“', () => {
-    const r = run({ [TRAINING_ITEM]: { startedAt: at(0) } }, at(1))!;
-    expect(onTurn(r.get(keys[i0]))).toBe(true);
-    expect(railClass(r, keys, i0).split(' ')).toEqual(expect.arrayContaining(['st-playing', 'st-next']));
-    expect(stateLabel(r.get(keys[i0]))).toBe('Na řadě');
-  });
-  it('jakmile se začne hrát, už ne na řadě', () => {
-    const [a] = ids(0);
-    const r = run({ [TRAINING_ITEM]: { startedAt: at(0) }, [a]: { startedAt: at(1) } }, at(2))!;
-    expect(onTurn(r.get(keys[i0]))).toBe(false);
-    expect(railClass(r, keys, i0).split(' ')).not.toContain('st-next');
-    expect(stateLabel(r.get(keys[i0]))).toBe('Hraje se');
   });
 });

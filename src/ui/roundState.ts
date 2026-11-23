@@ -72,15 +72,6 @@ export function playingRow(s: Schedule, rounds: Map<string, RoundStatus> | null)
 export const STATE_LABEL: Record<RoundStateKind, string> = { done: 'Odehráno', playing: 'Hraje se', upcoming: 'Bude se hrát' };
 
 /**
- * Kolo je na řadě (23. 11. 2026, *rozhodnutí uživatele*): „hraje se“, ale nikdo ještě nezačal a nic není hotové.
- * Na ose a rámečkem vypadá jako kola, která přijdou (čárkovaně), hrané kolo plně.
- */
-export const onTurn = (st: RoundStatus | undefined): boolean => st?.state === 'playing' && st.since === undefined && st.done === 0;
-
-/** Popisek stavu kola (uzel osy): Odehráno / Hraje se / Na řadě / Bude se hrát. */
-export const stateLabel = (st: RoundStatus | undefined): string => (onTurn(st) ? 'Na řadě' : STATE_LABEL[st?.state ?? 'upcoming']);
-
-/**
  * Třídy řádku s uzlem časové osy: st-<stav>; rt = linka shora zelená (předchozí odehraný),
  * rb = linka dolů zelená (tento odehraný). Bez stavu (trénink nezačal) prázdné.
  */
@@ -88,7 +79,7 @@ export function railClass(rounds: Map<string, RoundStatus> | null, keys: string[
   if (!rounds) return '';
   const st = rounds.get(keys[i])?.state ?? 'upcoming';
   const prev = i > 0 && rounds.get(keys[i - 1])?.state === 'done';
-  return ['rail', `st-${st}`, onTurn(rounds.get(keys[i])) ? 'st-next' : '', prev ? 'rt' : '', st === 'done' ? 'rb' : '', i === 0 ? 'rail-first' : '', i === keys.length - 1 ? 'rail-last' : '']
+  return ['rail', `st-${st}`, prev ? 'rt' : '', st === 'done' ? 'rb' : '', i === 0 ? 'rail-first' : '', i === keys.length - 1 ? 'rail-last' : '']
     .filter(Boolean)
     .join(' ');
 }
