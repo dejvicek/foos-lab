@@ -32,6 +32,7 @@ describe('menu účtu v liště (21. 11. 2026)', () => {
     const before = dark.getAttribute('aria-checked');
     await user.click(dark);
     expect(screen.getByRole('menuitemcheckbox', { name: 'Tmavý režim' }).getAttribute('aria-checked')).not.toBe(before);
+    await user.click(screen.getByRole('menuitem', { name: 'Administrace' })); // Šablony v podmenu (23. 11. 2026)
     await user.click(screen.getByRole('menuitem', { name: 'Šablony' }));
     expect(navigate).toHaveBeenCalledWith({ page: 'templates' });
     await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
@@ -51,5 +52,33 @@ describe('menu účtu v liště (21. 11. 2026)', () => {
     await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
     await user.click(screen.getByRole('menuitem', { name: 'Odhlásit' }));
     expect(out).toHaveBeenCalled();
+  });
+
+  it('Administrace (23. 11. 2026): jen pro admina; Zobrazit jako Admin / Organizátor / Hráč', async () => {
+    const user = userEvent.setup();
+    const onViewAs = vi.fn();
+    render(<MainNav route={{ page: 'trainings' }} navigate={vi.fn()} myName="Adam" myId="p1" admin realAdmin viewAs="admin" onViewAs={onViewAs} onSignOut={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    expect(screen.queryByRole('menuitemradio')).toBeNull(); // podmenu je sbalené
+    await user.click(screen.getByRole('menuitem', { name: 'Administrace' }));
+    const radios = screen.getAllByRole('menuitemradio');
+    expect(radios.map((r) => r.textContent)).toEqual(['Admin', 'Organizátor', 'Hráč']);
+    expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemradio', { name: 'Hráč' }));
+    expect(onViewAs).toHaveBeenCalledWith('player');
+  });
+
+  it('admin v pohledu hráče: Administrace zůstává (jde přepnout zpět), Šablony ne; hráč Administraci nemá', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<MainNav route={{ page: 'trainings' }} navigate={vi.fn()} myName="Adam" myId="p1" admin={false} realAdmin viewAs="player" onViewAs={vi.fn()} onSignOut={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    expect(screen.getByRole('menu', { name: 'Účet' })).toHaveTextContent('admin · jako hráč');
+    await user.click(screen.getByRole('menuitem', { name: 'Administrace' }));
+    expect(screen.queryByRole('menuitem', { name: 'Šablony' })).toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Hráč' })).toHaveAttribute('aria-checked', 'true');
+    unmount();
+    nav(false);
+    await user.click(screen.getByRole('button', { name: 'Účet: Adam' }));
+    expect(screen.queryByRole('menuitem', { name: 'Administrace' })).toBeNull();
   });
 });

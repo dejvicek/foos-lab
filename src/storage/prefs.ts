@@ -1,6 +1,7 @@
 import type { DisciplineId } from '../domain/types';
 import type { LadderRange, LadderView } from '../domain/ladder';
 import type { MatchKindFilter } from '../domain/practice';
+import type { ViewAs } from '../domain/my';
 
 /**
  * Část žebříčku (18. 11. 2026, *rozhodnutí uživatele*): Zápasy · Cvičení · Zdržovači; Cvičení má podčásti
@@ -79,6 +80,27 @@ export function saveTheme(t: Theme): void {
     localStorage.setItem(THEME_KEY, t);
   } catch {
     /* bez uložení platí volba do zavření appky */
+  }
+}
+
+/** Pohled admina jako jiná role (23. 11. 2026): pamatuje si ho zařízení; bez uložení admin. */
+const VIEW_AS_KEY = 'foosball-practice.view-as.v1';
+
+export function loadViewAs(): ViewAs {
+  try {
+    const v = localStorage.getItem(VIEW_AS_KEY);
+    return v === 'organizer' || v === 'player' ? v : 'admin';
+  } catch {
+    return 'admin';
+  }
+}
+
+export function saveViewAs(v: ViewAs): void {
+  try {
+    if (v === 'admin') localStorage.removeItem(VIEW_AS_KEY);
+    else localStorage.setItem(VIEW_AS_KEY, v);
+  } catch {
+    /* bez uložení platí do zavření appky */
   }
 }
 

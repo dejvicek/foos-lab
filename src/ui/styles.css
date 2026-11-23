@@ -2402,3 +2402,12 @@ button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); colo
 }
 .ready-mirror .mirror-half.waits { border-style: dashed; border-color: var(--line-strong); }
 .ready-mirror .mirror-half:has(.ready-ok) { border-color: var(--good); }
+
+/* Podmenu Administrace v menu účtu (23. 11. 2026): Šablony a Zobrazit jako (Admin / Organizátor / Hráč). */
+.acct-sub { display: flex; flex-direction: column; margin: 0 0 4px 10px; padding-left: 8px; border-left: 2px solid var(--line); }
+.acct-sub-k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 2px; }
+.acct-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; position: relative; }
+.acct-radio.on { border-color: var(--ink); }
+.acct-radio.on::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; background: var(--ink); }
+.viewas-banner { background: var(--ink); color: var(--surface); }
+.viewas-banner button.banner-ok { background: var(--surface); color: var(--ink); border-color: var(--surface); }

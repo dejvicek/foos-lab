@@ -2,9 +2,9 @@ import { activeFor, myFinishedToday, runningTraining } from './active';
 import { useNow } from './now';
 import { EditTrainingPage, NewTrainingPage } from './pages/TrainingWizardPages';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { viewerOf, type Viewer } from '../domain/my';
+import { viewAsRole, viewerOf, type ViewAs, type Viewer } from '../domain/my';
 import { memoryAuth, type AuthService, type Me } from '../storage/auth';
-import { loadPrefs, savePrefs, type UiPrefs } from '../storage/prefs';
+import { loadPrefs, loadViewAs, savePrefs, saveViewAs, type UiPrefs } from '../storage/prefs';
 import type { Repository } from '../storage/repository';
 import type { Outbox } from '../storage/outbox';
 import type { SnapshotStore } from '../storage/snapshot';
@@ -174,7 +174,15 @@ function SignedIn({
     if (seenVersion && !news.fresh.length && (news.seen === null || compareVersions(APP_VERSION, news.seen) > 0)) seenVersion.save(APP_VERSION);
   }, [seenVersion, news]);
   // Organizátor podle soupisky – když ho admin nastaví / odebere, platí to hned (10. 11. 2026).
-  const viewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
+  const realViewer = viewerOf(me.playerId, me.isAdmin, store.data.players);
+  // Admin se může dívat jako organizátor / hráč (23. 11. 2026): jen zobrazení, databáze ho zná dál jako admina.
+  const [viewAs, setViewAsState] = useState<ViewAs>(loadViewAs);
+  const setViewAs = (v: ViewAs) => {
+    setViewAsState(v);
+    saveViewAs(v);
+  };
+  const viewer = viewAsRole(realViewer, viewAs);
+  const viewingAs = realViewer.isAdmin && viewAs !== 'admin' ? viewAs : null;
   // Katalog disciplín (názvy, štítky, nápovědy, délky pro nové tréninky) platí pro celou appku.
   const appliedCatalog = useRef<unknown>(null);
   if (appliedCatalog.current !== (store.data.catalog ?? null)) {
@@ -308,7 +316,18 @@ function SignedIn({
         mine={!!active?.plays}
         myTurn={!!active?.myTurn}
         admin={viewer.isAdmin}
+        realAdmin={realViewer.isAdmin}
+        viewAs={viewAs}
+        onViewAs={setViewAs}
       />
+      {viewingAs && (
+        <div className="update-banner viewas-banner" role="status">
+          Díváš se jako {viewingAs === 'player' ? 'hráč' : 'organizátor'} – vidíš jen to, co on.{' '}
+          <button type="button" className="ghost banner-ok" onClick={() => setViewAs('admin')}>
+            Zpět na admina
+          </button>
+        </div>
+      )}
       {news.banner && route.page !== 'patch-notes' && (
         <div className="update-banner news-banner" role="status">
           Appka má novou verzi {APP_VERSION}.{' '}
