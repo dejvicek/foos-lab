@@ -225,7 +225,7 @@ function MatchBoard({ m, t, names, me, noLive }: { m: Match; t: Training; names:
           <span className="mb-who">
             <Names ids={ids} names={names} me={me} />
           </span>
-          {b && <span className={m.wall === k ? 'mb-badge wall' : 'mb-badge'}>{b}</span>}
+          {b && <span className="mb-badge">{b}</span>}
         </span>
         <span className="mb-sc">
           {legs.map((l, j) => (
