@@ -226,14 +226,14 @@ export function MyTable(props: Props) {
       );
     if (started)
       return (
-        <div className="c-state live" role="status">
+        <div className="c-state live play" role="status">
           <span>● Hraje se</span>
           <span className="count">{fmtDur(now - ist.startedAt!)}</span>
         </div>
       );
     if (isReady)
       return (
-        <div className="c-state live" role="status">
+        <div className="c-state live turn" role="status">
           <span>● Na řadě{waitingFor ? ` · ${waitingFor}` : ''}</span>
           {readySlots.length > 0 && (
             <span>
@@ -432,7 +432,7 @@ export function MyTable(props: Props) {
       {/* Po mém posledním kole „Tvůj trénink“ (20. 11. 2026). */}
       {nextIdx < 0 && own.length > 0 && own.every((x) => x.s!.endedAt !== undefined) && <TrainingRecap training={training} playerId={playerId} />}
       {/* Kolo jako dlaždice v Rozpisu: hlavička, můj stůl (velké číslo + zápas) a stavový proužek. */}
-      <article className={`round-card my-card mine-row rk-${rowKind(a.row)}`} aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
+      <article className={`round-card my-card mine-row rk-${rowKind(a.row)}${a.role === 'wait' || !ist || isEnded || isOver ? '' : started ? ' st-play' : isReady ? ' st-turn' : ''}`} aria-label={`${a.row.label}, ${rowName(a.row, sec?.id)}`}>
         <RoundTileHead
           a={a}
           name={keepLast(rowName(a.row, sec?.id))}
