@@ -2311,3 +2311,35 @@ td .player-link:has(.av), .who-av { display: inline-flex; align-items: center; g
 /* Moje hry: kroužky hráčů nad jménem ve zrcadle stolu */
 .mirror-who .av-stack { margin-bottom: 4px; }
 .mirror-who .av-stack .av + .av { margin-left: -8px; }
+
+/* Hráči na telefonu (23. 11. 2026, varianta A): řádek jméno + docházka, akce v menu ⋯ zespodu */
+.pl-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pl-top h1 { margin-bottom: 2px; }
+.pl-top .lead { margin-top: 0; }
+.pl-top > button { flex: none; white-space: nowrap; min-height: 40px; margin-top: 4px; }
+.player-row.pl-m { flex-wrap: nowrap; gap: 8px; min-height: 56px; padding: 6px 4px 6px 12px; }
+.pl-who { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.pl-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; }
+.pl-name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-name .role-tag { margin-left: 0; flex: none; }
+.pl-who .att-meta { overflow: hidden; text-overflow: ellipsis; }
+.player-row .pl-who .att-meta { margin-right: 0; }
+button.pl-more {
+  flex: none; width: 44px; height: 44px; min-height: 0; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); font-size: 22px; font-weight: 800; line-height: 1;
+}
+button.pl-more:hover, button.pl-more:focus-visible { background: var(--bg); color: var(--ink); }
+.pl-backdrop { position: fixed; inset: 0; z-index: 59; background: color-mix(in srgb, #000 35%, transparent); }
+.pl-menu {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; flex-direction: column;
+  background: var(--surface); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0;
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+}
+.pl-menu-who { display: grid; gap: 2px; padding: 6px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.pl-menu-who > b { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-menu button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%; height: auto; min-height: 48px; margin: 0;
+  padding: 8px 10px; background: none; color: var(--ink); border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: left;
+}
+.pl-menu button:hover, .pl-menu button:focus-visible { background: var(--bg); }
+.pl-menu button.danger { color: var(--warn); }

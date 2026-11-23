@@ -252,7 +252,7 @@ function SignedIn({
         </button>
       </div>
     );
-  else if (route.page === 'players') body = <PlayersPage store={store} viewer={viewer} auth={auth} />;
+  else if (route.page === 'players') body = <PlayersPage store={store} viewer={viewer} auth={auth} navigate={navigate} />;
   else if (route.page === 'trainings') body = <TrainingsPage store={store} navigate={navigate} viewer={viewer} prefs={prefs} setPrefs={setPrefs} />;
   else if (route.page === 'practice-new' || route.page === 'practice' || (route.page === 'training' && store.data.trainings.some((t) => t.id === route.id && isPractice(t))))
     // Stejný klíč: po založení (practice-new → practice) zůstane vybrané cvičení na obrazovce.
